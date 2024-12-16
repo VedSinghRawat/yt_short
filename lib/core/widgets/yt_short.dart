@@ -82,13 +82,25 @@ class _YoutubeShortState extends State<YoutubeShort> with AutomaticKeepAliveClie
       key: Key('youtube_short_${widget.videoId}'),
       onVisibilityChanged: _onVisibilityChanged,
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 8),
+        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(16.0),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
         child: Stack(
           children: [
             if (_controller != null)
               Container(
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.withOpacity(0.3), width: 1),
+                  border: Border.all(color: Colors.grey.withOpacity(0.3), width: 1.5),
                   borderRadius: BorderRadius.circular(12.0),
                 ),
                 child: ClipRRect(
@@ -113,14 +125,6 @@ class _YoutubeShortState extends State<YoutubeShort> with AutomaticKeepAliveClie
                 ),
               ),
 
-            // Loading indicator
-            if (_isLoading)
-              const Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
-                ),
-              ),
-
             // Video controls overlay
             if (_isPlayerReady)
               Positioned(
@@ -129,16 +133,21 @@ class _YoutubeShortState extends State<YoutubeShort> with AutomaticKeepAliveClie
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _buildActionButton(
-                      Icons.favorite_border,
-                      'Like',
-                      () => print('Video Liked!'),
+                    IconButton(
+                      onPressed: () => print('Video Liked!'),
+                      constraints: const BoxConstraints(),
+                      icon: const Icon(
+                        Icons.favorite_border,
+                        color: Colors.white,
+                        size: 28,
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                    _buildActionButton(
-                      Icons.share,
-                      'Share',
-                      () => print('Share clicked!'),
+                    const Text(
+                      'Like',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
@@ -146,24 +155,6 @@ class _YoutubeShortState extends State<YoutubeShort> with AutomaticKeepAliveClie
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildActionButton(IconData icon, String label, VoidCallback onTap) {
-    return Column(
-      children: [
-        IconButton(
-          onPressed: onTap,
-          icon: Icon(icon, color: Colors.white, size: 28),
-        ),
-        Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 12,
-          ),
-        ),
-      ],
     );
   }
 }
