@@ -1,0 +1,72 @@
+import 'dart:developer' as developer;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../domain/repositories/auth_repository.dart';
+import '../../../../core/supabase/supabase_config.dart';
+
+class AuthRepositoryImpl implements AuthRepository {
+  final SupabaseClient _supabaseClient = SupabaseConfig.client;
+
+  @override
+  Future<void> signUp({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final response = await _supabaseClient.auth.signUp(
+        email: email,
+        password: password,
+      );
+
+      if (response.user == null) {
+        throw Exception('Sign up failed: No user data received');
+      }
+    } on AuthException catch (e) {
+      developer.log('Auth Error during sign up', error: '${e.message} (Status: ${e.statusCode})', stackTrace: StackTrace.current);
+      throw Exception(e.message);
+    } catch (e, stackTrace) {
+      developer.log('Unexpected error during sign up', error: e.toString(), stackTrace: stackTrace);
+      throw Exception(e.toString());
+    }
+  }
+
+  @override
+  Future<void> signIn({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final response = await _supabaseClient.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+
+      if (response.user == null) {
+        throw Exception('Sign in failed: No user data received');
+      }
+    } on AuthException catch (e) {
+      developer.log('Auth Error during sign in', error: '${e.message} (Status: ${e.statusCode})', stackTrace: StackTrace.current);
+      throw Exception(e.message);
+    } catch (e, stackTrace) {
+      developer.log('Unexpected error during sign in', error: e.toString(), stackTrace: stackTrace);
+      throw Exception(e.toString());
+    }
+  }
+
+  @override
+  Future<void> signOut() async {
+    try {
+      await _supabaseClient.auth.signOut();
+    } catch (e, stackTrace) {
+      developer.log('Error during sign out', error: e.toString(), stackTrace: stackTrace);
+      throw Exception(e.toString());
+    }
+  }
+
+  @override
+  Stream<bool> get authStateChange => _supabaseClient.auth.onAuthStateChange.map((event) => event.session != null);
+}
+
+final authRepositoryProvider = Provider<AuthRepository>((ref) {
+  return AuthRepositoryImpl();
+});
