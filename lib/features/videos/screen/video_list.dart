@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/widgets/yt_shorts_list.dart';
 import '../video_controller.dart';
+import '../../auth/auth_controller.dart';
 
 class VideoListScreen extends ConsumerStatefulWidget {
   const VideoListScreen({super.key});
@@ -21,7 +22,26 @@ class _VideoListScreenState extends ConsumerState<VideoListScreen> {
   @override
   Widget build(BuildContext context) {
     final videoState = ref.watch(videoControllerProvider);
+    final authController = ref.watch(authControllerProvider.notifier);
 
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        title: const Text('Youtube Shorts'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () {
+              authController.signOut();
+            },
+          ),
+        ],
+      ),
+      body: _buildBody(videoState),
+    );
+  }
+
+  Widget _buildBody(VideoControllerState videoState) {
     switch (videoState.state) {
       case VideoState.loading:
         return const Center(

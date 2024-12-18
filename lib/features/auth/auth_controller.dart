@@ -37,41 +37,29 @@ class AuthController extends StateNotifier<AuthState> {
     super.dispose();
   }
 
-  Future<void> signUp({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> signUp({required String email, required String password}) async {
     try {
       state = AuthState.loading;
       final authRepository = _ref.read(authAPIProvider);
-      await authRepository.signUp(
-        email: email,
-        password: password,
-      );
-      // State will be updated by the auth state stream
+      await authRepository.signUp(email: email, password: password);
+      state = AuthState.authenticated;
     } catch (e, stackTrace) {
       state = AuthState.error;
       developer.log('Error in AuthController.signUp', error: e.toString(), stackTrace: stackTrace);
-      rethrow; // Rethrow to let UI handle the error
+      rethrow;
     }
   }
 
-  Future<void> signIn({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> signIn({required String email, required String password}) async {
     try {
       state = AuthState.loading;
       final authRepository = _ref.read(authAPIProvider);
-      await authRepository.signIn(
-        email: email,
-        password: password,
-      );
-      // State will be updated by the auth state stream
+      await authRepository.signIn(email: email, password: password);
+      state = AuthState.authenticated;
     } catch (e, stackTrace) {
-      state = AuthState.error;
+      state = AuthState.unauthenticated;
       developer.log('Error in AuthController.signIn', error: e.toString(), stackTrace: stackTrace);
-      rethrow; // Rethrow to let UI handle the error
+      rethrow;
     }
   }
 
@@ -80,11 +68,11 @@ class AuthController extends StateNotifier<AuthState> {
       state = AuthState.loading;
       final authRepository = _ref.read(authAPIProvider);
       await authRepository.signOut();
-      // State will be updated by the auth state stream
+      state = AuthState.unauthenticated;
     } catch (e, stackTrace) {
       state = AuthState.error;
       developer.log('Error in AuthController.signOut', error: e.toString(), stackTrace: stackTrace);
-      rethrow; // Rethrow to let UI handle the error
+      rethrow;
     }
   }
 }

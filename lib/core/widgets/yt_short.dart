@@ -28,7 +28,6 @@ class _YoutubeShortState extends State<YoutubeShort> {
         hideControls: false,
         enableCaption: false,
         controlsVisibleAtStart: false,
-        useHybridComposition: true,
       ),
     );
   }

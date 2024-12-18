@@ -18,10 +18,7 @@ class AuthAPI implements IAuthAPI {
   @override
   Future<void> signUp({required String email, required String password}) async {
     try {
-      final response = await _supabaseClient.auth.signUp(
-        email: email,
-        password: password,
-      );
+      final response = await _supabaseClient.auth.signUp(email: email, password: password);
 
       if (response.user == null) {
         throw Exception('Sign up failed: No user data received');

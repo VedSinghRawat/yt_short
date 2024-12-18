@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'dart:developer' as developer;
 import '../auth_controller.dart';
 
@@ -29,9 +30,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
               email: _emailController.text.trim(),
               password: _passwordController.text.trim(),
             );
-        if (mounted) {
-          Navigator.pop(context); // Return to sign in screen after successful signup
-        }
+        // No need to navigate manually, router will handle redirection
       } catch (e, stackTrace) {
         developer.log('Error in SignUpScreen', error: e.toString(), stackTrace: stackTrace);
         if (mounted) {
@@ -50,6 +49,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sign Up'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/auth/signin'),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
