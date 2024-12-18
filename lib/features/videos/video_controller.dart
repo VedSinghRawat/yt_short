@@ -1,32 +1,30 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:developer' as developer;
 import '../../apis/video_api.dart';
 import '../../models/models.dart';
+import '../../core/utils.dart';
 
 // Define the state for videos
-enum VideoState { initial, loading, loaded, error }
+enum VideoState { initial, loading, loaded }
 
 // Define the state class to hold both the state enum and the video data
 class VideoControllerState {
   final VideoState state;
   final List<Video> videos;
-  final String? errorMessage;
 
   const VideoControllerState({
     required this.state,
     this.videos = const [],
-    this.errorMessage,
   });
 
   VideoControllerState copyWith({
     VideoState? state,
     List<Video>? videos,
-    String? errorMessage,
   }) {
     return VideoControllerState(
       state: state ?? this.state,
       videos: videos ?? this.videos,
-      errorMessage: errorMessage ?? this.errorMessage,
     );
   }
 }
@@ -40,7 +38,7 @@ class VideoController extends StateNotifier<VideoControllerState> {
 
   VideoController(this._ref) : super(const VideoControllerState(state: VideoState.initial));
 
-  Future<void> fetchVideos() async {
+  Future<void> fetchVideos(BuildContext context) async {
     try {
       state = state.copyWith(state: VideoState.loading);
 
@@ -50,15 +48,11 @@ class VideoController extends StateNotifier<VideoControllerState> {
       state = state.copyWith(
         state: VideoState.loaded,
         videos: videos,
-        errorMessage: null,
       );
     } catch (e, stackTrace) {
       developer.log('Error in VideoController.fetchVideos', error: e.toString(), stackTrace: stackTrace);
-      state = state.copyWith(
-        state: VideoState.error,
-        errorMessage: e.toString(),
-      );
-      rethrow; // Rethrow to let UI handle the error
+      state = state.copyWith(state: VideoState.loaded); // Reset to loaded state with existing videos
+      showErrorSnackBar(context, e.toString());
     }
   }
 }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'dart:developer' as developer;
 import '../auth_controller.dart';
 
 class SignInScreen extends ConsumerStatefulWidget {
@@ -25,25 +24,17 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   Future<void> _signIn() async {
     if (_formKey.currentState!.validate()) {
-      try {
-        await ref.read(authControllerProvider.notifier).signIn(
-              email: _emailController.text.trim(),
-              password: _passwordController.text.trim(),
-            );
-      } catch (e, stackTrace) {
-        developer.log('Error in SignInScreen', error: e.toString(), stackTrace: stackTrace);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.toString())),
+      await ref.read(authControllerProvider.notifier).signIn(
+            context,
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
           );
-        }
-      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authControllerProvider);
+    final isLoading = ref.watch(authLoadingProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -85,7 +76,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 },
               ),
               const SizedBox(height: 24),
-              if (authState == AuthState.loading)
+              if (isLoading)
                 const CircularProgressIndicator()
               else
                 ElevatedButton(

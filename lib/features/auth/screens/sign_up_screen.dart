@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'dart:developer' as developer;
 import '../auth_controller.dart';
 
 class SignUpScreen extends ConsumerStatefulWidget {
@@ -25,26 +24,17 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
   Future<void> _signUp() async {
     if (_formKey.currentState!.validate()) {
-      try {
-        await ref.read(authControllerProvider.notifier).signUp(
-              email: _emailController.text.trim(),
-              password: _passwordController.text.trim(),
-            );
-        // No need to navigate manually, router will handle redirection
-      } catch (e, stackTrace) {
-        developer.log('Error in SignUpScreen', error: e.toString(), stackTrace: stackTrace);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.toString())),
+      await ref.read(authControllerProvider.notifier).signUp(
+            context,
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
           );
-        }
-      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authControllerProvider);
+    final isLoading = ref.watch(authLoadingProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -90,10 +80,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                 },
               ),
               const SizedBox(height: 24),
-              if (authState == AuthState.loading)
-                const CircularProgressIndicator()
-              else
-                ElevatedButton(onPressed: _signUp, child: const Text('Sign Up')),
+              if (isLoading) const CircularProgressIndicator() else ElevatedButton(onPressed: _signUp, child: const Text('Sign Up')),
             ],
           ),
         ),

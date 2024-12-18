@@ -14,33 +14,19 @@ class AuthWrapper extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authControllerProvider);
+    final isLoading = ref.watch(authLoadingProvider);
+
+    if (isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
 
     switch (authState) {
       case AuthState.authenticated:
         return child;
-      case AuthState.loading:
-        return const Scaffold(
-          body: Center(
-            child: CircularProgressIndicator(),
-          ),
-        );
-      case AuthState.error:
-        return Scaffold(
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text('An error occurred'),
-                ElevatedButton(
-                  onPressed: () {
-                    ref.invalidate(authControllerProvider);
-                  },
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
-          ),
-        );
       case AuthState.initial:
       case AuthState.unauthenticated:
         return const SignInScreen();
