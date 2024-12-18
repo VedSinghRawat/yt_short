@@ -70,7 +70,7 @@ class AuthAPI implements IAuthAPI {
 
       final response = await _supabaseClient.from('users').select().eq('id', userId).single();
 
-      return response != null ? UserModel.fromJson(response) : null;
+      return UserModel.fromJson(response);
     } catch (e, stackTrace) {
       developer.log('Error getting current user', error: e.toString(), stackTrace: stackTrace);
       return null;
