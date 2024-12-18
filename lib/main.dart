@@ -1,10 +1,11 @@
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/widgets/yt_shorts_list.dart';
 import 'package:myapp/core/supabase/supabase_config.dart';
-import 'package:myapp/features/auth/presentation/widgets/auth_wrapper.dart';
-import 'package:myapp/features/auth/presentation/providers/auth_provider.dart';
+import 'package:myapp/features/auth/widgets/auth_wrapper.dart';
+import 'package:myapp/features/auth/auth_controller.dart';
+import 'package:myapp/features/videos/video_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,29 +34,56 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MyHomePage extends ConsumerWidget {
+class MyHomePage extends ConsumerStatefulWidget {
   const MyHomePage({super.key, required this.title});
 
   final String title;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends ConsumerState<MyHomePage> {
+  @override
+  void initState() {
+    super.initState();
+    // Fetch videos when the page loads
+    Future.microtask(() => ref.read(videoControllerProvider.notifier).fetchVideos());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final videoState = ref.watch(videoControllerProvider);
+    final authController = ref.watch(authControllerProvider.notifier);
+
+    Widget buildBody() {
+      switch (videoState.state) {
+        case VideoState.error:
+          developer.log('video api err:', error: videoState.errorMessage);
+          return Center(child: Text('Error: ${videoState.errorMessage}'));
+        case VideoState.loaded:
+          final videoIds = videoState.videos.map((video) => video.id).toList();
+          return YoutubeShortsList(videoIds: videoIds);
+        case VideoState.initial:
+        case VideoState.loading:
+          return const Center(child: CircularProgressIndicator());
+      }
+    }
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(title),
+        title: Text(widget.title),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
-              ref.read(authControllerProvider).signOut();
+              authController.signOut();
             },
           ),
         ],
       ),
-      body: const Center(
-        child: YoutubeShortsList(videoIds: shortIds),
-      ),
+      body: buildBody(),
     );
   }
 }

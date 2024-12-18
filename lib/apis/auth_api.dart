@@ -1,17 +1,22 @@
 import 'dart:developer' as developer;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../domain/repositories/auth_repository.dart';
-import '../../../../core/supabase/supabase_config.dart';
+import '../core/supabase/supabase_config.dart';
+import '../models/models.dart';
 
-class AuthRepositoryImpl implements AuthRepository {
+abstract class IAuthAPI {
+  Future<void> signUp({required String email, required String password});
+  Future<void> signIn({required String email, required String password});
+  Future<void> signOut();
+  Future<UserModel?> getCurrentUser();
+  Stream<bool> get authStateChange;
+}
+
+class AuthAPI implements IAuthAPI {
   final SupabaseClient _supabaseClient = SupabaseConfig.client;
 
   @override
-  Future<void> signUp({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> signUp({required String email, required String password}) async {
     try {
       final response = await _supabaseClient.auth.signUp(
         email: email,
@@ -31,15 +36,9 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<void> signIn({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> signIn({required String email, required String password}) async {
     try {
-      final response = await _supabaseClient.auth.signInWithPassword(
-        email: email,
-        password: password,
-      );
+      final response = await _supabaseClient.auth.signInWithPassword(email: email, password: password);
 
       if (response.user == null) {
         throw Exception('Sign in failed: No user data received');
@@ -64,9 +63,30 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<UserModel?> getCurrentUser() async {
+    try {
+      final userId = _supabaseClient.auth.currentUser?.id;
+      if (userId == null) return null;
+
+      final response = await _supabaseClient.from('users').select().eq('id', userId).single();
+
+      return response != null ? UserModel.fromJson(response) : null;
+    } catch (e, stackTrace) {
+      developer.log('Error getting current user', error: e.toString(), stackTrace: stackTrace);
+      return null;
+    }
+  }
+
+  @override
   Stream<bool> get authStateChange => _supabaseClient.auth.onAuthStateChange.map((event) => event.session != null);
 }
 
-final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return AuthRepositoryImpl();
+final authAPIProvider = Provider<IAuthAPI>((ref) {
+  return AuthAPI();
+});
+
+// Provider for the current user
+final currentUserProvider = FutureProvider<UserModel?>((ref) async {
+  final authAPI = ref.watch(authAPIProvider);
+  return authAPI.getCurrentUser();
 });

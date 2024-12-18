@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:developer' as developer;
-import '../providers/auth_provider.dart';
-import 'sign_up_screen.dart';
+import '../auth_controller.dart';
 
-class SignInScreen extends ConsumerStatefulWidget {
-  const SignInScreen({super.key});
+class SignUpScreen extends ConsumerStatefulWidget {
+  const SignUpScreen({super.key});
 
   @override
-  ConsumerState<SignInScreen> createState() => _SignInScreenState();
+  ConsumerState<SignUpScreen> createState() => _SignUpScreenState();
 }
 
-class _SignInScreenState extends ConsumerState<SignInScreen> {
+class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -23,15 +22,18 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     super.dispose();
   }
 
-  Future<void> _signIn() async {
+  Future<void> _signUp() async {
     if (_formKey.currentState!.validate()) {
       try {
-        await ref.read(authControllerProvider).signIn(
+        await ref.read(authControllerProvider.notifier).signUp(
               email: _emailController.text.trim(),
               password: _passwordController.text.trim(),
             );
+        if (mounted) {
+          Navigator.pop(context); // Return to sign in screen after successful signup
+        }
       } catch (e, stackTrace) {
-        developer.log('Error in SignInScreen', error: e.toString(), stackTrace: stackTrace);
+        developer.log('Error in SignUpScreen', error: e.toString(), stackTrace: stackTrace);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(e.toString())),
@@ -43,9 +45,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authControllerProvider);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sign In'),
+        title: const Text('Sign Up'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -56,13 +60,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             children: [
               TextFormField(
                 controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
-                ),
+                decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter your email';
+                  }
+                  if (!value.contains('@')) {
+                    return 'Please enter a valid email';
                   }
                   return null;
                 },
@@ -70,34 +74,23 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _passwordController,
-                decoration: const InputDecoration(
-                  labelText: 'Password',
-                  border: OutlineInputBorder(),
-                ),
+                decoration: const InputDecoration(labelText: 'Password', border: OutlineInputBorder()),
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter your password';
                   }
+                  if (value.length < 6) {
+                    return 'Password must be at least 6 characters';
+                  }
                   return null;
                 },
               ),
               const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _signIn,
-                child: const Text('Sign In'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const SignUpScreen(),
-                    ),
-                  );
-                },
-                child: const Text('Don\'t have an account? Sign Up'),
-              ),
+              if (authState == AuthState.loading)
+                const CircularProgressIndicator()
+              else
+                ElevatedButton(onPressed: _signUp, child: const Text('Sign Up')),
             ],
           ),
         ),
