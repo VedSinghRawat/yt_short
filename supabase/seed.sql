@@ -3,559 +3,502 @@
     INSERT INTO videos (title, description, id)
     VALUES
         (
-            'Flutter Animation Tutorial',
-            'Learn how to create smooth animations in Flutter',
-            'HiUGSawr5gU'
+            'Lorem ipsum dolor sit amet',
+            'Consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+            'UUb68mu2G1M'
         ),
         (
-            'State Management in Flutter',
-            'Understanding different state management approaches',
-            'fyXCkB_KMCk'
+            'Ut enim ad minim veniam',
+            'Quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
+            'Hs-zk8dxTqY'
         ),
         (
-            'Flutter Navigation 2.0',
-            'Deep dive into Flutter''s new navigation system',
-            'US-y0W87Dr4'
+            'Duis aute irure dolor',
+            'Reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.',
+            'gyJ8ChsdxTA'
         ),
         (
-            'Flutter UI Best Practices',
-            'Tips and tricks for building better Flutter UIs',
-            's6H6aIWFTyM'
+            'Excepteur sint occaecat',
+            'Cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
+            'MWY1wApWPvc'
         ),
         (
-            'Flutter App Architecture',
-            'Learn clean architecture principles in Flutter',
-            'GBtE2qCTo7w'
+            'Sed ut perspiciatis unde',
+            'Omnis iste natus error sit voluptatem accusantium doloremque laudantium.',
+            'L_xR73DMHdg'
         ),
         (
-            'Flutter Custom Animations',
-            'Create beautiful custom animations in Flutter',
-            'kxPCxJgx4k4'
+            'Totam rem aperiam eaque',
+            'Ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt.',
+            'LvNlWkYzG9A'
         ),
         (
-            'Flutter GetX Tutorial',
-            'State management made easy with GetX',
-            'V0-qEH5_dpU'
+            'Nemo enim ipsam voluptatem',
+            'Quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur.',
+            'lBGtAEn6WOg'
         ),
         (
-            'Flutter Firebase Setup',
-            'Quick guide to setting up Firebase in Flutter',
-            'sfA3NWDB9Ys'
+            'Neque porro quisquam est',
+            'Qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit.',
+            'hKcrDuWaOkc'
         ),
         (
-            'Flutter Hero Animation',
-            'Implementing hero animations between screens',
-            'Be9UNITHXmo'
+            'Sed quia non numquam',
+            'Eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem.',
+            'uZbGEDB3qDc'
         ),
         (
-            'Flutter REST API Integration',
-            'Connect your Flutter app to REST APIs',
-            'ZH-1j4STxvY'
+            'Ut enim ad minima veniam',
+            'Quis nostrum exercitationem ullam corporis suscipit laboriosam.',
+            'tFKdZPvyOc8'
         ),
         (
-            'Flutter Local Storage',
-            'Using shared preferences in Flutter',
-            'u8H_WUhZPWc'
+            'Nisi ut aliquid ex ea',
+            'Commodi consequatur quis autem vel eum iure reprehenderit.',
+            '2W0vHcJtXBY'
         ),
         (
-            'Flutter Provider Pattern',
-            'State management with Provider package',
-            'hwv_tTGxwZk'
+            'Qui dolorem eum fugiat',
+            'Quo voluptas nulla pariatur at vero eos et accusamus et iusto odio.',
+            'y8kneKeNyCI'
         ),
         (
-            'Flutter Custom Painter',
-            'Drawing custom shapes in Flutter',
-            'kp14Y4uHpHs'
+            'Dignissimos ducimus qui',
+            'Blanditiis praesentium voluptatum deleniti atque corrupti.',
+            'kXoATJxvJPI'
         ),
         (
-            'Flutter Form Validation',
-            'Implement form validation in Flutter',
-            'RlBLqPpX9wY'
+            'Quos dolores et quas',
+            'Molestias excepturi sint occaecati cupiditate non provident.',
+            'KZHcdHv_Vf4'
         ),
         (
-            'Flutter Responsive Design',
-            'Make your Flutter app responsive',
-            'dc3B_0vW8K8'
+            'Similique sunt in culpa',
+            'Qui officia deserunt mollitia animi, id est laborum et dolorum fuga.',
+            'MpN5lKbvR64'
         ),
         (
-            'Flutter Dark Mode',
-            'Implementing dark mode theme',
-            'YxFc96kl9JE'
+            'Et harum quidem rerum',
+            'Facilis est et expedita distinctio nam libero tempore.',
+            '3Pv4vxfmSzs'
         ),
         (
-            'Flutter Bottom Navigation',
-            'Create bottom navigation bar',
-            'xoKqQx5HXz4'
+            'Cum soluta nobis est',
+            'Eligendi optio cumque nihil impedit quo minus id quod maxime.',
+            'mzX3DSh-AW4'
         ),
         (
-            'Flutter Bloc Pattern',
-            'State management with BLoC',
-            'THCkkQ-V1-8'
+            'Temporibus autem quibusdam',
+            'Et aut officiis debitis aut rerum necessitatibus saepe eveniet.',
+            'zp64uAFLsDs'
         ),
         (
-            'Flutter Custom Fonts',
-            'Adding custom fonts to Flutter app',
-            'z_5xkKGUQJw'
+            'Itaque earum rerum hic',
+            'Tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores.',
+            'lG4GEpyULwU'
         ),
         (
-            'Flutter Image Picker',
-            'Implement image picker in Flutter',
-            'MSv38jO4EJk'
+            'Alias consequatur aut',
+            'Perferendis doloribus asperiores repellat ut et voluptates repudiandae.',
+            'oDhgN-MvAXs'
         ),
         (
-            'Flutter Local Notifications',
-            'Adding push notifications',
-            'g5rM3Iz8N4o'
+            'Nam libero tempore soluta',
+            'Nobis est eligendi optio cumque nihil impedit quo minus.',
+            'J0iIQ629N2c'
         ),
         (
-            'Flutter Google Maps',
-            'Integrating Google Maps in Flutter',
-            'LWoF2NQD_ZY'
+            'Omnis voluptas assumenda',
+            'Est omnis dolor repellendus temporibus autem quibusdam.',
+            'o1ExzJTFzmQ'
         ),
         (
-            'Flutter Animations Basic',
-            'Introduction to Flutter animations',
-            'VgQwhmvS8lU'
+            'Officiis debitis aut rerum',
+            'Necessitatibus saepe eveniet ut et voluptates repudiandae sint.',
+            'h-nnk5oK29A'
         ),
         (
-            'Flutter Custom Drawer',
-            'Creating custom navigation drawer',
-            'u9sy9WzqXKY'
+            'Reiciendis voluptatibus',
+            'Maiores alias consequatur aut perferendis doloribus asperiores.',
+            'ZIWO2v0b_2Q'
         ),
         (
-            'Flutter HTTP Requests',
-            'Making HTTP requests in Flutter',
-            'qYxRwY7QHTU'
+            'Maxime placeat facere',
+            'Possimus omnis voluptas assumenda est, omnis dolor repellendus.',
+            '6B6pIFWANoM'
         ),
         (
-            'Flutter Shared Preferences',
-            'Local data storage in Flutter',
-            'szGWXHFD8S4'
+            'Temporibus autem quibusdam',
+            'Et aut officiis debitis aut rerum necessitatibus saepe eveniet.',
+            'zwMEhBq4kYM'
         ),
         (
-            'Flutter Custom Widgets',
-            'Creating reusable widgets',
-            'J4BVaXkwmM8'
+            'Voluptates repudiandae',
+            'Sint et molestiae non recusandae itaque earum rerum.',
+            'tLZjL-dMH_g'
         ),
         (
-            'Flutter Page Transitions',
-            'Custom page transition animations',
-            'ZHyF0Z2pJ7Y'
+            'Hic tenetur a sapiente',
+            'Delectus ut aut reiciendis voluptatibus maiores alias consequatur.',
+            'vvYFiQb9uzk'
         ),
         (
-            'Flutter Firebase Auth',
-            'Implementing Firebase authentication',
-            'EXp0w9LhEJs'
+            'Perferendis doloribus',
+            'Asperiores repellat at vero eos et accusamus et iusto odio.',
+            'hwOkhor72hE'
         ),
         (
-            'Flutter Gestures',
-            'Handling gestures in Flutter',
-            'vFxk_KJCqgk'
+            'Dignissimos ducimus qui',
+            'Blanditiis praesentium voluptatum deleniti atque corrupti quos.',
+            'HLPb_6R0m34'
         ),
         (
-            'Flutter Riverpod Tutorial',
-            'State management with Riverpod',
-            'GVq5BtZ8DQE'
+            'Dolores et quas molestias',
+            'Excepturi sint occaecati cupiditate non provident similique.',
+            'NuzTmpC8Xg8'
         ),
         (
-            'Flutter App Lifecycle',
-            'Understanding app lifecycle',
-            'f9m_Wc4-PDI'
+            'Sunt in culpa qui officia',
+            'Deserunt mollitia animi id est laborum et dolorum fuga.',
+            '0lSlPg2ifm4'
         ),
         (
-            'Flutter Custom Themes',
-            'Creating and using custom themes',
-            'LSm7NUj5Nls'
+            'Et harum quidem rerum',
+            'Facilis est et expedita distinctio nam libero tempore.',
+            'prCIcoD-HN8'
         ),
         (
-            'Flutter Infinite Scroll',
-            'Implementing infinite scroll list',
-            'JaVjHDdoqOg'
+            'Cum soluta nobis est',
+            'Eligendi optio cumque nihil impedit quo minus id quod.',
+            '2dR6SzUwbpY'
         ),
         (
-            'Flutter Camera Integration',
-            'Using camera in Flutter apps',
-            'ZkpHWACKlOg'
+            'Maxime placeat facere',
+            'Possimus omnis voluptas assumenda est omnis dolor repellendus.',
+            'ZP5lqhDm9lU'
         ),
         (
-            'Flutter Error Handling',
-            'Best practices for error handling',
-            'NoJ0yj0MVcg'
+            'Temporibus autem quibusdam',
+            'Et aut officiis debitis aut rerum necessitatibus saepe eveniet.',
+            'v-mnS8ow3nc'
         ),
         (
-            'Flutter Unit Testing',
-            'Writing unit tests in Flutter',
-            'RDY6kW-gJX0'
+            'Voluptates repudiandae',
+            'Sint et molestiae non recusandae itaque earum rerum hic.',
+            '9Zt8UfuX8G4'
         ),
         (
-            'Flutter Charts',
-            'Creating charts and graphs',
-            'JBJ6RPhFTPs'
+            'Tenetur a sapiente',
+            'Delectus ut aut reiciendis voluptatibus maiores alias.',
+            'rzPDGVsk9Gk'
         ),
         (
-            'Flutter Localization',
-            'Adding multiple languages support',
-            'aVZ4mKXwq_E'
+            'Perferendis doloribus',
+            'Asperiores repellat nam libero tempore cum soluta nobis.',
+            'xe5OhyE0JEQ'
         ),
         (
-            'Flutter Web Sockets',
-            'Real-time data with web sockets',
-            'TwJI6B5QXdw'
+            'Eligendi optio cumque',
+            'Nihil impedit quo minus id quod maxime placeat facere.',
+            'qqpP2hXD0pY'
         ),
         (
-            'Flutter App Release',
-            'Preparing app for release',
-            'g5rM3Iz8N4o'
+            'Omnis voluptas assumenda',
+            'Est omnis dolor repellendus temporibus autem quibusdam.',
+            'qj_fqQDlboQ'
         ),
         (
-            'Flutter Custom Scroll',
-            'Custom scroll behaviors',
-            'eJZMJFwGQJs'
+            'Officiis debitis aut',
+            'Rerum necessitatibus saepe eveniet ut et voluptates.',
+            'IdfukfHa8GI'
         ),
         (
-            'Flutter File Handling',
-            'Working with files in Flutter',
-            'MSv38jO4EJk'
+            'Repudiandae sint et',
+            'Molestiae non recusandae itaque earum rerum hic tenetur.',
+            '6QMe1g-pgi4'
         ),
         (
-            'Flutter Dependency Injection',
-            'Implementing dependency injection',
-            'vFxk_KJCqgk'
+            'Sapiente delectus ut',
+            'Aut reiciendis voluptatibus maiores alias consequatur.',
+            'lpV9ali0CDY'
         ),
         (
-            'Flutter Custom Layouts',
-            'Creating custom layout widgets',
-            'JBJ6RPhFTPs'
+            'Perferendis doloribus',
+            'Asperiores repellat temporibus autem quibusdam et aut.',
+            'dOizr_VkfP4'
         ),
         (
-            'Flutter Performance Tips',
-            'Optimizing Flutter performance',
-            'aVZ4mKXwq_E'
+            'Officiis debitis aut',
+            'Rerum necessitatibus saepe eveniet ut et voluptates.',
+            'Q7EqBvNNiT8'
         ),
         (
-            'Flutter Background Tasks',
-            'Handling background processes',
-            'TwJI6B5QXdw'
+            'Repudiandae sint et',
+            'Molestiae non recusandae itaque earum rerum hic tenetur.',
+            'ZjXM5WgPyBk'
         ),
         (
-            'Flutter Social Auth',
-            'Social media authentication',
-            'g5rM3Iz8N4o'
+            'Sapiente delectus ut',
+            'Aut reiciendis voluptatibus maiores alias consequatur.',
+            'i2i_B0qJvL8'
         ),
         (
-            'Flutter Custom Icons',
-            'Adding custom icons to app',
-            'eJZMJFwGQJs'
+            'Perferendis doloribus',
+            'Asperiores repellat nam libero tempore cum soluta.',
+            'owgcMD2dLo8'
         ),
         (
-            'Flutter Deep Links',
-            'Implementing deep linking',
-            'MSv38jO4EJk'
+            'Eligendi optio cumque',
+            'Nihil impedit quo minus id quod maxime placeat.',
+            'bXlVhLIYYjk'
         ),
         (
-            'Flutter App Signing',
-            'App signing for release',
-            'vFxk_KJCqgk'
+            'Omnis voluptas assumenda',
+            'Est omnis dolor repellendus temporibus autem.',
+            'VpLhY9zyanc'
         ),
         (
-            'Flutter Clean Code',
-            'Writing clean code in Flutter',
-            'JBJ6RPhFTPs'
+            'Officiis debitis aut',
+            'Rerum necessitatibus saepe eveniet ut et voluptates.',
+            '3PmzDiC2RwI'
         ),
         (
-            'Flutter Code Generation',
-            'Using build_runner and code gen',
-            'aVZ4mKXwq_E'
+            'Repudiandae sint et',
+            'Molestiae non recusandae itaque earum rerum hic.',
+            '4SdF06P-4vY'
         ),
         (
-            'Flutter Platform Channels',
-            'Native code integration',
-            'TwJI6B5QXdw'
+            'Sapiente delectus ut',
+            'Aut reiciendis voluptatibus maiores alias consequatur.',
+            'fvcraTQ2txo'
         ),
         (
-            'Flutter CI/CD Setup',
-            'Continuous integration setup',
-            'g5rM3Iz8N4o'
+            'Perferendis doloribus',
+            'Asperiores repellat nam libero tempore cum soluta.',
+            'tRZv1FOPKmQ'
         ),
         (
-            'Flutter App Security',
-            'Security best practices',
-            'eJZMJFwGQJs'
+            'Eligendi optio cumque',
+            'Nihil impedit quo minus id quod maxime placeat.',
+            '67nEfA6Mh8M'
         ),
         (
-            'Flutter Custom Shapes',
-            'Drawing custom shapes with Path',
-            'MSv38jO4EJk'
+            'Omnis voluptas assumenda',
+            'Est omnis dolor repellendus temporibus autem.',
+            'NK62pGno-KM'
         ),
         (
-            'Flutter App Monetization',
-            'Implementing in-app purchases',
-            'vFxk_KJCqgk'
+            'Officiis debitis aut',
+            'Rerum necessitatibus saepe eveniet ut et voluptates.',
+            'e6PwUOEZoaU'
         ),
         (
-            'Flutter Widget Testing',
-            'Writing widget tests',
-            'JBJ6RPhFTPs'
+            'Repudiandae sint et',
+            'Molestiae non recusandae itaque earum rerum hic.',
+            '3-SqxUiU0oE'
         ),
         (
-            'Flutter App Analytics',
-            'Implementing analytics',
-            'aVZ4mKXwq_E'
+            'Sapiente delectus ut',
+            'Aut reiciendis voluptatibus maiores alias consequatur.',
+            'Z9SqyG69FHU'
         ),
         (
-            'Flutter Custom Clipper',
-            'Creating custom shaped widgets',
-            'TwJI6B5QXdw'
+            'Perferendis doloribus',
+            'Asperiores repellat nam libero tempore cum soluta.',
+            'ydc9Nn9j4kI'
         ),
         (
-            'Flutter App Debugging',
-            'Debugging techniques and tools',
-            'g5rM3Iz8N4o'
+            'Eligendi optio cumque',
+            'Nihil impedit quo minus id quod maxime placeat.',
+            'TwAPSdD0eNA'
         ),
         (
-            'Flutter State Persistence',
-            'Persisting app state',
-            'eJZMJFwGQJs'
+            'Omnis voluptas assumenda',
+            'Est omnis dolor repellendus temporibus autem.',
+            '7itG8lrdkK8'
         ),
         (
-            'Flutter App Theming',
-            'Advanced theming techniques',
-            'MSv38jO4EJk'
+            'Officiis debitis aut',
+            'Rerum necessitatibus saepe eveniet ut et voluptates.',
+            'wXVPdGoqihM'
         ),
         (
-            'Flutter Route Guards',
-            'Implementing route protection',
-            'vFxk_KJCqgk'
+            'Repudiandae sint et',
+            'Molestiae non recusandae itaque earum rerum hic.',
+            'xqtMXBx6tis'
         ),
         (
-            'Flutter Error Boundaries',
-            'Handling widget errors',
-            'JBJ6RPhFTPs'
+            'Sapiente delectus ut',
+            'Aut reiciendis voluptatibus maiores alias consequatur.',
+            'xoH4yiAdGlQ'
         ),
         (
-            'Flutter App Initialization',
-            'Proper app initialization',
-            'aVZ4mKXwq_E'
+            'Perferendis doloribus',
+            'Asperiores repellat nam libero tempore cum soluta.',
+            'lU_naVHn63E'
         ),
         (
-            'Flutter Custom Transitions',
-            'Creating page transitions',
-            'TwJI6B5QXdw'
+            'Eligendi optio cumque',
+            'Nihil impedit quo minus id quod maxime placeat.',
+            'DRuOtXP177M'
         ),
         (
-            'Flutter App Architecture',
-            'Clean architecture implementation',
-            'g5rM3Iz8N4o'
+            'Omnis voluptas assumenda',
+            'Est omnis dolor repellendus temporibus autem.',
+            '-adqBBqMKJE'
         ),
         (
-            'Flutter Code Organization',
-            'Organizing large Flutter projects',
-            'eJZMJFwGQJs'
+            'Officiis debitis aut',
+            'Rerum necessitatibus saepe eveniet ut et voluptates.',
+            'VZ-CsIMFpJQ'
         ),
         (
-            'Flutter App Localization',
-            'Implementing multiple languages',
-            'MSv38jO4EJk'
+            'Repudiandae sint et',
+            'Molestiae non recusandae itaque earum rerum hic.',
+            '9tP3vV4WqtM'
         ),
         (
-            'Flutter Custom Scrolling',
-            'Custom scroll behaviors',
-            'vFxk_KJCqgk'
+            'Sapiente delectus ut',
+            'Aut reiciendis voluptatibus maiores alias consequatur.',
+            'OlXPV9t3Xs0'
         ),
         (
-            'Flutter App Performance',
-            'Performance optimization tips',
-            'JBJ6RPhFTPs'
+            'Perferendis doloribus',
+            'Asperiores repellat nam libero tempore cum soluta.',
+            'nsbi1dFNyEA'
         ),
         (
-            'Flutter State Restoration',
-            'Implementing state restoration',
-            'aVZ4mKXwq_E'
+            'Eligendi optio cumque',
+            'Nihil impedit quo minus id quod maxime placeat.',
+            'yl8H6VF7yas'
         ),
         (
-            'Flutter Custom Painters',
-            'Advanced custom painting',
-            'TwJI6B5QXdw'
+            'Omnis voluptas assumenda',
+            'Est omnis dolor repellendus temporibus autem.',
+            '_vD3kdLdRi4'
         ),
         (
-            'Flutter App Testing',
-            'Comprehensive testing guide',
-            'g5rM3Iz8N4o'
+            'Officiis debitis aut',
+            'Rerum necessitatibus saepe eveniet ut et voluptates.',
+            'pxn3NiR2l_s'
         ),
         (
-            'Flutter Code Splitting',
-            'Optimizing app size',
-            'eJZMJFwGQJs'
+            'Repudiandae sint et',
+            'Molestiae non recusandae itaque earum rerum hic.',
+            'wx-OcTtaSqk'
         ),
         (
-            'Flutter App Security',
-            'Security best practices',
-            'MSv38jO4EJk'
+            'Sapiente delectus ut',
+            'Aut reiciendis voluptatibus maiores alias consequatur.',
+            '8jcjoQVHnfI'
         ),
         (
-            'Flutter Custom Layouts',
-            'Creating complex layouts',
-            'vFxk_KJCqgk'
+            'Perferendis doloribus',
+            'Asperiores repellat nam libero tempore cum soluta.',
+            'CsnqrBMohGg'
         ),
         (
-            'Flutter App Optimization',
-            'Performance optimization',
-            'JBJ6RPhFTPs'
+            'Eligendi optio cumque',
+            'Nihil impedit quo minus id quod maxime placeat.',
+            'JGPBAuD0JEs'
         ),
         (
-            'Flutter State Management',
-            'Advanced state patterns',
-            'aVZ4mKXwq_E'
+            'Omnis voluptas assumenda',
+            'Est omnis dolor repellendus temporibus autem.',
+            'AZ5NuOVstR4'
         ),
         (
-            'Flutter Custom Widgets',
-            'Building reusable widgets',
-            'TwJI6B5QXdw'
+            'Officiis debitis aut',
+            'Rerum necessitatibus saepe eveniet ut et voluptates.',
+            '3axh7FZnYjo'
         ),
         (
-            'Flutter App Architecture',
-            'Scalable app architecture',
-            'g5rM3Iz8N4o'
+            'Repudiandae sint et',
+            'Molestiae non recusandae itaque earum rerum hic.',
+            'JXR2DkPMqL0'
         ),
         (
-            'Flutter Code Quality',
-            'Maintaining code quality',
-            'eJZMJFwGQJs'
+            'Sapiente delectus ut',
+            'Aut reiciendis voluptatibus maiores alias consequatur.',
+            '7GzoCWhZc-g'
         ),
         (
-            'Flutter App Design',
-            'UI/UX design principles',
-            'MSv38jO4EJk'
+            'Perferendis doloribus',
+            'Asperiores repellat nam libero tempore cum soluta.',
+            'LDiwYGARj44'
         ),
         (
-            'Flutter Custom Navigation',
-            'Advanced navigation patterns',
-            'vFxk_KJCqgk'
+            'Eligendi optio cumque',
+            'Nihil impedit quo minus id quod maxime placeat.',
+            '7haOSi2TVW0'
         ),
         (
-            'Flutter App Structure',
-            'Organizing project structure',
-            'JBJ6RPhFTPs'
+            'Omnis voluptas assumenda',
+            'Est omnis dolor repellendus temporibus autem.',
+            'F4dIxethVAY'
         ),
         (
-            'Flutter State Sync',
-            'Syncing app state',
-            'aVZ4mKXwq_E'
+            'Officiis debitis aut',
+            'Rerum necessitatibus saepe eveniet ut et voluptates.',
+            'SyIqAioN_g0'
         ),
         (
-            'Flutter Custom Effects',
-            'Creating visual effects',
-            'TwJI6B5QXdw'
+            'Repudiandae sint et',
+            'Molestiae non recusandae itaque earum rerum hic.',
+            'aGSTnm18ABM'
         ),
         (
-            'Flutter App Testing',
-            'Integration testing guide',
-            'g5rM3Iz8N4o'
+            'Sapiente delectus ut',
+            'Aut reiciendis voluptatibus maiores alias consequatur.',
+            '8i-6hRhBl-4'
         ),
         (
-            'Flutter Code Review',
-            'Code review best practices',
-            'eJZMJFwGQJs'
+            'Perferendis doloribus',
+            'Asperiores repellat nam libero tempore cum soluta.',
+            'M9_SCdt02jc'
         ),
         (
-            'Flutter App Security',
-            'Advanced security patterns',
-            'MSv38jO4EJk'
+            'Eligendi optio cumque',
+            'Nihil impedit quo minus id quod maxime placeat.',
+            'iiscRsIrCkI'
         ),
         (
-            'Flutter Custom Animations',
-            'Complex animation systems',
-            'vFxk_KJCqgk'
+            'Omnis voluptas assumenda',
+            'Est omnis dolor repellendus temporibus autem.',
+            'zNh8hE5MSok'
         ),
         (
-            'Flutter App Performance',
-            'Memory optimization guide',
-            'JBJ6RPhFTPs'
+            'Officiis debitis aut',
+            'Rerum necessitatibus saepe eveniet ut et voluptates.',
+            'x0JXv4l4w1M'
         ),
         (
-            'Flutter State Patterns',
-            'Advanced state management',
-            'aVZ4mKXwq_E'
+            'Repudiandae sint et',
+            'Molestiae non recusandae itaque earum rerum hic.',
+            '-61YF7QZoDs'
         ),
         (
-            'Flutter Custom Graphics',
-            'Advanced graphics rendering',
-            'TwJI6B5QXdw'
+            'Sapiente delectus ut',
+            'Aut reiciendis voluptatibus maiores alias consequatur.',
+            'pE5rpIdqaoc'
         ),
         (
-            'Flutter App Architecture',
-            'Enterprise architecture patterns',
-            'g5rM3Iz8N4o'
+            'Perferendis doloribus',
+            'Asperiores repellat nam libero tempore cum soluta.',
+            'sbNB2iq8xmM'
         ),
         (
-            'Flutter Code Standards',
-            'Maintaining code standards',
-            'eJZMJFwGQJs'
+            'Eligendi optio cumque',
+            'Nihil impedit quo minus id quod maxime placeat.',
+            'JLZqv4kMBO0'
         ),
         (
-            'Flutter App Design',
-            'Material Design 3 implementation',
-            'MSv38jO4EJk'
+            'Omnis voluptas assumenda',
+            'Est omnis dolor repellendus temporibus autem.',
+            'S4L_K6mBWzc'
         ),
         (
-            'Flutter Custom Gestures',
-            'Advanced gesture handling',
-            'vFxk_KJCqgk'
-        ),
-        (
-            'Flutter App Structure',
-            'Feature-first architecture',
-            'JBJ6RPhFTPs'
-        ),
-        (
-            'Flutter State Solutions',
-            'Complex state management',
-            'aVZ4mKXwq_E'
-        ),
-        (
-            'Flutter Custom UI',
-            'Building custom interfaces',
-            'TwJI6B5QXdw'
-        ),
-        (
-            'Flutter App Testing',
-            'E2E testing implementation',
-            'g5rM3Iz8N4o'
-        ),
-        (
-            'Flutter Code Patterns',
-            'Design patterns in Flutter',
-            'eJZMJFwGQJs'
-        ),
-        (
-            'Flutter App Security',
-            'Secure data handling',
-            'MSv38jO4EJk'
-        ),
-        (
-            'Flutter Custom Rendering',
-            'Custom render objects',
-            'vFxk_KJCqgk'
-        ),
-        (
-            'Flutter App Performance',
-            'Network optimization guide',
-            'JBJ6RPhFTPs'
-        ),
-        (
-            'Flutter State Architecture',
-            'Scalable state architecture',
-            'aVZ4mKXwq_E'
-        ),
-        (
-            'Flutter Custom Layouts',
-            'Advanced layout techniques',
-            'TwJI6B5QXdw'
-        ),
-        (
-            'Flutter App Development',
-            'Best practices and patterns',
-            'g5rM3Iz8N4o'
-        )
-    ON CONFLICT DO NOTHING;
--- Execute the seed function
+            'Officiis debitis aut',
+            'Rerum necessitatibus saepe eveniet ut et voluptates.',
+            'jQ9MTtdn7iQ'
+        );
