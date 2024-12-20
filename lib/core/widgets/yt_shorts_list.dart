@@ -3,8 +3,13 @@ import 'package:myapp/core/widgets/yt_short.dart';
 
 class YoutubeShortsList extends StatefulWidget {
   final List<String> ytIds;
+  final Function(int index)? onVideoChange;
 
-  const YoutubeShortsList({super.key, required this.ytIds});
+  const YoutubeShortsList({
+    super.key,
+    required this.ytIds,
+    this.onVideoChange,
+  });
 
   @override
   State<YoutubeShortsList> createState() => _YoutubeShortListState();
@@ -23,9 +28,10 @@ class _YoutubeShortListState extends State<YoutubeShortsList> {
 
   void _onPageChanged() {
     int newPage = _pageController.page?.round() ?? 0;
-    if (newPage != _currentPage) {
-      setState(() => _currentPage = newPage);
-    }
+    if (newPage == _currentPage) return;
+
+    setState(() => _currentPage = newPage);
+    widget.onVideoChange?.call(newPage);
   }
 
   @override

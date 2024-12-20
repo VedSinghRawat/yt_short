@@ -41,7 +41,6 @@ class UserAPI implements IUserAPI {
       if (userId == null) return;
 
       final user = await _supabaseClient.from('users').update({'at_vid_id': videoId}).eq('id', userId);
-      print(user);
     } catch (e, stackTrace) {
       developer.log('Error updating last viewed video', error: e.toString(), stackTrace: stackTrace);
       throw Exception(e.toString());

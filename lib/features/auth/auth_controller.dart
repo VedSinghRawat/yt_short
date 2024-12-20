@@ -45,7 +45,7 @@ class AuthController extends StateNotifier<AuthControllerState> {
 
     _authStateSubscription = authAPI.authStateChange.listen(
       (isAuthenticated) async {
-        if (isAuthenticated) userController.getCurrentUser();
+        if (isAuthenticated) await userController.getCurrentUser();
 
         state = state.copyWith(
           authState: isAuthenticated ? AuthState.authenticated : AuthState.unauthenticated,

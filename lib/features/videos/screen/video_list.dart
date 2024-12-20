@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../video_controller.dart';
 import '../../../core/widgets/yt_shorts_list.dart';
+import '../../user/user_controller.dart';
 
 class VideoListScreen extends ConsumerStatefulWidget {
   const VideoListScreen({super.key});
@@ -18,6 +19,14 @@ class _VideoListScreenState extends ConsumerState<VideoListScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(videoControllerProvider.notifier).fetchVideos();
     });
+  }
+
+  void _handleVideoChange(int index) {
+    final videos = ref.read(videoControllerProvider).videos;
+    if (index >= 0 && index < videos.length) {
+      final videoId = videos[index].id;
+      ref.read(userControllerProvider.notifier).updateLastViewedVideo(videoId, context);
+    }
   }
 
   @override
@@ -41,6 +50,7 @@ class _VideoListScreenState extends ConsumerState<VideoListScreen> {
 
     return YoutubeShortsList(
       ytIds: ytIds,
+      onVideoChange: _handleVideoChange,
     );
   }
 }

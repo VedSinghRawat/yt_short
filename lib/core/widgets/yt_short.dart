@@ -15,7 +15,6 @@ class YoutubeShort extends StatefulWidget {
 
 class _YoutubeShortState extends State<YoutubeShort> {
   late YoutubePlayerController _controller;
-  bool _isPlayerReady = false;
 
   @override
   void initState() {
@@ -43,17 +42,6 @@ class _YoutubeShortState extends State<YoutubeShort> {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
       padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
       child: Stack(
         children: [
           Container(
@@ -72,9 +60,6 @@ class _YoutubeShortState extends State<YoutubeShort> {
                   handleColor: Colors.redAccent,
                 ),
                 aspectRatio: 9 / 16,
-                onReady: () {
-                  setState(() => _isPlayerReady = true);
-                },
               ),
             ),
           ),

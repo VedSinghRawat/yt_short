@@ -16,12 +16,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isAuthRoute = state.matchedLocation.startsWith('/auth');
 
       // If we're not on an auth route and not authenticated, redirect to signin
-      if (authState == AuthState.unauthenticated && !isAuthRoute) {
+      if (authState.authState == AuthState.unauthenticated && !isAuthRoute) {
         return '/auth/signin';
       }
 
       // If we're authenticated and on an auth route, redirect to home
-      if (authState == AuthState.authenticated && isAuthRoute) {
+      if (authState.authState == AuthState.authenticated && isAuthRoute) {
         return '/';
       }
 
