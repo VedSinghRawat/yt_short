@@ -34,7 +34,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = ref.watch(authLoadingProvider);
+    final loading = ref.watch(authControllerProvider).loading;
 
     return Scaffold(
       appBar: AppBar(
@@ -80,7 +80,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                 },
               ),
               const SizedBox(height: 24),
-              if (isLoading) const CircularProgressIndicator() else ElevatedButton(onPressed: _signUp, child: const Text('Sign Up')),
+              if (loading) const CircularProgressIndicator() else ElevatedButton(onPressed: _signUp, child: const Text('Sign Up')),
             ],
           ),
         ),

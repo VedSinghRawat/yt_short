@@ -1,6 +1,6 @@
 -- Create a function to seed initial videos
     -- Insert sample videos
-    INSERT INTO videos (title, description, id)
+    INSERT INTO videos (title, description, yt_id)
     VALUES
         (
             'Lorem ipsum dolor sit amet',

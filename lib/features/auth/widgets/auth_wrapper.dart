@@ -14,17 +14,8 @@ class AuthWrapper extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authControllerProvider);
-    final isLoading = ref.watch(authLoadingProvider);
 
-    if (isLoading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
-    switch (authState) {
+    switch (authState.authState) {
       case AuthState.authenticated:
         return child;
       case AuthState.initial:

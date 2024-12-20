@@ -1,16 +1,18 @@
--- Create users table
-CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    email TEXT UNIQUE NOT NULL,
+-- Create videos table
+CREATE TABLE videos (
+    id SERIAL PRIMARY KEY,
+    title TEXT NOT NULL,
+    yt_id TEXT NOT NULL,
+    description TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
--- Create videos table
-CREATE TABLE videos (
-    id TEXT PRIMARY KEY NOT NULL,
-    title TEXT NOT NULL,
-    description TEXT,
+-- Create users table
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email TEXT UNIQUE NOT NULL,
+    at_vid_id INTEGER references videos(id) DEFAULT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );

@@ -4,8 +4,10 @@ part 'video.g.dart';
 
 @JsonSerializable()
 class Video {
-  final String id;
+  final int id;
   final String title;
+  @JsonKey(name: 'yt_id')
+  final String ytId;
   final String? description;
   @JsonKey(name: 'created_at')
   final DateTime createdAt;
@@ -15,6 +17,7 @@ class Video {
   const Video({
     required this.id,
     required this.title,
+    required this.ytId,
     this.description,
     required this.createdAt,
     required this.updatedAt,
@@ -24,9 +27,9 @@ class Video {
   Map<String, dynamic> toJson() => _$VideoToJson(this);
 
   Video copyWith({
-    String? id,
-    String? videoId,
+    int? id,
     String? title,
+    String? ytId,
     String? description,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -34,6 +37,7 @@ class Video {
     return Video(
       id: id ?? this.id,
       title: title ?? this.title,
+      ytId: ytId ?? this.ytId,
       description: description ?? this.description,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

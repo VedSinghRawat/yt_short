@@ -3,34 +3,59 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:developer' as developer;
 import '../../apis/auth_api.dart';
 import '../../core/utils.dart';
+import '../user/user_controller.dart';
 import 'dart:async';
 
 // Define the state for authentication
 enum AuthState { initial, authenticated, unauthenticated }
 
-final authControllerProvider = StateNotifierProvider<AuthController, AuthState>((ref) {
+class AuthControllerState {
+  final AuthState authState;
+  final bool loading;
+
+  const AuthControllerState({required this.authState, required this.loading});
+
+  // Initial state factory constructor
+  factory AuthControllerState.initial() => const AuthControllerState(authState: AuthState.initial, loading: false);
+
+  // CopyWith method for immutable state updates
+  AuthControllerState copyWith({AuthState? authState, bool? loading}) {
+    return AuthControllerState(authState: authState ?? this.authState, loading: loading ?? this.loading);
+  }
+}
+
+final authControllerProvider = StateNotifierProvider<AuthController, AuthControllerState>((ref) {
   return AuthController(ref);
 });
 
-final authLoadingProvider = StateProvider<bool>((ref) => false);
-
-class AuthController extends StateNotifier<AuthState> {
+class AuthController extends StateNotifier<AuthControllerState> {
   final Ref _ref;
+  late UserController userController;
+  late AuthAPI authAPI;
+
   StreamSubscription<bool>? _authStateSubscription;
 
-  AuthController(this._ref) : super(AuthState.initial) {
+  AuthController(this._ref) : super(AuthControllerState.initial()) {
     _initializeAuthState();
   }
 
   void _initializeAuthState() {
-    final authAPI = _ref.read(authAPIProvider);
+    authAPI = _ref.read(authAPIProvider);
+    userController = _ref.read(userControllerProvider.notifier);
+
     _authStateSubscription = authAPI.authStateChange.listen(
-      (isAuthenticated) {
-        state = isAuthenticated ? AuthState.authenticated : AuthState.unauthenticated;
+      (isAuthenticated) async {
+        if (isAuthenticated) userController.getCurrentUser();
+
+        state = state.copyWith(
+          authState: isAuthenticated ? AuthState.authenticated : AuthState.unauthenticated,
+        );
       },
       onError: (error) {
         developer.log('Error in auth state stream', error: error.toString());
-        state = AuthState.unauthenticated;
+        state = state.copyWith(
+          authState: AuthState.unauthenticated,
+        );
       },
     );
   }
@@ -42,56 +67,55 @@ class AuthController extends StateNotifier<AuthState> {
   }
 
   Future<void> signUp(BuildContext context, {required String email, required String password}) async {
-    final previousState = state;
+    state = state.copyWith(loading: true);
+
     try {
-      _ref.read(authLoadingProvider.notifier).state = true;
       final authRepository = _ref.read(authAPIProvider);
       await authRepository.signUp(email: email, password: password);
-      state = AuthState.authenticated;
+
+      state = state.copyWith(authState: AuthState.authenticated);
     } catch (e, stackTrace) {
       developer.log('Error in AuthController.signUp', error: e.toString(), stackTrace: stackTrace);
-      state = previousState;
       if (context.mounted) {
         showErrorSnackBar(context, e.toString());
       }
-    } finally {
-      _ref.read(authLoadingProvider.notifier).state = false;
     }
+
+    state = state.copyWith(loading: false);
   }
 
   Future<void> signIn(BuildContext context, {required String email, required String password}) async {
-    final previousState = state;
+    state = state.copyWith(loading: true);
+
     try {
-      _ref.read(authLoadingProvider.notifier).state = true;
       final authRepository = _ref.read(authAPIProvider);
       await authRepository.signIn(email: email, password: password);
-      state = AuthState.authenticated;
     } catch (e, stackTrace) {
       developer.log('Error in AuthController.signIn', error: e.toString(), stackTrace: stackTrace);
-      state = previousState;
       if (context.mounted) {
         showErrorSnackBar(context, e.toString());
       }
-    } finally {
-      _ref.read(authLoadingProvider.notifier).state = false;
     }
+
+    state = state.copyWith(loading: false);
   }
 
   Future<void> signOut(BuildContext context) async {
-    final previousState = state;
+    state = state.copyWith(loading: true);
+
     try {
-      _ref.read(authLoadingProvider.notifier).state = true;
       final authRepository = _ref.read(authAPIProvider);
       await authRepository.signOut();
-      state = AuthState.unauthenticated;
+      state = state.copyWith(
+        authState: AuthState.unauthenticated,
+      );
     } catch (e, stackTrace) {
       developer.log('Error in AuthController.signOut', error: e.toString(), stackTrace: stackTrace);
-      state = previousState;
       if (context.mounted) {
         showErrorSnackBar(context, e.toString());
       }
-    } finally {
-      _ref.read(authLoadingProvider.notifier).state = false;
     }
+
+    state = state.copyWith(loading: false);
   }
 }

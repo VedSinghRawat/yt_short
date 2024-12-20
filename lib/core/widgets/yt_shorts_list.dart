@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:myapp/core/widgets/yt_short.dart';
 
 class YoutubeShortsList extends StatefulWidget {
-  final List<String> videoIds;
+  final List<String> ytIds;
 
-  const YoutubeShortsList({super.key, required this.videoIds});
+  const YoutubeShortsList({super.key, required this.ytIds});
 
   @override
   State<YoutubeShortsList> createState() => _YoutubeShortListState();
@@ -38,13 +38,13 @@ class _YoutubeShortListState extends State<YoutubeShortsList> {
   Widget build(BuildContext context) {
     return PageView.builder(
       controller: _pageController,
-      itemCount: widget.videoIds.length,
+      itemCount: widget.ytIds.length,
       scrollDirection: Axis.vertical,
       itemBuilder: (context, index) {
         return Center(
           child: YoutubeShort(
-            key: ValueKey(widget.videoIds[index]),
-            videoId: widget.videoIds[index],
+            key: ValueKey(widget.ytIds[index]),
+            videoId: widget.ytIds[index],
           ),
         );
       },

@@ -34,7 +34,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = ref.watch(authLoadingProvider);
+    final isLoading = ref.watch(authControllerProvider).loading;
 
     return Scaffold(
       appBar: AppBar(
@@ -76,13 +76,16 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 },
               ),
               const SizedBox(height: 24),
-              if (isLoading)
-                const CircularProgressIndicator()
-              else
-                ElevatedButton(
-                  onPressed: _signIn,
-                  child: const Text('Sign In'),
+              ElevatedButton(
+                onPressed: isLoading ? null : _signIn,
+                child: SizedBox(
+                  width: 80, // Fixed width to prevent size change
+                  child: Center(
+                    child:
+                        isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Sign In'),
+                  ),
                 ),
+              ),
               TextButton(
                 onPressed: () {
                   context.go('/auth/signup');
