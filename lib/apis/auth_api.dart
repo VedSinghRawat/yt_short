@@ -11,7 +11,9 @@ abstract class IAuthAPI {
 }
 
 class AuthAPI implements IAuthAPI {
-  final SupabaseClient _supabaseClient = SupabaseConfig.client;
+  final SupabaseClient _supabaseClient;
+
+  AuthAPI(SupabaseClient superbaseClient) : _supabaseClient = superbaseClient;
 
   @override
   Future<void> signUp({required String email, required String password}) async {
@@ -62,5 +64,5 @@ class AuthAPI implements IAuthAPI {
 }
 
 final authAPIProvider = Provider<AuthAPI>((ref) {
-  return AuthAPI();
+  return AuthAPI(SupabaseConfig.client);
 });
