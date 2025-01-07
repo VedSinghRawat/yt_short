@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:developer' as developer;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
