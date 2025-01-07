@@ -15,30 +15,51 @@ class SignInScreen extends ConsumerWidget {
         title: 'Sign In',
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'Welcome to YT Shorts',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 32.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24.0),
+                child: Column(
+                  children: [
+                    Text(
+                      "Welcome to",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.grey,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    Text(
+                      "CodeYogi's English Course",
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: isLoading ? null : () => ref.read(authControllerProvider.notifier).signInWithGoogle(context),
-              icon: Image.network(
-                'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png',
-                height: 24,
+              const SizedBox(height: 32),
+              ElevatedButton.icon(
+                onPressed: isLoading ? null : () => ref.read(authControllerProvider.notifier).signInWithGoogle(context),
+                icon: Image.network(
+                  'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png',
+                  height: 24,
+                ),
+                label: const Text('Sign in with Google'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  textStyle: const TextStyle(fontSize: 16),
+                ),
               ),
-              label: const Text('Sign in with Google'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                textStyle: const TextStyle(fontSize: 16),
-              ),
-            ),
-          ],
+              const SizedBox(height: 64),
+            ],
+          ),
         ),
       ),
     );

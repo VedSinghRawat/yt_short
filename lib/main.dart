@@ -14,7 +14,7 @@ class MyApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(
-      title: 'Youtube Shorts',
+      title: 'English Course',
       theme: ThemeData.dark(useMaterial3: true),
       routerConfig: router,
     );
