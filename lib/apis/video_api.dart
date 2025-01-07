@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:myapp/core/supabase/supabase_config.dart';
 import 'package:myapp/models/models.dart';
 
 abstract class IVideoAPI {
@@ -7,20 +6,40 @@ abstract class IVideoAPI {
 }
 
 class VideoAPI implements IVideoAPI {
+  // Mock video data
+  final List<Video> _videos = [
+    Video(
+      id: 1,
+      title: 'Introduction to Flutter',
+      ytId: 'fq4N0hgOWzU',
+      description: 'Learn the basics of Flutter development',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    ),
+    Video(
+      id: 2,
+      title: 'Flutter State Management',
+      ytId: 'kDEflMYTFlk',
+      description: 'Understanding state management in Flutter',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    ),
+    Video(
+      id: 3,
+      title: 'Flutter Navigation',
+      ytId: 'nyvwx7o277U',
+      description: 'Learn about navigation in Flutter',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    ),
+  ];
+
   @override
   Future<List<Video>> getVideos({int? startFromVideoId}) async {
-    var query = SupabaseConfig.client.from('videos').select();
-
     if (startFromVideoId != null) {
-      // Get videos with IDs greater than equal to the last viewed video ID
-      query = query.gte('id', startFromVideoId);
+      return _videos.where((video) => video.id >= startFromVideoId).toList();
     }
-
-    final response = await query;
-
-    final videos = List<Map<String, dynamic>>.from(response).map((video) => Video.fromJson(video)).toList();
-
-    return videos;
+    return _videos;
   }
 }
 

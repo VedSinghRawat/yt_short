@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../auth_controller.dart';
+import '../../../core/widgets/custom_app_bar.dart';
 
 class SignInScreen extends ConsumerWidget {
   const SignInScreen({super.key});
@@ -10,6 +11,9 @@ class SignInScreen extends ConsumerWidget {
     final isLoading = ref.watch(authControllerProvider).loading;
 
     return Scaffold(
+      appBar: const CustomAppBar(
+        title: 'Sign In',
+      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
