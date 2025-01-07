@@ -17,6 +17,7 @@ class _VideoListScreenState extends ConsumerState<VideoListScreen> {
     super.initState();
     // Fetch videos when the screen is first loaded
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       ref.read(videoControllerProvider.notifier).fetchVideos();
     });
   }

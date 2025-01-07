@@ -65,30 +65,16 @@ class AuthController extends StateNotifier<AuthControllerState> {
     super.dispose();
   }
 
-  Future<void> signUp(BuildContext context, {required String email, required String password}) async {
+  Future<void> signInWithGoogle(BuildContext context) async {
     state = state.copyWith(loading: true);
 
     try {
-      await authAPI.signUp(email: email, password: password);
-
-      state = state.copyWith(authState: AuthState.authenticated);
-    } catch (e, stackTrace) {
-      developer.log('Error in AuthController.signUp', error: e.toString(), stackTrace: stackTrace);
-      if (context.mounted) {
-        showErrorSnackBar(context, e.toString());
+      final account = await authAPI.signInWithGoogle();
+      if (account != null) {
+        state = state.copyWith(authState: AuthState.authenticated);
       }
-    }
-
-    state = state.copyWith(loading: false);
-  }
-
-  Future<void> signIn(BuildContext context, {required String email, required String password}) async {
-    state = state.copyWith(loading: true);
-
-    try {
-      await authAPI.signIn(email: email, password: password);
     } catch (e, stackTrace) {
-      developer.log('Error in AuthController.signIn', error: e.toString(), stackTrace: stackTrace);
+      developer.log('Error in AuthController.signInWithGoogle', error: e.toString(), stackTrace: stackTrace);
       if (context.mounted) {
         showErrorSnackBar(context, e.toString());
       }
