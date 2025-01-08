@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:speech_reco/recognizer.dart';
+import 'package:myapp/features/speech_to_text/recognizer.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 
 class SpeechScreen extends StatefulWidget {
@@ -12,16 +12,15 @@ class SpeechScreen extends StatefulWidget {
 }
 
 class _SpeechScreenState extends State<SpeechScreen> {
-  late List<String> words; // Words from the initial text
-  late List<bool> highlightWords; // To track which words to highlight
-  int lastMatchedIndex = -1; // Index of the last matched word
+  late List<String> words; 
+  late List<bool> highlightWords;
+  int lastMatchedIndex = -1; 
 
   @override
   void initState() {
     super.initState();
     words = widget.text.split(' ');
-    highlightWords = List.generate(
-        words.length, (index) => false); // No words are highlighted initially
+    highlightWords = List.generate(words.length, (index) => false); // No words are highlighted initially
   }
 
   void _onSpeechResult(SpeechRecognitionResult result) {
@@ -34,9 +33,7 @@ class _SpeechScreenState extends State<SpeechScreen> {
       if (nextIndexToHighlight < words.length) {
         String targetWord = words[nextIndexToHighlight].toLowerCase();
 
-        int minLength = targetWord.length < lastRecognizedWord.length
-            ? targetWord.length
-            : lastRecognizedWord.length;
+        int minLength = targetWord.length < lastRecognizedWord.length ? targetWord.length : lastRecognizedWord.length;
         int matchCount = 0;
 
         for (int i = 0; i < minLength; i++) {
@@ -70,7 +67,7 @@ class _SpeechScreenState extends State<SpeechScreen> {
             TextSpan(
               children: List.generate(words.length, (index) {
                 return TextSpan(
-                  text: words[index] + ' ',
+                  text: '${words[index]} ',
                   style: TextStyle(
                     color: highlightWords[index] ? Colors.blue : Colors.black,
                     fontSize: 20,
