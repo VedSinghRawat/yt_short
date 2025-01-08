@@ -1,48 +1,42 @@
+import 'dart:async';
 import 'dart:developer' as developer;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../core/supabase/supabase_config.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 abstract class IAuthAPI {
-  Future<void> signUp({required String email, required String password});
-  Future<void> signIn({required String email, required String password});
+  Future<GoogleSignInAccount?> signInWithGoogle();
   Future<void> signOut();
   Stream<bool> get authStateChange;
 }
 
 class AuthAPI implements IAuthAPI {
-  final SupabaseClient _supabaseClient = SupabaseConfig.client;
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: [
+      'email',
+      'profile',
+    ],
+  );
 
-  @override
-  Future<void> signUp({required String email, required String password}) async {
-    try {
-      final response = await _supabaseClient.auth.signUp(email: email, password: password);
+  final StreamController<bool> _authStateController = StreamController<bool>.broadcast();
 
-      if (response.user == null) {
-        throw Exception('Sign up failed: No user data received');
-      }
-    } on AuthException catch (e) {
-      developer.log('Auth Error during sign up', error: '${e.message} (Status: ${e.statusCode})', stackTrace: StackTrace.current);
-      throw Exception(e.message);
-    } catch (e, stackTrace) {
-      developer.log('Unexpected error during sign up', error: e.toString(), stackTrace: stackTrace);
-      throw Exception(e.toString());
-    }
+  AuthAPI() {
+    _googleSignIn.onCurrentUserChanged.listen((GoogleSignInAccount? account) {
+      _authStateController.add(account != null);
+    });
   }
 
   @override
-  Future<void> signIn({required String email, required String password}) async {
+  Future<GoogleSignInAccount?> signInWithGoogle() async {
     try {
-      final response = await _supabaseClient.auth.signInWithPassword(email: email, password: password);
-
-      if (response.user == null) {
-        throw Exception('Sign in failed: No user data received');
+      developer.log(_googleSignIn.clientId ?? 'Client ID is null');
+      final account = await _googleSignIn.signIn();
+      developer.log(account.toString());
+      if (account == null) {
+        throw Exception('Google Sign In cancelled or failed');
       }
-    } on AuthException catch (e) {
-      developer.log('Auth Error during sign in', error: '${e.message} (Status: ${e.statusCode})', stackTrace: StackTrace.current);
-      throw Exception(e.message);
+      return account;
     } catch (e, stackTrace) {
-      developer.log('Unexpected error during sign in', error: e.toString(), stackTrace: stackTrace);
+      developer.log('Error during Google Sign In', error: e.toString(), stackTrace: stackTrace);
       throw Exception(e.toString());
     }
   }
@@ -50,7 +44,7 @@ class AuthAPI implements IAuthAPI {
   @override
   Future<void> signOut() async {
     try {
-      await _supabaseClient.auth.signOut();
+      await _googleSignIn.signOut();
     } catch (e, stackTrace) {
       developer.log('Error during sign out', error: e.toString(), stackTrace: stackTrace);
       throw Exception(e.toString());
@@ -58,7 +52,7 @@ class AuthAPI implements IAuthAPI {
   }
 
   @override
-  Stream<bool> get authStateChange => _supabaseClient.auth.onAuthStateChange.map((event) => event.session != null);
+  Stream<bool> get authStateChange => _authStateController.stream;
 }
 
 final authAPIProvider = Provider<AuthAPI>((ref) {

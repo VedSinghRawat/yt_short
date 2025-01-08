@@ -39,7 +39,7 @@ class VideoController extends StateNotifier<VideoControllerState> {
       final videoAPI = _ref.read(videoAPIProvider);
       final user = userController.currentUser;
 
-      final videos = await videoAPI.getVideos(startFromVideoId: user?.atVidId);
+      final videos = await videoAPI.getVideos(startFromVideoId: user?.atStepId);
       state = state.copyWith(videos: videos);
     } catch (e, stackTrace) {
       developer.log('Error in VideoController.fetchVideos', error: e.toString(), stackTrace: stackTrace);

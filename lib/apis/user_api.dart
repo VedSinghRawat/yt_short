@@ -1,27 +1,32 @@
 import 'dart:developer' as developer;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../core/supabase/supabase_config.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../models/models.dart';
 
 abstract class IUserAPI {
   Future<void> updateLastViewedVideo(int videoId);
-  Future<UserModel?> fetchCurrentUser();
-  Future<UserModel?> getCurrentUser(); // Added for compatibility
+  Future<UserModel?> getCurrentUser();
 }
 
 class UserAPI implements IUserAPI {
-  final SupabaseClient _supabaseClient = SupabaseConfig.client;
+  final GoogleSignIn _googleSignIn;
+  int? _lastViewedVideoId;
+
+  UserAPI(this._googleSignIn);
 
   @override
-  Future<UserModel?> fetchCurrentUser() async {
+  Future<UserModel?> getCurrentUser() async {
     try {
-      final userId = _supabaseClient.auth.currentUser?.id;
-      if (userId == null) return null;
+      final googleUser = await _googleSignIn.signInSilently();
+      if (googleUser == null) return null;
 
-      final response = await _supabaseClient.from('users').select().eq('id', userId).single();
-
-      return UserModel.fromJson(response);
+      return UserModel(
+        id: googleUser.id,
+        email: googleUser.email,
+        atStepId: _lastViewedVideoId,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
     } catch (e, stackTrace) {
       developer.log('Error getting current user', error: e.toString(), stackTrace: stackTrace);
       return null;
@@ -29,25 +34,17 @@ class UserAPI implements IUserAPI {
   }
 
   @override
-  Future<UserModel?> getCurrentUser() async {
-    // Alias for fetchCurrentUser to maintain compatibility
-    return fetchCurrentUser();
-  }
-
-  @override
   Future<void> updateLastViewedVideo(int videoId) async {
-    try {
-      final userId = _supabaseClient.auth.currentUser?.id;
-      if (userId == null) return;
-
-      final user = await _supabaseClient.from('users').update({'at_vid_id': videoId}).eq('id', userId);
-    } catch (e, stackTrace) {
-      developer.log('Error updating last viewed video', error: e.toString(), stackTrace: stackTrace);
-      throw Exception(e.toString());
-    }
+    _lastViewedVideoId = videoId;
   }
 }
 
 final userAPIProvider = Provider<IUserAPI>((ref) {
-  return UserAPI();
+  final googleSignIn = GoogleSignIn(
+    scopes: [
+      'email',
+      'profile',
+    ],
+  );
+  return UserAPI(googleSignIn);
 });

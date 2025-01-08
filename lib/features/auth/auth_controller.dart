@@ -25,24 +25,23 @@ class AuthControllerState {
 }
 
 final authControllerProvider = StateNotifierProvider<AuthController, AuthControllerState>((ref) {
-  return AuthController(ref);
+  final userController = ref.read(userControllerProvider.notifier);
+  final authAPI = ref.read(authAPIProvider);
+
+  return AuthController(userController, authAPI);
 });
 
 class AuthController extends StateNotifier<AuthControllerState> {
-  final Ref _ref;
-  late UserController userController;
-  late AuthAPI authAPI;
+  final UserController userController;
+  final AuthAPI authAPI;
 
   StreamSubscription<bool>? _authStateSubscription;
 
-  AuthController(this._ref) : super(AuthControllerState.initial()) {
+  AuthController(this.userController, this.authAPI) : super(AuthControllerState.initial()) {
     _initializeAuthState();
   }
 
   void _initializeAuthState() {
-    authAPI = _ref.read(authAPIProvider);
-    userController = _ref.read(userControllerProvider.notifier);
-
     _authStateSubscription = authAPI.authStateChange.listen(
       (isAuthenticated) async {
         if (isAuthenticated) await userController.getCurrentUser();
@@ -66,32 +65,16 @@ class AuthController extends StateNotifier<AuthControllerState> {
     super.dispose();
   }
 
-  Future<void> signUp(BuildContext context, {required String email, required String password}) async {
+  Future<void> signInWithGoogle(BuildContext context) async {
     state = state.copyWith(loading: true);
 
     try {
-      final authRepository = _ref.read(authAPIProvider);
-      await authRepository.signUp(email: email, password: password);
-
-      state = state.copyWith(authState: AuthState.authenticated);
-    } catch (e, stackTrace) {
-      developer.log('Error in AuthController.signUp', error: e.toString(), stackTrace: stackTrace);
-      if (context.mounted) {
-        showErrorSnackBar(context, e.toString());
+      final account = await authAPI.signInWithGoogle();
+      if (account != null) {
+        state = state.copyWith(authState: AuthState.authenticated);
       }
-    }
-
-    state = state.copyWith(loading: false);
-  }
-
-  Future<void> signIn(BuildContext context, {required String email, required String password}) async {
-    state = state.copyWith(loading: true);
-
-    try {
-      final authRepository = _ref.read(authAPIProvider);
-      await authRepository.signIn(email: email, password: password);
     } catch (e, stackTrace) {
-      developer.log('Error in AuthController.signIn', error: e.toString(), stackTrace: stackTrace);
+      developer.log('Error in AuthController.signInWithGoogle', error: e.toString(), stackTrace: stackTrace);
       if (context.mounted) {
         showErrorSnackBar(context, e.toString());
       }
@@ -104,8 +87,7 @@ class AuthController extends StateNotifier<AuthControllerState> {
     state = state.copyWith(loading: true);
 
     try {
-      final authRepository = _ref.read(authAPIProvider);
-      await authRepository.signOut();
+      await authAPI.signOut();
       state = state.copyWith(
         authState: AuthState.unauthenticated,
       );

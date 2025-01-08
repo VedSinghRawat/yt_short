@@ -35,7 +35,7 @@ class UserController extends StateNotifier<UserControllerState> {
 
     try {
       final userAPI = _ref.read(userAPIProvider);
-      final user = await userAPI.fetchCurrentUser();
+      final user = await userAPI.getCurrentUser();
 
       state = state.copyWith(
         currentUser: user,
