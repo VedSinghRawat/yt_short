@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/core/widgets/yt_short.dart';
 
-class YoutubeShortsList extends StatefulWidget {
-  final List<String> ytIds;
+import '../../models/models.dart';
+
+class SubLevelsList extends StatefulWidget {
+  final List<SubLevel> stepList;
   final Function(int index)? onVideoChange;
 
-  const YoutubeShortsList({
+  const SubLevelsList({
     super.key,
-    required this.ytIds,
+    required this.stepList,
     this.onVideoChange,
   });
 
   @override
-  State<YoutubeShortsList> createState() => _YoutubeShortListState();
+  State<SubLevelsList> createState() => _SubLevelsListState();
 }
 
-class _YoutubeShortListState extends State<YoutubeShortsList> {
+class _SubLevelsListState extends State<SubLevelsList> {
   late PageController _pageController;
   int _currentPage = 0;
 
@@ -44,15 +46,19 @@ class _YoutubeShortListState extends State<YoutubeShortsList> {
   Widget build(BuildContext context) {
     return PageView.builder(
       controller: _pageController,
-      itemCount: widget.ytIds.length,
+      itemCount: widget.stepList.length,
       scrollDirection: Axis.vertical,
       itemBuilder: (context, index) {
-        return Center(
-          child: YoutubeShort(
-            key: ValueKey(widget.ytIds[index]),
-            videoId: widget.ytIds[index],
-          ),
-        );
+        final subLevel = widget.stepList[index];
+
+        if (subLevel.video != null) {
+          return Center(
+            child: YoutubeShort(
+              key: ValueKey(subLevel.video!.ytId),
+              videoId: subLevel.video!.ytId,
+            ),
+          );
+        }
       },
     );
   }

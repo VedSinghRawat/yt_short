@@ -1,46 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../video_controller.dart';
-import '../../../core/widgets/yt_shorts_list.dart';
-import '../../../core/widgets/custom_app_bar.dart';
-import '../../user/user_controller.dart';
-import '../../auth/auth_controller.dart';
+import 'package:myapp/constants/constants.dart';
+import 'package:myapp/models/models.dart';
+import '../../features/sub_level/sub_level_controller.dart';
+import '../widgets/step_list.dart';
+import '../widgets/custom_app_bar.dart';
+import '../../features/user/user_controller.dart';
+import '../../features/auth/auth_controller.dart';
 
-class VideoListScreen extends ConsumerStatefulWidget {
-  const VideoListScreen({super.key});
+class HomeScreen extends ConsumerStatefulWidget {
+  const HomeScreen({super.key});
 
   @override
-  ConsumerState<VideoListScreen> createState() => _VideoListScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _VideoListScreenState extends ConsumerState<VideoListScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
     // Fetch videos when the screen is first loaded
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      ref.read(videoControllerProvider.notifier).fetchVideos();
+      ref.read(subLevelControllerProvider.notifier).fetchSubLevels();
     });
   }
 
-  void _handleVideoChange(int index) {
-    final videos = ref.read(videoControllerProvider).videos;
+  void _handleOnScroll(int index) {
+    final videos = ref.read(subLevelControllerProvider).subLevels;
     if (index >= 0 && index < videos.length) {
-      final videoId = videos[index].id;
+      final subLevel = videos[index];
+      final videoId = (subLevel.speechExercise?.id ?? subLevel.video?.id)!;
       ref.read(userControllerProvider.notifier).updateLastViewedVideo(videoId, context);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final videoControllerState = ref.watch(videoControllerProvider);
+    final subLevelControllerState = ref.watch(subLevelControllerProvider);
 
-    if (videoControllerState.loading) {
+    if (subLevelControllerState.loading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (videoControllerState.videos.isEmpty) {
+    if (subLevelControllerState.subLevels.isEmpty) {
       return const Scaffold(
         body: Center(
           child: Text('No videos available'),
@@ -49,7 +52,6 @@ class _VideoListScreenState extends ConsumerState<VideoListScreen> {
     }
 
     // Map Video objects to their IDs
-    final ytIds = videoControllerState.videos.map((video) => video.ytId.toString()).toList();
 
     return Scaffold(
       appBar: CustomAppBar(
@@ -77,9 +79,17 @@ class _VideoListScreenState extends ConsumerState<VideoListScreen> {
           ),
         ],
       ),
-      body: YoutubeShortsList(
-        ytIds: ytIds,
-        onVideoChange: _handleVideoChange,
+      body: SubLevelsList(
+        stepList: kDummySubLevels
+            .map((subLevel) => subLevel is Video
+                ? SubLevel(video: subLevel)
+                : subLevel is SpeechExercise
+                    ? SubLevel(speechExercise: subLevel)
+                    : null)
+            .where((subLevel) => subLevel != null)
+            .map((subLevel) => subLevel!)
+            .toList(),
+        onVideoChange: _handleOnScroll,
       ),
     );
   }
