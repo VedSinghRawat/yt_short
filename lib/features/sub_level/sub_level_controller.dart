@@ -38,15 +38,16 @@ class SubLevelController extends StateNotifier<SubLevelControllerState> {
 
       final subLevels = await subLevelAPI.getSubLevels(startFromVideoId: user?.atStepId);
       state = state.copyWith(
-          subLevels: subLevels
-              .map((subLevel) => subLevel is Video
-                  ? SubLevel(video: subLevel)
-                  : subLevel is SpeechExercise
-                      ? SubLevel(speechExercise: subLevel)
-                      : null)
-              .where((subLevel) => subLevel != null)
-              .map((subLevel) => subLevel!)
-              .toList());
+        subLevels: subLevels
+            .map((subLevel) => subLevel is Video
+                ? SubLevel(video: subLevel)
+                : subLevel is SpeechExercise
+                    ? SubLevel(speechExercise: subLevel)
+                    : null)
+            .where((subLevel) => subLevel != null)
+            .map((subLevel) => subLevel!)
+            .toList(),
+      );
     } catch (e, stackTrace) {
       developer.log('Error in SubLevelController.fetchVideos', error: e.toString(), stackTrace: stackTrace);
     }

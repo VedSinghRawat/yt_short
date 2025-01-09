@@ -63,32 +63,6 @@ class _YoutubeShortState extends State<YoutubeShort> {
               ),
             ),
           ),
-          Positioned(
-            bottom: 16,
-            right: 16,
-            child: GestureDetector(
-              onTap: () => {print('liked')},
-              child: const Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.favorite_border,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Like',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
         ],
       ),
     );

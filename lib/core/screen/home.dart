@@ -80,15 +80,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
       body: SubLevelsList(
-        stepList: kDummySubLevels
-            .map((subLevel) => subLevel is Video
-                ? SubLevel(video: subLevel)
-                : subLevel is SpeechExercise
-                    ? SubLevel(speechExercise: subLevel)
-                    : null)
-            .where((subLevel) => subLevel != null)
-            .map((subLevel) => subLevel!)
-            .toList(),
+        stepList: subLevelControllerState.subLevels,
         onVideoChange: _handleOnScroll,
       ),
     );
