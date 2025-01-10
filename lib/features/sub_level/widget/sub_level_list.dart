@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/core/widgets/yt_short.dart';
+import 'package:myapp/features/speech_to_text/speech_exercise_card.dart';
 
-import '../../models/models.dart';
+import '../../../models/models.dart';
 
 class SubLevelsList extends StatefulWidget {
   final List<SubLevel> stepList;
@@ -58,7 +59,15 @@ class _SubLevelsListState extends State<SubLevelsList> {
               videoId: subLevel.video!.ytId,
             ),
           );
+        } else if (subLevel.speechExercise != null) {
+          return Center(
+            child: SpeechExerciseCard(
+              text: subLevel.speechExercise!.textToSpeak,
+            ),
+          );
         }
+
+        return const SizedBox.shrink();
       },
     );
   }

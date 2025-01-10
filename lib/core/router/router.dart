@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/core/widgets/version_check_wrapper.dart';
 import 'package:myapp/features/auth/screens/sign_in_screen.dart';
 import 'package:myapp/core/screen/home.dart';
-import 'package:myapp/features/auth/widgets/auth_wrapper.dart';
 import 'package:myapp/core/screen/suggest_version_update.dart';
 import 'package:myapp/core/screen/require_version_update.dart';
 

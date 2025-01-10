@@ -19,7 +19,7 @@ class SubLevelAPI implements ISubLevelAPI {
     SpeechExercise(
       id: 1,
       ytId: 'q30IT5IpB0Q',
-      textToSpeak: 'Flutter is amazing',
+      textToSpeak: 'This is a Mobile',
       pauseAt: 30,
       audioUrl: 'https://example.com/audio1.mp3',
       createdAt: DateTime(2024, 1, 1),
