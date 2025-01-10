@@ -11,6 +11,8 @@ class SpeechExercise {
   final String textToSpeak;
   @JsonKey(name: 'pause_at')
   final int pauseAt;
+  @JsonKey(name: 'play_at')
+  final int playAt;
   @JsonKey(name: 'audio_url')
   final String audioUrl;
   @JsonKey(name: 'created_at')
@@ -23,6 +25,7 @@ class SpeechExercise {
     required this.ytId,
     required this.textToSpeak,
     required this.pauseAt,
+    required this.playAt,
     required this.audioUrl,
     required this.createdAt,
     required this.updatedAt,
@@ -36,6 +39,7 @@ class SpeechExercise {
     String? ytId,
     String? textToSpeak,
     int? pauseAt,
+    int? playAt,
     String? audioUrl,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -45,6 +49,7 @@ class SpeechExercise {
       ytId: ytId ?? this.ytId,
       textToSpeak: textToSpeak ?? this.textToSpeak,
       pauseAt: pauseAt ?? this.pauseAt,
+      playAt: playAt ?? this.playAt,
       audioUrl: audioUrl ?? this.audioUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

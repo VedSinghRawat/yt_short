@@ -55,13 +55,14 @@ class _SubLevelsListState extends State<SubLevelsList> {
         if (subLevel.video != null) {
           return Center(
             child: YtPlayer(
-              key: ValueKey(subLevel.video!.ytId),
+              key: ValueKey(subLevel.video!.id),
               videoId: subLevel.video!.ytId,
             ),
           );
         } else if (subLevel.speechExercise != null) {
           return Center(
             child: SpeechExerciseScreen(
+              key: ValueKey(subLevel.speechExercise!.id),
               exercise: subLevel.speechExercise!,
             ),
           );

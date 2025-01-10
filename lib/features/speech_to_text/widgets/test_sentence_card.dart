@@ -4,8 +4,13 @@ import 'package:speech_to_text/speech_recognition_result.dart';
 
 class TestSentenceCard extends StatefulWidget {
   final String text;
+  final VoidCallback onContinue;
 
-  const TestSentenceCard({super.key, required this.text});
+  const TestSentenceCard({
+    super.key,
+    required this.text,
+    required this.onContinue,
+  });
 
   @override
   State<TestSentenceCard> createState() => _TestSentenceCardState();
@@ -59,103 +64,116 @@ class _TestSentenceCardState extends State<TestSentenceCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Speak the sentence given below.'),
-      ),
-      body: Container(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 24.0),
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  Column(
-                    children: [
-                      Center(
-                        child: RichText(
-                          textAlign: TextAlign.center,
-                          text: TextSpan(
-                            children: List.generate(words.length, (index) {
-                              return WidgetSpan(
-                                alignment: PlaceholderAlignment.middle,
-                                child: Stack(
-                                  clipBehavior: Clip.none,
-                                  children: [
-                                    if (wordMarking[index] == false)
-                                      Positioned(
-                                        top: -25,
-                                        child: Text(
-                                          recognizedWords[index],
-                                          style: TextStyle(
-                                            color: Colors.grey[400],
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w300,
-                                          ),
+    return Container(
+      padding: const EdgeInsets.all(16.0),
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: Column(
+        children: [
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 24.0),
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                Column(
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 24.0),
+                      child: Text(
+                        "Please speak the sentence given below to continue",
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.white70,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Center(
+                      child: RichText(
+                        textAlign: TextAlign.center,
+                        text: TextSpan(
+                          children: List.generate(words.length, (index) {
+                            return WidgetSpan(
+                              alignment: PlaceholderAlignment.middle,
+                              child: Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  if (wordMarking[index] == false)
+                                    Positioned(
+                                      top: -25,
+                                      child: Text(
+                                        recognizedWords[index],
+                                        style: TextStyle(
+                                          color: Colors.grey[400],
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w300,
                                         ),
                                       ),
-                                    Text(
-                                      '${words[index]} ',
-                                      style: TextStyle(
-                                        color: wordMarking[index] == null
-                                            ? Colors.white70
-                                            : wordMarking[index] == true
-                                                ? Colors.lightBlue[200]
-                                                : Colors.red,
-                                        fontSize: 24,
-                                        fontWeight: wordMarking[index] != null ? FontWeight.bold : FontWeight.normal,
-                                        height: 1.5,
-                                      ),
                                     ),
-                                  ],
-                                ),
-                              );
-                            }),
-                          ),
+                                  Text(
+                                    '${words[index]} ',
+                                    style: TextStyle(
+                                      color: wordMarking[index] == null
+                                          ? Colors.white70
+                                          : wordMarking[index] == true
+                                              ? Colors.lightBlue[200]
+                                              : Colors.red,
+                                      fontSize: 24,
+                                      fontWeight: wordMarking[index] != null ? FontWeight.bold : FontWeight.normal,
+                                      height: 1.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
                         ),
                       ),
-                      if (allWordsCorrect)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 24.0),
-                          child: Icon(
-                            Icons.check_circle,
-                            color: Colors.green[300],
-                            size: 48,
-                          ),
+                    ),
+                    if (allWordsCorrect)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 24.0),
+                        child: Icon(
+                          Icons.check_circle,
+                          color: Colors.green[300],
+                          size: 48,
                         ),
-                    ],
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const Spacer(),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+            child: Container(
+              width: allWordsCorrect ? 160 : 80,
+              height: 80,
+              decoration: BoxDecoration(
+                shape: allWordsCorrect ? BoxShape.rectangle : BoxShape.circle,
+                borderRadius: allWordsCorrect ? BorderRadius.circular(40) : null,
+                color: allWordsCorrect
+                    ? Colors.yellow.shade100
+                    : _recognizer.isListening
+                        ? Colors.green.shade100
+                        : Colors.blue.shade100,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.3),
+                    spreadRadius: 2,
+                    blurRadius: 5,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
-            ),
-            const Spacer(),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-              child: Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: allWordsCorrect
-                      ? Colors.yellow.shade100
-                      : _recognizer.isListening
-                          ? Colors.green.shade100
-                          : Colors.blue.shade100,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.3),
-                      spreadRadius: 2,
-                      blurRadius: 5,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () {
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    if (allWordsCorrect) {
+                      widget.onContinue();
+                    } else {
                       setState(() {
                         if (_recognizer.isListening) {
                           _recognizer.stopListening();
@@ -163,34 +181,38 @@ class _TestSentenceCardState extends State<TestSentenceCard> {
                           _recognizer.startListening();
                         }
                       });
-                    },
-                    customBorder: const CircleBorder(),
-                    child: Container(
-                      width: 80,
-                      height: 80,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        allWordsCorrect
-                            ? Icons.close_fullscreen
-                            : _recognizer.isListening
-                                ? Icons.mic
-                                : Icons.mic_none,
-                        color: allWordsCorrect
-                            ? Colors.yellow.shade700
-                            : _recognizer.isListening
-                                ? Colors.green
-                                : Colors.blue,
-                        size: 32,
-                      ),
+                    }
+                  },
+                  customBorder: allWordsCorrect ? null : const CircleBorder(),
+                  child: Container(
+                    width: allWordsCorrect ? 160 : 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      shape: allWordsCorrect ? BoxShape.rectangle : BoxShape.circle,
+                      borderRadius: allWordsCorrect ? BorderRadius.circular(40) : null,
+                    ),
+                    child: Center(
+                      child: allWordsCorrect
+                          ? Text(
+                              'Continue',
+                              style: TextStyle(
+                                color: Colors.yellow.shade700,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            )
+                          : Icon(
+                              _recognizer.isListening ? Icons.mic : Icons.mic_none,
+                              color: _recognizer.isListening ? Colors.green : Colors.blue,
+                              size: 32,
+                            ),
                     ),
                   ),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
