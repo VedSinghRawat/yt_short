@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:myapp/features/speech_to_text/widgets/recognizer.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 
-class SpeakSentenceExercise extends StatefulWidget {
+class TestSentenceCard extends StatefulWidget {
   final String text;
 
-  const SpeakSentenceExercise({super.key, required this.text});
+  const TestSentenceCard({super.key, required this.text});
 
   @override
-  State<SpeakSentenceExercise> createState() => _SpeakSentenceExerciseState();
+  State<TestSentenceCard> createState() => _TestSentenceCardState();
 }
 
-class _SpeakSentenceExerciseState extends State<SpeakSentenceExercise> {
+class _TestSentenceCardState extends State<TestSentenceCard> {
   late List<String> words;
   late List<bool?> wordMarking;
   int currIndex = -1;

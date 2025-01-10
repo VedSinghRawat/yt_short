@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:myapp/core/widgets/yt_short.dart';
-import 'package:myapp/features/speech_to_text/widgets/sentence_exercise.dart';
+import 'package:myapp/core/widgets/yt_player.dart';
+import 'package:myapp/features/speech_to_text/screen/speech_exercise_screen.dart';
 
 import '../../../models/models.dart';
 
@@ -54,15 +54,15 @@ class _SubLevelsListState extends State<SubLevelsList> {
 
         if (subLevel.video != null) {
           return Center(
-            child: YoutubeShort(
+            child: YtPlayer(
               key: ValueKey(subLevel.video!.ytId),
               videoId: subLevel.video!.ytId,
             ),
           );
         } else if (subLevel.speechExercise != null) {
           return Center(
-            child: SpeakSentenceExercise(
-              text: subLevel.speechExercise!.textToSpeak,
+            child: SpeechExerciseScreen(
+              exercise: subLevel.speechExercise!,
             ),
           );
         }
