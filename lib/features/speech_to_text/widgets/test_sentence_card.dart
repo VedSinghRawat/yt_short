@@ -22,7 +22,9 @@ class _TestSentenceCardState extends State<TestSentenceCard> {
   int currIndex = -1;
   late SpeechRecognizer _recognizer;
   late List<String> recognizedWords;
-  bool get allWordsCorrect => wordMarking.every((mark) => mark == true);
+  bool get passed => wordMarking.every((mark) => mark == true);
+  bool get failed => recognizedWords.where((word) => word.isNotEmpty).toList().length == words.length && !passed;
+  bool get testCompleted => passed || failed;
 
   @override
   void initState() {
@@ -46,14 +48,12 @@ class _TestSentenceCardState extends State<TestSentenceCard> {
 
   void _onSpeechResult(SpeechRecognitionResult result) {
     List<String> wordsList = result.recognizedWords.split(' ').where((word) => word.isNotEmpty).toList();
-    print('Processing final result: $wordsList');
     if (wordsList.isEmpty) return;
 
     setState(() {
       for (int i = currIndex + 1; i < wordsList.length; i++) {
         String lowerRecognizedWord = wordsList[i].toLowerCase();
         String targetWord = words[i].toLowerCase();
-        print('Processing - Index: $i, Recognized: $lowerRecognizedWord, Target: $targetWord');
 
         wordMarking[i] = targetWord == lowerRecognizedWord;
         recognizedWords[i] = lowerRecognizedWord;
@@ -87,7 +87,7 @@ class _TestSentenceCardState extends State<TestSentenceCard> {
                         textAlign: TextAlign.center,
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 48),
                     Center(
                       child: RichText(
                         textAlign: TextAlign.center,
@@ -95,48 +95,59 @@ class _TestSentenceCardState extends State<TestSentenceCard> {
                           children: List.generate(words.length, (index) {
                             return WidgetSpan(
                               alignment: PlaceholderAlignment.middle,
-                              child: Stack(
-                                clipBehavior: Clip.none,
-                                children: [
-                                  if (wordMarking[index] == false)
-                                    Positioned(
-                                      top: -25,
-                                      child: Text(
-                                        recognizedWords[index],
-                                        style: TextStyle(
-                                          color: Colors.grey[400],
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w300,
-                                        ),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 4.0), // Adjust horizontal padding as needed
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    // Always reserve space for recognizedWord
+                                    wordMarking[index] == false && recognizedWords[index].isNotEmpty
+                                        ? Text(
+                                            recognizedWords[index],
+                                            style: TextStyle(
+                                              color: Colors.grey[400],
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w300,
+                                            ),
+                                          )
+                                        : const SizedBox(
+                                            height: 28, // Same height as the recognizedWord Text
+                                          ),
+                                    Text(
+                                      '${words[index]} ',
+                                      style: TextStyle(
+                                        color: wordMarking[index] == null
+                                            ? Colors.white70
+                                            : wordMarking[index] == true
+                                                ? Colors.lightBlue[200]
+                                                : Colors.red,
+                                        fontSize: 24,
+                                        fontWeight: wordMarking[index] != null ? FontWeight.bold : FontWeight.normal,
+                                        height: 1.5,
                                       ),
                                     ),
-                                  Text(
-                                    '${words[index]} ',
-                                    style: TextStyle(
-                                      color: wordMarking[index] == null
-                                          ? Colors.white70
-                                          : wordMarking[index] == true
-                                              ? Colors.lightBlue[200]
-                                              : Colors.red,
-                                      fontSize: 24,
-                                      fontWeight: wordMarking[index] != null ? FontWeight.bold : FontWeight.normal,
-                                      height: 1.5,
-                                    ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             );
                           }),
                         ),
                       ),
                     ),
-                    if (allWordsCorrect)
+                    if (testCompleted)
                       Padding(
                         padding: const EdgeInsets.only(top: 24.0),
-                        child: Icon(
-                          Icons.check_circle,
-                          color: Colors.green[300],
-                          size: 48,
+                        child: Container(
+                          padding: const EdgeInsets.all(8.0),
+                          decoration: BoxDecoration(
+                            color: passed ? Colors.green[300] : Colors.red[300],
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            passed ? Icons.check : Icons.close,
+                            color: Colors.white,
+                            size: 32, // Adjust icon size as needed
+                          ),
                         ),
                       ),
                   ],
@@ -148,14 +159,14 @@ class _TestSentenceCardState extends State<TestSentenceCard> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
             child: Container(
-              width: allWordsCorrect ? 160 : 80,
-              height: 80,
+              width: testCompleted ? 160 : 80,
+              height: testCompleted ? 60 : 80,
               decoration: BoxDecoration(
-                shape: allWordsCorrect ? BoxShape.rectangle : BoxShape.circle,
-                borderRadius: allWordsCorrect ? BorderRadius.circular(40) : null,
-                color: allWordsCorrect
-                    ? Colors.yellow.shade100
-                    : _recognizer.isListening
+                shape: testCompleted ? BoxShape.rectangle : BoxShape.circle,
+                borderRadius: testCompleted ? BorderRadius.circular(40) : null,
+                color: failed
+                    ? Colors.red.shade100
+                    : _recognizer.isListening | passed
                         ? Colors.green.shade100
                         : Colors.blue.shade100,
                 boxShadow: [
@@ -171,7 +182,7 @@ class _TestSentenceCardState extends State<TestSentenceCard> {
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: () {
-                    if (allWordsCorrect) {
+                    if (passed) {
                       widget.onContinue();
                     } else {
                       setState(() {
@@ -183,20 +194,20 @@ class _TestSentenceCardState extends State<TestSentenceCard> {
                       });
                     }
                   },
-                  customBorder: allWordsCorrect ? null : const CircleBorder(),
+                  customBorder: passed ? null : const CircleBorder(),
                   child: Container(
-                    width: allWordsCorrect ? 160 : 80,
+                    width: passed ? 160 : 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      shape: allWordsCorrect ? BoxShape.rectangle : BoxShape.circle,
-                      borderRadius: allWordsCorrect ? BorderRadius.circular(40) : null,
+                      shape: passed ? BoxShape.rectangle : BoxShape.circle,
+                      borderRadius: passed ? BorderRadius.circular(40) : null,
                     ),
                     child: Center(
-                      child: allWordsCorrect
+                      child: testCompleted
                           ? Text(
-                              'Continue',
+                              passed ? 'Continue' : 'Reset',
                               style: TextStyle(
-                                color: Colors.yellow.shade700,
+                                color: passed ? Colors.green.shade700 : Colors.red.shade700,
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),

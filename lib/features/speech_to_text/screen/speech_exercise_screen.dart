@@ -40,13 +40,13 @@ class _SpeechExerciseScreenState extends State<SpeechExerciseScreen> {
       barrierDismissible: false,
       barrierColor: Colors.black.withOpacity(0.8),
       builder: (context) => PopScope(
-        canPop: false,
+        // canPop: false,
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
           child: Dialog(
-            backgroundColor: Colors.white.withOpacity(0.15),
-            insetPadding: EdgeInsets.symmetric(
-              vertical: MediaQuery.of(context).size.height * 0.15,
+            backgroundColor: Colors.white.withOpacity(0.75),
+            insetPadding: const EdgeInsets.symmetric(
+              vertical: 48,
               horizontal: 24,
             ),
             child: TestSentenceCard(
