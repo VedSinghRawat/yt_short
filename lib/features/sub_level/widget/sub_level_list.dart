@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/core/widgets/yt_short.dart';
-import 'package:myapp/features/speech_to_text/speech_exercise_card.dart';
+import 'package:myapp/features/speech_to_text/widgets/sentence_exercise.dart';
 
 import '../../../models/models.dart';
 
@@ -61,7 +61,7 @@ class _SubLevelsListState extends State<SubLevelsList> {
           );
         } else if (subLevel.speechExercise != null) {
           return Center(
-            child: SpeechExerciseCard(
+            child: SpeakSentenceExercise(
               text: subLevel.speechExercise!.textToSpeak,
             ),
           );

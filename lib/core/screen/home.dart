@@ -53,7 +53,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       appBar: CustomAppBar(
-        title: 'Youtube Shorts',
+        title: 'Learn English',
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.account_circle),
