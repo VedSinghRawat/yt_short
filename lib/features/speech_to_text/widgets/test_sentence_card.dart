@@ -72,6 +72,19 @@ class _TestSentenceCardState extends State<TestSentenceCard> {
 
   @override
   Widget build(BuildContext context) {
+    // Match font sizes and line heights to keep total vertical space in sync
+    const double recognizedWordFontSize = 24;
+    const double recognizedWordLineHeight = 1.4; // Adjust if needed
+
+    final recognizedWordStyle = TextStyle(
+      color: Colors.grey[400],
+      fontSize: recognizedWordFontSize,
+      fontWeight: FontWeight.w300,
+      height: recognizedWordLineHeight,
+    );
+
+    final recognizedWordHeight = recognizedWordFontSize * recognizedWordLineHeight;
+
     return Container(
       padding: const EdgeInsets.all(16.0),
       color: Theme.of(context).scaffoldBackgroundColor,
@@ -96,53 +109,62 @@ class _TestSentenceCardState extends State<TestSentenceCard> {
                       ),
                     ),
                     const SizedBox(height: 48),
-                    Center(
-                      child: RichText(
-                        textAlign: TextAlign.center,
-                        text: TextSpan(
-                          children: List.generate(words.length, (index) {
-                            return WidgetSpan(
-                              alignment: PlaceholderAlignment.middle,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 4.0), // Adjust horizontal padding as needed
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    // Always reserve space for recognizedWord
-                                    wordMarking[index] == false && recognizedWords[index].isNotEmpty
-                                        ? Text(
-                                            recognizedWords[index],
-                                            style: TextStyle(
-                                              color: Colors.grey[400],
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.w300,
-                                            ),
-                                          )
-                                        : const SizedBox(
-                                            height: 32, // Same height as the recognizedWord Text
-                                          ),
-                                    Text(
-                                      '${words[index]} ',
-                                      style: TextStyle(
-                                        color: wordMarking[index] == null
-                                            ? Colors.white60
-                                            : wordMarking[index] == true
-                                                ? Colors.lightBlue[200]
-                                                : wordMarking[index] == false
-                                                    ? Colors.red
-                                                    : Colors.white,
-                                        fontSize: 24,
-                                        fontWeight: wordMarking[index] != null ? FontWeight.bold : FontWeight.normal,
-                                        height: 1.5,
+                    Table(
+                      // Let each column size itself to the largest cell in that column
+                      defaultColumnWidth: IntrinsicColumnWidth(),
+
+                      // Align text baselines
+                      defaultVerticalAlignment: TableCellVerticalAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+
+                      children: [
+                        // ------------------ Row 1: Recognized Words ------------------
+                        TableRow(
+                          children: [
+                            for (int i = 0; i < words.length; i++) ...[
+                              // The recognized word or empty space
+                              recognizedWords[i].isNotEmpty
+                                  ? Text(
+                                      recognizedWords[i],
+                                      style: recognizedWordStyle.copyWith(
+                                        textBaseline: TextBaseline.alphabetic,
                                       ),
-                                    ),
-                                  ],
+                                    )
+                                  : SizedBox(height: recognizedWordHeight),
+
+                              // Add a gap column after each word (except the last)
+                              if (i < words.length - 1) const SizedBox(width: 8),
+                            ]
+                          ],
+                        ),
+
+                        // ------------------ Row 2: Main Words ------------------
+                        TableRow(
+                          children: [
+                            for (int i = 0; i < words.length; i++) ...[
+                              Text(
+                                words[i],
+                                style: TextStyle(
+                                  color: wordMarking[i] == null
+                                      ? Colors.white60
+                                      : wordMarking[i] == true
+                                          ? Colors.lightBlue[200]
+                                          : wordMarking[i] == false
+                                              ? Colors.red
+                                              : Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: wordMarking[i] != null ? FontWeight.bold : FontWeight.normal,
+                                  height: 1.4,
+                                  textBaseline: TextBaseline.alphabetic,
                                 ),
                               ),
-                            );
-                          }),
+
+                              // Same small gap for “sentence spacing”
+                              if (i < words.length - 1) const SizedBox(width: 8),
+                            ]
+                          ],
                         ),
-                      ),
+                      ],
                     ),
                     if (testCompleted)
                       Padding(
@@ -191,17 +213,18 @@ class _TestSentenceCardState extends State<TestSentenceCard> {
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: () {
+                  onTap: () async {
                     if (passed) {
                       widget.onContinue();
                       _recognizer.stopListening();
                     } else {
+                      if (_recognizer.isListening) {
+                        _recognizer.stopListening();
+                      } else {
+                        await _recognizer.startListening();
+                      }
                       setState(() {
-                        if (_recognizer.isListening) {
-                          _recognizer.stopListening();
-                        } else {
-                          _recognizer.startListening();
-                        }
+                        _recognizer = _recognizer;
                       });
                     }
                   },
