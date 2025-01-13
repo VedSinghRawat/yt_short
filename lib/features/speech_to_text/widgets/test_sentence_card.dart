@@ -19,7 +19,7 @@ class TestSentenceCard extends StatefulWidget {
 class _TestSentenceCardState extends State<TestSentenceCard> {
   late List<String> words;
   late List<bool?> wordMarking;
-  int currIndex = -1;
+  int offset = 0;
   late SpeechRecognizer _recognizer;
   late List<String> recognizedWords;
   bool get passed => wordMarking.every((mark) => mark == true);
@@ -39,25 +39,33 @@ class _TestSentenceCardState extends State<TestSentenceCard> {
   }
 
   void _onStopListening() {
+    print("stopped listening");
     setState(() {
-      currIndex = -1;
       wordMarking = List.generate(words.length, (index) => null);
       recognizedWords = List.filled(words.length, '');
     });
   }
 
   void _onSpeechResult(SpeechRecognitionResult result) {
-    List<String> wordsList = result.recognizedWords.split(' ').where((word) => word.isNotEmpty).toList();
-    if (wordsList.isEmpty) return;
-
     setState(() {
-      for (int i = currIndex + 1; i < wordsList.length; i++) {
-        String lowerRecognizedWord = wordsList[i].toLowerCase();
+      List<String> currRecognizedWords = result.recognizedWords.split(' ').where((word) => word.isNotEmpty).toList();
+      if (currRecognizedWords.isEmpty) {
+        offset = recognizedWords.where((word) => word.isNotEmpty).length;
+        return;
+      }
+      print({"result": result.recognizedWords, "currRecognizedWords": currRecognizedWords});
+
+      for (var i = 0; i < currRecognizedWords.length; i++) {
+        recognizedWords[i + offset] = currRecognizedWords[i];
+      }
+
+      print({"recognizedWords": recognizedWords});
+      for (int i = 0; i < recognizedWords.where((word) => word.isNotEmpty).length; i++) {
         String targetWord = words[i].toLowerCase();
+        String lowerRecognizedWord = recognizedWords[i].toLowerCase();
+        print("targetWord $targetWord, lowerRecognizedWord $lowerRecognizedWord");
 
         wordMarking[i] = targetWord == lowerRecognizedWord;
-        recognizedWords[i] = lowerRecognizedWord;
-        currIndex = i;
       }
     });
   }
@@ -111,16 +119,18 @@ class _TestSentenceCardState extends State<TestSentenceCard> {
                                             ),
                                           )
                                         : const SizedBox(
-                                            height: 28, // Same height as the recognizedWord Text
+                                            height: 32, // Same height as the recognizedWord Text
                                           ),
                                     Text(
                                       '${words[index]} ',
                                       style: TextStyle(
                                         color: wordMarking[index] == null
-                                            ? Colors.white70
+                                            ? Colors.white60
                                             : wordMarking[index] == true
                                                 ? Colors.lightBlue[200]
-                                                : Colors.red,
+                                                : wordMarking[index] == false
+                                                    ? Colors.red
+                                                    : Colors.white,
                                         fontSize: 24,
                                         fontWeight: wordMarking[index] != null ? FontWeight.bold : FontWeight.normal,
                                         height: 1.5,
@@ -184,6 +194,7 @@ class _TestSentenceCardState extends State<TestSentenceCard> {
                   onTap: () {
                     if (passed) {
                       widget.onContinue();
+                      _recognizer.stopListening();
                     } else {
                       setState(() {
                         if (_recognizer.isListening) {
@@ -205,7 +216,7 @@ class _TestSentenceCardState extends State<TestSentenceCard> {
                     child: Center(
                       child: testCompleted
                           ? Text(
-                              passed ? 'Continue' : 'Reset',
+                              passed ? 'Continue' : 'Retry',
                               style: TextStyle(
                                 color: passed ? Colors.green.shade700 : Colors.red.shade700,
                                 fontSize: 18,

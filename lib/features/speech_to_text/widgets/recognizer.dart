@@ -32,7 +32,10 @@ class SpeechRecognizer {
         pauseFor: const Duration(minutes: 1),
         listenFor: const Duration(minutes: 1),
         onResult: onResult,
-        listenOptions: stt.SpeechListenOptions(partialResults: true),
+        listenOptions: stt.SpeechListenOptions(
+          partialResults: true,
+          listenMode: stt.ListenMode.dictation,
+        ),
       );
     } else {
       _isListening = false;
@@ -48,10 +51,7 @@ class SpeechRecognizer {
 
   void _onStatus(String status) {
     if (status == stt.SpeechToText.doneStatus && _isListening) {
-      _speech.listen(
-        onResult: onResult,
-        listenOptions: stt.SpeechListenOptions(partialResults: true),
-      );
+      stopListening();
     }
   }
 }

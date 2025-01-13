@@ -3,7 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:myapp/models/speech_exercise/speech_exercise.dart';
-import 'package:myapp/core/widgets/yt_player.dart';
+import 'package:myapp/core/widgets/yt_short_player.dart';
 import 'package:myapp/features/speech_to_text/widgets/test_sentence_card.dart';
 
 class SpeechExerciseScreen extends StatefulWidget {
@@ -66,7 +66,7 @@ class _SpeechExerciseScreenState extends State<SpeechExerciseScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: YtPlayer(
+        child: YtShortPlayer(
           videoId: widget.exercise.ytId,
           onControllerInitialized: _onControllerInitialized,
         ),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:myapp/core/widgets/yt_player.dart';
+import 'package:myapp/core/widgets/yt_short_player.dart';
 import 'package:myapp/features/speech_to_text/screen/speech_exercise_screen.dart';
 
 import '../../../models/models.dart';
@@ -54,7 +54,7 @@ class _SubLevelsListState extends State<SubLevelsList> {
 
         if (subLevel.video != null) {
           return Center(
-            child: YtPlayer(
+            child: YtShortPlayer(
               key: ValueKey(subLevel.video!.id),
               videoId: subLevel.video!.ytId,
             ),

@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
-class YtPlayer extends StatefulWidget {
+class YtShortPlayer extends StatefulWidget {
   final String videoId;
   final void Function(YoutubePlayerController controller)? onControllerInitialized;
 
-  const YtPlayer({
+  const YtShortPlayer({
     super.key,
     required this.videoId,
     this.onControllerInitialized,
   });
 
   @override
-  State<YtPlayer> createState() => _YtPlayerState();
+  State<YtShortPlayer> createState() => _YtShortPlayerState();
 }
 
-class _YtPlayerState extends State<YtPlayer> {
+class _YtShortPlayerState extends State<YtShortPlayer> {
   late YoutubePlayerController _controller;
 
   @override
@@ -24,7 +24,7 @@ class _YtPlayerState extends State<YtPlayer> {
     _controller = YoutubePlayerController(
       initialVideoId: widget.videoId,
       flags: const YoutubePlayerFlags(
-        autoPlay: true,
+        autoPlay: false,
         mute: false,
         hideControls: false,
         enableCaption: false,
