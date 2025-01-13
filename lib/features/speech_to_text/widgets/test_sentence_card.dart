@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/core/widgets/active_mic.dart';
 import 'package:myapp/features/speech_to_text/widgets/recognizer.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 
@@ -83,7 +84,7 @@ class _TestSentenceCardState extends State<TestSentenceCard> {
       height: recognizedWordLineHeight,
     );
 
-    final recognizedWordHeight = recognizedWordFontSize * recognizedWordLineHeight;
+    const recognizedWordHeight = recognizedWordFontSize * recognizedWordLineHeight;
 
     return Container(
       padding: const EdgeInsets.all(16.0),
@@ -246,11 +247,13 @@ class _TestSentenceCardState extends State<TestSentenceCard> {
                                 fontWeight: FontWeight.bold,
                               ),
                             )
-                          : Icon(
-                              _recognizer.isListening ? Icons.mic : Icons.mic_none,
-                              color: _recognizer.isListening ? Colors.green : Colors.blue,
-                              size: 32,
-                            ),
+                          : _recognizer.isListening
+                              ? const ActiveMic()
+                              : const Icon(
+                                  Icons.mic_none,
+                                  color: Colors.blue,
+                                  size: 32,
+                                ),
                     ),
                   ),
                 ),
