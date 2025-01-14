@@ -40,7 +40,6 @@ class _TestSentenceCardState extends State<TestSentenceCard> {
   }
 
   void _onStopListening() {
-    print("stopped listening");
     setState(() {
       wordMarking = List.generate(words.length, (index) => null);
       recognizedWords = List.filled(words.length, '');
@@ -54,17 +53,14 @@ class _TestSentenceCardState extends State<TestSentenceCard> {
         offset = recognizedWords.where((word) => word.isNotEmpty).length;
         return;
       }
-      print({"result": result.recognizedWords, "currRecognizedWords": currRecognizedWords});
 
       for (var i = 0; i < currRecognizedWords.length; i++) {
         recognizedWords[i + offset] = currRecognizedWords[i];
       }
 
-      print({"recognizedWords": recognizedWords});
       for (int i = 0; i < recognizedWords.where((word) => word.isNotEmpty).length; i++) {
         String targetWord = words[i].toLowerCase();
         String lowerRecognizedWord = recognizedWords[i].toLowerCase();
-        print("targetWord $targetWord, lowerRecognizedWord $lowerRecognizedWord");
 
         wordMarking[i] = targetWord == lowerRecognizedWord;
       }
@@ -112,7 +108,7 @@ class _TestSentenceCardState extends State<TestSentenceCard> {
                     const SizedBox(height: 48),
                     Table(
                       // Let each column size itself to the largest cell in that column
-                      defaultColumnWidth: IntrinsicColumnWidth(),
+                      defaultColumnWidth: const IntrinsicColumnWidth(),
 
                       // Align text baselines
                       defaultVerticalAlignment: TableCellVerticalAlignment.baseline,
@@ -131,7 +127,7 @@ class _TestSentenceCardState extends State<TestSentenceCard> {
                                         textBaseline: TextBaseline.alphabetic,
                                       ),
                                     )
-                                  : SizedBox(height: recognizedWordHeight),
+                                  : const SizedBox(height: recognizedWordHeight),
 
                               // Add a gap column after each word (except the last)
                               if (i < words.length - 1) const SizedBox(width: 8),
