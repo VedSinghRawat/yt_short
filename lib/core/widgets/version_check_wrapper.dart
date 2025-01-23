@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/core/controllers/version_controller.dart';
+import 'package:myapp/core/widgets/loader.dart';
 
 class VersionCheckWrapper extends ConsumerWidget {
   final Widget child;
@@ -17,9 +18,7 @@ class VersionCheckWrapper extends ConsumerWidget {
       future: ref.read(versionControllerProvider.notifier).checkVersion(context),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
+          return const Loader();
         }
 
         if (snapshot.hasData && snapshot.data != null) {

@@ -11,7 +11,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   // final authState = ref.watch(authControllerProvider);
 
   return GoRouter(
-    initialLocation: '/',
+    initialLocation: '/signIn',
     routes: [
       // Version check routes - not wrapped with VersionCheckWrapper to avoid loops
       GoRoute(

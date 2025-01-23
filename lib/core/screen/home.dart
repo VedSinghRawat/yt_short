@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:myapp/core/widgets/loader.dart';
 import '../../features/sub_level/sub_level_controller.dart';
 import '../../features/sub_level/widget/sub_level_list.dart';
 import '../widgets/custom_app_bar.dart';
@@ -38,7 +39,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final subLevelControllerState = ref.watch(subLevelControllerProvider);
 
     if (subLevelControllerState.loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Loader();
     }
 
     if (subLevelControllerState.subLevels.isEmpty) {

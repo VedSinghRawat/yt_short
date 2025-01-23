@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer' as developer;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:myapp/core/services/api_service.dart';
 
 abstract class IAuthAPI {
   Future<GoogleSignInAccount?> signInWithGoogle();
@@ -18,8 +19,9 @@ class AuthAPI implements IAuthAPI {
   );
 
   final StreamController<bool> _authStateController = StreamController<bool>.broadcast();
+  final ApiService _apiService;
 
-  AuthAPI() {
+  AuthAPI({required ApiService apiService}) : _apiService = apiService {
     _googleSignIn.onCurrentUserChanged.listen((GoogleSignInAccount? account) {
       _authStateController.add(account != null);
     });
@@ -28,12 +30,19 @@ class AuthAPI implements IAuthAPI {
   @override
   Future<GoogleSignInAccount?> signInWithGoogle() async {
     try {
-      developer.log(_googleSignIn.clientId ?? 'Client ID is null');
       final account = await _googleSignIn.signIn();
-      developer.log(account.toString());
+
       if (account == null) {
         throw Exception('Google Sign In cancelled or failed');
       }
+      final auth = await account.authentication;
+
+      _apiService.setToken(auth.idToken ?? '');
+
+      final response = await _apiService.call(endpoint: '/auth/google', method: Method.get);
+
+      print('response: ${response}');
+
       return account;
     } catch (e, stackTrace) {
       developer.log('Error during Google Sign In', error: e.toString(), stackTrace: stackTrace);
@@ -56,5 +65,5 @@ class AuthAPI implements IAuthAPI {
 }
 
 final authAPIProvider = Provider<AuthAPI>((ref) {
-  return AuthAPI();
+  return AuthAPI(apiService: ref.read(apiServiceProvider));
 });

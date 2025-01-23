@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void showErrorSnackBar(BuildContext context, String message) {
   // Remove mounted check since ScaffoldMessenger handles this internally
@@ -19,4 +20,14 @@ void showSnackBar(BuildContext context, String text) {
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(content: Text(text)));
+}
+
+Future<void> setToPrefs(String key, String value) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString(key, value);
+}
+
+Future<String?> getFromPrefs(String key) async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString(key);
 }
