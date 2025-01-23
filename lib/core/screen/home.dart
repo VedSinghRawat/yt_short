@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:myapp/core/shared_pref.dart';
 import '../../features/content/content_controller.dart';
-import '../../features/content/widget/sub_level_list.dart';
+import '../../features/content/widget/content_list.dart';
 import '../widgets/custom_app_bar.dart';
 import '../../features/user/user_controller.dart';
 import '../../features/auth/auth_controller.dart';
@@ -24,14 +25,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
-  void _handleOnScroll(int index) {
+  Future<void> _handleOnScroll(int index) async {
+    const minDiff = Duration.microsecondsPerMinute * 10;
+    final lastSync = await SharedPref.getLastSync();
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    if ((now - lastSync) < minDiff) return;
+
     final contents = ref.read(contentControllerProvider).contents;
-    if (index >= 0 && index < contents.length) {
-      final content = contents[index];
-      final level = (content.speechExercise?.level ?? content.video?.level)!;
-      final subLevel = (content.speechExercise?.subLevel ?? content.video?.subLevel)!;
-      // ref.read(userControllerProvider.notifier).updateLastViewedVideo(level, subLevel, context);
-    }
+    if (index < 0 || index >= contents.length) return;
+
+    final content = contents[index];
+    final level = (content.speechExercise?.level ?? content.video?.level)!;
+    final subLevel = (content.speechExercise?.subLevel ?? content.video?.subLevel)!;
+
+    await ref.read(userControllerProvider.notifier).progressSync(level, subLevel);
   }
 
   @override

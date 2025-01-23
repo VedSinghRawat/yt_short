@@ -5,13 +5,9 @@ part 'user.g.dart';
 class UserModel {
   final String id;
   final String email;
-  @JsonKey(name: 'level')
   final int? level;
-  @JsonKey(name: 'sub_level')
   final int? subLevel;
-  @JsonKey(name: 'created_at')
   final DateTime createdAt;
-  @JsonKey(name: 'updated_at')
   final DateTime updatedAt;
 
   const UserModel({

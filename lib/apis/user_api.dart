@@ -2,9 +2,10 @@ import 'dart:developer' as developer;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../models/models.dart';
+import 'package:dio/dio.dart';
 
 abstract class IUserAPI {
-  Future<void> sync(int videoId);
+  Future<UserModel?> progressSync(int level, int subLevel);
   Future<UserModel?> getCurrentUser();
 }
 
@@ -34,7 +35,38 @@ class UserAPI implements IUserAPI {
   }
 
   @override
-  Future<void> sync(int videoId) async {}
+  Future<UserModel?> progressSync(int level, int subLevel) async {
+    try {
+      final googleUser = await _googleSignIn.signInSilently();
+      if (googleUser == null) {
+        developer.log('Cannot sync: User not signed in');
+        return null;
+      }
+
+      final dio = Dio();
+      final response = await dio.post(
+        '${const String.fromEnvironment('API_BASE_URL')}/user/sync',
+        data: {
+          'level': level,
+          'subLevel': subLevel,
+        },
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer ${await googleUser.authHeaders}',
+          },
+        ),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to sync user progress: ${response.statusCode}');
+      }
+
+      return UserModel.fromJson(response.data);
+    } catch (e, stackTrace) {
+      developer.log('Error syncing user progress', error: e.toString(), stackTrace: stackTrace);
+      return null;
+    }
+  }
 }
 
 final userAPIProvider = Provider<IUserAPI>((ref) {

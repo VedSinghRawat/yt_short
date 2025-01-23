@@ -47,15 +47,16 @@ class UserController extends StateNotifier<UserControllerState> {
     state = state.copyWith(loading: false);
   }
 
-  Future<void> updateLastViewedVideo(int videoId, BuildContext? context) async {
+  Future<void> progressSync(int level, int subLevel) async {
     try {
       final userAPI = _ref.read(userAPIProvider);
-      await userAPI.sync(videoId);
+      await userAPI.progressSync(level, subLevel);
+
+      // Get updated user data after progress sync
+      final updatedUser = await userAPI.getCurrentUser();
+      state = state.copyWith(currentUser: updatedUser);
     } catch (e, stackTrace) {
       developer.log('Error in UserController.updateLastViewedVideo', error: e.toString(), stackTrace: stackTrace);
-      if (context != null && context.mounted) {
-        showErrorSnackBar(context, e.toString());
-      }
     }
   }
 }

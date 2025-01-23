@@ -38,15 +38,7 @@ class ContentController extends StateNotifier<ContentControllerState> {
 
       final contents = await contentAPI.getContents(currentLevel: user?.level);
       state = state.copyWith(
-        contents: contents
-            .map((content) => content is Video
-                ? Content(video: content)
-                : content is SpeechExercise
-                    ? Content(speechExercise: content)
-                    : null)
-            .where((content) => content != null)
-            .map((content) => content!)
-            .toList(),
+        contents: contents.map((content) => content is Video ? Content(video: content) : Content(speechExercise: content)).toList(),
       );
     } catch (e, stackTrace) {
       developer.log('Error in ContentController.fetchVideos', error: e.toString(), stackTrace: stackTrace);
