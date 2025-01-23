@@ -50,7 +50,7 @@ class UserController extends StateNotifier<UserControllerState> {
   Future<void> updateLastViewedVideo(int videoId, BuildContext? context) async {
     try {
       final userAPI = _ref.read(userAPIProvider);
-      await userAPI.updateLastViewedVideo(videoId);
+      await userAPI.sync(videoId);
     } catch (e, stackTrace) {
       developer.log('Error in UserController.updateLastViewedVideo', error: e.toString(), stackTrace: stackTrace);
       if (context != null && context.mounted) {

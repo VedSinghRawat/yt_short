@@ -4,13 +4,12 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../models/models.dart';
 
 abstract class IUserAPI {
-  Future<void> updateLastViewedVideo(int videoId);
+  Future<void> sync(int videoId);
   Future<UserModel?> getCurrentUser();
 }
 
 class UserAPI implements IUserAPI {
   final GoogleSignIn _googleSignIn;
-  int? _lastViewedVideoId;
 
   UserAPI(this._googleSignIn);
 
@@ -35,9 +34,7 @@ class UserAPI implements IUserAPI {
   }
 
   @override
-  Future<void> updateLastViewedVideo(int videoId) async {
-    _lastViewedVideoId = videoId;
-  }
+  Future<void> sync(int videoId) async {}
 }
 
 final userAPIProvider = Provider<IUserAPI>((ref) {

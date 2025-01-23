@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/core/widgets/yt_short_player.dart';
-import 'package:myapp/features/speech_to_text/screen/speech_exercise_screen.dart';
+import 'package:myapp/features/speech_exercise/screen/speech_exercise_screen.dart';
 
 import '../../../models/models.dart';
 

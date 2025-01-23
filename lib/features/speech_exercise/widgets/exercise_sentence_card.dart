@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/core/widgets/active_mic.dart';
-import 'package:myapp/features/speech_to_text/widgets/recognizer.dart';
+import 'package:myapp/features/speech_exercise/widgets/recognizer.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 
-class TestSentenceCard extends StatefulWidget {
+class ExerciseSentenceCard extends StatefulWidget {
   final String text;
   final VoidCallback onContinue;
 
-  const TestSentenceCard({
+  const ExerciseSentenceCard({
     super.key,
     required this.text,
     required this.onContinue,
   });
 
   @override
-  State<TestSentenceCard> createState() => _TestSentenceCardState();
+  State<ExerciseSentenceCard> createState() => _ExerciseSentenceCardState();
 }
 
-class _TestSentenceCardState extends State<TestSentenceCard> {
+class _ExerciseSentenceCardState extends State<ExerciseSentenceCard> {
   late List<String> words;
   late List<bool?> wordMarking;
   int offset = 0;
