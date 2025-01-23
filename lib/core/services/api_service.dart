@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:myapp/constants/prefs.dart';
 import 'package:myapp/core/utils.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum Method { get, post, put, delete }
@@ -14,11 +14,11 @@ class ApiService {
   final String baseUrl = 'https://1x20ei1lng.execute-api.us-east-1.amazonaws.com';
 
   Future<void> setToken(String token) async {
-    await setToPrefs('token', token);
+    await setToPrefs(Prefs.token, token);
   }
 
   Future<String?> getToken() async {
-    return await getFromPrefs('token');
+    return await getFromPrefs(Prefs.token);
   }
 
   Future<http.Response> _makeRequest({

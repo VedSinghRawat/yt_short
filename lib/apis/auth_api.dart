@@ -16,6 +16,7 @@ class AuthAPI implements IAuthAPI {
       'email',
       'profile',
     ],
+    serverClientId: '938593061148-harja8fpbj1sacgvsmlg7v7ifuvcvauk.apps.googleusercontent.com',
   );
 
   final StreamController<bool> _authStateController = StreamController<bool>.broadcast();
@@ -32,9 +33,12 @@ class AuthAPI implements IAuthAPI {
     try {
       final account = await _googleSignIn.signIn();
 
+      print('account: $account');
+
       if (account == null) {
         throw Exception('Google Sign In cancelled or failed');
       }
+
       final auth = await account.authentication;
 
       _apiService.setToken(auth.idToken ?? '');

@@ -6,12 +6,13 @@ import 'package:myapp/features/auth/screens/sign_in_screen.dart';
 import 'package:myapp/core/screen/home.dart';
 import 'package:myapp/core/screen/suggest_version_update.dart';
 import 'package:myapp/core/screen/require_version_update.dart';
+import 'package:myapp/features/auth/widgets/auth_wrapper.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   // final authState = ref.watch(authControllerProvider);
 
   return GoRouter(
-    initialLocation: '/signIn',
+    initialLocation: '/',
     routes: [
       // Version check routes - not wrapped with VersionCheckWrapper to avoid loops
       GoRoute(
@@ -25,14 +26,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Main app routes - wrapped with VersionCheckWrapper
       GoRoute(
         path: '/',
-        builder: (context, state) => const VersionCheckWrapper(
-          child: HomeScreen(),
+        builder: (context, state) => const AuthWrapper(
+          child: VersionCheckWrapper(
+            child: HomeScreen(),
+          ),
         ),
       ),
       GoRoute(
         path: '/signIn',
-        builder: (context, state) => const VersionCheckWrapper(
-          child: SignInScreen(),
+        builder: (context, state) => const AuthWrapper(
+          child: VersionCheckWrapper(
+            child: SignInScreen(),
+          ),
         ),
       ),
     ],
