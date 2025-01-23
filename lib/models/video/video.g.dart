@@ -7,19 +7,17 @@ part of 'video.dart';
 // **************************************************************************
 
 Video _$VideoFromJson(Map<String, dynamic> json) => Video(
-      id: (json['id'] as num).toInt(),
-      title: json['title'] as String,
-      ytId: json['yt_id'] as String,
-      description: json['description'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      ytId: json['ytId'] as String,
+      level: (json['level'] as num).toInt(),
+      subLevel: (json['subLevel'] as num).toInt(),
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
 
 Map<String, dynamic> _$VideoToJson(Video instance) => <String, dynamic>{
-      'id': instance.id,
-      'title': instance.title,
-      'yt_id': instance.ytId,
-      'description': instance.description,
-      'created_at': instance.createdAt.toIso8601String(),
-      'updated_at': instance.updatedAt.toIso8601String(),
+      'ytId': instance.ytId,
+      'level': instance.level,
+      'subLevel': instance.subLevel,
+      'createdAt': instance.createdAt.toIso8601String(),
+      'updatedAt': instance.updatedAt.toIso8601String(),
     };

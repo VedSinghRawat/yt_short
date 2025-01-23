@@ -4,21 +4,21 @@ import 'package:myapp/features/speech_to_text/screen/speech_exercise_screen.dart
 
 import '../../../models/models.dart';
 
-class SubLevelsList extends StatefulWidget {
-  final List<SubLevel> stepList;
+class ContentsList extends StatefulWidget {
+  final List<Content> stepList;
   final Function(int index)? onVideoChange;
 
-  const SubLevelsList({
+  const ContentsList({
     super.key,
     required this.stepList,
     this.onVideoChange,
   });
 
   @override
-  State<SubLevelsList> createState() => _SubLevelsListState();
+  State<ContentsList> createState() => _ContentsListState();
 }
 
-class _SubLevelsListState extends State<SubLevelsList> {
+class _ContentsListState extends State<ContentsList> {
   late PageController _pageController;
   int _currentPage = 0;
 
@@ -50,20 +50,20 @@ class _SubLevelsListState extends State<SubLevelsList> {
       itemCount: widget.stepList.length,
       scrollDirection: Axis.vertical,
       itemBuilder: (context, index) {
-        final subLevel = widget.stepList[index];
+        final content = widget.stepList[index];
 
-        if (subLevel.video != null) {
+        if (content.video != null) {
           return Center(
             child: YtShortPlayer(
-              key: ValueKey(subLevel.video!.id),
-              videoId: subLevel.video!.ytId,
+              key: ValueKey('${content.video!.level}-${content.video!.subLevel}'),
+              videoId: content.video!.ytId,
             ),
           );
-        } else if (subLevel.speechExercise != null) {
+        } else if (content.speechExercise != null) {
           return Center(
             child: SpeechExerciseScreen(
-              key: ValueKey(subLevel.speechExercise!.id),
-              exercise: subLevel.speechExercise!,
+              key: ValueKey('${content.speechExercise!.level}-${content.speechExercise!.subLevel}'),
+              exercise: content.speechExercise!,
             ),
           );
         }

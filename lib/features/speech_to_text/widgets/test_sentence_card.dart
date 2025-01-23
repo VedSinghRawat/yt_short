@@ -106,20 +106,17 @@ class _TestSentenceCardState extends State<TestSentenceCard> {
                       ),
                     ),
                     const SizedBox(height: 48),
-                    Table(
-                      // Let each column size itself to the largest cell in that column
-                      defaultColumnWidth: const IntrinsicColumnWidth(),
-
-                      // Align text baselines
-                      defaultVerticalAlignment: TableCellVerticalAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-
+                    Wrap(
+                      spacing: 8, // horizontal spacing between items
+                      runSpacing: 16, // vertical spacing between lines
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        // ------------------ Row 1: Recognized Words ------------------
-                        TableRow(
-                          children: [
-                            for (int i = 0; i < words.length; i++) ...[
-                              // The recognized word or empty space
+                        for (int i = 0; i < words.length; i++)
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Recognized word
                               recognizedWords[i].isNotEmpty
                                   ? Text(
                                       recognizedWords[i],
@@ -127,18 +124,9 @@ class _TestSentenceCardState extends State<TestSentenceCard> {
                                         textBaseline: TextBaseline.alphabetic,
                                       ),
                                     )
-                                  : const SizedBox(height: recognizedWordHeight),
+                                  : SizedBox(height: recognizedWordHeight),
 
-                              // Add a gap column after each word (except the last)
-                              if (i < words.length - 1) const SizedBox(width: 8),
-                            ]
-                          ],
-                        ),
-
-                        // ------------------ Row 2: Main Words ------------------
-                        TableRow(
-                          children: [
-                            for (int i = 0; i < words.length; i++) ...[
+                              // Target word
                               Text(
                                 words[i],
                                 style: TextStyle(
@@ -155,12 +143,8 @@ class _TestSentenceCardState extends State<TestSentenceCard> {
                                   textBaseline: TextBaseline.alphabetic,
                                 ),
                               ),
-
-                              // Same small gap for “sentence spacing”
-                              if (i < words.length - 1) const SizedBox(width: 8),
-                            ]
-                          ],
-                        ),
+                            ],
+                          ),
                       ],
                     ),
                     if (testCompleted)

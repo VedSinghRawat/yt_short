@@ -23,7 +23,8 @@ class UserAPI implements IUserAPI {
       return UserModel(
         id: googleUser.id,
         email: googleUser.email,
-        atStepId: _lastViewedVideoId,
+        level: 1,
+        subLevel: 1,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );

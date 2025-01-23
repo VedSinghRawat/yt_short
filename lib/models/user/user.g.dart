@@ -11,13 +11,15 @@ UserModel _$UserModelFromJson(Map<String, dynamic> json) => UserModel(
       email: json['email'] as String,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
-      atStepId: (json['at_step_id'] as num?)?.toInt(),
+      level: (json['level'] as num?)?.toInt(),
+      subLevel: (json['sub_level'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
       'id': instance.id,
       'email': instance.email,
-      'at_step_id': instance.atStepId,
+      'level': instance.level,
+      'sub_level': instance.subLevel,
       'created_at': instance.createdAt.toIso8601String(),
       'updated_at': instance.updatedAt.toIso8601String(),
     };

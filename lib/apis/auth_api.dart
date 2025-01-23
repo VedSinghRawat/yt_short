@@ -30,6 +30,7 @@ class AuthAPI implements IAuthAPI {
     try {
       developer.log(_googleSignIn.clientId ?? 'Client ID is null');
       final account = await _googleSignIn.signIn();
+
       developer.log(account.toString());
       if (account == null) {
         throw Exception('Google Sign In cancelled or failed');

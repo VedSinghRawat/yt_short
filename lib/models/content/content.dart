@@ -1,10 +1,10 @@
 import '../models.dart';
 
-class SubLevel {
+class Content {
   final Video? video;
   final SpeechExercise? speechExercise;
 
-  SubLevel({
+  Content({
     this.video,
     this.speechExercise,
   });

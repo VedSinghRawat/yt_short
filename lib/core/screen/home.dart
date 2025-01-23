@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../features/sub_level/sub_level_controller.dart';
-import '../../features/sub_level/widget/sub_level_list.dart';
+import '../../features/content/content_controller.dart';
+import '../../features/content/widget/sub_level_list.dart';
 import '../widgets/custom_app_bar.dart';
 import '../../features/user/user_controller.dart';
 import '../../features/auth/auth_controller.dart';
@@ -20,28 +20,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // Fetch videos when the screen is first loaded
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      ref.read(subLevelControllerProvider.notifier).fetchSubLevels();
+      ref.read(contentControllerProvider.notifier).fetchContents();
     });
   }
 
   void _handleOnScroll(int index) {
-    final videos = ref.read(subLevelControllerProvider).subLevels;
-    if (index >= 0 && index < videos.length) {
-      final subLevel = videos[index];
-      final videoId = (subLevel.speechExercise?.id ?? subLevel.video?.id)!;
-      ref.read(userControllerProvider.notifier).updateLastViewedVideo(videoId, context);
+    final contents = ref.read(contentControllerProvider).contents;
+    if (index >= 0 && index < contents.length) {
+      final content = contents[index];
+      final level = (content.speechExercise?.level ?? content.video?.level)!;
+      final subLevel = (content.speechExercise?.subLevel ?? content.video?.subLevel)!;
+      // ref.read(userControllerProvider.notifier).updateLastViewedVideo(level, subLevel, context);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final subLevelControllerState = ref.watch(subLevelControllerProvider);
+    final contentControllerState = ref.watch(contentControllerProvider);
 
-    if (subLevelControllerState.loading) {
+    if (contentControllerState.loading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (subLevelControllerState.subLevels.isEmpty) {
+    if (contentControllerState.contents.isEmpty) {
       return const Scaffold(
         body: Center(
           child: Text('No videos available'),
@@ -77,8 +78,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ],
       ),
-      body: SubLevelsList(
-        stepList: subLevelControllerState.subLevels,
+      body: ContentsList(
+        stepList: contentControllerState.contents,
         onVideoChange: _handleOnScroll,
       ),
     );

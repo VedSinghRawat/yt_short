@@ -50,7 +50,7 @@ class _SpeechExerciseScreenState extends State<SpeechExerciseScreen> {
               horizontal: 24,
             ),
             child: TestSentenceCard(
-              text: widget.exercise.textToSpeak,
+              text: widget.exercise.text,
               onContinue: () {
                 _controller?.play();
                 Navigator.of(context).pop();
