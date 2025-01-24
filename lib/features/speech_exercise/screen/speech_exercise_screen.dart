@@ -1,10 +1,9 @@
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:myapp/models/speech_exercise/speech_exercise.dart';
 import 'package:myapp/core/widgets/yt_short_player.dart';
-import 'package:myapp/features/speech_to_text/widgets/test_sentence_card.dart';
+import 'package:myapp/features/speech_exercise/widgets/exercise_sentence_card.dart';
 
 class SpeechExerciseScreen extends StatefulWidget {
   final SpeechExercise exercise;
@@ -49,8 +48,8 @@ class _SpeechExerciseScreenState extends State<SpeechExerciseScreen> {
               vertical: 48,
               horizontal: 24,
             ),
-            child: TestSentenceCard(
-              text: widget.exercise.textToSpeak,
+            child: ExerciseSentenceCard(
+              text: widget.exercise.text,
               onContinue: () {
                 _controller?.play();
                 Navigator.of(context).pop();

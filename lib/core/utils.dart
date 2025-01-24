@@ -21,13 +21,3 @@ void showSnackBar(BuildContext context, String text) {
     ..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(content: Text(text)));
 }
-
-Future<void> setToPrefs(String key, String value) async {
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.setString(key, value);
-}
-
-Future<String?> getFromPrefs(String key) async {
-  final prefs = await SharedPreferences.getInstance();
-  return prefs.getString(key);
-}

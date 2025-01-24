@@ -1,8 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:myapp/core/shared_pref.dart';
 import '../../apis/user_api.dart';
 import '../../models/models.dart';
-import '../../core/utils.dart';
 import 'dart:developer' as developer;
 
 class UserControllerState {
@@ -26,15 +25,14 @@ class UserControllerState {
 }
 
 class UserController extends StateNotifier<UserControllerState> {
-  final Ref _ref;
+  final IUserAPI userAPI;
 
-  UserController(this._ref) : super(UserControllerState());
+  UserController(this.userAPI) : super(UserControllerState());
 
   Future<void> getCurrentUser() async {
     state = state.copyWith(loading: true);
 
     try {
-      final userAPI = _ref.read(userAPIProvider);
       final user = await userAPI.getCurrentUser();
 
       state = state.copyWith(
@@ -47,19 +45,19 @@ class UserController extends StateNotifier<UserControllerState> {
     state = state.copyWith(loading: false);
   }
 
-  Future<void> updateLastViewedVideo(int videoId, BuildContext? context) async {
+  Future<void> progressSync(int level, int subLevel) async {
     try {
-      final userAPI = _ref.read(userAPIProvider);
-      await userAPI.updateLastViewedVideo(videoId);
+      final user = await userAPI.progressSync(level, subLevel);
+      if (user == null) return;
+
+      state = state.copyWith(currentUser: user);
     } catch (e, stackTrace) {
       developer.log('Error in UserController.updateLastViewedVideo', error: e.toString(), stackTrace: stackTrace);
-      if (context != null && context.mounted) {
-        showErrorSnackBar(context, e.toString());
-      }
     }
   }
 }
 
 final userControllerProvider = StateNotifierProvider<UserController, UserControllerState>((ref) {
-  return UserController(ref);
+  final userAPI = ref.read(userAPIProvider);
+  return UserController(userAPI);
 });

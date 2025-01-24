@@ -5,11 +5,9 @@ part 'user.g.dart';
 class UserModel {
   final String id;
   final String email;
-  @JsonKey(name: 'at_step_id')
-  final int? atStepId;
-  @JsonKey(name: 'created_at')
+  final int? level;
+  final int? subLevel;
   final DateTime createdAt;
-  @JsonKey(name: 'updated_at')
   final DateTime updatedAt;
 
   const UserModel({
@@ -17,7 +15,8 @@ class UserModel {
     required this.email,
     required this.createdAt,
     required this.updatedAt,
-    this.atStepId,
+    this.level,
+    this.subLevel,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) => _$UserModelFromJson(json);
@@ -28,14 +27,16 @@ class UserModel {
     String? email,
     DateTime? createdAt,
     DateTime? updatedAt,
-    int? atStepId,
+    int? level,
+    int? subLevel,
   }) {
     return UserModel(
       id: id ?? this.id,
       email: email ?? this.email,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      atStepId: atStepId ?? this.atStepId,
+      level: level ?? this.level,
+      subLevel: subLevel ?? this.subLevel,
     );
   }
 }

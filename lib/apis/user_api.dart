@@ -1,16 +1,18 @@
 import 'dart:developer' as developer;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:myapp/core/shared_pref.dart';
 import '../models/models.dart';
+import 'package:dio/dio.dart';
 
 abstract class IUserAPI {
-  Future<void> updateLastViewedVideo(int videoId);
+  Future<UserModel?> progressSync(int level, int subLevel);
   Future<UserModel?> getCurrentUser();
 }
 
 class UserAPI implements IUserAPI {
   final GoogleSignIn _googleSignIn;
-  int? _lastViewedVideoId;
 
   UserAPI(this._googleSignIn);
 
@@ -23,7 +25,8 @@ class UserAPI implements IUserAPI {
       return UserModel(
         id: googleUser.id,
         email: googleUser.email,
-        atStepId: _lastViewedVideoId,
+        level: 1,
+        subLevel: 1,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -34,8 +37,38 @@ class UserAPI implements IUserAPI {
   }
 
   @override
-  Future<void> updateLastViewedVideo(int videoId) async {
-    _lastViewedVideoId = videoId;
+  Future<UserModel?> progressSync(int level, int subLevel) async {
+    developer.log('level: $level, subLevel: $subLevel', name: 'progressSync');
+    try {
+      final googleIdToken = await SharedPref.getGoogleIdToken();
+      if (googleIdToken == null) {
+        developer.log('Cannot sync: User not signed in');
+        return null;
+      }
+
+      final dio = Dio();
+      final response = await dio.post(
+        '${dotenv.env['API_BASE_URL']}/user/sync',
+        data: {
+          'level': level,
+          'subLevel': subLevel,
+        },
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $googleIdToken',
+          },
+        ),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to sync user progress: ${response.statusCode}');
+      }
+
+      return UserModel.fromJson(response.data);
+    } catch (e, stackTrace) {
+      // developer.log('Error syncing user progress', error: e.toString(), stackTrace: stackTrace);
+      return null;
+    }
   }
 }
 

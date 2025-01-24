@@ -1,23 +1,21 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'video.dart';
+part of 'log.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-Video _$VideoFromJson(Map<String, dynamic> json) => Video(
-      ytId: json['ytId'] as String,
-      level: (json['level'] as num).toInt(),
+Log _$LogFromJson(Map<String, dynamic> json) => Log(
+      videoId: (json['videoId'] as num).toInt(),
       subLevel: (json['subLevel'] as num).toInt(),
+      userId: json['userId'] as String,
       createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
 
-Map<String, dynamic> _$VideoToJson(Video instance) => <String, dynamic>{
-      'ytId': instance.ytId,
-      'level': instance.level,
+Map<String, dynamic> _$LogToJson(Log instance) => <String, dynamic>{
+      'videoId': instance.videoId,
       'subLevel': instance.subLevel,
+      'userId': instance.userId,
       'createdAt': instance.createdAt.toIso8601String(),
-      'updatedAt': instance.updatedAt.toIso8601String(),
     };

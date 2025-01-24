@@ -4,29 +4,22 @@ part 'speech_exercise.g.dart';
 
 @JsonSerializable()
 class SpeechExercise {
-  final int id;
-  @JsonKey(name: 'yt_id')
   final String ytId;
-  @JsonKey(name: 'text_to_speak')
-  final String textToSpeak;
-  @JsonKey(name: 'pause_at')
+  final String text;
   final int pauseAt;
-  @JsonKey(name: 'play_at')
-  final int playAt;
-  @JsonKey(name: 'audio_url')
   final String audioUrl;
-  @JsonKey(name: 'created_at')
+  final int level;
+  final int subLevel;
   final DateTime createdAt;
-  @JsonKey(name: 'updated_at')
   final DateTime updatedAt;
 
   const SpeechExercise({
-    required this.id,
     required this.ytId,
-    required this.textToSpeak,
+    required this.text,
     required this.pauseAt,
-    required this.playAt,
     required this.audioUrl,
+    required this.level,
+    required this.subLevel,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -35,22 +28,22 @@ class SpeechExercise {
   Map<String, dynamic> toJson() => _$SpeechExerciseToJson(this);
 
   SpeechExercise copyWith({
-    int? id,
     String? ytId,
-    String? textToSpeak,
+    String? text,
     int? pauseAt,
-    int? playAt,
     String? audioUrl,
+    int? level,
+    int? subLevel,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
     return SpeechExercise(
-      id: id ?? this.id,
       ytId: ytId ?? this.ytId,
-      textToSpeak: textToSpeak ?? this.textToSpeak,
+      text: text ?? this.text,
       pauseAt: pauseAt ?? this.pauseAt,
-      playAt: playAt ?? this.playAt,
       audioUrl: audioUrl ?? this.audioUrl,
+      level: level ?? this.level,
+      subLevel: subLevel ?? this.subLevel,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

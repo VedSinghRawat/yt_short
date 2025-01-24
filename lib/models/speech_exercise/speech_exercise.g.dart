@@ -8,24 +8,24 @@ part of 'speech_exercise.dart';
 
 SpeechExercise _$SpeechExerciseFromJson(Map<String, dynamic> json) =>
     SpeechExercise(
-      id: (json['id'] as num).toInt(),
-      ytId: json['yt_id'] as String,
-      textToSpeak: json['text_to_speak'] as String,
-      pauseAt: (json['pause_at'] as num).toInt(),
-      playAt: (json['play_at'] as num).toInt(),
-      audioUrl: json['audio_url'] as String,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      ytId: json['ytId'] as String,
+      text: json['text'] as String,
+      pauseAt: (json['pauseAt'] as num).toInt(),
+      audioUrl: json['audioUrl'] as String,
+      level: (json['level'] as num).toInt(),
+      subLevel: (json['subLevel'] as num).toInt(),
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
 
 Map<String, dynamic> _$SpeechExerciseToJson(SpeechExercise instance) =>
     <String, dynamic>{
-      'id': instance.id,
-      'yt_id': instance.ytId,
-      'text_to_speak': instance.textToSpeak,
-      'pause_at': instance.pauseAt,
-      'play_at': instance.playAt,
-      'audio_url': instance.audioUrl,
-      'created_at': instance.createdAt.toIso8601String(),
-      'updated_at': instance.updatedAt.toIso8601String(),
+      'ytId': instance.ytId,
+      'text': instance.text,
+      'pauseAt': instance.pauseAt,
+      'audioUrl': instance.audioUrl,
+      'level': instance.level,
+      'subLevel': instance.subLevel,
+      'createdAt': instance.createdAt.toIso8601String(),
+      'updatedAt': instance.updatedAt.toIso8601String(),
     };

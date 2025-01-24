@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:myapp/constants/prefs.dart';
-import 'package:myapp/core/utils.dart';
+import 'package:myapp/core/shared_pref.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:developer' as developer;
 
@@ -16,11 +15,11 @@ class ApiService {
   final Dio _dio = Dio();
 
   Future<void> setToken(String token) async {
-    await setToPrefs(Prefs.token, token);
+    await SharedPref.setToken(token);
   }
 
   Future<String?> getToken() async {
-    return await getFromPrefs(Prefs.token);
+    return await SharedPref.getToken();
   }
 
   Future<Response> _makeRequest({
