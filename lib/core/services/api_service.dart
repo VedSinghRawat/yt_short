@@ -3,6 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:myapp/constants/prefs.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:developer' as developer;
 
 enum Method { get, post, put, delete }
 
@@ -38,6 +39,8 @@ class ApiService {
     } catch (e) {
       if (e is DioException) {
         // Handle Dio specific errors if needed
+        developer.log('DioException: ${e.response?.statusCode}');
+        developer.log('DioException: ${e.response?.data}');
         rethrow;
       }
       rethrow;
