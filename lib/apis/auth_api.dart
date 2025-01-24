@@ -12,7 +12,9 @@ abstract class IAuthAPI {
 }
 
 class AuthAPI implements IAuthAPI {
+
   final GoogleSignIn _googleSignIn = GoogleSignIn(
+
     scopes: [
       'email',
       'profile',
