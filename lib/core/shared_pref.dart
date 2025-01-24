@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SharedPref {
@@ -49,5 +48,14 @@ class SharedPref {
 
   static Future<void> setLastSync(int lastSync) async {
     await _setValue('lastSync', lastSync.toString());
+  }
+
+  static Future<String?> getGoogleIdToken() async {
+    final token = await _getValue('googleIdToken');
+    return token;
+  }
+
+  static Future<void> setGoogleIdToken(String token) async {
+    await _setValue('googleIdToken', token);
   }
 }

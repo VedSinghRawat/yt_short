@@ -12,17 +12,14 @@ abstract class IContentAPI {
 
 class ContentAPI implements IContentAPI {
   final Dio _dio;
-  final String _baseUrl;
 
-  ContentAPI()
-      : _dio = Dio(),
-        _baseUrl = dotenv.env['S3_BASE_URL'] ?? '';
+  ContentAPI() : _dio = Dio();
 
   @override
   Future<List<dynamic>> getContents({int? currentLevel}) async {
     try {
       final level = currentLevel ?? 1;
-      final response = await _dio.get('$_baseUrl/content/$level.json');
+      final response = await _dio.get('${dotenv.env['S3_BASE_URL']}/content/$level.json');
 
       if (response.statusCode == 200) {
         final List<dynamic> jsonList = jsonDecode(response.data) as List<dynamic>;
@@ -47,7 +44,7 @@ class ContentAPI implements IContentAPI {
         response: response,
         message: 'Failed to fetch contents',
       );
-    } on DioException catch (e) {
+    } on DioException {
       // Log error or handle specific error cases
       rethrow;
     }

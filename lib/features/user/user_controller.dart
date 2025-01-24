@@ -1,8 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../apis/user_api.dart';
 import '../../models/models.dart';
-import '../../core/utils.dart';
 import 'dart:developer' as developer;
 
 class UserControllerState {
