@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer' as developer;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:myapp/core/services/api_service.dart';
@@ -16,7 +17,7 @@ class AuthAPI implements IAuthAPI {
       'email',
       'profile',
     ],
-    serverClientId: '938593061148-harja8fpbj1sacgvsmlg7v7ifuvcvauk.apps.googleusercontent.com',
+    serverClientId: dotenv.env['GOOGLE_SERVER_ID'],
   );
 
   final StreamController<bool> _authStateController = StreamController<bool>.broadcast();
@@ -30,6 +31,8 @@ class AuthAPI implements IAuthAPI {
 
   @override
   Future<GoogleSignInAccount?> signInWithGoogle() async {
+    print('GOOGLE_SERVER_ID: ${dotenv.env['GOOGLE_SERVER_ID']}');
+    print('client: ${_googleSignIn.serverClientId}');
     try {
       final account = await _googleSignIn.signIn();
 

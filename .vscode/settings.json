@@ -1,5 +1,6 @@
 {
   "dart.lineLength": 150,
+  "dart.flutterRunAdditionalArgs": ["--no-enable-impeller"],
   "IDX.aI.enableInlineCompletion": true,
   "IDX.aI.enableCodebaseIndexing": true
 }

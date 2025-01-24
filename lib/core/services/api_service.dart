@@ -1,5 +1,5 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:myapp/constants/prefs.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,7 +11,8 @@ final apiServiceProvider = Provider<ApiService>((ref) {
 });
 
 class ApiService {
-  final String baseUrl = 'https://1x20ei1lng.execute-api.us-east-1.amazonaws.com';
+  final String baseUrl = dotenv.env['API_BASE_URL'] ?? '';
+  final Dio _dio = Dio();
 
   Future<void> setToken(String token) async {
     await setToPrefs(Prefs.token, token);
@@ -21,7 +22,7 @@ class ApiService {
     return await getFromPrefs(Prefs.token);
   }
 
-  Future<http.Response> _makeRequest({
+  Future<Response> _makeRequest({
     required String endpoint,
     required Method method,
     Map<String, dynamic>? body,
@@ -29,24 +30,16 @@ class ApiService {
   }) async {
     final String? token = await getToken();
 
-    final effectiveHeaders = {
-      'Content-Type': 'application/json',
-      if (token != null) 'Authorization': 'Bearer $token',
-      ...?headers,
-    };
+    final effectiveHeaders = {'Content-Type': 'application/json', if (token != null) 'Authorization': 'Bearer $token', ...?headers};
+
     try {
-      if (method == Method.get) {
-        return await http.get(Uri.parse('$baseUrl$endpoint'), headers: effectiveHeaders);
-      } else if (method == Method.post) {
-        return await http.post(Uri.parse('$baseUrl$endpoint'), headers: effectiveHeaders, body: jsonEncode(body));
-      } else if (method == Method.put) {
-        return await http.put(Uri.parse('$baseUrl$endpoint'), headers: effectiveHeaders, body: jsonEncode(body));
-      } else if (method == Method.delete) {
-        return await http.delete(Uri.parse('$baseUrl$endpoint'), headers: effectiveHeaders);
-      } else {
-        throw Exception('Unsupported HTTP method: $method');
-      }
+      final options = Options(method: method.name.toUpperCase(), headers: effectiveHeaders);
+      return await _dio.request('$baseUrl$endpoint', data: body, options: options);
     } catch (e) {
+      if (e is DioException) {
+        // Handle Dio specific errors if needed
+        rethrow;
+      }
       rethrow;
     }
   }
@@ -58,6 +51,6 @@ class ApiService {
     Map<String, String>? headers,
   }) async {
     final response = await _makeRequest(endpoint: endpoint, method: method, body: body, headers: headers);
-    return jsonDecode(response.body);
+    return response.data;
   }
 }
