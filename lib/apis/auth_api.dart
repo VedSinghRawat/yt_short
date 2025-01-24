@@ -31,12 +31,8 @@ class AuthAPI implements IAuthAPI {
 
   @override
   Future<GoogleSignInAccount?> signInWithGoogle() async {
-    print('GOOGLE_SERVER_ID: ${dotenv.env['GOOGLE_SERVER_ID']}');
-    print('client: ${_googleSignIn.serverClientId}');
     try {
       final account = await _googleSignIn.signIn();
-
-      print('account: $account');
 
       if (account == null) {
         throw Exception('Google Sign In cancelled or failed');
@@ -47,8 +43,6 @@ class AuthAPI implements IAuthAPI {
       _apiService.setToken(auth.idToken ?? '');
 
       final response = await _apiService.call(endpoint: '/auth/google', method: Method.get);
-
-      print('response: ${response}');
 
       return account;
     } catch (e, stackTrace) {

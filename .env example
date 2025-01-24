@@ -1,0 +1,3 @@
+S3_BASE_URL=your sst S3 bucket url
+API_BASE_URL=your sst ApiGatewayV2 url
+GOOGLE_SERVER_ID=make a web application oauth, use the client id from that
