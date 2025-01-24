@@ -19,25 +19,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     // Fetch videos when the screen is first loaded
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      ref.read(contentControllerProvider.notifier).fetchContents();
+      final progress = await SharedPref.getProgress();
+      await ref.read(contentControllerProvider.notifier).fetchContents(level: progress?['level']);
     });
   }
 
   Future<void> _handleOnScroll(int index) async {
-    const minDiff = Duration.microsecondsPerMinute * 10;
-    final lastSync = await SharedPref.getLastSync();
-    final now = DateTime.now().millisecondsSinceEpoch;
-
-    if ((now - lastSync) < minDiff) return;
-
     final contents = ref.read(contentControllerProvider).contents;
     if (index < 0 || index >= contents.length) return;
 
     final content = contents[index];
     final level = (content.speechExercise?.level ?? content.video?.level)!;
     final subLevel = (content.speechExercise?.subLevel ?? content.video?.subLevel)!;
+
+    await SharedPref.setProgress(level, subLevel);
+
+    const minDiff = Duration.microsecondsPerMinute * 10;
+    final lastSync = await SharedPref.getLastSync();
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    if ((now - lastSync) < minDiff) return;
 
     await ref.read(userControllerProvider.notifier).progressSync(level, subLevel);
   }

@@ -30,13 +30,11 @@ class ContentController extends StateNotifier<ContentControllerState> {
 
   ContentController({required this.userController, required this.contentAPI}) : super(ContentControllerState());
 
-  Future<void> fetchContents() async {
+  Future<void> fetchContents({int? level}) async {
     state = state.copyWith(loading: true);
 
     try {
-      final user = userController.currentUser;
-
-      final contents = await contentAPI.getContents(currentLevel: user?.level);
+      final contents = await contentAPI.getContents(currentLevel: level);
       state = state.copyWith(
         contents: contents.map((content) => content is Video ? Content(video: content) : Content(speechExercise: content)).toList(),
       );
