@@ -12,14 +12,12 @@ abstract class IAuthAPI {
 }
 
 class AuthAPI implements IAuthAPI {
-
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-
     scopes: [
       'email',
       'profile',
     ],
-    serverClientId: dotenv.env['GOOGLE_SERVER_ID'],
+    clientId: dotenv.env['GOOGLE_SERVER_ID'],
   );
 
   final StreamController<bool> _authStateController = StreamController<bool>.broadcast();
@@ -45,6 +43,7 @@ class AuthAPI implements IAuthAPI {
       _apiService.setToken(auth.idToken ?? '');
 
       final response = await _apiService.call(endpoint: '/auth/google', method: Method.get);
+      developer.log('Google Sign In response: $response', name: 'api');
 
       return account;
     } catch (e, stackTrace) {

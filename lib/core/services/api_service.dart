@@ -39,8 +39,8 @@ class ApiService {
     } catch (e) {
       if (e is DioException) {
         // Handle Dio specific errors if needed
-        developer.log('DioException: ${e.response?.statusCode}');
-        developer.log('DioException: ${e.response?.data}');
+        developer.log('DioException: ${e.response?.statusCode}', name: 'api');
+        developer.log('DioException: ${e.response?.data}', name: 'api');
         rethrow;
       }
       rethrow;
