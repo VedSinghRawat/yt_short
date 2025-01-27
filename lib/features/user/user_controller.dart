@@ -43,7 +43,9 @@ class UserController extends StateNotifier<UserControllerState> {
 
       await updateUser(user);
 
-      state = state.copyWith(currentUserEmail: user.email);
+      print('user: ${user.email}');
+
+      updateCurrentUserEmail(user.email);
 
       return user;
     } catch (e, stackTrace) {

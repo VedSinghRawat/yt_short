@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:myapp/core/services/google_sign_in.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,12 +9,15 @@ import 'dart:developer' as developer;
 enum Method { get, post, put, delete }
 
 final apiServiceProvider = Provider<ApiService>((ref) {
-  return ApiService();
+  return ApiService(googleSignIn: ref.read(googleSignInProvider));
 });
 
 class ApiService {
   final String baseUrl = dotenv.env['API_BASE_URL'] ?? '';
   final Dio _dio = Dio();
+  final GoogleSignIn _googleSignIn;
+
+  ApiService({required GoogleSignIn googleSignIn}) : _googleSignIn = googleSignIn;
 
   Future<void> setToken(String token) async {
     await SharedPref.setGoogleIdToken(token);
@@ -56,11 +60,9 @@ class ApiService {
     try {
       return await _makeRequest<T>(endpoint: endpoint, method: method, body: body, headers: headers);
     } on DioException catch (e) {
-      print('error from api is: ${e.response?.data}');
-
       if (e.response?.data['message'].toLowerCase().contains('token used too late') == false) rethrow;
 
-      final account = await googleSignIn.signInSilently();
+      final account = await _googleSignIn.signInSilently();
 
       if (account != null) {
         final auth = await account.authentication;
@@ -68,8 +70,6 @@ class ApiService {
         final idToken = auth.idToken;
 
         if (idToken == null) rethrow;
-
-        print('New ID Token: $idToken');
 
         await setToken(idToken);
 

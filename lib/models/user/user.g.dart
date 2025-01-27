@@ -8,8 +8,8 @@ part of 'user.dart';
 
 UserModel _$UserModelFromJson(Map<String, dynamic> json) => UserModel(
       email: json['email'] as String,
-      created: DateTime.parse(json['created'] as String),
-      modified: DateTime.parse(json['modified'] as String),
+      created: json['created'] as String,
+      modified: json['modified'] as String,
       level: (json['level'] as num?)?.toInt(),
       subLevel: (json['subLevel'] as num?)?.toInt(),
       lastSeen: (json['lastSeen'] as num?)?.toInt(),
@@ -20,8 +20,8 @@ Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
       'email': instance.email,
       'level': instance.level,
       'subLevel': instance.subLevel,
-      'created': instance.created.toIso8601String(),
-      'modified': instance.modified.toIso8601String(),
+      'created': instance.created,
+      'modified': instance.modified,
       'lastSeen': instance.lastSeen,
       'lastProgress': instance.lastProgress,
     };

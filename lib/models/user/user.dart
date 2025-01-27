@@ -6,8 +6,8 @@ class UserModel {
   final String email;
   final int? level;
   final int? subLevel;
-  final DateTime created;
-  final DateTime modified;
+  final String created;
+  final String modified;
   final int? lastSeen;
   final int? lastProgress;
 
@@ -26,8 +26,8 @@ class UserModel {
 
   UserModel copyWith({
     String? email,
-    DateTime? created,
-    DateTime? modified,
+    String? created,
+    String? modified,
     int? level,
     int? subLevel,
     int? lastSeen,

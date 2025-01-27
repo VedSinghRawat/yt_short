@@ -20,15 +20,12 @@ class UserAPI implements IUserAPI {
         method: Method.get,
         endpoint: '/user/me',
       );
-      final localUser = await SharedPref.getUser();
 
       if (response.statusCode == 401) {
-        return localUser;
+        return await SharedPref.getUser();
       }
 
-      print(response.data);
-
-      UserModel apiUser = UserModel.fromJson(response.data);
+      UserModel apiUser = UserModel.fromJson(response.data?['user']);
 
       await SharedPref.setUser(apiUser);
 
@@ -43,12 +40,6 @@ class UserAPI implements IUserAPI {
   Future<UserModel?> progressSync(int level, int subLevel) async {
     developer.log('level: $level, subLevel: $subLevel', name: 'progressSync');
     try {
-      final googleIdToken = await SharedPref.getGoogleIdToken();
-      if (googleIdToken == null) {
-        developer.log('Cannot sync: User not signed in');
-        return null;
-      }
-
       final response = await _apiService.call(
         method: Method.post,
         endpoint: '/user/sync',

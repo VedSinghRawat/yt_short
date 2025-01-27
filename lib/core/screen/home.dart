@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/features/activity_log/activity_log.controller.dart';
@@ -30,7 +31,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (!mounted) return;
       final progress = await SharedPref.getCurrProgress();
       final contents = await ref.read(contentControllerProvider.notifier).fetchContents(level: progress?['level']);
-      developer.log('contents: $progress');
+
       _jumpTo = contents.indexWhere(
         (content) =>
             content.speechExercise?.subLevel == progress?['subLevel'] && content.speechExercise?.level == progress?['level'] ||
@@ -51,13 +52,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     await SharedPref.setCurrProgress(level, subLevel);
 
-    final user = ref.read(userControllerProvider).currentUserEmail;
-
-    if (subLevel > 3 && user == null) {
-      if (mounted) {
-        context.go(Routes.signIn);
-      }
+    if (level > authRequiredLevel && userEmail.isEmpty && mounted) {
+      context.go(Routes.signIn);
     }
+
     await SharedPref.setCurrProgress(level, subLevel);
 
     if (userEmail.isNotEmpty) {
@@ -71,7 +69,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     if ((now - lastSync) < minDiff) return;
 
-    if (user != null) {
+    if (userEmail.isNotEmpty) {
       await ref.read(userControllerProvider.notifier).progressSync(level, subLevel);
     }
 

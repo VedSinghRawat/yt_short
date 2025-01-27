@@ -18,8 +18,11 @@ class InitializeService {
 
       if (apiUser == null || localUser == null) return;
 
-      if (((localUser.lastProgress != null && apiUser.lastProgress == null) || localUser.lastProgress! > apiUser.lastProgress!) &&
-          (localUser.level != null && localUser.subLevel != null)) {
+      final localLastModified = DateTime.parse(localUser.modified);
+
+      final apiLastModified = DateTime.parse(apiUser.modified);
+
+      if (localLastModified.isAfter(apiLastModified) && (localUser.level != null && localUser.subLevel != null)) {
         await userController.progressSync(localUser.level!, localUser.subLevel!);
 
         apiUser = apiUser.copyWith(level: localUser.level, subLevel: localUser.subLevel);

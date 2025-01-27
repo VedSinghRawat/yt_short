@@ -17,8 +17,11 @@ abstract class IAuthAPI {
 class AuthAPI implements IAuthAPI {
   final StreamController<bool> _authStateController = StreamController<bool>.broadcast();
   final ApiService _apiService;
+  final GoogleSignIn _googleSignIn;
 
-  AuthAPI({required ApiService apiService}) : _apiService = apiService {
+  AuthAPI({required ApiService apiService, required GoogleSignIn googleSignIn})
+      : _apiService = apiService,
+        _googleSignIn = googleSignIn {
     googleSignIn.onCurrentUserChanged.listen((GoogleSignInAccount? account) {
       _authStateController.add(account != null);
     });
@@ -27,7 +30,7 @@ class AuthAPI implements IAuthAPI {
   @override
   Future<UserModel?> signInWithGoogle() async {
     try {
-      final account = await googleSignIn.signIn();
+      final account = await _googleSignIn.signIn();
 
       if (account == null) {
         throw Exception('Google Sign In cancelled or failed');
@@ -53,7 +56,7 @@ class AuthAPI implements IAuthAPI {
   @override
   Future<void> signOut() async {
     try {
-      await googleSignIn.signOut();
+      await _googleSignIn.signOut();
       _apiService.setToken('');
       _authStateController.add(false);
     } catch (e, stackTrace) {
@@ -67,5 +70,5 @@ class AuthAPI implements IAuthAPI {
 }
 
 final authAPIProvider = Provider<AuthAPI>((ref) {
-  return AuthAPI(apiService: ref.read(apiServiceProvider));
+  return AuthAPI(apiService: ref.read(apiServiceProvider), googleSignIn: ref.read(googleSignInProvider));
 });
