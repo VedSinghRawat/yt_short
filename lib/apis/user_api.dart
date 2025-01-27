@@ -18,7 +18,7 @@ class UserAPI implements IUserAPI {
     try {
       final response = await _apiService.call(
         method: Method.get,
-        endpoint: '/me',
+        endpoint: '/user/me',
       );
       final localUser = await SharedPref.getUser();
 
@@ -29,14 +29,6 @@ class UserAPI implements IUserAPI {
       print(response.data);
 
       UserModel apiUser = UserModel.fromJson(response.data);
-
-      if (localUser != null &&
-          ((localUser.lastProgress != null && apiUser.lastProgress == null) || localUser.lastProgress! > apiUser.lastProgress!) &&
-          (localUser.level != null && localUser.subLevel != null)) {
-        await progressSync(localUser.level!, localUser.subLevel!);
-
-        apiUser = apiUser.copyWith(level: localUser.level, subLevel: localUser.subLevel);
-      }
 
       await SharedPref.setUser(apiUser);
 

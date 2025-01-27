@@ -5,6 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:myapp/core/services/api_service.dart';
+import 'package:myapp/core/services/google_sign_in.dart';
 import 'package:myapp/models/user/user.dart';
 
 abstract class IAuthAPI {
@@ -14,19 +15,11 @@ abstract class IAuthAPI {
 }
 
 class AuthAPI implements IAuthAPI {
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: [
-      'email',
-      'profile',
-    ],
-    clientId: dotenv.env['GOOGLE_SERVER_ID'],
-  );
-
   final StreamController<bool> _authStateController = StreamController<bool>.broadcast();
   final ApiService _apiService;
 
   AuthAPI({required ApiService apiService}) : _apiService = apiService {
-    _googleSignIn.onCurrentUserChanged.listen((GoogleSignInAccount? account) {
+    googleSignIn.onCurrentUserChanged.listen((GoogleSignInAccount? account) {
       _authStateController.add(account != null);
     });
   }
@@ -34,17 +27,17 @@ class AuthAPI implements IAuthAPI {
   @override
   Future<UserModel?> signInWithGoogle() async {
     try {
-      final account = await _googleSignIn.signIn();
+      final account = await googleSignIn.signIn();
+
       if (account == null) {
         throw Exception('Google Sign In cancelled or failed');
       }
 
       final auth = await account.authentication;
 
-      _apiService.setToken(auth.idToken ?? '');
+      await _apiService.setToken(auth.idToken ?? '');
 
       final response = await _apiService.call(endpoint: '/auth/google', method: Method.get);
-      developer.log('Google Sign In response: $response', name: 'api');
 
       final user = UserModel.fromJson(response.data['user']);
 
@@ -60,7 +53,7 @@ class AuthAPI implements IAuthAPI {
   @override
   Future<void> signOut() async {
     try {
-      await _googleSignIn.signOut();
+      await googleSignIn.signOut();
       _apiService.setToken('');
       _authStateController.add(false);
     } catch (e, stackTrace) {

@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:myapp/core/services/google_sign_in.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:developer' as developer;
@@ -52,6 +53,30 @@ class ApiService {
     Map<String, dynamic>? body,
     Map<String, String>? headers,
   }) async {
-    return await _makeRequest<T>(endpoint: endpoint, method: method, body: body, headers: headers);
+    try {
+      return await _makeRequest<T>(endpoint: endpoint, method: method, body: body, headers: headers);
+    } on DioException catch (e) {
+      print('error from api is: ${e.response?.data}');
+
+      if (e.response?.data['message'].toLowerCase().contains('token used too late') == false) rethrow;
+
+      final account = await googleSignIn.signInSilently();
+
+      if (account != null) {
+        final auth = await account.authentication;
+
+        final idToken = auth.idToken;
+
+        if (idToken == null) rethrow;
+
+        print('New ID Token: $idToken');
+
+        await setToken(idToken);
+
+        return await _makeRequest<T>(endpoint: endpoint, method: method, body: body, headers: headers);
+      }
+
+      rethrow;
+    }
   }
 }

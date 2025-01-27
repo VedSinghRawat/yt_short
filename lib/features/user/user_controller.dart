@@ -4,21 +4,25 @@ import '../../models/models.dart';
 import 'dart:developer' as developer;
 
 class UserControllerState {
-  final UserModel? currentUser;
+  final Map<String, UserModel> user;
   final bool loading;
+  final String? currentUserEmail;
 
   UserControllerState({
-    this.currentUser,
+    this.user = const {},
     this.loading = false,
+    this.currentUserEmail = null,
   });
 
   UserControllerState copyWith({
-    UserModel? currentUser,
+    Map<String, UserModel>? user,
     bool? loading,
+    String? currentUserEmail,
   }) {
     return UserControllerState(
-      currentUser: currentUser ?? this.currentUser,
+      user: user ?? this.user,
       loading: loading ?? this.loading,
+      currentUserEmail: currentUserEmail ?? this.currentUserEmail,
     );
   }
 }
@@ -28,19 +32,34 @@ class UserController extends StateNotifier<UserControllerState> {
 
   UserController(this.userAPI) : super(UserControllerState());
 
-  Future<void> getCurrentUser() async {
+  Future<UserModel?> getCurrentUser() async {
     state = state.copyWith(loading: true);
 
     try {
       final user = await userAPI.getUser();
-      state = state.copyWith(
-        currentUser: user,
-      );
+
+      if (user == null) return null;
+
+      await updateUser(user);
+
+      state = state.copyWith(currentUserEmail: user.email);
+
+      return user;
     } catch (e, stackTrace) {
       developer.log('Error in UserController.getCurrentUser', error: e.toString(), stackTrace: stackTrace);
     }
 
     state = state.copyWith(loading: false);
+
+    return null;
+  }
+
+  Future<void> updateUser(UserModel user) async {
+    state = state.copyWith(user: {...state.user, user.email: user});
+  }
+
+  updateCurrentUserEmail(String email) {
+    state = state.copyWith(currentUserEmail: email);
   }
 
   Future<void> progressSync(int level, int subLevel) async {
@@ -48,7 +67,7 @@ class UserController extends StateNotifier<UserControllerState> {
       final user = await userAPI.progressSync(level, subLevel);
       if (user == null) return;
 
-      state = state.copyWith(currentUser: user);
+      await updateUser(user);
     } catch (e, stackTrace) {
       developer.log('Error in UserController.updateLastViewedVideo', error: e.toString(), stackTrace: stackTrace);
     }

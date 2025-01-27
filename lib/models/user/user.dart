@@ -6,15 +6,15 @@ class UserModel {
   final String email;
   final int? level;
   final int? subLevel;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final DateTime created;
+  final DateTime modified;
   final int? lastSeen;
   final int? lastProgress;
 
   const UserModel({
     required this.email,
-    required this.createdAt,
-    required this.updatedAt,
+    required this.created,
+    required this.modified,
     this.level,
     this.subLevel,
     this.lastSeen,
@@ -25,10 +25,9 @@ class UserModel {
   Map<String, dynamic> toJson() => _$UserModelToJson(this);
 
   UserModel copyWith({
-    String? id,
     String? email,
-    DateTime? createdAt,
-    DateTime? updatedAt,
+    DateTime? created,
+    DateTime? modified,
     int? level,
     int? subLevel,
     int? lastSeen,
@@ -36,8 +35,8 @@ class UserModel {
   }) {
     return UserModel(
       email: email ?? this.email,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
+      created: created ?? this.created,
+      modified: modified ?? this.modified,
       level: level ?? this.level,
       subLevel: subLevel ?? this.subLevel,
       lastSeen: lastSeen ?? this.lastSeen,

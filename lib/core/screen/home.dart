@@ -40,9 +40,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     await SharedPref.setProgress(level, subLevel);
 
-    final user = ref.read(userControllerProvider).currentUser;
-
-    print('user: $user');
+    final user = ref.read(userControllerProvider).currentUserEmail;
 
     if (subLevel > 3 && user == null) {
       if (mounted) {

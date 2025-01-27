@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:myapp/core/shared_pref.dart';
+import 'package:myapp/core/widgets/show_confirmation_dialog.dart';
 import 'dart:developer' as developer;
 import '../../apis/auth_api.dart';
 import '../../core/utils.dart';
@@ -65,24 +67,42 @@ class AuthController extends StateNotifier<AuthControllerState> {
     super.dispose();
   }
 
-  Future<void> signInWithGoogle(BuildContext context) async {
+  Future<bool> signInWithGoogle(BuildContext context) async {
     state = state.copyWith(loading: true);
 
     try {
       final user = await authAPI.signInWithGoogle();
 
-      if (user != null) {
-        state = state.copyWith(authState: AuthState.authenticated);
+      if (user == null) return false;
+
+      await userController.updateUser(user);
+
+      userController.updateCurrentUserEmail(user.email);
+
+      state = state.copyWith(authState: AuthState.authenticated);
+
+      if (user.level != null && user.level! > 3) {
+        if (!context.mounted) return true;
+
+        showConfirmationDialog(context, question: 'We notice that you have already are on level ${user.level!}. Do you want to go there?',
+            onResult: (result) {
+          if (result) {
+            SharedPref.setProgress(user.level!, user.subLevel!);
+          }
+        });
       }
 
+      return true;
     } catch (e, stackTrace) {
       developer.log('Error in AuthController.signInWithGoogle', error: e.toString(), stackTrace: stackTrace);
       if (context.mounted) {
         showErrorSnackBar(context, e.toString());
       }
+    } finally {
+      state = state.copyWith(loading: false);
     }
 
-    state = state.copyWith(loading: false);
+    return true;
   }
 
   Future<void> signOut(BuildContext context) async {
