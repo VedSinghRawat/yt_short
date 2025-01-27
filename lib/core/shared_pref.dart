@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SharedPref {
@@ -31,13 +32,7 @@ class SharedPref {
   }
 
   static Future<Map<String, dynamic>?> getProgress() async {
-    final progress = await _getObject('progress');
-    if (progress == null) return null;
-
-    return {
-      'level': int.parse(progress['level']),
-      'subLevel': int.parse(progress['subLevel']),
-    };
+    return await _getObject('progress');
   }
 
   static Future<int> getLastSync() async {

@@ -6,6 +6,7 @@ import '../../features/content/widget/content_list.dart';
 import '../widgets/custom_app_bar.dart';
 import '../../features/user/user_controller.dart';
 import '../../features/auth/auth_controller.dart';
+import 'dart:developer' as developer;
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -15,6 +16,8 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  int? _jumpTo;
+
   @override
   void initState() {
     super.initState();
@@ -22,7 +25,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       final progress = await SharedPref.getProgress();
-      await ref.read(contentControllerProvider.notifier).fetchContents(level: progress?['level']);
+      final contents = await ref.read(contentControllerProvider.notifier).fetchContents(level: progress?['level']);
+      developer.log('contents: $progress');
+      _jumpTo = contents.indexWhere(
+        (content) =>
+            content.speechExercise?.subLevel == progress?['subLevel'] && content.speechExercise?.level == progress?['level'] ||
+            content.video?.subLevel == progress?['subLevel'] && content.video?.level == progress?['level'],
+      );
+      developer.log('jumpTo: $_jumpTo');
     });
   }
 
@@ -36,7 +46,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     await SharedPref.setProgress(level, subLevel);
 
-    const minDiff = Duration.microsecondsPerMinute * 10;
+    const minDiff = Duration.millisecondsPerMinute * 10;
     final lastSync = await SharedPref.getLastSync();
     final now = DateTime.now().millisecondsSinceEpoch;
 
@@ -47,6 +57,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    developer.log('HomeScreen build: $_jumpTo');
     final contentControllerState = ref.watch(contentControllerProvider);
 
     if (contentControllerState.loading) {
@@ -60,8 +71,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       );
     }
-
-    // Map Video objects to their IDs
 
     return Scaffold(
       appBar: CustomAppBar(
@@ -90,8 +99,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
       body: ContentsList(
-        stepList: contentControllerState.contents,
+        contents: contentControllerState.contents,
         onVideoChange: _handleOnScroll,
+        jumpTo: _jumpTo,
       ),
     );
   }

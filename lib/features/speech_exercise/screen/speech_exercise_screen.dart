@@ -37,13 +37,13 @@ class _SpeechExerciseScreenState extends State<SpeechExerciseScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      barrierColor: Colors.black.withOpacity(0.8),
+      barrierColor: const Color.fromRGBO(0, 0, 0, 0.8),
       builder: (context) => PopScope(
-        // canPop: false,
+        canPop: false,
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
           child: Dialog(
-            backgroundColor: Colors.white.withOpacity(0.75),
+            backgroundColor: const Color.fromRGBO(255, 255, 255, 0.75),
             insetPadding: const EdgeInsets.symmetric(
               vertical: 48,
               horizontal: 24,

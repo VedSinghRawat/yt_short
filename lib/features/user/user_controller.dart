@@ -51,6 +51,7 @@ class UserController extends StateNotifier<UserControllerState> {
       if (user == null) return;
 
       state = state.copyWith(currentUser: user);
+      await SharedPref.setLastSync(DateTime.now().millisecondsSinceEpoch);
     } catch (e, stackTrace) {
       developer.log('Error in UserController.updateLastViewedVideo', error: e.toString(), stackTrace: stackTrace);
     }

@@ -49,15 +49,8 @@ class UserAPI implements IUserAPI {
       final dio = Dio();
       final response = await dio.post(
         '${dotenv.env['API_BASE_URL']}/user/sync',
-        data: {
-          'level': level,
-          'subLevel': subLevel,
-        },
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $googleIdToken',
-          },
-        ),
+        data: {'level': level, 'subLevel': subLevel},
+        options: Options(headers: {'Authorization': 'Bearer $googleIdToken'}),
       );
 
       if (response.statusCode != 200) {
@@ -66,7 +59,7 @@ class UserAPI implements IUserAPI {
 
       return UserModel.fromJson(response.data);
     } catch (e, stackTrace) {
-      // developer.log('Error syncing user progress', error: e.toString(), stackTrace: stackTrace);
+      developer.log('Error syncing user progress', error: e.toString(), stackTrace: stackTrace);
       return null;
     }
   }
