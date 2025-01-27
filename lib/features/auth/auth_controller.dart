@@ -69,10 +69,12 @@ class AuthController extends StateNotifier<AuthControllerState> {
     state = state.copyWith(loading: true);
 
     try {
-      final account = await authAPI.signInWithGoogle();
-      if (account != null) {
+      final user = await authAPI.signInWithGoogle();
+
+      if (user != null) {
         state = state.copyWith(authState: AuthState.authenticated);
       }
+
     } catch (e, stackTrace) {
       developer.log('Error in AuthController.signInWithGoogle', error: e.toString(), stackTrace: stackTrace);
       if (context.mounted) {

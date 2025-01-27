@@ -51,7 +51,7 @@ class _ContentsListState extends State<ContentsList> {
       scrollDirection: Axis.vertical,
       itemBuilder: (context, index) {
         final content = widget.stepList[index];
-
+    
         if (content.video != null) {
           return Center(
             child: YtShortPlayer(

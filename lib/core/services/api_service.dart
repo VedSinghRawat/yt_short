@@ -15,14 +15,14 @@ class ApiService {
   final Dio _dio = Dio();
 
   Future<void> setToken(String token) async {
-    await SharedPref.setToken(token);
+    await SharedPref.setGoogleIdToken(token);
   }
 
   Future<String?> getToken() async {
-    return await SharedPref.getToken();
+    return await SharedPref.getGoogleIdToken();
   }
 
-  Future<Response> _makeRequest({
+  Future<Response<T>> _makeRequest<T>({
     required String endpoint,
     required Method method,
     Map<String, dynamic>? body,
@@ -46,13 +46,12 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> call({
+  Future<Response<T>> call<T>({
     required String endpoint,
     required Method method,
     Map<String, dynamic>? body,
     Map<String, String>? headers,
   }) async {
-    final response = await _makeRequest(endpoint: endpoint, method: method, body: body, headers: headers);
-    return response.data;
+    return await _makeRequest<T>(endpoint: endpoint, method: method, body: body, headers: headers);
   }
 }

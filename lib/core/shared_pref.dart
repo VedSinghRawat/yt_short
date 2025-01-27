@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:myapp/models/user/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SharedPref {
@@ -23,6 +24,16 @@ class SharedPref {
     await _setValue(key, encoded);
   }
 
+  static Future<UserModel?> getUser() async {
+    final user = await _getObject('user');
+    if (user == null) return null;
+    return UserModel.fromJson(user);
+  }
+
+  static Future<void> setUser(UserModel user) async {
+    await _setObject('user', user.toJson());
+  }
+
   static Future<void> setProgress(int level, int subLevel) async {
     await _setObject('progress', {
       'level': level,
@@ -35,8 +46,8 @@ class SharedPref {
     if (progress == null) return null;
 
     return {
-      'level': int.parse(progress['level']),
-      'subLevel': int.parse(progress['subLevel']),
+      'level': progress['level'],
+      'subLevel': progress['subLevel'],
     };
   }
 
@@ -51,19 +62,10 @@ class SharedPref {
   }
 
   static Future<String?> getGoogleIdToken() async {
-    final token = await _getValue('googleIdToken');
-    return token;
+    return await _getValue('googleIdToken');
   }
 
   static Future<void> setGoogleIdToken(String token) async {
     await _setValue('googleIdToken', token);
-  }
-
-  static Future<void> setToken(String token) async {
-    await _setValue('token', token);
-  }
-
-  static Future<String?> getToken() async {
-    return await _getValue('token');
   }
 }

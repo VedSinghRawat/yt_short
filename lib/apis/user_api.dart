@@ -1,35 +1,46 @@
 import 'dart:developer' as developer;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:myapp/core/services/api_service.dart';
 import 'package:myapp/core/shared_pref.dart';
 import '../models/models.dart';
-import 'package:dio/dio.dart';
 
 abstract class IUserAPI {
+  Future<UserModel?> getUser();
   Future<UserModel?> progressSync(int level, int subLevel);
-  Future<UserModel?> getCurrentUser();
 }
 
 class UserAPI implements IUserAPI {
-  final GoogleSignIn _googleSignIn;
-
-  UserAPI(this._googleSignIn);
+  final ApiService _apiService;
+  UserAPI(this._apiService);
 
   @override
-  Future<UserModel?> getCurrentUser() async {
+  Future<UserModel?> getUser() async {
     try {
-      final googleUser = await _googleSignIn.signInSilently();
-      if (googleUser == null) return null;
-
-      return UserModel(
-        id: googleUser.id,
-        email: googleUser.email,
-        level: 1,
-        subLevel: 1,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
+      final response = await _apiService.call(
+        method: Method.get,
+        endpoint: '/me',
       );
+      final localUser = await SharedPref.getUser();
+
+      if (response.statusCode == 401) {
+        return localUser;
+      }
+
+      print(response.data);
+
+      UserModel apiUser = UserModel.fromJson(response.data);
+
+      if (localUser != null &&
+          ((localUser.lastProgress != null && apiUser.lastProgress == null) || localUser.lastProgress! > apiUser.lastProgress!) &&
+          (localUser.level != null && localUser.subLevel != null)) {
+        await progressSync(localUser.level!, localUser.subLevel!);
+
+        apiUser = apiUser.copyWith(level: localUser.level, subLevel: localUser.subLevel);
+      }
+
+      await SharedPref.setUser(apiUser);
+
+      return apiUser;
     } catch (e, stackTrace) {
       developer.log('Error getting current user', error: e.toString(), stackTrace: stackTrace);
       return null;
@@ -46,18 +57,13 @@ class UserAPI implements IUserAPI {
         return null;
       }
 
-      final dio = Dio();
-      final response = await dio.post(
-        '${dotenv.env['API_BASE_URL']}/user/sync',
-        data: {
+      final response = await _apiService.call(
+        method: Method.post,
+        endpoint: '/user/sync',
+        body: {
           'level': level,
           'subLevel': subLevel,
         },
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $googleIdToken',
-          },
-        ),
       );
 
       if (response.statusCode != 200) {
@@ -66,18 +72,12 @@ class UserAPI implements IUserAPI {
 
       return UserModel.fromJson(response.data);
     } catch (e, stackTrace) {
-      // developer.log('Error syncing user progress', error: e.toString(), stackTrace: stackTrace);
+      developer.log('Error syncing user progress', error: e.toString(), stackTrace: stackTrace);
       return null;
     }
   }
 }
 
 final userAPIProvider = Provider<IUserAPI>((ref) {
-  final googleSignIn = GoogleSignIn(
-    scopes: [
-      'email',
-      'profile',
-    ],
-  );
-  return UserAPI(googleSignIn);
+  return UserAPI(ref.read(apiServiceProvider));
 });

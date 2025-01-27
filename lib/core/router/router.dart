@@ -8,6 +8,13 @@ import 'package:myapp/core/screen/suggest_version_update.dart';
 import 'package:myapp/core/screen/require_version_update.dart';
 import 'package:myapp/features/auth/widgets/auth_wrapper.dart';
 
+class Routes {
+  static const home = '/';
+  static const versionRequired = '/version/required';
+  static const versionSuggest = '/version/suggest';
+  static const signIn = '/signIn';
+}
+
 final routerProvider = Provider<GoRouter>((ref) {
   // final authState = ref.watch(authControllerProvider);
 
@@ -16,24 +23,22 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       // Version check routes - not wrapped with VersionCheckWrapper to avoid loops
       GoRoute(
-        path: '/version/suggest',
+        path: Routes.versionSuggest,
         builder: (context, state) => const SuggestVersionUpdate(),
       ),
       GoRoute(
-        path: '/version/required',
+        path: Routes.versionRequired,
         builder: (context, state) => const RequireVersionUpdate(),
       ),
       // Main app routes - wrapped with VersionCheckWrapper
       GoRoute(
-        path: '/',
-        builder: (context, state) => const AuthWrapper(
-          child: VersionCheckWrapper(
-            child: HomeScreen(),
-          ),
+        path: Routes.home,
+        builder: (context, state) => const VersionCheckWrapper(
+          child: HomeScreen(),
         ),
       ),
       GoRoute(
-        path: '/signIn',
+        path: Routes.signIn,
         builder: (context, state) => const AuthWrapper(
           child: VersionCheckWrapper(
             child: SignInScreen(),

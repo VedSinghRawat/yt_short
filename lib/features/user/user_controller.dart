@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:myapp/core/shared_pref.dart';
 import '../../apis/user_api.dart';
 import '../../models/models.dart';
 import 'dart:developer' as developer;
@@ -33,8 +32,7 @@ class UserController extends StateNotifier<UserControllerState> {
     state = state.copyWith(loading: true);
 
     try {
-      final user = await userAPI.getCurrentUser();
-
+      final user = await userAPI.getUser();
       state = state.copyWith(
         currentUser: user,
       );

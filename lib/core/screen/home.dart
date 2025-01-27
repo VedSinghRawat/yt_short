@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/shared_pref.dart';
 import '../../features/content/content_controller.dart';
 import '../../features/content/widget/content_list.dart';
@@ -22,12 +24,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       final progress = await SharedPref.getProgress();
+      print('progress: $progress');
       await ref.read(contentControllerProvider.notifier).fetchContents(level: progress?['level']);
     });
   }
 
   Future<void> _handleOnScroll(int index) async {
     final contents = ref.read(contentControllerProvider).contents;
+
     if (index < 0 || index >= contents.length) return;
 
     final content = contents[index];
@@ -36,13 +40,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     await SharedPref.setProgress(level, subLevel);
 
+    final user = ref.read(userControllerProvider).currentUser;
+
+    print('user: $user');
+
+    if (subLevel > 3 && user == null) {
+      if (mounted) {
+        context.go(Routes.signIn);
+      }
+    }
+
     const minDiff = Duration.microsecondsPerMinute * 10;
+
     final lastSync = await SharedPref.getLastSync();
+
     final now = DateTime.now().millisecondsSinceEpoch;
 
     if ((now - lastSync) < minDiff) return;
 
-    await ref.read(userControllerProvider.notifier).progressSync(level, subLevel);
+    if (user != null) {
+      await ref.read(userControllerProvider.notifier).progressSync(level, subLevel);
+    }
   }
 
   @override

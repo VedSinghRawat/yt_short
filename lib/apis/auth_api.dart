@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'dart:developer' as developer;
+import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:myapp/core/services/api_service.dart';
+import 'package:myapp/models/user/user.dart';
 
 abstract class IAuthAPI {
-  Future<GoogleSignInAccount?> signInWithGoogle();
+  Future<UserModel?> signInWithGoogle();
   Future<void> signOut();
   Stream<bool> get authStateChange;
 }
@@ -30,10 +32,9 @@ class AuthAPI implements IAuthAPI {
   }
 
   @override
-  Future<GoogleSignInAccount?> signInWithGoogle() async {
+  Future<UserModel?> signInWithGoogle() async {
     try {
       final account = await _googleSignIn.signIn();
-
       if (account == null) {
         throw Exception('Google Sign In cancelled or failed');
       }
@@ -45,7 +46,11 @@ class AuthAPI implements IAuthAPI {
       final response = await _apiService.call(endpoint: '/auth/google', method: Method.get);
       developer.log('Google Sign In response: $response', name: 'api');
 
-      return account;
+      final user = UserModel.fromJson(response.data['user']);
+
+      return user;
+    } on DioException catch (e) {
+      throw Exception(e.response?.data?.toString());
     } catch (e, stackTrace) {
       developer.log('Error during Google Sign In', error: e.toString(), stackTrace: stackTrace);
       throw Exception(e.toString());
@@ -56,6 +61,8 @@ class AuthAPI implements IAuthAPI {
   Future<void> signOut() async {
     try {
       await _googleSignIn.signOut();
+      _apiService.setToken('');
+      _authStateController.add(false);
     } catch (e, stackTrace) {
       developer.log('Error during sign out', error: e.toString(), stackTrace: stackTrace);
       throw Exception(e.toString());

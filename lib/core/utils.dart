@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 void showErrorSnackBar(BuildContext context, String message) {
   // Remove mounted check since ScaffoldMessenger handles this internally
