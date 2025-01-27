@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
+import 'package:myapp/models/activity_log/activity_log.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SharedPref {
@@ -19,20 +20,26 @@ class SharedPref {
     return jsonDecode(value);
   }
 
-  static Future<void> _setObject(String key, Map<String, dynamic> value) async {
+  static Future<List<dynamic>?> _getList(String key) async {
+    final value = await _getValue(key);
+    if (value == null) return null;
+    return jsonDecode(value);
+  }
+
+  static Future<void> _setObject(String key, dynamic value) async {
     final encoded = jsonEncode(value);
     await _setValue(key, encoded);
   }
 
-  static Future<void> setProgress(int level, int subLevel) async {
-    await _setObject('progress', {
+  static Future<void> setCurrProgress(int level, int subLevel) async {
+    await _setObject('currProgress', {
       'level': level,
       'subLevel': subLevel,
     });
   }
 
-  static Future<Map<String, dynamic>?> getProgress() async {
-    return await _getObject('progress');
+  static Future<Map<String, dynamic>?> getCurrProgress() async {
+    return await _getObject('currProgress');
   }
 
   static Future<int> getLastSync() async {
@@ -52,5 +59,21 @@ class SharedPref {
 
   static Future<void> setGoogleIdToken(String token) async {
     await _setValue('googleIdToken', token);
+  }
+
+  static Future<void> addActivityLog(ActivityLog activityLog) async {
+    var activityLogs = await _getList('activityLogs') ?? [];
+    activityLogs.add(activityLog.toJson());
+    await _setObject('activityLogs', activityLogs);
+  }
+
+  static Future<void> clearActivityLogs() async {
+    await _setObject('activityLogs', []);
+  }
+
+  static Future<List<ActivityLog>?> getActivityLogs() async {
+    final activityLogs = await _getList('activityLogs');
+    if (activityLogs == null) return null;
+    return activityLogs.map((e) => ActivityLog.fromJson(e)).toList();
   }
 }
