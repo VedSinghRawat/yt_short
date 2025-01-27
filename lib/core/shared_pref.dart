@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:myapp/models/activity_log/activity_log.dart';
 import 'package:myapp/models/user/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -40,15 +41,15 @@ class SharedPref {
     await _setObject('user', user.toJson());
   }
 
-  static Future<void> setProgress(int level, int subLevel) async {
-    await _setObject('progress', {
+  static Future<void> setCurrProgress(int level, int subLevel) async {
+    await _setObject('currProgress', {
       'level': level,
       'subLevel': subLevel,
     });
   }
 
-  static Future<Map<String, dynamic>?> getProgress() async {
-    final progress = await _getObject('progress');
+  static Future<Map<String, dynamic>?> getCurrProgress() async {
+    final progress = await _getObject('currProgress');
     if (progress == null) return null;
 
     return {

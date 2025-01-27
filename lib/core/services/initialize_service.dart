@@ -12,8 +12,6 @@ class InitializeService {
     try {
       print('initialize');
 
-      
-
       final localUser = await SharedPref.getUser();
 
       var apiUser = await userController.getCurrentUser();
@@ -26,7 +24,7 @@ class InitializeService {
 
         apiUser = apiUser.copyWith(level: localUser.level, subLevel: localUser.subLevel);
       } else if (apiUser.level != null && apiUser.subLevel != null) {
-        SharedPref.setProgress(apiUser.level!, apiUser.subLevel!);
+        SharedPref.setCurrProgress(apiUser.level!, apiUser.subLevel!);
       }
 
       await SharedPref.setUser(apiUser);

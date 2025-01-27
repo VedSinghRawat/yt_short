@@ -42,14 +42,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Future<void> _handleOnScroll(int index) async {
     final contents = ref.read(contentControllerProvider).contents;
-    final userEmail = ref.read(userControllerProvider).currentUser?.email ?? '';
+    final userEmail = ref.read(userControllerProvider).currentUserEmail ?? '';
     if (index < 0 || index >= contents.length) return;
 
     final content = contents[index];
     final level = (content.speechExercise?.level ?? content.video?.level)!;
     final subLevel = (content.speechExercise?.subLevel ?? content.video?.subLevel)!;
 
-    await SharedPref.setProgress(level, subLevel);
+    await SharedPref.setCurrProgress(level, subLevel);
 
     final user = ref.read(userControllerProvider).currentUserEmail;
 
