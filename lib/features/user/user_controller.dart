@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:myapp/core/shared_pref.dart';
 import '../../apis/user_api.dart';
 import '../../models/models.dart';
 import 'dart:developer' as developer;
@@ -11,7 +12,7 @@ class UserControllerState {
   UserControllerState({
     this.user = const {},
     this.loading = false,
-    this.currentUserEmail = null,
+    this.currentUserEmail,
   });
 
   UserControllerState copyWith({
@@ -68,6 +69,8 @@ class UserController extends StateNotifier<UserControllerState> {
       if (user == null) return;
 
       await updateUser(user);
+
+      await SharedPref.setLastSync(DateTime.now().millisecondsSinceEpoch);
     } catch (e, stackTrace) {
       developer.log('Error in UserController.updateLastViewedVideo', error: e.toString(), stackTrace: stackTrace);
     }

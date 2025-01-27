@@ -8,7 +8,7 @@ class ActiveMic extends StatefulWidget {
   State<ActiveMic> createState() => _ActiveMicState();
 }
 
-class _ActiveMicState extends State<ActiveMic> with SingleTickerProviderStateMixin {
+class _ActiveMicState extends State<ActiveMic> with TickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
 
@@ -83,9 +83,9 @@ class _SineWavePainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
 
     // Draw three filled waves, each with a phase offset for color separation
-    _drawWave(canvas, center, color: const Color.fromARGB(255, 212, 108, 100).withOpacity(0.6), offset: 0.0);
-    _drawWave(canvas, center, color: const Color.fromARGB(255, 133, 211, 136).withOpacity(0.6), offset: 2 * pi / 3);
-    _drawWave(canvas, center, color: const Color.fromARGB(255, 89, 157, 212).withOpacity(0.6), offset: 4 * pi / 3);
+    _drawWave(canvas, center, color: const Color.fromRGBO(212, 108, 100, 0.6), offset: 0.0);
+    _drawWave(canvas, center, color: const Color.fromRGBO(133, 211, 136, 0.6), offset: 2 * pi / 3);
+    _drawWave(canvas, center, color: const Color.fromRGBO(89, 157, 212, 0.6), offset: 4 * pi / 3);
   }
 
   void _drawWave(

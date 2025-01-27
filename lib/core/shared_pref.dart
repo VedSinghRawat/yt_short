@@ -19,7 +19,13 @@ class SharedPref {
     return jsonDecode(value);
   }
 
-  static Future<void> _setObject(String key, Map<String, dynamic> value) async {
+  static Future<List<dynamic>?> _getList(String key) async {
+    final value = await _getValue(key);
+    if (value == null) return null;
+    return jsonDecode(value);
+  }
+
+  static Future<void> _setObject(String key, dynamic value) async {
     final encoded = jsonEncode(value);
     await _setValue(key, encoded);
   }
@@ -67,5 +73,21 @@ class SharedPref {
 
   static Future<void> setGoogleIdToken(String token) async {
     await _setValue('googleIdToken', token);
+  }
+
+  static Future<void> addActivityLog(ActivityLog activityLog) async {
+    var activityLogs = await _getList('activityLogs') ?? [];
+    activityLogs.add(activityLog.toJson());
+    await _setObject('activityLogs', activityLogs);
+  }
+
+  static Future<void> clearActivityLogs() async {
+    await _setObject('activityLogs', []);
+  }
+
+  static Future<List<ActivityLog>?> getActivityLogs() async {
+    final activityLogs = await _getList('activityLogs');
+    if (activityLogs == null) return null;
+    return activityLogs.map((e) => ActivityLog.fromJson(e)).toList();
   }
 }

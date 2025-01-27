@@ -28,7 +28,6 @@ class ContentAPI implements IContentAPI {
           json['level'] = level;
           json['subLevel'] = subLevel;
           subLevel++;
-          developer.log(json.toString());
 
           // Determine the type based on presence of specific fields
           if (json.containsKey('text')) {
