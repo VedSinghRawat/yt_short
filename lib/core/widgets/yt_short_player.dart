@@ -35,11 +35,11 @@ class _YtShortPlayerState extends State<YtShortPlayer> {
     widget.onControllerInitialized?.call(_controller);
   }
 
-  // @override
-  // void dispose() {
-  //   _controller.dispose();
-  //   super.dispose();
-  // }
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
