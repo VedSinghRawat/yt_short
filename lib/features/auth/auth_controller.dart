@@ -84,12 +84,21 @@ class AuthController extends StateNotifier<AuthControllerState> {
 
       if (user.level < kAuthRequiredLevel || !context.mounted) return true;
 
-      showConfirmationDialog(context, question: 'We notice that you have already are on level ${user.subLevel}. Do you want to go there?',
-          onResult: (result) {
-        if (result) {
-          SharedPref.setCurrProgress(user.level, user.subLevel);
-        }
-      });
+      await showConfirmationDialog(
+        context,
+        question: 'We notice that you have already are on level ${user.level}.${user.subLevel}. Do you want to go there?',
+        onResult: (result) {
+          if (result) {
+            SharedPref.setCurrProgress(user.level, user.subLevel);
+          }
+        },
+        yesButtonStyle: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
 
       return true;
     } catch (e, stackTrace) {
