@@ -82,7 +82,7 @@ class AuthController extends StateNotifier<AuthControllerState> {
 
       state = state.copyWith(authState: AuthState.authenticated);
 
-      if (user.level == null || user.subLevel! < authRequiredLevel || !context.mounted) return true;
+      if (user.level == null || user.level! < authRequiredLevel || !context.mounted) return true;
 
       await showConfirmationDialog(
         context,
