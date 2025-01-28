@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/widgets/show_confirmation_dialog.dart';
+import 'package:myapp/models/user/user.dart';
 import 'dart:developer' as developer;
 import '../../apis/auth_api.dart';
 import '../../core/utils.dart';
@@ -78,13 +79,13 @@ class AuthController extends StateNotifier<AuthControllerState> {
 
       await userController.updateUser(user);
 
-      userController.updateCurrentUserEmail(user.email);
+      userController.updateCurrentUser(user);
 
       state = state.copyWith(authState: AuthState.authenticated);
 
       if (user.level == null || user.level! < authRequiredLevel || !context.mounted) return true;
 
-      showConfirmationDialog(context, question: 'We notice that you have already are on level ${user.level!}. Do you want to go there?',
+      showConfirmationDialog(context, question: 'We notice that you have already are on level ${user.subLevel!}. Do you want to go there?',
           onResult: (result) {
         if (result) {
           SharedPref.setCurrProgress(user.level!, user.subLevel!);
@@ -97,11 +98,10 @@ class AuthController extends StateNotifier<AuthControllerState> {
       if (context.mounted) {
         showErrorSnackBar(context, e.toString());
       }
+      return false;
     } finally {
       state = state.copyWith(loading: false);
     }
-
-    return true;
   }
 
   Future<void> signOut(BuildContext context) async {
@@ -109,6 +109,9 @@ class AuthController extends StateNotifier<AuthControllerState> {
 
     try {
       await authAPI.signOut();
+
+      await userController.removeCurrentUser();
+
       state = state.copyWith(
         authState: AuthState.unauthenticated,
       );

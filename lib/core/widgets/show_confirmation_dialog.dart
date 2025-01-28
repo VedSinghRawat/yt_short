@@ -5,6 +5,8 @@ Future<void> showConfirmationDialog(
   required String question,
   required ValueChanged<bool> onResult,
 }) {
+  print("showConfirmationDialog");
+
   return showDialog(
     context: context,
     builder: (context) {

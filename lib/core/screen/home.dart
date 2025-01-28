@@ -43,7 +43,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Future<void> _handleOnScroll(int index) async {
     final contents = ref.read(contentControllerProvider).contents;
-    final userEmail = ref.read(userControllerProvider).currentUserEmail ?? '';
+    final userEmail = ref.read(userControllerProvider).currentUser?.email ?? '';
     if (index < 0 || index >= contents.length) return;
 
     final content = contents[index];
@@ -52,7 +52,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     await SharedPref.setCurrProgress(level, subLevel);
 
-    if (level > authRequiredLevel && userEmail.isEmpty && mounted) {
+    print("userEmail: $userEmail");
+
+    if (subLevel > authRequiredLevel && userEmail.isEmpty && mounted) {
       context.go(Routes.signIn);
     }
 
@@ -105,6 +107,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             onSelected: (value) {
               if (value == 'signout') {
                 ref.read(authControllerProvider.notifier).signOut(context);
+                context.go(Routes.signIn);
               }
             },
             itemBuilder: (BuildContext context) => [

@@ -53,7 +53,8 @@ class UserAPI implements IUserAPI {
         throw Exception('Failed to sync user progress: ${response.statusCode}');
       }
 
-      return UserModel.fromJson(response.data);
+
+      return UserModel.fromJson(response.data?['user']);
     } catch (e, stackTrace) {
       developer.log('Error syncing user progress', error: e.toString(), stackTrace: stackTrace);
       developer.log('Error syncing user progress', error: e.toString(), stackTrace: stackTrace);

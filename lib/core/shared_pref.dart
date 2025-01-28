@@ -91,4 +91,9 @@ class SharedPref {
     if (activityLogs == null) return null;
     return activityLogs.map((e) => ActivityLog.fromJson(e)).toList();
   }
+
+  static Future<void> clearAll() async {
+    final instance = await SharedPreferences.getInstance();
+    await instance.clear();
+  }
 }

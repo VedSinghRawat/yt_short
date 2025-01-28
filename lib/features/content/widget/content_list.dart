@@ -35,6 +35,7 @@ class _ContentsListState extends State<ContentsList> {
         _pageController.animateToPage(widget.jumpTo!, duration: const Duration(milliseconds: 650), curve: Curves.bounceInOut);
       }
     });
+  
   }
 
   void _onPageChanged() {

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:myapp/core/services/api_service.dart';
 import 'package:myapp/core/services/google_sign_in.dart';
+import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/models/user/user.dart';
 
 abstract class IAuthAPI {
@@ -46,7 +47,7 @@ class AuthAPI implements IAuthAPI {
 
       return user;
     } on DioException catch (e) {
-      throw Exception(e.response?.data?.toString());
+      throw Exception(e.response?.data?.toString() ?? e.toString());
     } catch (e, stackTrace) {
       developer.log('Error during Google Sign In', error: e.toString(), stackTrace: stackTrace);
       throw Exception(e.toString());
@@ -59,6 +60,8 @@ class AuthAPI implements IAuthAPI {
       await _googleSignIn.signOut();
       _apiService.setToken('');
       _authStateController.add(false);
+
+      await SharedPref.clearAll();
     } catch (e, stackTrace) {
       developer.log('Error during sign out', error: e.toString(), stackTrace: stackTrace);
       throw Exception(e.toString());

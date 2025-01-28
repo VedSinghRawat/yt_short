@@ -1,29 +1,31 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/core/shared_pref.dart';
 import '../../apis/user_api.dart';
 import '../../models/models.dart';
 import 'dart:developer' as developer;
 
+@immutable
 class UserControllerState {
-  final Map<String, UserModel> user;
+  final Map<String, UserModel> users;
   final bool loading;
-  final String? currentUserEmail;
+  final UserModel? currentUser;
 
-  UserControllerState({
-    this.user = const {},
+  const UserControllerState({
+    this.users = const {},
     this.loading = false,
-    this.currentUserEmail,
+    this.currentUser,
   });
 
   UserControllerState copyWith({
-    Map<String, UserModel>? user,
+    Map<String, UserModel>? users,
     bool? loading,
-    String? currentUserEmail,
+    UserModel? currentUser,
   }) {
     return UserControllerState(
-      user: user ?? this.user,
+      users: users ?? this.users,
       loading: loading ?? this.loading,
-      currentUserEmail: currentUserEmail ?? this.currentUserEmail,
+      currentUser: currentUser ?? this.currentUser,
     );
   }
 }
@@ -31,7 +33,7 @@ class UserControllerState {
 class UserController extends StateNotifier<UserControllerState> {
   final IUserAPI userAPI;
 
-  UserController(this.userAPI) : super(UserControllerState());
+  UserController(this.userAPI) : super(const UserControllerState());
 
   Future<UserModel?> getCurrentUser() async {
     state = state.copyWith(loading: true);
@@ -43,9 +45,7 @@ class UserController extends StateNotifier<UserControllerState> {
 
       await updateUser(user);
 
-      print('user: ${user.email}');
-
-      updateCurrentUserEmail(user.email);
+      updateCurrentUser(user);
 
       return user;
     } catch (e, stackTrace) {
@@ -58,11 +58,15 @@ class UserController extends StateNotifier<UserControllerState> {
   }
 
   Future<void> updateUser(UserModel user) async {
-    state = state.copyWith(user: {...state.user, user.email: user});
+    state = state.copyWith(users: {...state.users, user.email: user});
   }
 
-  updateCurrentUserEmail(String email) {
-    state = state.copyWith(currentUserEmail: email);
+  updateCurrentUser(UserModel user) {
+    state = state.copyWith(currentUser: user);
+  }
+
+  removeCurrentUser() {
+    state = state.copyWith(currentUser: null);
   }
 
   Future<void> progressSync(int level, int subLevel) async {

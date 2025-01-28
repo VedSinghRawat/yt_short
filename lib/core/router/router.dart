@@ -6,7 +6,6 @@ import 'package:myapp/features/auth/screens/sign_in_screen.dart';
 import 'package:myapp/core/screen/home.dart';
 import 'package:myapp/core/screen/suggest_version_update.dart';
 import 'package:myapp/core/screen/require_version_update.dart';
-import 'package:myapp/features/auth/widgets/auth_wrapper.dart';
 
 class Routes {
   static const home = '/';
@@ -16,8 +15,6 @@ class Routes {
 }
 
 final routerProvider = Provider<GoRouter>((ref) {
-  // final authState = ref.watch(authControllerProvider);
-
   return GoRouter(
     initialLocation: '/',
     routes: [
