@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/widgets/show_confirmation_dialog.dart';
-import 'package:myapp/models/user/user.dart';
 import 'dart:developer' as developer;
 import '../../apis/auth_api.dart';
 import '../../core/utils.dart';
@@ -83,12 +82,12 @@ class AuthController extends StateNotifier<AuthControllerState> {
 
       state = state.copyWith(authState: AuthState.authenticated);
 
-      if (user.level == null || user.level! < kAuthRequiredLevel || !context.mounted) return true;
+      if (user.level < kAuthRequiredLevel || !context.mounted) return true;
 
-      showConfirmationDialog(context, question: 'We notice that you have already are on level ${user.subLevel!}. Do you want to go there?',
+      showConfirmationDialog(context, question: 'We notice that you have already are on level ${user.subLevel}. Do you want to go there?',
           onResult: (result) {
         if (result) {
-          SharedPref.setCurrProgress(user.level!, user.subLevel!);
+          SharedPref.setCurrProgress(user.level, user.subLevel);
         }
       });
 

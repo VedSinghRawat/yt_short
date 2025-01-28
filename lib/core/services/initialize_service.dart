@@ -10,8 +10,6 @@ class InitializeService {
 
   Future<void> initialize() async {
     try {
-      print('initialize');
-
       final localUser = await SharedPref.getUser();
 
       var apiUser = await userController.getCurrentUser();
@@ -19,15 +17,14 @@ class InitializeService {
       if (apiUser == null || localUser == null) return;
 
       final localLastModified = DateTime.parse(localUser.modified);
-
       final apiLastModified = DateTime.parse(apiUser.modified);
 
-      if (localLastModified.isAfter(apiLastModified) && (localUser.level != null && localUser.subLevel != null)) {
-        await userController.progressSync(localUser.level!, localUser.subLevel!);
+      if (localLastModified.isAfter(apiLastModified)) {
+        await userController.progressSync(localUser.level, localUser.subLevel);
 
         apiUser = apiUser.copyWith(level: localUser.level, subLevel: localUser.subLevel);
-      } else if (apiUser.level != null && apiUser.subLevel != null) {
-        SharedPref.setCurrProgress(apiUser.level!, apiUser.subLevel!);
+      } else {
+        SharedPref.setCurrProgress(apiUser.level, apiUser.subLevel);
       }
 
       await SharedPref.setUser(apiUser);

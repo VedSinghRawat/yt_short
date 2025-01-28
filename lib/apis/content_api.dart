@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/core/services/api_service.dart';
 import 'package:myapp/models/models.dart';
-import 'dart:developer' as developer;
 
 abstract class IContentAPI {
   Future<List<Content>> listByLevel(int level);

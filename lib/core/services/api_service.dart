@@ -62,7 +62,9 @@ class ApiService {
     } on DioException catch (e) {
       if (e.response?.data == null ||
           e.response?.data['message'] == null ||
-          e.response?.data['message'].toLowerCase().contains('token used too late') == false) rethrow;
+          e.response?.data['message'].toLowerCase().contains('token used too late') == false) {
+        rethrow;
+      }
 
       final account = await _googleSignIn.signInSilently();
 

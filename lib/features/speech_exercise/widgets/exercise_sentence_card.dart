@@ -124,7 +124,7 @@ class _ExerciseSentenceCardState extends State<ExerciseSentenceCard> {
                                         textBaseline: TextBaseline.alphabetic,
                                       ),
                                     )
-                                  : SizedBox(height: recognizedWordHeight),
+                                  : const SizedBox(height: recognizedWordHeight),
 
                               // Target word
                               Text(
