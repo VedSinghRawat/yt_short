@@ -83,7 +83,7 @@ class AuthController extends StateNotifier<AuthControllerState> {
 
       state = state.copyWith(authState: AuthState.authenticated);
 
-      if (user.level == null || user.level! < authRequiredLevel || !context.mounted) return true;
+      if (user.level == null || user.level! < kAuthRequiredLevel || !context.mounted) return true;
 
       showConfirmationDialog(context, question: 'We notice that you have already are on level ${user.subLevel!}. Do you want to go there?',
           onResult: (result) {

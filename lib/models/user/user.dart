@@ -4,21 +4,21 @@ part 'user.g.dart';
 @JsonSerializable()
 class UserModel {
   final String email;
-  final int? level;
-  final int? subLevel;
+  final int level;
+  final int subLevel;
   final String created;
   final String modified;
-  final int? lastSeen;
-  final int? lastProgress;
+  final int lastSeen;
+  final int lastProgress;
 
   const UserModel({
     required this.email,
     required this.created,
     required this.modified,
-    this.level,
-    this.subLevel,
-    this.lastSeen,
-    this.lastProgress,
+    required this.level,
+    required this.subLevel,
+    required this.lastSeen,
+    required this.lastProgress,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) => _$UserModelFromJson(json);

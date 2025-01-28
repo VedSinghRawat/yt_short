@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/services/initialize_service.dart';
 import 'package:myapp/core/widgets/loader.dart';
-import 'package:myapp/features/user/user_controller.dart';
 
 Future<void> main() async {
   await dotenv.load(fileName: '.env');

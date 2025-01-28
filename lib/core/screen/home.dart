@@ -6,6 +6,7 @@ import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/features/activity_log/activity_log.controller.dart';
 import 'package:myapp/models/activity_log/activity_log.dart';
+import 'package:myapp/models/content/content.dart';
 import '../../features/content/content_controller.dart';
 import '../../features/content/widget/content_list.dart';
 import '../widgets/custom_app_bar.dart';
@@ -21,6 +22,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  List<Content> _contents = [];
   int? _jumpTo;
 
   @override
@@ -29,10 +31,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // Fetch videos when the screen is first loaded
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
+      await ref.read(contentControllerProvider.notifier).fetchContents();
       final progress = await SharedPref.getCurrProgress();
-      final contents = await ref.read(contentControllerProvider.notifier).fetchContents(level: progress?['level']);
+      _contents = ref
+          .read(contentControllerProvider)
+          .contentKeysByLevel[progress?['level'] ?? 1]!
+          .map((key) => ref.read(contentControllerProvider).contentMap[key]!)
+          .toList();
 
-      _jumpTo = contents.indexWhere(
+      _jumpTo = _contents.indexWhere(
         (content) =>
             content.speechExercise?.subLevel == progress?['subLevel'] && content.speechExercise?.level == progress?['level'] ||
             content.video?.subLevel == progress?['subLevel'] && content.video?.level == progress?['level'],
@@ -42,19 +49,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _handleOnScroll(int index) async {
-    final contents = ref.read(contentControllerProvider).contents;
     final userEmail = ref.read(userControllerProvider).currentUser?.email ?? '';
-    if (index < 0 || index >= contents.length) return;
+    if (index < 0 || index >= _contents.length) return;
 
-    final content = contents[index];
+    final content = _contents[index];
     final level = (content.speechExercise?.level ?? content.video?.level)!;
     final subLevel = (content.speechExercise?.subLevel ?? content.video?.subLevel)!;
 
     await SharedPref.setCurrProgress(level, subLevel);
 
-    print("userEmail: $userEmail");
-
-    if (subLevel > authRequiredLevel && userEmail.isEmpty && mounted) {
+    if (subLevel > kAuthRequiredLevel && userEmail.isEmpty && mounted) {
       context.go(Routes.signIn);
     }
 
@@ -84,13 +88,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     developer.log('HomeScreen build: $_jumpTo');
-    final contentControllerState = ref.watch(contentControllerProvider);
 
-    if (contentControllerState.loading) {
+    if (ref.read(contentControllerProvider).loading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (contentControllerState.contents.isEmpty) {
+    if (_contents.isEmpty) {
       return const Scaffold(
         body: Center(
           child: Text('No videos available'),
@@ -126,7 +129,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
       body: ContentsList(
-        contents: contentControllerState.contents,
+        contents: _contents,
         onVideoChange: _handleOnScroll,
         jumpTo: _jumpTo,
       ),

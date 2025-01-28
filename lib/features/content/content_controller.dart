@@ -1,24 +1,32 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:myapp/constants/constants.dart';
+import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'dart:developer' as developer;
 import '../../apis/content_api.dart';
 import '../../models/models.dart';
 
 class ContentControllerState {
-  final List<Content> contents;
+  // the key will be $level-$subLevel
+  final Map<String, Content> contentMap;
+  // level against the key attribute of content
+  final Map<int, Set<String>> contentKeysByLevel;
   final bool loading;
 
   ContentControllerState({
-    this.contents = const [],
+    this.contentMap = const {},
+    this.contentKeysByLevel = const {},
     this.loading = false,
   });
 
   ContentControllerState copyWith({
-    List<Content>? contents,
+    Map<String, Content>? contentMap,
+    Map<int, Set<String>>? contentKeysByLevel,
     bool? loading,
   }) {
     return ContentControllerState(
-      contents: contents ?? this.contents,
+      contentMap: contentMap ?? this.contentMap,
+      contentKeysByLevel: contentKeysByLevel ?? this.contentKeysByLevel,
       loading: loading ?? this.loading,
     );
   }
@@ -30,15 +38,26 @@ class ContentController extends StateNotifier<ContentControllerState> {
 
   ContentController({required this.userController, required this.contentAPI}) : super(ContentControllerState());
 
-  Future<List<Content>> fetchContents({int? level}) async {
+  Future<List<Content>> _listByLevel(int level) async {
     state = state.copyWith(loading: true);
 
     List<Content> contents = [];
     try {
-      final tempContents = await contentAPI.getContents(currentLevel: level);
-      contents = tempContents.map((content) => content is Video ? Content(video: content) : Content(speechExercise: content)).toList();
+      final tempContents = await contentAPI.listByLevel(level);
+      Map<String, Content> contentMap = {};
+      Map<int, Set<String>> contentKeysByLevel = {};
+      for (var content in tempContents) {
+        final level = content.speechExercise?.level ?? content.video?.level;
+        final subLevel = content.speechExercise?.subLevel ?? content.video?.subLevel;
+
+        contentMap["$level-$subLevel"] = content;
+        contentKeysByLevel[level!] = contentKeysByLevel[level] ?? {}
+          ..add("$level-$subLevel");
+      }
+
       state = state.copyWith(
-        contents: contents,
+        contentMap: contentMap,
+        contentKeysByLevel: contentKeysByLevel,
       );
     } catch (e, stackTrace) {
       developer.log('Error in ContentController.fetchVideos', error: e.toString(), stackTrace: stackTrace);
@@ -46,6 +65,29 @@ class ContentController extends StateNotifier<ContentControllerState> {
 
     state = state.copyWith(loading: false);
     return contents;
+  }
+
+  Future<List<Content>> fetchContents() async {
+    var progress = await SharedPref.getCurrProgress();
+    final currUserLevel = progress?['level'] ?? userController.currentUser?.level ?? 1;
+    final currUserSubLevel = progress?['subLevel'] ?? userController.currentUser?.subLevel ?? 1;
+
+    if (!state.contentKeysByLevel.containsKey(currUserLevel)) {
+      await _listByLevel(currUserLevel);
+    }
+
+    final currLevelKeys = state.contentKeysByLevel[currUserLevel]!;
+    final prevLevel = currUserLevel - 1;
+    if ((currUserSubLevel <= kSubLevelAPIBuffer) && !state.contentKeysByLevel.containsKey(prevLevel)) {
+      await _listByLevel(prevLevel);
+    }
+
+    final nextLevel = currUserLevel + 1;
+    if ((currUserSubLevel >= currLevelKeys.length - kSubLevelAPIBuffer) && !state.contentKeysByLevel.containsKey(nextLevel)) {
+      await _listByLevel(nextLevel);
+    }
+
+    return [];
   }
 }
 
