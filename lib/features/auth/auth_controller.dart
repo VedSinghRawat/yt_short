@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/widgets/show_confirmation_dialog.dart';
-import 'package:myapp/models/user/user.dart';
 import 'dart:developer' as developer;
 import '../../apis/auth_api.dart';
 import '../../core/utils.dart';
@@ -83,14 +82,23 @@ class AuthController extends StateNotifier<AuthControllerState> {
 
       state = state.copyWith(authState: AuthState.authenticated);
 
-      if (user.level == null || user.level! < authRequiredLevel || !context.mounted) return true;
+      if (user.level == null || user.subLevel! < authRequiredLevel || !context.mounted) return true;
 
-      showConfirmationDialog(context, question: 'We notice that you have already are on level ${user.subLevel!}. Do you want to go there?',
-          onResult: (result) {
-        if (result) {
-          SharedPref.setCurrProgress(user.level!, user.subLevel!);
-        }
-      });
+      await showConfirmationDialog(
+        context,
+        question: 'We notice that you have already are on level ${user.level!}.${user.subLevel}. Do you want to go there?',
+        onResult: (result) {
+          if (result) {
+            SharedPref.setCurrProgress(user.level!, user.subLevel!);
+          }
+        },
+        yesButtonStyle: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
 
       return true;
     } catch (e, stackTrace) {

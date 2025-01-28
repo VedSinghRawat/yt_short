@@ -4,9 +4,9 @@ Future<void> showConfirmationDialog(
   BuildContext context, {
   required String question,
   required ValueChanged<bool> onResult,
+  ButtonStyle? yesButtonStyle,
+  ButtonStyle? noButtonStyle,
 }) {
-  print("showConfirmationDialog");
-
   return showDialog(
     context: context,
     builder: (context) {
@@ -33,9 +33,10 @@ Future<void> showConfirmationDialog(
               Navigator.of(context).pop();
               onResult(false);
             },
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.grey,
-            ),
+            style: noButtonStyle ??
+                TextButton.styleFrom(
+                  foregroundColor: Colors.grey,
+                ),
             child: const Text('No'),
           ),
           ElevatedButton(
@@ -43,12 +44,13 @@ Future<void> showConfirmationDialog(
               Navigator.of(context).pop();
               onResult(true);
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
+            style: yesButtonStyle ??
+                ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
             child: const Text('Yes'),
           ),
         ],

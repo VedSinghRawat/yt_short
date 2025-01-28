@@ -52,9 +52,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     await SharedPref.setCurrProgress(level, subLevel);
 
-    print("userEmail: $userEmail");
-
-    if (subLevel > authRequiredLevel && userEmail.isEmpty && mounted) {
+    if (level > authRequiredLevel && userEmail.isEmpty && mounted) {
       context.go(Routes.signIn);
     }
 

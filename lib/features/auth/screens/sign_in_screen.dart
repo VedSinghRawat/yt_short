@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/widgets/loader.dart';
-import 'package:myapp/features/user/user_controller.dart';
 import '../auth_controller.dart';
 import '../../../core/widgets/custom_app_bar.dart';
 
