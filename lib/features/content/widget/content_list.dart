@@ -53,7 +53,7 @@ class _ContentsListState extends State<ContentsList> {
   }
 
   @override
-  Future<void> didUpdateWidget(covariant ContentsList oldWidget) async {
+  void didUpdateWidget(covariant ContentsList oldWidget) {
     super.didUpdateWidget(oldWidget);
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
       if (oldWidget.contents.length != widget.contents.length) {
@@ -90,6 +90,7 @@ class _ContentsListState extends State<ContentsList> {
 
     return PageView.builder(
       controller: _pageController,
+      allowImplicitScrolling: true,
       itemCount: widget.contents.length,
       scrollDirection: Axis.vertical,
       onPageChanged: (index) {

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/shared_pref.dart';
@@ -108,17 +109,9 @@ class ContentController extends StateNotifier<ContentControllerState> {
     }
 
     // Update levels to show
-    if (!_areListsEqual(state.levelsToShow, levelsToShow)) {
+    if (!listEquals(state.levelsToShow, levelsToShow)) {
       state = state.copyWith(levelsToShow: levelsToShow);
     }
-  }
-
-  bool _areListsEqual(List<int> a, List<int> b) {
-    if (a.length != b.length) return false;
-    for (int i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) return false;
-    }
-    return true;
   }
 }
 

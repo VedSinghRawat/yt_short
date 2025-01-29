@@ -86,7 +86,7 @@ class AuthController extends StateNotifier<AuthControllerState> {
 
       await showConfirmationDialog(
         context,
-        question: 'We notice that you have already are on level ${user.level}.${user.subLevel}. Do you want to go there?',
+        question: 'We notice that you are already on Level: ${user.level} SubLevel: ${user.subLevel}. Do you continue from there?',
         onResult: (result) {
           if (result) {
             SharedPref.setCurrProgress(user.level, user.subLevel);
