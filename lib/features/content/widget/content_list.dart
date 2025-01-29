@@ -32,8 +32,10 @@ class _ContentsListState extends State<ContentsList> {
 
       final jumpTo = widget.contents.indexWhere(
         (content) =>
-            content.speechExercise?.subLevel == progress?['subLevel'] && content.speechExercise?.level == progress?['level'] ||
-            content.video?.subLevel == progress?['subLevel'] && content.video?.level == progress?['level'],
+            content.speechExercise?.subLevel == progress?['subLevel'] &&
+                content.speechExercise?.level == progress?['level'] ||
+            content.video?.subLevel == progress?['subLevel'] &&
+                content.video?.level == progress?['level'],
       );
 
       if (jumpTo < widget.contents.length && jumpTo >= 0) {
@@ -59,8 +61,10 @@ class _ContentsListState extends State<ContentsList> {
         final progress = await SharedPref.getCurrProgress();
         final jumpTo = widget.contents.indexWhere(
           (content) =>
-              content.speechExercise?.subLevel == progress?['subLevel'] && content.speechExercise?.level == progress?['level'] ||
-              content.video?.subLevel == progress?['subLevel'] && content.video?.level == progress?['level'],
+              content.speechExercise?.subLevel == progress?['subLevel'] &&
+                  content.speechExercise?.level == progress?['level'] ||
+              content.video?.subLevel == progress?['subLevel'] &&
+                  content.video?.level == progress?['level'],
         );
 
         if (jumpTo < widget.contents.length && jumpTo >= 0) {
@@ -126,7 +130,8 @@ class _ContentsListState extends State<ContentsList> {
             children: [
               Center(
                 child: SpeechExerciseScreen(
-                  key: ValueKey('${content.speechExercise!.level}-${content.speechExercise!.subLevel}'),
+                  key: ValueKey(
+                      '${content.speechExercise!.level}-${content.speechExercise!.subLevel}'),
                   exercise: content.speechExercise!,
                 ),
               ),

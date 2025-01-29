@@ -56,7 +56,9 @@ class SignInScreen extends ConsumerWidget {
                     onPressed: isLoading
                         ? null
                         : () async {
-                            final isLoggedIn = await ref.read(authControllerProvider.notifier).signInWithGoogle(context);
+                            final isLoggedIn = await ref
+                                .read(authControllerProvider.notifier)
+                                .signInWithGoogle(context);
 
                             if (isLoggedIn && context.mounted) context.go(Routes.home);
                           },

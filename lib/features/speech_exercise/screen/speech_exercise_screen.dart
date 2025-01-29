@@ -25,7 +25,9 @@ class _SpeechExerciseScreenState extends State<SpeechExerciseScreen> {
     _controller = controller;
 
     controller.addListener(() {
-      if (!_hasShownDialog && controller.value.position.inSeconds >= widget.exercise.pauseAt && controller.value.isPlaying) {
+      if (!_hasShownDialog &&
+          controller.value.position.inSeconds >= widget.exercise.pauseAt &&
+          controller.value.isPlaying) {
         controller.pause();
         _showTestSentenceDialog();
       }

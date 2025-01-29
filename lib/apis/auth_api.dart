@@ -72,5 +72,6 @@ class AuthAPI implements IAuthAPI {
 }
 
 final authAPIProvider = Provider<AuthAPI>((ref) {
-  return AuthAPI(apiService: ref.read(apiServiceProvider), googleSignIn: ref.read(googleSignInProvider));
+  return AuthAPI(
+      apiService: ref.read(apiServiceProvider), googleSignIn: ref.read(googleSignInProvider));
 });

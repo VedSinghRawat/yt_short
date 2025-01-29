@@ -35,7 +35,11 @@ class ApiService {
   }) async {
     final String? token = await getToken();
 
-    final effectiveHeaders = {'Content-Type': 'application/json', if (token != null) 'Authorization': 'Bearer $token', ...?headers};
+    final effectiveHeaders = {
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+      ...?headers
+    };
 
     try {
       final options = Options(method: method.name.toUpperCase(), headers: effectiveHeaders);
@@ -58,7 +62,8 @@ class ApiService {
     Map<String, String>? headers,
   }) async {
     try {
-      return await _makeRequest<T>(endpoint: endpoint, method: method, body: body, headers: headers);
+      return await _makeRequest<T>(
+          endpoint: endpoint, method: method, body: body, headers: headers);
     } on DioException catch (e) {
       developer.log('DioException: ${e.response}');
       if (e.response?.data == null ||
@@ -76,7 +81,8 @@ class ApiService {
         if (idToken == null) rethrow;
 
         await setToken(idToken);
-        return await _makeRequest<T>(endpoint: endpoint, method: method, body: body, headers: headers);
+        return await _makeRequest<T>(
+            endpoint: endpoint, method: method, body: body, headers: headers);
       }
 
       rethrow;

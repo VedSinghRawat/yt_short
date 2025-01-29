@@ -19,11 +19,13 @@ class AuthControllerState {
   const AuthControllerState({required this.authState, required this.loading});
 
   // Initial state factory constructor
-  factory AuthControllerState.initial() => const AuthControllerState(authState: AuthState.initial, loading: false);
+  factory AuthControllerState.initial() =>
+      const AuthControllerState(authState: AuthState.initial, loading: false);
 
   // CopyWith method for immutable state updates
   AuthControllerState copyWith({AuthState? authState, bool? loading}) {
-    return AuthControllerState(authState: authState ?? this.authState, loading: loading ?? this.loading);
+    return AuthControllerState(
+        authState: authState ?? this.authState, loading: loading ?? this.loading);
   }
 }
 
@@ -84,7 +86,8 @@ class AuthController extends StateNotifier<AuthControllerState> {
 
       await showConfirmationDialog(
         context,
-        question: 'We notice that you are already on Level: ${user.level} SubLevel: ${user.subLevel}. Do you continue from there?',
+        question:
+            'We notice that you are already on Level: ${user.level} SubLevel: ${user.subLevel}. Do you continue from there?',
         onResult: (result) {
           if (result) {
             SharedPref.setCurrProgress(user.level, user.subLevel);
@@ -100,7 +103,8 @@ class AuthController extends StateNotifier<AuthControllerState> {
 
       return true;
     } catch (e, stackTrace) {
-      developer.log('Error in AuthController.signInWithGoogle', error: e.toString(), stackTrace: stackTrace);
+      developer.log('Error in AuthController.signInWithGoogle',
+          error: e.toString(), stackTrace: stackTrace);
       if (context.mounted) {
         showErrorSnackBar(context, e.toString());
       }

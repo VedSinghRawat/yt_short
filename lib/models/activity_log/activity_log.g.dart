@@ -13,8 +13,7 @@ ActivityLog _$ActivityLogFromJson(Map<String, dynamic> json) => ActivityLog(
       timestamp: (json['timestamp'] as num).toInt(),
     );
 
-Map<String, dynamic> _$ActivityLogToJson(ActivityLog instance) =>
-    <String, dynamic>{
+Map<String, dynamic> _$ActivityLogToJson(ActivityLog instance) => <String, dynamic>{
       'subLevel': instance.subLevel,
       'level': instance.level,
       'userEmail': instance.userEmail,

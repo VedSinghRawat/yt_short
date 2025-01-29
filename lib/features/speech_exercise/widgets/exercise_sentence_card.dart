@@ -24,7 +24,8 @@ class _ExerciseSentenceCardState extends State<ExerciseSentenceCard> {
   late SpeechRecognizer _recognizer;
   late List<String> recognizedWords;
   bool get passed => wordMarking.every((mark) => mark == true);
-  bool get failed => recognizedWords.where((word) => word.isNotEmpty).toList().length == words.length && !passed;
+  bool get failed =>
+      recognizedWords.where((word) => word.isNotEmpty).toList().length == words.length && !passed;
   bool get testCompleted => passed || failed;
 
   @override
@@ -48,7 +49,8 @@ class _ExerciseSentenceCardState extends State<ExerciseSentenceCard> {
 
   void _onSpeechResult(SpeechRecognitionResult result) {
     setState(() {
-      List<String> currRecognizedWords = result.recognizedWords.split(' ').where((word) => word.isNotEmpty).toList();
+      List<String> currRecognizedWords =
+          result.recognizedWords.split(' ').where((word) => word.isNotEmpty).toList();
       if (currRecognizedWords.isEmpty) {
         offset = recognizedWords.where((word) => word.isNotEmpty).length;
         return;
@@ -138,7 +140,8 @@ class _ExerciseSentenceCardState extends State<ExerciseSentenceCard> {
                                               ? Colors.red
                                               : Colors.white,
                                   fontSize: 24,
-                                  fontWeight: wordMarking[i] != null ? FontWeight.bold : FontWeight.normal,
+                                  fontWeight:
+                                      wordMarking[i] != null ? FontWeight.bold : FontWeight.normal,
                                   height: 1.4,
                                   textBaseline: TextBaseline.alphabetic,
                                 ),

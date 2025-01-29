@@ -19,7 +19,9 @@ class AuthWrapper extends ConsumerWidget {
     final authState = ref.watch(authControllerProvider);
 
     SharedPref.getCurrProgress().then((value) {
-      if (value?['level'] != null && value?['level']! > kAuthRequiredLevel && authState.authState == AuthState.unauthenticated) {
+      if (value?['level'] != null &&
+          value?['level']! > kAuthRequiredLevel &&
+          authState.authState == AuthState.unauthenticated) {
         return const SignInScreen();
       }
 

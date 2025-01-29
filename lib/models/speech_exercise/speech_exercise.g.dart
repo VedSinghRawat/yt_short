@@ -6,8 +6,7 @@ part of 'speech_exercise.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-SpeechExercise _$SpeechExerciseFromJson(Map<String, dynamic> json) =>
-    SpeechExercise(
+SpeechExercise _$SpeechExerciseFromJson(Map<String, dynamic> json) => SpeechExercise(
       ytId: json['ytId'] as String,
       text: json['text'] as String,
       pauseAt: (json['pauseAt'] as num).toInt(),
@@ -18,8 +17,7 @@ SpeechExercise _$SpeechExerciseFromJson(Map<String, dynamic> json) =>
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
 
-Map<String, dynamic> _$SpeechExerciseToJson(SpeechExercise instance) =>
-    <String, dynamic>{
+Map<String, dynamic> _$SpeechExerciseToJson(SpeechExercise instance) => <String, dynamic>{
       'ytId': instance.ytId,
       'text': instance.text,
       'pauseAt': instance.pauseAt,
