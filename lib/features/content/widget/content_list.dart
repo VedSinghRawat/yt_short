@@ -38,18 +38,17 @@ class _ContentsListState extends State<ContentsList> {
                 content.video?.level == progress?['level'],
       );
 
-      if (jumpTo < widget.contents.length && jumpTo >= 0) {
-        _isAnimating = true;
-        _pageController
-            .animateToPage(
-          jumpTo,
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-        )
-            .then((_) {
-          _isAnimating = false;
-        });
-      }
+      if (jumpTo >= widget.contents.length || jumpTo < 0) return;
+      _isAnimating = true;
+      _pageController
+          .animateToPage(
+            jumpTo,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+          )
+          .then(
+            (_) => _isAnimating = false,
+          );
     });
   }
 
@@ -89,7 +88,7 @@ class _ContentsListState extends State<ContentsList> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
+                    color: Colors.black.withValues(alpha: 0.7),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -120,7 +119,7 @@ class _ContentsListState extends State<ContentsList> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
+                    color: Colors.black.withValues(alpha: 0.7),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
