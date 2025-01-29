@@ -42,7 +42,8 @@ class ContentController extends StateNotifier<ContentControllerState> {
   final UserControllerState userController;
   final IContentAPI contentAPI;
 
-  ContentController({required this.userController, required this.contentAPI}) : super(ContentControllerState());
+  ContentController({required this.userController, required this.contentAPI})
+      : super(ContentControllerState());
 
   Future<List<Content>> _listByLevel(int level) async {
     if (state.contentKeysByLevel.containsKey(level)) return [];
@@ -66,7 +67,8 @@ class ContentController extends StateNotifier<ContentControllerState> {
         contentKeysByLevel: contentKeysByLevel,
       );
     } catch (e, stackTrace) {
-      developer.log('Error in ContentController._listByLevel', error: e.toString(), stackTrace: stackTrace);
+      developer.log('Error in ContentController._listByLevel',
+          error: e.toString(), stackTrace: stackTrace);
     } finally {
       state = state.copyWith(loading: false);
     }
@@ -79,8 +81,6 @@ class ContentController extends StateNotifier<ContentControllerState> {
     var progress = await SharedPref.getCurrProgress();
     final currUserLevel = progress?['level'] ?? userController.currentUser?.level ?? 1;
     final currUserSubLevel = progress?['subLevel'] ?? userController.currentUser?.subLevel ?? 1;
-
-    developer.log('fetchContents: $currUserLevel $currUserSubLevel');
 
     List<int> levelsToShow = [currUserLevel];
 
@@ -115,7 +115,8 @@ class ContentController extends StateNotifier<ContentControllerState> {
   }
 }
 
-final contentControllerProvider = StateNotifierProvider<ContentController, ContentControllerState>((ref) {
+final contentControllerProvider =
+    StateNotifierProvider<ContentController, ContentControllerState>((ref) {
   final userController = ref.read(userControllerProvider);
   final contentAPI = ref.read(contentAPIProvider);
   return ContentController(contentAPI: contentAPI, userController: userController);

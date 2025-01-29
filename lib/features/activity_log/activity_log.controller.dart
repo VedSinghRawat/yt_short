@@ -1,4 +1,3 @@
-import 'dart:developer' as developer;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/apis/activity_log_api.dart';
 import 'package:myapp/models/activity_log/activity_log.dart';
@@ -26,16 +25,13 @@ class ActivityLogController extends StateNotifier<ActivityLogControllerState> {
 
   Future<void> syncActivityLogs(List<ActivityLog> activityLogs) async {
     state = state.copyWith(loading: true);
-    try {
-      await activityLogAPI.syncActivityLogs(activityLogs);
-    } catch (e, stackTrace) {
-      developer.log('Error syncing activity logs', error: e.toString(), stackTrace: stackTrace);
-    }
+    await activityLogAPI.syncActivityLogs(activityLogs);
     state = state.copyWith(loading: false);
   }
 }
 
-final activityLogControllerProvider = StateNotifierProvider<ActivityLogController, ActivityLogControllerState>((ref) {
+final activityLogControllerProvider =
+    StateNotifierProvider<ActivityLogController, ActivityLogControllerState>((ref) {
   final activityLogAPI = ref.read(activityLogAPIProvider);
   return ActivityLogController(activityLogAPI);
 });

@@ -76,9 +76,7 @@ class AuthController extends StateNotifier<AuthControllerState> {
 
       if (user == null) return false;
 
-      await userController.updateUser(user);
-
-      userController.updateCurrentUser(user);
+      await userController.updateCurrentUser(user);
 
       state = state.copyWith(authState: AuthState.authenticated);
 

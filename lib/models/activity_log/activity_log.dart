@@ -7,13 +7,13 @@ class ActivityLog {
   final int subLevel;
   final int level;
   final String userEmail;
-  final DateTime created;
+  final int timestamp;
 
   const ActivityLog({
     required this.subLevel,
     required this.level,
     required this.userEmail,
-    required this.created,
+    required this.timestamp,
   });
 
   factory ActivityLog.fromJson(Map<String, dynamic> json) => _$ActivityLogFromJson(json);

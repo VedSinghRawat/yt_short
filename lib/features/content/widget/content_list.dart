@@ -1,4 +1,3 @@
-import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/widgets/yt_short_player.dart';
@@ -57,8 +56,6 @@ class _ContentsListState extends State<ContentsList> {
     super.didUpdateWidget(oldWidget);
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
       if (oldWidget.contents.length != widget.contents.length) {
-        developer.log('ContentsList didUpdateWidget: ${widget.contents.length}');
-
         final progress = await SharedPref.getCurrProgress();
         final jumpTo = widget.contents.indexWhere(
           (content) =>
@@ -81,13 +78,6 @@ class _ContentsListState extends State<ContentsList> {
 
   @override
   Widget build(BuildContext context) {
-    // for (var content in widget.contents) {
-    //   developer.log(
-    //     'ContentsList build: ${content.speechExercise?.level ?? content.video?.level}-${content.speechExercise?.subLevel ?? content.video?.subLevel}',
-    //   );
-    // }
-    developer.log('ContentsList build: ${widget.contents.length}');
-
     return PageView.builder(
       controller: _pageController,
       allowImplicitScrolling: true,

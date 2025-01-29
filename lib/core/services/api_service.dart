@@ -60,7 +60,9 @@ class ApiService {
     try {
       return await _makeRequest<T>(endpoint: endpoint, method: method, body: body, headers: headers);
     } on DioException catch (e) {
+      developer.log('DioException: ${e.response}');
       if (e.response?.data == null ||
+          e.response?.data is! Map<String, dynamic> ||
           e.response?.data['message'] == null ||
           e.response?.data['message'].toLowerCase().contains('token used too late') == false) {
         rethrow;
@@ -70,13 +72,10 @@ class ApiService {
 
       if (account != null) {
         final auth = await account.authentication;
-
         final idToken = auth.idToken;
-
         if (idToken == null) rethrow;
 
         await setToken(idToken);
-
         return await _makeRequest<T>(endpoint: endpoint, method: method, body: body, headers: headers);
       }
 

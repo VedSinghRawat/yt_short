@@ -38,11 +38,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final contentsByLevel = ref.read(contentControllerProvider).contentKeysByLevel;
     final contentMap = ref.read(contentControllerProvider).contentMap;
     final levelsToShow = ref.watch(contentControllerProvider.select((state) => state.levelsToShow));
-    final contents =
-        levelsToShow.fold<List<Content>>([], (acc, level) => acc + (contentsByLevel[level] ?? []).map((key) => contentMap[key]!).toList());
-
-    developer.log('HomeScreen build: $levelsToShow');
-    developer.log('HomeScreen build: ${contents.length}');
+    final contents = levelsToShow.fold<List<Content>>(
+      [],
+      (acc, level) => acc + (contentsByLevel[level] ?? []).map((key) => contentMap[key]!).toList(),
+    );
 
     if (loading) {
       return const Center(child: CircularProgressIndicator());
@@ -95,7 +94,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
           await SharedPref.setCurrProgress(level, subLevel);
 
-          if (level > kAuthRequiredLevel && userEmail.isEmpty && mounted) {
+          if (level > kAuthRequiredLevel && userEmail.isEmpty && context.mounted) {
             context.go(Routes.signIn);
           }
 
@@ -103,15 +102,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           await ref.read(contentControllerProvider.notifier).fetchContents();
 
           if (userEmail.isNotEmpty) {
-            await SharedPref.addActivityLog(ActivityLog(subLevel: subLevel, level: level, userEmail: userEmail, created: DateTime.now()));
+            await SharedPref.addActivityLog(ActivityLog(
+              subLevel: subLevel,
+              level: level,
+              userEmail: userEmail,
+              timestamp: DateTime.now().millisecondsSinceEpoch,
+            ));
           }
 
-          const minDiff = Duration.millisecondsPerMinute * 10;
+          const minDiff = Duration.millisecondsPerMinute * 3;
           final lastSync = await SharedPref.getLastSync();
 
           final now = DateTime.now().millisecondsSinceEpoch;
 
-          if ((now - lastSync) < minDiff) return;
+          final diff = now - lastSync;
+          developer.log('minDiff: $minDiff, diff: $diff');
+          if (diff < minDiff) return;
 
           if (userEmail.isNotEmpty) {
             await ref.read(userControllerProvider.notifier).progressSync(level, subLevel);
@@ -120,7 +126,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           final activityLogs = await SharedPref.getActivityLogs();
           if (activityLogs == null || activityLogs.isEmpty) return;
           await ref.read(activityLogControllerProvider.notifier).syncActivityLogs(activityLogs);
+
           await SharedPref.clearActivityLogs();
+          await SharedPref.setLastSync(DateTime.now().millisecondsSinceEpoch);
         },
       ),
     );
