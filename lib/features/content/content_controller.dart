@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/shared_pref.dart';
@@ -12,27 +11,23 @@ class ContentControllerState {
   final Map<String, Content> contentMap;
   // level against the key attribute of content
   final Map<int, List<String>> contentKeysByLevel;
-  // the content keys (level-subLevel) to show in the home screen
-  final List<int> levelsToShow;
+
   final bool loading;
 
   ContentControllerState({
     this.contentMap = const {},
     this.contentKeysByLevel = const {},
-    this.levelsToShow = const [],
     this.loading = false,
   });
 
   ContentControllerState copyWith({
     Map<String, Content>? contentMap,
     Map<int, List<String>>? contentKeysByLevel,
-    List<int>? levelsToShow,
     bool? loading,
   }) {
     return ContentControllerState(
       contentMap: contentMap ?? this.contentMap,
       contentKeysByLevel: contentKeysByLevel ?? this.contentKeysByLevel,
-      levelsToShow: levelsToShow ?? this.levelsToShow,
       loading: loading ?? this.loading,
     );
   }
@@ -82,7 +77,7 @@ class ContentController extends StateNotifier<ContentControllerState> {
     final currUserLevel = progress?['level'] ?? userController.currentUser?.level ?? 1;
     final currUserSubLevel = progress?['subLevel'] ?? userController.currentUser?.subLevel ?? 1;
 
-    List<int> levelsToShow = [currUserLevel];
+    developer.log('fetchContents: $currUserLevel $currUserSubLevel');
 
     // Fetch the current level if not already in cache
     if (!state.contentKeysByLevel.containsKey(currUserLevel)) {
@@ -91,26 +86,21 @@ class ContentController extends StateNotifier<ContentControllerState> {
 
     // Fetch previous level if near start of sublevels
     final prevLevel = currUserLevel - 1;
+
     if (currUserSubLevel <= kSubLevelAPIBuffer && prevLevel >= 1) {
       if (!state.contentKeysByLevel.containsKey(prevLevel)) {
         await _listByLevel(prevLevel);
       }
-      levelsToShow.insert(0, prevLevel);
     }
 
     // Fetch next level if near the end of sublevels
     final currLevelKeys = state.contentKeysByLevel[currUserLevel] ?? [];
     final nextLevel = currUserLevel + 1;
+
     if (currUserSubLevel >= currLevelKeys.length - kSubLevelAPIBuffer) {
       if (!state.contentKeysByLevel.containsKey(nextLevel)) {
         await _listByLevel(nextLevel);
       }
-      levelsToShow.add(nextLevel);
-    }
-
-    // Update levels to show
-    if (!listEquals(state.levelsToShow, levelsToShow)) {
-      state = state.copyWith(levelsToShow: levelsToShow);
     }
   }
 }

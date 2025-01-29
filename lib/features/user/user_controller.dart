@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/apis/user_api.dart';
+import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/models/models.dart';
 import 'dart:developer' as developer;
 
@@ -34,6 +35,10 @@ class UserController extends StateNotifier<UserControllerState> {
     state = state.copyWith(loading: true);
 
     try {
+      final authToken = await SharedPref.getGoogleIdToken();
+
+      if (authToken == null) return null;
+
       final user = await userAPI.getUser();
 
       if (user == null) return null;
