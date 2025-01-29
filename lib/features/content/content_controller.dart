@@ -10,23 +10,28 @@ class ContentControllerState {
   // the key will be $level-$subLevel
   final Map<String, Content> contentMap;
   // level against the key attribute of content
-  final Map<int, Set<String>> contentKeysByLevel;
+  final Map<int, List<String>> contentKeysByLevel;
+  // the content keys (level-subLevel) to show in the home screen
+  final List<int> levelsToShow;
   final bool loading;
 
   ContentControllerState({
     this.contentMap = const {},
     this.contentKeysByLevel = const {},
+    this.levelsToShow = const [],
     this.loading = false,
   });
 
   ContentControllerState copyWith({
     Map<String, Content>? contentMap,
-    Map<int, Set<String>>? contentKeysByLevel,
+    Map<int, List<String>>? contentKeysByLevel,
+    List<int>? levelsToShow,
     bool? loading,
   }) {
     return ContentControllerState(
       contentMap: contentMap ?? this.contentMap,
       contentKeysByLevel: contentKeysByLevel ?? this.contentKeysByLevel,
+      levelsToShow: levelsToShow ?? this.levelsToShow,
       loading: loading ?? this.loading,
     );
   }
@@ -39,19 +44,19 @@ class ContentController extends StateNotifier<ContentControllerState> {
   ContentController({required this.userController, required this.contentAPI}) : super(ContentControllerState());
 
   Future<List<Content>> _listByLevel(int level) async {
-    state = state.copyWith(loading: true);
+    if (state.contentKeysByLevel.containsKey(level)) return [];
 
-    List<Content> contents = [];
+    state = state.copyWith(loading: true);
     try {
       final tempContents = await contentAPI.listByLevel(level);
-      Map<String, Content> contentMap = {};
-      Map<int, Set<String>> contentKeysByLevel = {};
+      Map<String, Content> contentMap = Map.from(state.contentMap);
+      Map<int, List<String>> contentKeysByLevel = Map.from(state.contentKeysByLevel);
+
       for (var content in tempContents) {
         final level = content.speechExercise?.level ?? content.video?.level;
         final subLevel = content.speechExercise?.subLevel ?? content.video?.subLevel;
-
         contentMap["$level-$subLevel"] = content;
-        contentKeysByLevel[level!] = contentKeysByLevel[level] ?? {}
+        contentKeysByLevel[level!] = contentKeysByLevel[level] ?? []
           ..add("$level-$subLevel");
       }
 
@@ -60,34 +65,60 @@ class ContentController extends StateNotifier<ContentControllerState> {
         contentKeysByLevel: contentKeysByLevel,
       );
     } catch (e, stackTrace) {
-      developer.log('Error in ContentController.fetchVideos', error: e.toString(), stackTrace: stackTrace);
+      developer.log('Error in ContentController._listByLevel', error: e.toString(), stackTrace: stackTrace);
+    } finally {
+      state = state.copyWith(loading: false);
     }
-
-    state = state.copyWith(loading: false);
-    return contents;
+    return [];
   }
 
-  Future<List<Content>> fetchContents() async {
+  Future<void> fetchContents() async {
+    if (state.loading) return;
+
     var progress = await SharedPref.getCurrProgress();
     final currUserLevel = progress?['level'] ?? userController.currentUser?.level ?? 1;
     final currUserSubLevel = progress?['subLevel'] ?? userController.currentUser?.subLevel ?? 1;
 
+    developer.log('fetchContents: $currUserLevel $currUserSubLevel');
+
+    List<int> levelsToShow = [currUserLevel];
+
+    // Fetch the current level if not already in cache
     if (!state.contentKeysByLevel.containsKey(currUserLevel)) {
       await _listByLevel(currUserLevel);
     }
 
-    final currLevelKeys = state.contentKeysByLevel[currUserLevel]!;
+    // Fetch previous level if near start of sublevels
     final prevLevel = currUserLevel - 1;
-    if ((currUserSubLevel <= kSubLevelAPIBuffer) && !state.contentKeysByLevel.containsKey(prevLevel)) {
-      await _listByLevel(prevLevel);
+    if (currUserSubLevel <= kSubLevelAPIBuffer && prevLevel >= 1) {
+      if (!state.contentKeysByLevel.containsKey(prevLevel)) {
+        await _listByLevel(prevLevel);
+      }
+      levelsToShow.insert(0, prevLevel);
     }
 
+    // Fetch next level if near the end of sublevels
+    final currLevelKeys = state.contentKeysByLevel[currUserLevel] ?? [];
     final nextLevel = currUserLevel + 1;
-    if ((currUserSubLevel >= currLevelKeys.length - kSubLevelAPIBuffer) && !state.contentKeysByLevel.containsKey(nextLevel)) {
-      await _listByLevel(nextLevel);
+    if (currUserSubLevel >= currLevelKeys.length - kSubLevelAPIBuffer) {
+      if (!state.contentKeysByLevel.containsKey(nextLevel)) {
+        await _listByLevel(nextLevel);
+      }
+      levelsToShow.add(nextLevel);
     }
 
-    return [];
+    // Update levels to show
+    if (!_areListsEqual(state.levelsToShow, levelsToShow)) {
+      state = state.copyWith(levelsToShow: levelsToShow);
+    }
+  }
+
+  bool _areListsEqual(List<int> a, List<int> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 }
 

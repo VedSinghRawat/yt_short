@@ -1,5 +1,6 @@
 import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
+import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/widgets/yt_short_player.dart';
 import 'package:myapp/features/speech_exercise/screen/speech_exercise_screen.dart';
 import '../../../models/models.dart';
@@ -7,13 +8,11 @@ import '../../../models/models.dart';
 class ContentsList extends StatefulWidget {
   final List<Content> contents;
   final Function(int index)? onVideoChange;
-  final int? jumpTo;
 
   const ContentsList({
     super.key,
     required this.contents,
     this.onVideoChange,
-    this.jumpTo,
   });
 
   @override
@@ -22,28 +21,56 @@ class ContentsList extends StatefulWidget {
 
 class _ContentsListState extends State<ContentsList> {
   late PageController _pageController;
-  int _currentPage = 0;
+  bool _isAnimating = false;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
-    _pageController.addListener(_onPageChanged);
 
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      if (widget.jumpTo != null && widget.jumpTo! < widget.contents.length && widget.jumpTo! >= 0) {
-        _pageController.animateToPage(widget.jumpTo!, duration: const Duration(milliseconds: 650), curve: Curves.bounceInOut);
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
+      final progress = await SharedPref.getCurrProgress();
+
+      final jumpTo = widget.contents.indexWhere(
+        (content) =>
+            content.speechExercise?.subLevel == progress?['subLevel'] && content.speechExercise?.level == progress?['level'] ||
+            content.video?.subLevel == progress?['subLevel'] && content.video?.level == progress?['level'],
+      );
+
+      if (jumpTo < widget.contents.length && jumpTo >= 0) {
+        _isAnimating = true;
+        _pageController
+            .animateToPage(
+          jumpTo,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        )
+            .then((_) {
+          _isAnimating = false;
+        });
       }
     });
-  
   }
 
-  void _onPageChanged() {
-    int newPage = _pageController.page?.round() ?? 0;
-    if (newPage == _currentPage) return;
+  @override
+  Future<void> didUpdateWidget(covariant ContentsList oldWidget) async {
+    super.didUpdateWidget(oldWidget);
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
+      if (oldWidget.contents.length != widget.contents.length) {
+        developer.log('ContentsList didUpdateWidget: ${widget.contents.length}');
 
-    setState(() => _currentPage = newPage);
-    widget.onVideoChange?.call(newPage);
+        final progress = await SharedPref.getCurrProgress();
+        final jumpTo = widget.contents.indexWhere(
+          (content) =>
+              content.speechExercise?.subLevel == progress?['subLevel'] && content.speechExercise?.level == progress?['level'] ||
+              content.video?.subLevel == progress?['subLevel'] && content.video?.level == progress?['level'],
+        );
+
+        if (jumpTo < widget.contents.length && jumpTo >= 0) {
+          _pageController.jumpToPage(jumpTo);
+        }
+      }
+    });
   }
 
   @override
@@ -54,27 +81,84 @@ class _ContentsListState extends State<ContentsList> {
 
   @override
   Widget build(BuildContext context) {
-    developer.log('ContentsList build: ${widget.contents}');
+    // for (var content in widget.contents) {
+    //   developer.log(
+    //     'ContentsList build: ${content.speechExercise?.level ?? content.video?.level}-${content.speechExercise?.subLevel ?? content.video?.subLevel}',
+    //   );
+    // }
+    developer.log('ContentsList build: ${widget.contents.length}');
+
     return PageView.builder(
       controller: _pageController,
       itemCount: widget.contents.length,
       scrollDirection: Axis.vertical,
+      onPageChanged: (index) {
+        if (!_isAnimating) {
+          widget.onVideoChange?.call(index);
+        }
+      },
       itemBuilder: (context, index) {
         final content = widget.contents[index];
 
         if (content.video != null) {
-          return Center(
-            child: YtShortPlayer(
-              key: ValueKey('${content.video!.level}-${content.video!.subLevel}'),
-              videoId: content.video!.ytId,
-            ),
+          return Stack(
+            children: [
+              Center(
+                child: YtShortPlayer(
+                  key: ValueKey('${content.video!.level}-${content.video!.subLevel}'),
+                  videoId: content.video!.ytId,
+                ),
+              ),
+              Positioned(
+                top: 16,
+                right: 16,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'Level ${content.video!.level}-${content.video!.subLevel}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           );
         } else if (content.speechExercise != null) {
-          return Center(
-            child: SpeechExerciseScreen(
-              key: ValueKey('${content.speechExercise!.level}-${content.speechExercise!.subLevel}'),
-              exercise: content.speechExercise!,
-            ),
+          return Stack(
+            children: [
+              Center(
+                child: SpeechExerciseScreen(
+                  key: ValueKey('${content.speechExercise!.level}-${content.speechExercise!.subLevel}'),
+                  exercise: content.speechExercise!,
+                ),
+              ),
+              Positioned(
+                top: 16,
+                right: 16,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'Level ${content.speechExercise!.level}-${content.speechExercise!.subLevel}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           );
         }
 

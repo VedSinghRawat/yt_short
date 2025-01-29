@@ -1,6 +1,7 @@
 import 'dart:convert';
+import 'package:dio/dio.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:myapp/core/services/api_service.dart';
 import 'package:myapp/models/models.dart';
 
 abstract class IContentAPI {
@@ -8,31 +9,36 @@ abstract class IContentAPI {
 }
 
 class ContentAPI implements IContentAPI {
-  final ApiService _apiService;
-
-  ContentAPI({required ApiService apiService}) : _apiService = apiService;
+  ContentAPI();
 
   @override
   Future<List<Content>> listByLevel(int level) async {
-    final response = await _apiService.call(endpoint: '/content/$level.json', method: Method.get);
+    final dio = Dio();
+    final response = await dio.get('${dotenv.env['S3_BASE_URL']}/content/$level.json');
+
+    if (response.statusCode != 200) {
+      throw Exception("Failed to fetch content for level $level");
+    }
 
     final List<dynamic> jsonList = jsonDecode(response.data) as List<dynamic>;
     int subLevel = 1;
+
     return jsonList.map((json) {
       json['level'] = level;
       json['subLevel'] = subLevel;
       subLevel++;
 
-      // Determine the type based on presence of specific fields
       if (json.containsKey('text')) {
         return Content(speechExercise: SpeechExercise.fromJson(json));
-      } else {
+      } else if (json.containsKey('ytId')) {
         return Content(video: Video.fromJson(json));
+      } else {
+        throw Exception("Invalid content type");
       }
     }).toList();
   }
 }
 
 final contentAPIProvider = Provider<IContentAPI>((ref) {
-  return ContentAPI(apiService: ref.read(apiServiceProvider));
+  return ContentAPI();
 });

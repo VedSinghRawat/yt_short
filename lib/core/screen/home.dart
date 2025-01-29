@@ -22,9 +22,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  List<Content> _contents = [];
-  int? _jumpTo;
-
   @override
   void initState() {
     super.initState();
@@ -32,68 +29,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       await ref.read(contentControllerProvider.notifier).fetchContents();
-      final progress = await SharedPref.getCurrProgress();
-      _contents = ref
-          .read(contentControllerProvider)
-          .contentKeysByLevel[progress?['level'] ?? 1]!
-          .map((key) => ref.read(contentControllerProvider).contentMap[key]!)
-          .toList();
-
-      _jumpTo = _contents.indexWhere(
-        (content) =>
-            content.speechExercise?.subLevel == progress?['subLevel'] && content.speechExercise?.level == progress?['level'] ||
-            content.video?.subLevel == progress?['subLevel'] && content.video?.level == progress?['level'],
-      );
-      developer.log('jumpTo: $_jumpTo');
     });
-  }
-
-  Future<void> _handleOnScroll(int index) async {
-    final userEmail = ref.read(userControllerProvider).currentUser?.email ?? '';
-    if (index < 0 || index >= _contents.length) return;
-
-    final content = _contents[index];
-    final level = (content.speechExercise?.level ?? content.video?.level)!;
-    final subLevel = (content.speechExercise?.subLevel ?? content.video?.subLevel)!;
-
-    await SharedPref.setCurrProgress(level, subLevel);
-
-    if (subLevel > kAuthRequiredLevel && userEmail.isEmpty && mounted) {
-      context.go(Routes.signIn);
-    }
-
-    await SharedPref.setCurrProgress(level, subLevel);
-
-    if (userEmail.isNotEmpty) {
-      await SharedPref.addActivityLog(ActivityLog(subLevel: subLevel, level: level, userEmail: userEmail, created: DateTime.now()));
-    }
-
-    const minDiff = Duration.millisecondsPerMinute * 10;
-    final lastSync = await SharedPref.getLastSync();
-
-    final now = DateTime.now().millisecondsSinceEpoch;
-
-    if ((now - lastSync) < minDiff) return;
-
-    if (userEmail.isNotEmpty) {
-      await ref.read(userControllerProvider.notifier).progressSync(level, subLevel);
-    }
-
-    final activityLogs = await SharedPref.getActivityLogs();
-    if (activityLogs == null || activityLogs.isEmpty) return;
-    await ref.read(activityLogControllerProvider.notifier).syncActivityLogs(activityLogs);
-    await SharedPref.clearActivityLogs();
   }
 
   @override
   Widget build(BuildContext context) {
-    developer.log('HomeScreen build: $_jumpTo');
+    final loading = ref.read(contentControllerProvider).loading;
+    final contentsByLevel = ref.read(contentControllerProvider).contentKeysByLevel;
+    final contentMap = ref.read(contentControllerProvider).contentMap;
+    final levelsToShow = ref.watch(contentControllerProvider.select((state) => state.levelsToShow));
+    final contents =
+        levelsToShow.fold<List<Content>>([], (acc, level) => acc + (contentsByLevel[level] ?? []).map((key) => contentMap[key]!).toList());
 
-    if (ref.read(contentControllerProvider).loading) {
+    developer.log('HomeScreen build: $levelsToShow');
+    developer.log('HomeScreen build: ${contents.length}');
+
+    if (loading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_contents.isEmpty) {
+    if (contents.isEmpty) {
       return const Scaffold(
         body: Center(
           child: Text('No videos available'),
@@ -129,9 +84,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
       body: ContentsList(
-        contents: _contents,
-        onVideoChange: _handleOnScroll,
-        jumpTo: _jumpTo,
+        contents: contents,
+        onVideoChange: (int index) async {
+          final userEmail = ref.read(userControllerProvider).currentUser?.email ?? '';
+          if (index < 0 || index >= contents.length) return;
+
+          final content = contents[index];
+          final level = (content.speechExercise?.level ?? content.video?.level)!;
+          final subLevel = (content.speechExercise?.subLevel ?? content.video?.subLevel)!;
+
+          await SharedPref.setCurrProgress(level, subLevel);
+
+          if (level > kAuthRequiredLevel && userEmail.isEmpty && mounted) {
+            context.go(Routes.signIn);
+          }
+
+          await SharedPref.setCurrProgress(level, subLevel);
+          await ref.read(contentControllerProvider.notifier).fetchContents();
+
+          if (userEmail.isNotEmpty) {
+            await SharedPref.addActivityLog(ActivityLog(subLevel: subLevel, level: level, userEmail: userEmail, created: DateTime.now()));
+          }
+
+          const minDiff = Duration.millisecondsPerMinute * 10;
+          final lastSync = await SharedPref.getLastSync();
+
+          final now = DateTime.now().millisecondsSinceEpoch;
+
+          if ((now - lastSync) < minDiff) return;
+
+          if (userEmail.isNotEmpty) {
+            await ref.read(userControllerProvider.notifier).progressSync(level, subLevel);
+          }
+
+          final activityLogs = await SharedPref.getActivityLogs();
+          if (activityLogs == null || activityLogs.isEmpty) return;
+          await ref.read(activityLogControllerProvider.notifier).syncActivityLogs(activityLogs);
+          await SharedPref.clearActivityLogs();
+        },
       ),
     );
   }
