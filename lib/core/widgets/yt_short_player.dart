@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 
 class YtShortPlayer extends StatefulWidget {
   final String videoId;
@@ -17,6 +18,7 @@ class YtShortPlayer extends StatefulWidget {
 
 class _YtShortPlayerState extends State<YtShortPlayer> {
   late YoutubePlayerController _controller;
+  bool _isVisible = false;
 
   @override
   void initState() {
@@ -24,12 +26,12 @@ class _YtShortPlayerState extends State<YtShortPlayer> {
     _controller = YoutubePlayerController(
       initialVideoId: widget.videoId,
       flags: const YoutubePlayerFlags(
-        autoPlay: false,
         mute: false,
         hideControls: false,
         enableCaption: false,
         controlsVisibleAtStart: false,
         loop: true,
+        autoPlay: false,
       ),
     );
     widget.onControllerInitialized?.call(_controller);
@@ -41,22 +43,36 @@ class _YtShortPlayerState extends State<YtShortPlayer> {
     super.dispose();
   }
 
+  void _onVisibilityChanged(VisibilityInfo info) {
+    if (info.visibleFraction > 0.8 && !_isVisible) {
+      _isVisible = true;
+      _controller.play();
+    } else if (info.visibleFraction <= 0.8 && _isVisible) {
+      _isVisible = false;
+      _controller.pause();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 9 / 16,
-      child: SizedBox(
-        width: MediaQuery.of(context).size.width,
-        height: MediaQuery.of(context).size.height,
-        child: YoutubePlayer(
-          controller: _controller,
-          showVideoProgressIndicator: true,
-          progressIndicatorColor: Colors.red,
-          progressColors: const ProgressBarColors(
-            playedColor: Colors.red,
-            handleColor: Colors.redAccent,
+    return VisibilityDetector(
+      key: Key(widget.videoId),
+      onVisibilityChanged: _onVisibilityChanged,
+      child: AspectRatio(
+        aspectRatio: 9 / 16,
+        child: SizedBox(
+          width: MediaQuery.of(context).size.width,
+          height: MediaQuery.of(context).size.height,
+          child: YoutubePlayer(
+            controller: _controller,
+            showVideoProgressIndicator: true,
+            progressIndicatorColor: Colors.red,
+            progressColors: const ProgressBarColors(
+              playedColor: Colors.red,
+              handleColor: Colors.redAccent,
+            ),
+            aspectRatio: 9 / 16,
           ),
-          aspectRatio: 9 / 16,
         ),
       ),
     );

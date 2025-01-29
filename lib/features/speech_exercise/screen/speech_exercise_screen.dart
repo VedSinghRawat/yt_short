@@ -65,13 +65,9 @@ class _SpeechExerciseScreenState extends State<SpeechExerciseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: YtShortPlayer(
-          videoId: widget.exercise.ytId,
-          onControllerInitialized: _onControllerInitialized,
-        ),
-      ),
+    return YtShortPlayer(
+      videoId: widget.exercise.ytId,
+      onControllerInitialized: _onControllerInitialized,
     );
   }
 }
