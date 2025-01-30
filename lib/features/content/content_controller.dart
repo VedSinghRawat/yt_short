@@ -10,7 +10,7 @@ class ContentControllerState {
   // the key will be $level-$subLevel
   final Map<String, Content> contentMap;
   // level against the key attribute of content
-  final Map<int, List<String>> contentKeysByLevel;
+  final Map<int, int> contentKeysByLevel;
 
   final bool loading;
 
@@ -22,7 +22,7 @@ class ContentControllerState {
 
   ContentControllerState copyWith({
     Map<String, Content>? contentMap,
-    Map<int, List<String>>? contentKeysByLevel,
+    Map<int, int>? contentKeysByLevel,
     bool? loading,
   }) {
     return ContentControllerState(
@@ -47,14 +47,13 @@ class ContentController extends StateNotifier<ContentControllerState> {
     try {
       final tempContents = await contentAPI.listByLevel(level);
       Map<String, Content> contentMap = Map.from(state.contentMap);
-      Map<int, List<String>> contentKeysByLevel = Map.from(state.contentKeysByLevel);
+      Map<int, int> contentKeysByLevel = Map.from(state.contentKeysByLevel);
 
       for (var content in tempContents) {
         final level = content.speechExercise?.level ?? content.video?.level;
         final subLevel = content.speechExercise?.subLevel ?? content.video?.subLevel;
         contentMap["$level-$subLevel"] = content;
-        contentKeysByLevel[level!] = contentKeysByLevel[level] ?? []
-          ..add("$level-$subLevel");
+        contentKeysByLevel[level!] = subLevel!;
       }
 
       state = state.copyWith(
@@ -73,7 +72,8 @@ class ContentController extends StateNotifier<ContentControllerState> {
   Future<void> fetchContents() async {
     if (state.loading) return;
 
-    var progress = await SharedPref.getCurrProgress();
+    final progress = await SharedPref.getCurrProgress();
+
     final currUserLevel = progress?['level'] ?? userController.currentUser?.level ?? 1;
     final currUserSubLevel = progress?['subLevel'] ?? userController.currentUser?.subLevel ?? 1;
 
@@ -94,13 +94,12 @@ class ContentController extends StateNotifier<ContentControllerState> {
     }
 
     // Fetch next level if near the end of sublevels
-    final currLevelKeys = state.contentKeysByLevel[currUserLevel] ?? [];
+    final currLevelKeys = state.contentKeysByLevel[currUserLevel] ?? 0;
     final nextLevel = currUserLevel + 1;
 
-    if (currUserSubLevel >= currLevelKeys.length - kSubLevelAPIBuffer) {
-      if (!state.contentKeysByLevel.containsKey(nextLevel)) {
-        await _listByLevel(nextLevel);
-      }
+    if (currUserSubLevel >= currLevelKeys - kSubLevelAPIBuffer &&
+        !state.contentKeysByLevel.containsKey(nextLevel)) {
+      await _listByLevel(nextLevel);
     }
   }
 }

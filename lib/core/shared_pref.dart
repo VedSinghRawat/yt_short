@@ -46,6 +46,7 @@ class SharedPref {
       'level': level,
       'subLevel': subLevel,
     });
+
   }
 
   static Future<Map<String, dynamic>?> getCurrProgress() async {

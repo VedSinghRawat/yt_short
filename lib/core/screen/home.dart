@@ -33,17 +33,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final loading = ref.watch(contentControllerProvider.select((state) => state.loading));
+    final provider = ref.watch(contentControllerProvider);
+    final loading = provider.loading;
+    final contentMap = provider.contentMap;
 
-    final contentsByLevel =
-        ref.watch(contentControllerProvider.select((state) => state.contentKeysByLevel));
+    final isLoggedIn =
+        ref.watch(userControllerProvider.select((state) => state.currentUser))?.email.isNotEmpty ??
+            false;
+    final contents = contentMap.values.toList()
+      ..sort((a, b) {
+        final levelA = a.speechExercise?.level ?? a.video?.level ?? 0;
+        final levelB = b.speechExercise?.level ?? b.video?.level ?? 0;
 
-    final contentMap = ref.watch(contentControllerProvider.select((state) => state.contentMap));
+        if (levelA != levelB) {
+          return levelA.compareTo(levelB);
+        }
 
-    final contents =
-        contentsByLevel.values.expand((x) => x.map((key) => contentMap[key]!)).toList();
+        final subLevelA = a.speechExercise?.subLevel ?? a.video?.subLevel ?? 0;
+        final subLevelB = b.speechExercise?.subLevel ?? b.video?.subLevel ?? 0;
 
-    if (loading) {
+        return subLevelA.compareTo(subLevelB);
+      });
+
+    if (loading && contents.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -51,27 +63,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: CustomAppBar(
         title: 'Learn English',
         actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.account_circle),
-            onSelected: (value) {
-              if (value == 'signout') {
-                ref.read(authControllerProvider.notifier).signOut(context);
-                context.go(Routes.signIn);
-              }
-            },
-            itemBuilder: (BuildContext context) => [
-              const PopupMenuItem<String>(
-                value: 'signout',
-                child: Row(
-                  children: [
-                    Icon(Icons.logout, color: Colors.white),
-                    SizedBox(width: 8),
-                    Text('Sign Out'),
+          isLoggedIn
+              ? IconButton(
+                  onPressed: () {
+                    context.push(Routes.signIn);
+                  },
+                  icon: const Icon(Icons.account_circle),
+                )
+              : PopupMenuButton<String>(
+                  icon: const Icon(Icons.account_circle),
+                  onSelected: (value) {
+                    if (value == 'signout') {
+                      ref.read(authControllerProvider.notifier).signOut(context);
+                      context.go(Routes.signIn);
+                    }
+                  },
+                  itemBuilder: (BuildContext context) => [
+                    const PopupMenuItem<String>(
+                      value: 'signout',
+                      child: Row(
+                        children: [
+                          Icon(Icons.logout, color: Colors.white),
+                          SizedBox(width: 8),
+                          Text('Sign Out'),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
-              ),
-            ],
-          ),
         ],
       ),
       body: contents.isEmpty
@@ -79,22 +98,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           : ContentsList(
               contents: contents,
               onVideoChange: (int index) async {
-                final userEmail = ref.read(userControllerProvider).currentUser?.email ?? '';
-                if (index < 0 || index >= contents.length) return;
+                // Get the user's email, return early if index is out of bounds
+                await ref.read(contentControllerProvider.notifier).fetchContents();
 
+                if (index < 0 || index >= contents.length) return;
+                final userEmail = ref.read(userControllerProvider).currentUser?.email ?? '';
+
+                // Get the content, level, and sublevel for the current index
                 final content = contents[index];
                 final level = (content.speechExercise?.level ?? content.video?.level)!;
                 final subLevel = (content.speechExercise?.subLevel ?? content.video?.subLevel)!;
 
+                // Update the user's current progress in shared preferences
                 await SharedPref.setCurrProgress(level, subLevel);
 
+                // If the level requires auth and the user is not logged in, redirect to sign in
                 if (level > kAuthRequiredLevel && userEmail.isEmpty && context.mounted) {
                   context.go(Routes.signIn);
                 }
 
+                // Update the user's current progress again and fetch new contents
                 await SharedPref.setCurrProgress(level, subLevel);
-                await ref.read(contentControllerProvider.notifier).fetchContents();
 
+                // If the user is logged in, add an activity log entry
                 if (userEmail.isNotEmpty) {
                   await SharedPref.addActivityLog(ActivityLog(
                     subLevel: subLevel,
@@ -104,25 +130,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ));
                 }
 
+                // Check if enough time has passed since the last sync
                 const minDiff = Duration.millisecondsPerMinute * 3;
                 final lastSync = await SharedPref.getLastSync();
-
                 final now = DateTime.now().millisecondsSinceEpoch;
-
                 final diff = now - lastSync;
                 developer.log('minDiff: $minDiff, diff: $diff');
                 if (diff < minDiff) return;
 
+                // If the user is logged in, sync their progress with the server
                 if (userEmail.isNotEmpty) {
                   await ref.read(userControllerProvider.notifier).progressSync(level, subLevel);
                 }
 
+                // Sync any pending activity logs with the server
                 final activityLogs = await SharedPref.getActivityLogs();
                 if (activityLogs == null || activityLogs.isEmpty) return;
                 await ref
                     .read(activityLogControllerProvider.notifier)
                     .syncActivityLogs(activityLogs);
 
+                // Clear the activity logs and update the last sync time
                 await SharedPref.clearActivityLogs();
                 await SharedPref.setLastSync(DateTime.now().millisecondsSinceEpoch);
               },
