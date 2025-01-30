@@ -93,68 +93,64 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
         ],
       ),
-      body: contents.isEmpty
-          ? const Center(child: Text('No videos available'))
-          : ContentsList(
-              contents: contents,
-              onVideoChange: (int index) async {
-                // Get the user's email, return early if index is out of bounds
-                await ref.read(contentControllerProvider.notifier).fetchContents();
+      body: ContentsList(
+        contents: contents,
+        onVideoChange: (int index) async {
+          // Get the user's email, return early if index is out of bounds
+          await ref.read(contentControllerProvider.notifier).fetchContents();
 
-                if (index < 0 || index >= contents.length) return;
-                final userEmail = ref.read(userControllerProvider).currentUser?.email ?? '';
+          if (index < 0 || index >= contents.length) return;
+          final userEmail = ref.read(userControllerProvider).currentUser?.email ?? '';
 
-                // Get the content, level, and sublevel for the current index
-                final content = contents[index];
-                final level = (content.speechExercise?.level ?? content.video?.level)!;
-                final subLevel = (content.speechExercise?.subLevel ?? content.video?.subLevel)!;
+          // Get the content, level, and sublevel for the current index
+          final content = contents[index];
+          final level = (content.speechExercise?.level ?? content.video?.level)!;
+          final subLevel = (content.speechExercise?.subLevel ?? content.video?.subLevel)!;
 
-                // Update the user's current progress in shared preferences
-                await SharedPref.setCurrProgress(level, subLevel);
+          // Update the user's current progress in shared preferences
+          await SharedPref.setCurrProgress(level, subLevel);
 
-                // If the level requires auth and the user is not logged in, redirect to sign in
-                if (level > kAuthRequiredLevel && userEmail.isEmpty && context.mounted) {
-                  context.go(Routes.signIn);
-                }
+          // If the level requires auth and the user is not logged in, redirect to sign in
+          if (level > kAuthRequiredLevel && userEmail.isEmpty && context.mounted) {
+            context.go(Routes.signIn);
+          }
 
-                // Update the user's current progress again and fetch new contents
-                await SharedPref.setCurrProgress(level, subLevel);
+          // Update the user's current progress again and fetch new contents
+          await SharedPref.setCurrProgress(level, subLevel);
 
-                // If the user is logged in, add an activity log entry
-                if (userEmail.isNotEmpty) {
-                  await SharedPref.addActivityLog(ActivityLog(
-                    subLevel: subLevel,
-                    level: level,
-                    userEmail: userEmail,
-                    timestamp: DateTime.now().millisecondsSinceEpoch,
-                  ));
-                }
+          // If the user is logged in, add an activity log entry
+          if (userEmail.isNotEmpty) {
+            await SharedPref.addActivityLog(ActivityLog(
+              subLevel: subLevel,
+              level: level,
+              userEmail: userEmail,
+              timestamp: DateTime.now().millisecondsSinceEpoch,
+            ));
+          }
 
-                // Check if enough time has passed since the last sync
-                const minDiff = Duration.millisecondsPerMinute * 3;
-                final lastSync = await SharedPref.getLastSync();
-                final now = DateTime.now().millisecondsSinceEpoch;
-                final diff = now - lastSync;
-                developer.log('minDiff: $minDiff, diff: $diff');
-                if (diff < minDiff) return;
+          // Check if enough time has passed since the last sync
+          const minDiff = Duration.millisecondsPerMinute * 3;
+          final lastSync = await SharedPref.getLastSync();
+          final now = DateTime.now().millisecondsSinceEpoch;
+          final diff = now - lastSync;
+          developer.log('minDiff: $minDiff, diff: $diff');
+          if (diff < minDiff) return;
 
-                // If the user is logged in, sync their progress with the server
-                if (userEmail.isNotEmpty) {
-                  await ref.read(userControllerProvider.notifier).progressSync(level, subLevel);
-                }
+          // If the user is logged in, sync their progress with the server
+          if (userEmail.isNotEmpty) {
+            await ref.read(userControllerProvider.notifier).progressSync(level, subLevel);
+          }
 
-                // Sync any pending activity logs with the server
-                final activityLogs = await SharedPref.getActivityLogs();
-                if (activityLogs == null || activityLogs.isEmpty) return;
-                await ref
-                    .read(activityLogControllerProvider.notifier)
-                    .syncActivityLogs(activityLogs);
+          // Sync any pending activity logs with the server
+          final activityLogs = await SharedPref.getActivityLogs();
+          if (activityLogs == null || activityLogs.isEmpty) return;
+          await ref.read(activityLogControllerProvider.notifier).syncActivityLogs(activityLogs);
 
-                // Clear the activity logs and update the last sync time
-                await SharedPref.clearActivityLogs();
-                await SharedPref.setLastSync(DateTime.now().millisecondsSinceEpoch);
-              },
-            ),
+          // Clear the activity logs and update the last sync time
+          await SharedPref.clearActivityLogs();
+          await SharedPref.setLastSync(DateTime.now().millisecondsSinceEpoch);
+        },
+      ),
     );
   }
 }

@@ -61,12 +61,16 @@ class _ExerciseSentenceCardState extends State<ExerciseSentenceCard> {
       }
 
       for (int i = 0; i < recognizedWords.where((word) => word.isNotEmpty).length; i++) {
-        String targetWord = words[i].toLowerCase();
-        String lowerRecognizedWord = recognizedWords[i].toLowerCase();
+        String formatedTargetWord = formatWord(words[i]);
+        String formatedRecognizedWord = formatWord(recognizedWords[i]);
 
-        wordMarking[i] = targetWord == lowerRecognizedWord;
+        wordMarking[i] = formatedTargetWord == formatedRecognizedWord;
       }
     });
+  }
+
+  String formatWord(String word) {
+    return word.replaceAll(RegExp(r'[^\w\s]'), '').toLowerCase();
   }
 
   @override
