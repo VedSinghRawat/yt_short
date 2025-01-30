@@ -10,24 +10,24 @@ class ContentControllerState {
   // the key will be $level-$subLevel
   final Map<String, Content> contentMap;
   // level against the key attribute of content
-  final Map<int, int> contentKeysByLevel;
+  final Map<int, int> subLevelCountByLevel;
 
   final bool loading;
 
   ContentControllerState({
     this.contentMap = const {},
-    this.contentKeysByLevel = const {},
+    this.subLevelCountByLevel = const {},
     this.loading = false,
   });
 
   ContentControllerState copyWith({
     Map<String, Content>? contentMap,
-    Map<int, int>? contentKeysByLevel,
+    Map<int, int>? subLevelCountByLevel,
     bool? loading,
   }) {
     return ContentControllerState(
       contentMap: contentMap ?? this.contentMap,
-      contentKeysByLevel: contentKeysByLevel ?? this.contentKeysByLevel,
+      subLevelCountByLevel: subLevelCountByLevel ?? this.subLevelCountByLevel,
       loading: loading ?? this.loading,
     );
   }
@@ -41,24 +41,24 @@ class ContentController extends StateNotifier<ContentControllerState> {
       : super(ContentControllerState());
 
   Future<List<Content>> _listByLevel(int level) async {
-    if (state.contentKeysByLevel.containsKey(level)) return [];
+    if (state.subLevelCountByLevel.containsKey(level)) return [];
 
     state = state.copyWith(loading: true);
     try {
       final tempContents = await contentAPI.listByLevel(level);
       Map<String, Content> contentMap = Map.from(state.contentMap);
-      Map<int, int> contentKeysByLevel = Map.from(state.contentKeysByLevel);
+      Map<int, int> subLevelCountByLevel = Map.from(state.subLevelCountByLevel);
 
+      subLevelCountByLevel[level] = tempContents.length;
       for (var content in tempContents) {
         final level = content.speechExercise?.level ?? content.video?.level;
         final subLevel = content.speechExercise?.subLevel ?? content.video?.subLevel;
         contentMap["$level-$subLevel"] = content;
-        contentKeysByLevel[level!] = subLevel!;
       }
 
       state = state.copyWith(
         contentMap: contentMap,
-        contentKeysByLevel: contentKeysByLevel,
+        subLevelCountByLevel: subLevelCountByLevel,
       );
     } catch (e, stackTrace) {
       developer.log('Error in ContentController._listByLevel',
@@ -77,28 +77,26 @@ class ContentController extends StateNotifier<ContentControllerState> {
     final currUserLevel = progress?['level'] ?? userController.currentUser?.level ?? 1;
     final currUserSubLevel = progress?['subLevel'] ?? userController.currentUser?.subLevel ?? 1;
 
-    developer.log('fetchContents: $currUserLevel $currUserSubLevel');
-
     // Fetch the current level if not already in cache
-    if (!state.contentKeysByLevel.containsKey(currUserLevel)) {
+    if (!state.subLevelCountByLevel.containsKey(currUserLevel)) {
       await _listByLevel(currUserLevel);
     }
 
     // Fetch previous level if near start of sublevels
     final prevLevel = currUserLevel - 1;
 
-    if (currUserSubLevel <= kSubLevelAPIBuffer && prevLevel >= 1) {
-      if (!state.contentKeysByLevel.containsKey(prevLevel)) {
-        await _listByLevel(prevLevel);
-      }
+    if (currUserSubLevel <= kSubLevelAPIBuffer &&
+        prevLevel >= 1 &&
+        !state.subLevelCountByLevel.containsKey(prevLevel)) {
+      await _listByLevel(prevLevel);
     }
 
     // Fetch next level if near the end of sublevels
-    final currLevelKeys = state.contentKeysByLevel[currUserLevel] ?? 0;
+    final currLevelKeys = state.subLevelCountByLevel[currUserLevel] ?? 0;
     final nextLevel = currUserLevel + 1;
 
     if (currUserSubLevel >= currLevelKeys - kSubLevelAPIBuffer &&
-        !state.contentKeysByLevel.containsKey(nextLevel)) {
+        !state.subLevelCountByLevel.containsKey(nextLevel)) {
       await _listByLevel(nextLevel);
     }
   }

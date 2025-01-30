@@ -97,7 +97,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         contents: contents,
         onVideoChange: (int index) async {
           // Get the user's email, return early if index is out of bounds
-          await ref.read(contentControllerProvider.notifier).fetchContents();
+          if (index <= kSubLevelAPIBuffer || index >= contents.length - kSubLevelAPIBuffer) {
+            await ref.read(contentControllerProvider.notifier).fetchContents();
+          }
 
           if (index < 0 || index >= contents.length) return;
           final userEmail = ref.read(userControllerProvider).currentUser?.email ?? '';
@@ -115,9 +117,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             context.go(Routes.signIn);
           }
 
-          // Update the user's current progress again and fetch new contents
-          await SharedPref.setCurrProgress(level, subLevel);
-
           // If the user is logged in, add an activity log entry
           if (userEmail.isNotEmpty) {
             await SharedPref.addActivityLog(ActivityLog(
@@ -133,7 +132,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           final lastSync = await SharedPref.getLastSync();
           final now = DateTime.now().millisecondsSinceEpoch;
           final diff = now - lastSync;
-          developer.log('minDiff: $minDiff, diff: $diff');
           if (diff < minDiff) return;
 
           // If the user is logged in, sync their progress with the server

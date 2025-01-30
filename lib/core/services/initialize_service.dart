@@ -10,26 +10,28 @@ class InitializeService {
 
   Future<void> initialize() async {
     try {
-      final localUser = await SharedPref.getUser();
+      final currProgress = await SharedPref.getCurrProgress();
+      final apiUser = await userController.getCurrentUser();
 
-      var apiUser = await userController.getCurrentUser();
+      if (currProgress == null && apiUser == null) return;
 
-      if (apiUser == null || localUser == null) return;
-
-      final localLastModified = DateTime.parse(localUser.modified);
-      final apiLastModified = DateTime.parse(apiUser.modified);
-
-      if (localLastModified.isAfter(apiLastModified)) {
-        await userController.progressSync(localUser.level, localUser.subLevel);
-
-        apiUser = apiUser.copyWith(level: localUser.level, subLevel: localUser.subLevel);
-      } else {
-        SharedPref.setCurrProgress(apiUser.level, apiUser.subLevel);
+      if (currProgress == null && apiUser != null) {
+        await SharedPref.setCurrProgress(apiUser.level, apiUser.subLevel);
+        return;
+      } else if (currProgress != null && apiUser == null) {
+        await userController.progressSync(currProgress['level'], currProgress['subLevel']);
+        return;
       }
 
-      await SharedPref.setUser(apiUser);
-    } catch (e) {
-      developer.log(e.toString());
+      final localLastModified = DateTime.fromMillisecondsSinceEpoch(currProgress!['modified'] ?? 0);
+      final apiLastModified = DateTime.parse(apiUser!.modified);
+
+      if (localLastModified.isAfter(apiLastModified)) {
+      } else {
+        await SharedPref.setCurrProgress(apiUser.level, apiUser.subLevel);
+      }
+    } catch (e, stackTrace) {
+      developer.log('Error during initialize', error: e.toString(), stackTrace: stackTrace);
     }
   }
 }

@@ -17,10 +17,7 @@ class ActivityLogAPI implements IActivityLogAPI {
   Future<void> syncActivityLogs(List<ActivityLog> activityLogs) async {
     try {
       final googleIdToken = await SharedPref.getGoogleIdToken();
-      if (googleIdToken == null) {
-        developer.log('Cannot sync: User not signed in');
-        return;
-      }
+      if (googleIdToken == null) return;
 
       await _apiService.call(
         method: Method.post,

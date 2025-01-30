@@ -1,6 +1,6 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'package:myapp/models/activity_log/activity_log.dart';
-import 'package:myapp/models/user/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SharedPref {
@@ -27,36 +27,21 @@ class SharedPref {
   }
 
   static Future<void> _setObject(String key, dynamic value) async {
+    if (key == 'currProgress') developer.log('setObject:  $value');
     final encoded = jsonEncode(value);
     await _setValue(key, encoded);
-  }
-
-  static Future<UserModel?> getUser() async {
-    final user = await _getObject('user');
-    if (user == null) return null;
-    return UserModel.fromJson(user);
-  }
-
-  static Future<void> setUser(UserModel user) async {
-    await _setObject('user', user.toJson());
   }
 
   static Future<void> setCurrProgress(int level, int subLevel) async {
     await _setObject('currProgress', {
       'level': level,
       'subLevel': subLevel,
+      'modified': DateTime.now().millisecondsSinceEpoch,
     });
-
   }
 
   static Future<Map<String, dynamic>?> getCurrProgress() async {
-    final progress = await _getObject('currProgress');
-    if (progress == null) return null;
-
-    return {
-      'level': progress['level'],
-      'subLevel': progress['subLevel'],
-    };
+    return await _getObject('currProgress');
   }
 
   static Future<int> getLastSync() async {

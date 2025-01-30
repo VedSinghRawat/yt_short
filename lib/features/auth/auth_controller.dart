@@ -88,9 +88,9 @@ class AuthController extends StateNotifier<AuthControllerState> {
         context,
         question:
             'We notice that you are already on Level: ${user.level} SubLevel: ${user.subLevel}. Do you continue from there?',
-        onResult: (result) {
+        onResult: (result) async {
           if (result) {
-            SharedPref.setCurrProgress(user.level, user.subLevel);
+            await SharedPref.setCurrProgress(user.level, user.subLevel);
           }
         },
         yesButtonStyle: ElevatedButton.styleFrom(

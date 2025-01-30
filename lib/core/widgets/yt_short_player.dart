@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:visibility_detector/visibility_detector.dart';
+import 'dart:developer' as developer;
 
 class YtShortPlayer extends StatefulWidget {
   final String videoId;
@@ -44,12 +45,16 @@ class _YtShortPlayerState extends State<YtShortPlayer> {
   }
 
   void _onVisibilityChanged(VisibilityInfo info) {
-    if (info.visibleFraction > 0.8 && !_isVisible) {
-      _isVisible = true;
-      _controller.play();
-    } else if (info.visibleFraction <= 0.8 && _isVisible) {
-      _isVisible = false;
-      _controller.pause();
+    try {
+      if (info.visibleFraction > 0.8 && !_isVisible) {
+        _isVisible = true;
+        _controller.play();
+      } else if (info.visibleFraction <= 0.8 && _isVisible) {
+        _isVisible = false;
+        _controller.pause();
+      }
+    } catch (e) {
+      developer.log('Error in YtShortPlayer._onVisibilityChanged', error: e.toString());
     }
   }
 

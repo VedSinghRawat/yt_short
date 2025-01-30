@@ -67,7 +67,6 @@ class UserController extends StateNotifier<UserControllerState> {
   }
 
   Future<void> progressSync(int level, int subLevel) async {
-    developer.log('progressSync: $level, $subLevel, inside progressSync in contoller');
     try {
       final user = await userAPI.progressSync(level, subLevel);
       if (user == null) return;

@@ -1,7 +1,6 @@
 import 'dart:developer' as developer;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/core/services/api_service.dart';
-import 'package:myapp/core/shared_pref.dart';
 import '../models/models.dart';
 
 abstract class IUserAPI {
@@ -21,13 +20,7 @@ class UserAPI implements IUserAPI {
         endpoint: '/user/me',
       );
 
-      if (response.statusCode == 401) {
-        return await SharedPref.getUser();
-      }
-
       UserModel apiUser = UserModel.fromJson(response.data?['user']);
-
-      await SharedPref.setUser(apiUser);
 
       return apiUser;
     } catch (e, stackTrace) {
