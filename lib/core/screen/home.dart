@@ -63,7 +63,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: CustomAppBar(
         title: 'Learn English',
         actions: [
-          isLoggedIn
+          !isLoggedIn
               ? IconButton(
                   onPressed: () {
                     context.push(Routes.signIn);
