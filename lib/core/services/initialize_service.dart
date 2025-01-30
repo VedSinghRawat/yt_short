@@ -15,21 +15,13 @@ class InitializeService {
 
       if (currProgress == null && apiUser == null) return;
 
-      if (currProgress == null && apiUser != null) {
-        await SharedPref.setCurrProgress(apiUser.level, apiUser.subLevel);
-        return;
-      } else if (currProgress != null && apiUser == null) {
-        await userController.progressSync(currProgress['level'], currProgress['subLevel']);
-        return;
-      }
+      final localLastModified = currProgress?['modified'] ?? 0;
+      final apiLastModified =
+          apiUser != null ? DateTime.parse(apiUser.modified).millisecondsSinceEpoch : 0;
 
-      final localLastModified = DateTime.fromMillisecondsSinceEpoch(currProgress!['modified'] ?? 0);
-      final apiLastModified = DateTime.parse(apiUser!.modified);
-
-      if (localLastModified.isAfter(apiLastModified)) {
-      } else {
-        await SharedPref.setCurrProgress(apiUser.level, apiUser.subLevel);
-      }
+      localLastModified > apiLastModified
+          ? await userController.progressSync(currProgress!['level'], currProgress['subLevel'])
+          : await SharedPref.setCurrProgress(apiUser!.level, apiUser.subLevel);
     } catch (e, stackTrace) {
       developer.log('Error during initialize', error: e.toString(), stackTrace: stackTrace);
     }
