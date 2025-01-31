@@ -96,70 +96,43 @@ class _ContentsListState extends State<ContentsList> {
           });
         }
 
-        if (content.video != null) {
-          return Stack(
-            children: [
-              Center(
-                child: YtShortPlayer(
-                  key: ValueKey('${content.video!.level}-${content.video!.subLevel}'),
-                  videoId: content.video!.ytId,
+        return Stack(
+          children: [
+            Center(
+              child: content.video != null
+                  ? YtShortPlayer(
+                      key: ValueKey('${content.video!.level}-${content.video!.subLevel}'),
+                      videoId: content.video!.ytId,
+                    )
+                  : content.speechExercise != null
+                      ? SpeechExerciseScreen(
+                          key: ValueKey(
+                              '${content.speechExercise!.level}-${content.speechExercise!.subLevel}'),
+                          exercise: content.speechExercise!,
+                        )
+                      : const SizedBox.shrink(),
+            ),
+            Positioned(
+              top: 16,
+              right: 16,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.7),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              ),
-              Positioned(
-                top: 16,
-                right: 16,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.7),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    'Level ${content.video!.level}-${content.video!.subLevel}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          );
-        } else if (content.speechExercise != null) {
-          return Stack(
-            children: [
-              Center(
-                child: SpeechExerciseScreen(
-                  key: ValueKey(
-                      '${content.speechExercise!.level}-${content.speechExercise!.subLevel}'),
-                  exercise: content.speechExercise!,
-                ),
-              ),
-              Positioned(
-                top: 16,
-                right: 16,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.7),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    'Level ${content.speechExercise!.level}-${content.speechExercise!.subLevel}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                child: Text(
+                  'Level ${content.video?.level ?? content.speechExercise?.level}-${content.video?.subLevel ?? content.speechExercise?.subLevel}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-            ],
-          );
-        }
-
-        return const SizedBox.shrink();
+            ),
+          ],
+        );
       },
     );
   }

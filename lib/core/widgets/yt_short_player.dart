@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:visibility_detector/visibility_detector.dart';
+import 'dart:async';
 import 'dart:developer' as developer;
 
 class YtShortPlayer extends StatefulWidget {
@@ -20,6 +21,9 @@ class YtShortPlayer extends StatefulWidget {
 class _YtShortPlayerState extends State<YtShortPlayer> {
   late YoutubePlayerController _controller;
   bool _isVisible = false;
+  bool _showPlayPauseIcon = false;
+  IconData _iconData = Icons.play_arrow;
+  Timer? _iconTimer;
 
   @override
   void initState() {
@@ -28,8 +32,10 @@ class _YtShortPlayerState extends State<YtShortPlayer> {
       initialVideoId: widget.videoId,
       flags: const YoutubePlayerFlags(
         mute: false,
-        hideControls: false,
+        hideControls: true,
         enableCaption: false,
+        showLiveFullscreenButton: false,
+        disableDragSeek: true,
         controlsVisibleAtStart: false,
         loop: true,
         autoPlay: false,
@@ -41,7 +47,29 @@ class _YtShortPlayerState extends State<YtShortPlayer> {
   @override
   void dispose() {
     _controller.dispose();
+    _iconTimer?.cancel();
     super.dispose();
+  }
+
+  void _togglePlayPause() {
+    setState(() {
+      if (_controller.value.isPlaying) {
+        _controller.pause();
+        _iconData = Icons.pause;
+      } else {
+        _controller.play();
+        _iconData = Icons.play_arrow;
+      }
+      _showPlayPauseIcon = true;
+    });
+
+    // Hide the icon after 2 seconds
+    _iconTimer?.cancel();
+    _iconTimer = Timer(Duration(seconds: _iconData == Icons.play_arrow ? 1 : 2), () {
+      setState(() {
+        _showPlayPauseIcon = false;
+      });
+    });
   }
 
   void _onVisibilityChanged(VisibilityInfo info) {
@@ -63,21 +91,45 @@ class _YtShortPlayerState extends State<YtShortPlayer> {
     return VisibilityDetector(
       key: Key(widget.videoId),
       onVisibilityChanged: _onVisibilityChanged,
-      child: AspectRatio(
-        aspectRatio: 9 / 16,
-        child: SizedBox(
-          width: MediaQuery.of(context).size.width,
-          height: MediaQuery.of(context).size.height,
-          child: YoutubePlayer(
-            controller: _controller,
-            showVideoProgressIndicator: true,
-            progressIndicatorColor: Colors.red,
-            progressColors: const ProgressBarColors(
-              playedColor: Colors.red,
-              handleColor: Colors.redAccent,
+      child: GestureDetector(
+        onTap: _togglePlayPause,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            AspectRatio(
+              aspectRatio: 9 / 16,
+              child: YoutubePlayer(
+                controller: _controller,
+                showVideoProgressIndicator: true,
+                bufferIndicator: const CircularProgressIndicator(),
+                progressIndicatorColor: Colors.red,
+                progressColors: const ProgressBarColors(
+                  playedColor: Colors.red,
+                  handleColor: Colors.redAccent,
+                ),
+              ),
             ),
-            aspectRatio: 9 / 16,
-          ),
+
+            // Play/Pause Icon (shows for 2 seconds)
+            AnimatedOpacity(
+              opacity: _showPlayPauseIcon ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 400),
+              child: RepaintBoundary(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.black54,
+                    shape: BoxShape.circle,
+                  ),
+                  padding: const EdgeInsets.all(20),
+                  child: Icon(
+                    _iconData,
+                    size: 50,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
