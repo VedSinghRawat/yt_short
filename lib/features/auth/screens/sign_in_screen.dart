@@ -56,11 +56,11 @@ class SignInScreen extends ConsumerWidget {
                     onPressed: isLoading
                         ? null
                         : () async {
-                            final isLoggedIn = await ref
+                            await ref
                                 .read(authControllerProvider.notifier)
                                 .signInWithGoogle(context);
-
-                            if (isLoggedIn && context.mounted) context.go(Routes.home);
+                            final state = ref.read(authControllerProvider).authState;
+                            if (state == AuthState.authenticated) context.go(Routes.home);
                           },
                     icon: Image.network(
                       'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png',

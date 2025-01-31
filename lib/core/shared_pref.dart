@@ -27,7 +27,6 @@ class SharedPref {
   }
 
   static Future<void> _setObject(String key, dynamic value) async {
-    if (key == 'currProgress') developer.log('setObject:  $value');
     final encoded = jsonEncode(value);
     await _setValue(key, encoded);
   }

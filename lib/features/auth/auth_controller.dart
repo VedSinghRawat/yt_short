@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/widgets/show_confirmation_dialog.dart';
+import 'package:myapp/features/content/content_controller.dart';
 import 'dart:developer' as developer;
 import '../../apis/auth_api.dart';
 import '../../core/utils.dart';
@@ -29,20 +30,15 @@ class AuthControllerState {
   }
 }
 
-final authControllerProvider = StateNotifierProvider<AuthController, AuthControllerState>((ref) {
-  final userController = ref.read(userControllerProvider.notifier);
-  final authAPI = ref.read(authAPIProvider);
-
-  return AuthController(userController, authAPI);
-});
-
 class AuthController extends StateNotifier<AuthControllerState> {
   final UserController userController;
   final AuthAPI authAPI;
+  final ContentController contentController;
 
   StreamSubscription<bool>? _authStateSubscription;
 
-  AuthController(this.userController, this.authAPI) : super(AuthControllerState.initial()) {
+  AuthController(this.userController, this.authAPI, this.contentController)
+      : super(AuthControllerState.initial()) {
     _initializeAuthState();
   }
 
@@ -70,45 +66,41 @@ class AuthController extends StateNotifier<AuthControllerState> {
     super.dispose();
   }
 
-  Future<bool> signInWithGoogle(BuildContext context) async {
+  Future<void> signInWithGoogle(BuildContext context) async {
     state = state.copyWith(loading: true);
 
     try {
       final user = await authAPI.signInWithGoogle();
 
-      if (user == null) return false;
-
+      if (user == null) return;
       await userController.updateCurrentUser(user);
 
       state = state.copyWith(authState: AuthState.authenticated);
 
-      if (user.level < kAuthRequiredLevel || !context.mounted) return true;
+      if (user.level < kAuthRequiredLevel || !context.mounted) return;
 
       await showConfirmationDialog(
         context,
         question:
             'We notice that you are already on Level: ${user.level} SubLevel: ${user.subLevel}. Do you continue from there?',
         onResult: (result) async {
-          if (result) {
-            await SharedPref.setCurrProgress(user.level, user.subLevel);
-          }
+          if (!result) return;
+          await SharedPref.setCurrProgress(user.level, user.subLevel);
+          await contentController.fetchContents();
         },
         yesButtonStyle: ElevatedButton.styleFrom(
           backgroundColor: Colors.blue,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
-
-      return true;
     } catch (e, stackTrace) {
-      developer.log('Error in AuthController.signInWithGoogle',
-          error: e.toString(), stackTrace: stackTrace);
-      if (context.mounted) {
-        showErrorSnackBar(context, e.toString());
-      }
-      return false;
+      developer.log(
+        'Error in AuthController.signInWithGoogle',
+        error: e.toString(),
+        stackTrace: stackTrace,
+      );
+      if (!context.mounted) return;
+      showErrorSnackBar(context, e.toString());
     } finally {
       state = state.copyWith(loading: false);
     }
@@ -135,3 +127,11 @@ class AuthController extends StateNotifier<AuthControllerState> {
     state = state.copyWith(loading: false);
   }
 }
+
+final authControllerProvider = StateNotifierProvider<AuthController, AuthControllerState>((ref) {
+  final userController = ref.read(userControllerProvider.notifier);
+  final authAPI = ref.read(authAPIProvider);
+  final contentController = ref.read(contentControllerProvider.notifier);
+
+  return AuthController(userController, authAPI, contentController);
+});

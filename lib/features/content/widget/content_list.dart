@@ -41,15 +41,10 @@ class _ContentsListState extends State<ContentsList> {
 
       if (jumpTo >= widget.contents.length || jumpTo < 0) return;
       _isAnimating = true;
-      _pageController
-          .animateToPage(
-            jumpTo,
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeInOut,
-          )
-          .then(
-            (_) => _isAnimating = false,
-          );
+
+      await _pageController.animateToPage(jumpTo,
+          duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+      _isAnimating = false;
     });
   }
 

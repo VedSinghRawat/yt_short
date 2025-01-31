@@ -70,8 +70,6 @@ class ContentController extends StateNotifier<ContentControllerState> {
   }
 
   Future<void> fetchContents() async {
-    if (state.loading) return;
-
     final progress = await SharedPref.getCurrProgress();
 
     final currUserLevel = progress?['level'] ?? userController.currentUser?.level ?? 1;
