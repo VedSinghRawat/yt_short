@@ -116,20 +116,27 @@ class _YtShortPlayerState extends State<YtShortPlayer> {
             AnimatedOpacity(
               opacity: _showPlayPauseIcon ? 1.0 : 0.0,
               duration: const Duration(milliseconds: 400),
-              child: RepaintBoundary(
-                child: Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.black54,
-                    shape: BoxShape.circle,
-                  ),
-                  padding: const EdgeInsets.all(20),
-                  child: Icon(
-                    _iconData,
-                    size: 50,
-                    color: Colors.white,
-                  ),
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.black54,
+                  shape: BoxShape.circle,
+                ),
+                padding: const EdgeInsets.all(20),
+                child: Icon(
+                  _iconData,
+                  size: 50,
+                  color: Colors.white,
                 ),
               ),
+            ),
+            ValueListenableBuilder<YoutubePlayerValue>(
+              valueListenable: _controller,
+              builder: (context, value, child) {
+                if (!value.hasPlayed && value.metaData.duration == Duration.zero) {
+                  return const Loader();
+                }
+                return const SizedBox.shrink();
+              },
             ),
           ],
         ),
