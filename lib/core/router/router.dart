@@ -6,6 +6,7 @@ import 'package:myapp/features/auth/screens/sign_in_screen.dart';
 import 'package:myapp/core/screen/home.dart';
 import 'package:myapp/core/screen/suggest_version_update.dart';
 import 'package:myapp/core/screen/require_version_update.dart';
+import 'package:myapp/features/auth/widgets/auth_wrapper.dart';
 
 class Routes {
   static const home = '/';
@@ -30,8 +31,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Main app routes - wrapped with VersionCheckWrapper
       GoRoute(
         path: Routes.home,
-        builder: (context, state) => const VersionCheckWrapper(
-          child: HomeScreen(),
+        builder: (context, state) => const AuthWrapper(
+          child: VersionCheckWrapper(
+            child: HomeScreen(),
+          ),
         ),
       ),
       GoRoute(

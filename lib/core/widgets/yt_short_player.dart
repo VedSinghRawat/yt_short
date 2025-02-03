@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/core/widgets/loader.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'dart:async';
@@ -41,6 +42,7 @@ class _YtShortPlayerState extends State<YtShortPlayer> {
         autoPlay: false,
       ),
     );
+
     widget.onControllerInitialized?.call(_controller);
   }
 
@@ -101,8 +103,8 @@ class _YtShortPlayerState extends State<YtShortPlayer> {
               child: YoutubePlayer(
                 controller: _controller,
                 showVideoProgressIndicator: true,
-                bufferIndicator: const CircularProgressIndicator(),
                 progressIndicatorColor: Colors.red,
+                bufferIndicator: const Loader(),
                 progressColors: const ProgressBarColors(
                   playedColor: Colors.red,
                   handleColor: Colors.redAccent,

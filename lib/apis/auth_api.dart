@@ -11,21 +11,15 @@ import 'package:myapp/models/user/user.dart';
 abstract class IAuthAPI {
   Future<UserModel?> signInWithGoogle();
   Future<void> signOut();
-  Stream<bool> get authStateChange;
 }
 
 class AuthAPI implements IAuthAPI {
-  final StreamController<bool> _authStateController = StreamController<bool>.broadcast();
   final ApiService _apiService;
   final GoogleSignIn _googleSignIn;
 
   AuthAPI({required ApiService apiService, required GoogleSignIn googleSignIn})
       : _apiService = apiService,
-        _googleSignIn = googleSignIn {
-    googleSignIn.onCurrentUserChanged.listen((GoogleSignInAccount? account) {
-      _authStateController.add(account != null);
-    });
-  }
+        _googleSignIn = googleSignIn;
 
   @override
   Future<UserModel?> signInWithGoogle() async {
@@ -58,7 +52,6 @@ class AuthAPI implements IAuthAPI {
     try {
       await _googleSignIn.signOut();
       _apiService.setToken('');
-      _authStateController.add(false);
 
       await SharedPref.clearAll();
     } catch (e, stackTrace) {
@@ -66,9 +59,6 @@ class AuthAPI implements IAuthAPI {
       throw Exception(e.toString());
     }
   }
-
-  @override
-  Stream<bool> get authStateChange => _authStateController.stream;
 }
 
 final authAPIProvider = Provider<AuthAPI>((ref) {

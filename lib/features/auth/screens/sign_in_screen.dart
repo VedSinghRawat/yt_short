@@ -1,8 +1,11 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/widgets/loader.dart';
+import 'package:myapp/features/user/user_controller.dart';
 import '../auth_controller.dart';
 import '../../../core/widgets/custom_app_bar.dart';
 
@@ -12,6 +15,8 @@ class SignInScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isLoading = ref.watch(authControllerProvider).loading;
+
+    log('sign in screen', name: 'sign in screen');
 
     return Scaffold(
       appBar: const CustomAppBar(
@@ -59,8 +64,14 @@ class SignInScreen extends ConsumerWidget {
                             await ref
                                 .read(authControllerProvider.notifier)
                                 .signInWithGoogle(context);
-                            final state = ref.read(authControllerProvider).authState;
-                            if (state == AuthState.authenticated) context.go(Routes.home);
+
+                            if (!context.mounted) return;
+
+                            final user = ref.read(userControllerProvider).currentUser;
+
+                            if (user != null) {
+                              context.go(Routes.home);
+                            }
                           },
                     icon: Image.network(
                       'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png',

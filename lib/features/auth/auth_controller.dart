@@ -10,61 +10,24 @@ import '../../core/utils.dart';
 import '../user/user_controller.dart';
 import 'dart:async';
 
-// Define the state for authentication
-enum AuthState { initial, authenticated, unauthenticated }
-
 class AuthControllerState {
-  final AuthState authState;
   final bool loading;
 
-  const AuthControllerState({required this.authState, required this.loading});
+  AuthControllerState({required this.loading});
 
-  // Initial state factory constructor
-  factory AuthControllerState.initial() =>
-      const AuthControllerState(authState: AuthState.initial, loading: false);
-
-  // CopyWith method for immutable state updates
-  AuthControllerState copyWith({AuthState? authState, bool? loading}) {
-    return AuthControllerState(
-        authState: authState ?? this.authState, loading: loading ?? this.loading);
+  AuthControllerState copyWith({bool? loading}) {
+    return AuthControllerState(loading: loading ?? this.loading);
   }
 }
 
 class AuthController extends StateNotifier<AuthControllerState> {
   final UserController userController;
+
   final AuthAPI authAPI;
   final ContentController contentController;
 
-  StreamSubscription<bool>? _authStateSubscription;
-
   AuthController(this.userController, this.authAPI, this.contentController)
-      : super(AuthControllerState.initial()) {
-    _initializeAuthState();
-  }
-
-  void _initializeAuthState() {
-    _authStateSubscription = authAPI.authStateChange.listen(
-      (isAuthenticated) async {
-        if (isAuthenticated) await userController.getCurrentUser();
-
-        state = state.copyWith(
-          authState: isAuthenticated ? AuthState.authenticated : AuthState.unauthenticated,
-        );
-      },
-      onError: (error) {
-        developer.log('Error in auth state stream', error: error.toString());
-        state = state.copyWith(
-          authState: AuthState.unauthenticated,
-        );
-      },
-    );
-  }
-
-  @override
-  void dispose() {
-    _authStateSubscription?.cancel();
-    super.dispose();
-  }
+      : super(AuthControllerState(loading: false));
 
   Future<void> signInWithGoogle(BuildContext context) async {
     state = state.copyWith(loading: true);
@@ -75,9 +38,9 @@ class AuthController extends StateNotifier<AuthControllerState> {
       if (user == null) return;
       await userController.updateCurrentUser(user);
 
-      state = state.copyWith(authState: AuthState.authenticated);
+      final level = (await SharedPref.getCurrProgress())?['level'] ?? kAuthRequiredLevel;
 
-      if (user.level < kAuthRequiredLevel || !context.mounted) return;
+      if ((user.level < level) || !context.mounted) return;
 
       await showConfirmationDialog(
         context,
@@ -99,7 +62,11 @@ class AuthController extends StateNotifier<AuthControllerState> {
         error: e.toString(),
         stackTrace: stackTrace,
       );
+
+      userController.removeCurrentUser();
+
       if (!context.mounted) return;
+
       showErrorSnackBar(context, e.toString());
     } finally {
       state = state.copyWith(loading: false);
@@ -110,13 +77,12 @@ class AuthController extends StateNotifier<AuthControllerState> {
     state = state.copyWith(loading: true);
 
     try {
+      await userController.progressSync(
+          userController.state.currentUser!.level, userController.state.currentUser!.subLevel);
+
       await authAPI.signOut();
 
       await userController.removeCurrentUser();
-
-      state = state.copyWith(
-        authState: AuthState.unauthenticated,
-      );
     } catch (e, stackTrace) {
       developer.log('Error in AuthController.signOut', error: e.toString(), stackTrace: stackTrace);
       if (context.mounted) {
@@ -129,9 +95,9 @@ class AuthController extends StateNotifier<AuthControllerState> {
 }
 
 final authControllerProvider = StateNotifierProvider<AuthController, AuthControllerState>((ref) {
-  final userController = ref.read(userControllerProvider.notifier);
-  final authAPI = ref.read(authAPIProvider);
-  final contentController = ref.read(contentControllerProvider.notifier);
+  final userController = ref.watch(userControllerProvider.notifier);
+  final authAPI = ref.watch(authAPIProvider);
+  final contentController = ref.watch(contentControllerProvider.notifier);
 
   return AuthController(userController, authAPI, contentController);
 });

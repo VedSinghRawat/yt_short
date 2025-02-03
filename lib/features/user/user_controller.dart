@@ -51,9 +51,9 @@ class UserController extends StateNotifier<UserControllerState> {
     } catch (e, stackTrace) {
       developer.log('Error in UserController.getCurrentUser',
           error: e.toString(), stackTrace: stackTrace);
+    } finally {
+      state = state.copyWith(loading: false);
     }
-
-    state = state.copyWith(loading: false);
 
     return null;
   }
@@ -80,6 +80,7 @@ class UserController extends StateNotifier<UserControllerState> {
 }
 
 final userControllerProvider = StateNotifierProvider<UserController, UserControllerState>((ref) {
-  final userAPI = ref.read(userAPIProvider);
+  final userAPI = ref.watch(userAPIProvider);
+
   return UserController(userAPI);
 });

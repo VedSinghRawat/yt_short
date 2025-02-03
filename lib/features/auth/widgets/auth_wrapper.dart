@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/widgets/loader.dart';
-import '../auth_controller.dart';
-import '../screens/sign_in_screen.dart';
+import 'package:myapp/features/auth/screens/sign_in_screen.dart';
+import 'package:myapp/features/user/user_controller.dart';
+import 'dart:developer' as developer;
 
 class AuthWrapper extends ConsumerWidget {
   final Widget child;
@@ -16,20 +17,32 @@ class AuthWrapper extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authControllerProvider);
+    final userController = ref.watch(userControllerProvider);
 
-    SharedPref.getCurrProgress().then((value) {
-      if (value?['level'] != null &&
-          value?['level']! > kAuthRequiredLevel &&
-          authState.authState == AuthState.unauthenticated) {
-        return const SignInScreen();
-      }
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: SharedPref.getCurrProgress(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Loader(); 
+        }
 
-      if (authState.authState == AuthState.initial) return const Loader();
+        final progress = snapshot.data;
 
-      return child;
-    });
+        if (progress?['level'] != null &&
+            progress?['level']! > kAuthRequiredLevel &&
+            userController.currentUser == null) {
+          return const SignInScreen(); 
+        }
 
-    return const Loader();
+        developer.log(userController.currentUser?.toString() ?? 'null',
+            name: 'userController.currentUser');
+
+        if (userController.currentUser == null && userController.loading) {
+          return const Loader(); 
+        }
+
+        return child;
+      },
+    );
   }
 }
