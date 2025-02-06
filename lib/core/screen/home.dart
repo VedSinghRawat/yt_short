@@ -108,9 +108,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           final level = (content.speechExercise?.level ?? content.video?.level)!;
           final subLevel = (content.speechExercise?.subLevel ?? content.video?.subLevel)!;
 
-          final previousLevel =
-              contents[index - 1].speechExercise?.level ?? contents[index - 1].video?.level;
-
           // Update the user's current progress in shared preferences
           await SharedPref.setCurrProgress(level, subLevel);
 
@@ -129,7 +126,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ));
           }
 
-          if (userEmail.isNotEmpty && level != previousLevel) {
+          // Sync the progress with db if the user moves to a new level
+          final previousContentLevel =
+              contents[index - 1].speechExercise?.level ?? contents[index - 1].video?.level;
+          if (userEmail.isNotEmpty && level != previousContentLevel) {
             await ref.read(userControllerProvider.notifier).progressSync(level, subLevel);
           }
 
@@ -141,10 +141,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
           if (diff < minDiff) return;
 
-          // If the user is logged in, sync their progress with the server
-          if (userEmail.isNotEmpty) {
-            await ref.read(userControllerProvider.notifier).progressSync(level, subLevel);
-          }
           // If the user is logged in, sync their progress with the server
           // Sync any pending activity logs with the server
           final activityLogs = await SharedPref.getActivityLogs();
