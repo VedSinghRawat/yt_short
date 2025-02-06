@@ -75,10 +75,8 @@ class _YtShortPlayerState extends State<YtShortPlayer> {
     try {
       setState(() {
         if (info.visibleFraction > 0.8 && !_playVid) {
-          developer.log('${widget.key} is visible');
           _playVid = true;
         } else if (info.visibleFraction <= 0.8 && _playVid) {
-          developer.log('${widget.key} is not visible');
           _playVid = false;
         }
       });
