@@ -11,7 +11,6 @@ import '../../features/content/widget/content_list.dart';
 import '../widgets/custom_app_bar.dart';
 import '../../features/user/user_controller.dart';
 import '../../features/auth/auth_controller.dart';
-import 'dart:developer' as developer;
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -135,7 +134,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           }
 
           // Check if enough time has passed since the last sync
-          const minDiff = Duration.millisecondsPerMinute * 10;
+          const minDiff = Duration.millisecondsPerMinute * kMinDiff;
           final lastSync = await SharedPref.getLastSync();
           final now = DateTime.now().millisecondsSinceEpoch;
           final diff = now - lastSync;
