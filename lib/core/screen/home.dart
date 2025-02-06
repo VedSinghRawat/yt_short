@@ -134,12 +134,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           }
 
           // Check if enough time has passed since the last sync
-          const minDiff = Duration.millisecondsPerMinute * kMinDiff;
           final lastSync = await SharedPref.getLastSync();
           final now = DateTime.now().millisecondsSinceEpoch;
           final diff = now - lastSync;
 
-          if (diff < minDiff) return;
+          if (diff < kMinProgressSyncingDiffInMillis) return;
 
           // If the user is logged in, sync their progress with the server
           // Sync any pending activity logs with the server
