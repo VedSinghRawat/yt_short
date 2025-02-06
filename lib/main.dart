@@ -24,12 +24,16 @@ class MyApp extends ConsumerWidget {
       routerConfig: router,
     );
 
-    return ref.watch(initializeServiceProvider).when(data: (data) {
-      return app;
-    }, error: (error, stackTrace) {
-      return app;
-    }, loading: () {
-      return const MaterialApp(home: Scaffold(body: Loader()));
-    });
+    return ref.watch(initializeServiceProvider).when(
+      data: (data) {
+        return app;
+      },
+      error: (error, stackTrace) {
+        return app;
+      },
+      loading: () {
+        return const MaterialApp(home: Scaffold(body: Loader()));
+      },
+    );
   }
 }

@@ -21,7 +21,7 @@ class YtShortPlayer extends StatefulWidget {
 
 class _YtShortPlayerState extends State<YtShortPlayer> {
   late YoutubePlayerController _controller;
-  bool _isVisible = false;
+  bool _playVid = false;
   bool _showPlayPauseIcon = false;
   IconData _iconData = Icons.play_arrow;
   Timer? _iconTimer;
@@ -55,13 +55,9 @@ class _YtShortPlayerState extends State<YtShortPlayer> {
 
   void _togglePlayPause() {
     setState(() {
-      if (_controller.value.isPlaying) {
-        _controller.pause();
-        _iconData = Icons.pause;
-      } else {
-        _controller.play();
-        _iconData = Icons.play_arrow;
-      }
+      _playVid = !_controller.value.isPlaying;
+      _iconData = _controller.value.isPlaying ? Icons.pause : Icons.play_arrow;
+
       _showPlayPauseIcon = true;
     });
 
@@ -75,14 +71,17 @@ class _YtShortPlayerState extends State<YtShortPlayer> {
   }
 
   void _onVisibilityChanged(VisibilityInfo info) {
+    if (!mounted) return;
     try {
-      if (info.visibleFraction > 0.8 && !_isVisible) {
-        _isVisible = true;
-        _controller.play();
-      } else if (info.visibleFraction <= 0.8 && _isVisible) {
-        _isVisible = false;
-        _controller.pause();
-      }
+      setState(() {
+        if (info.visibleFraction > 0.8 && !_playVid) {
+          developer.log('${widget.key} is visible');
+          _playVid = true;
+        } else if (info.visibleFraction <= 0.8 && _playVid) {
+          developer.log('${widget.key} is not visible');
+          _playVid = false;
+        }
+      });
     } catch (e) {
       developer.log('Error in YtShortPlayer._onVisibilityChanged', error: e.toString());
     }
@@ -90,6 +89,8 @@ class _YtShortPlayerState extends State<YtShortPlayer> {
 
   @override
   Widget build(BuildContext context) {
+    _playVid ? _controller.play() : _controller.pause();
+
     return VisibilityDetector(
       key: Key(widget.videoId),
       onVisibilityChanged: _onVisibilityChanged,
@@ -102,16 +103,11 @@ class _YtShortPlayerState extends State<YtShortPlayer> {
               aspectRatio: 9 / 16,
               child: YoutubePlayer(
                 controller: _controller,
-                showVideoProgressIndicator: true,
-                progressIndicatorColor: Colors.red,
-                bufferIndicator: const Loader(),
-                progressColors: const ProgressBarColors(
-                  playedColor: Colors.red,
-                  handleColor: Colors.redAccent,
-                ),
+                onReady: () {
+                  _playVid ? _controller.play() : _controller.pause();
+                },
               ),
             ),
-
             // Play/Pause Icon (shows for 2 seconds)
             AnimatedOpacity(
               opacity: _showPlayPauseIcon ? 1.0 : 0.0,
@@ -132,8 +128,15 @@ class _YtShortPlayerState extends State<YtShortPlayer> {
             ValueListenableBuilder<YoutubePlayerValue>(
               valueListenable: _controller,
               builder: (context, value, child) {
-                if (!value.hasPlayed && value.metaData.duration == Duration.zero) {
+                if (!value.hasPlayed &&
+                    value.metaData.duration == Duration.zero &&
+                    value.buffered == 0.0) {
                   return const Loader();
+                }
+                if (!_playVid) {
+                  setState(() {
+                    _playVid = true;
+                  });
                 }
                 return const SizedBox.shrink();
               },
