@@ -131,11 +131,6 @@ class _YtShortPlayerState extends State<YtShortPlayer> {
                     value.buffered == 0.0) {
                   return const Loader();
                 }
-                if (!_playVid) {
-                  setState(() {
-                    _playVid = true;
-                  });
-                }
                 return const SizedBox.shrink();
               },
             ),

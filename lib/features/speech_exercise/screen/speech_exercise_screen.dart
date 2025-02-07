@@ -7,9 +7,11 @@ import 'package:myapp/features/speech_exercise/widgets/exercise_sentence_card.da
 
 class SpeechExerciseScreen extends StatefulWidget {
   final SpeechExercise exercise;
+  final Function(YoutubePlayerController) onControllerInitialized;
 
   const SpeechExerciseScreen({
     super.key,
+    required this.onControllerInitialized,
     required this.exercise,
   });
 
@@ -32,6 +34,8 @@ class _SpeechExerciseScreenState extends State<SpeechExerciseScreen> {
         _showTestSentenceDialog();
       }
     });
+
+    widget.onControllerInitialized(controller);
   }
 
   void _showTestSentenceDialog() {

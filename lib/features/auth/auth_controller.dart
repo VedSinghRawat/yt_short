@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/shared_pref.dart';
-import 'package:myapp/core/widgets/show_confirmation_dialog.dart';
+import 'package:myapp/features/auth/screens/sign_in_screen.dart';
 import 'package:myapp/features/content/content_controller.dart';
 import 'dart:developer' as developer;
 import '../../apis/auth_api.dart';
@@ -22,75 +22,70 @@ class AuthControllerState {
 
 class AuthController extends StateNotifier<AuthControllerState> {
   final UserController userController;
-
   final AuthAPI authAPI;
   final ContentController contentController;
+  bool _isProcessing = false;
 
   AuthController(this.userController, this.authAPI, this.contentController)
       : super(AuthControllerState(loading: false));
 
   Future<void> signInWithGoogle(BuildContext context) async {
+    if (_isProcessing) return;
+    _isProcessing = true;
     state = state.copyWith(loading: true);
-
+    
     try {
       final user = await authAPI.signInWithGoogle();
-
       if (user == null) return;
+
       await userController.updateCurrentUser(user);
+      await Future.delayed(Duration.zero); // Yield control to UI
 
-      final level = (await SharedPref.getCurrProgress())?['level'] ?? kAuthRequiredLevel;
+      final progress = await SharedPref.getCurrProgress();
+      final level = progress?['level'] ?? kAuthRequiredLevel;
+      final subLevel = progress?['subLevel'] ?? 0;
 
-      if ((user.level < level) || !context.mounted) return;
-
-      await showConfirmationDialog(
-        context,
-        question:
-            'We notice that you are already on Level: ${user.level} SubLevel: ${user.subLevel}. Do you continue from there?',
-        onResult: (result) async {
-          if (!result) return;
-          await SharedPref.setCurrProgress(user.level, user.subLevel);
-          await contentController.fetchContents();
-        },
-        yesButtonStyle: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blue,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
+      if (context.mounted && 
+          (user.level > level || (user.level == level && user.subLevel >= subLevel))) {
+        await showLevelChangeConfirmationDialog(context, user, contentController);
+      }
     } catch (e, stackTrace) {
-      developer.log(
-        'Error in AuthController.signInWithGoogle',
-        error: e.toString(),
-        stackTrace: stackTrace,
-      );
-
+      developer.log('Error in AuthController.signInWithGoogle', 
+          error: e.toString(), stackTrace: stackTrace);
+          
       userController.removeCurrentUser();
-
-      if (!context.mounted) return;
-
-      showErrorSnackBar(context, e.toString());
+      if (context.mounted) {
+        showErrorSnackBar(context, e.toString());
+      }
     } finally {
+      _isProcessing = false;
       state = state.copyWith(loading: false);
     }
   }
 
   Future<void> signOut(BuildContext context) async {
+    if (_isProcessing) return;
+    _isProcessing = true;
     state = state.copyWith(loading: true);
-
+    
     try {
-      await userController.progressSync(
-          userController.state.currentUser!.level, userController.state.currentUser!.subLevel);
-
-      await authAPI.signOut();
-
-      await userController.removeCurrentUser();
+      final user = userController.state.currentUser;
+      if (user != null) {
+        await userController.progressSync(user.level, user.subLevel);
+        await authAPI.signOut();
+        await userController.removeCurrentUser();
+        await Future.delayed(Duration.zero); // Allow UI to update
+      }
     } catch (e, stackTrace) {
-      developer.log('Error in AuthController.signOut', error: e.toString(), stackTrace: stackTrace);
+      developer.log('Error in AuthController.signOut', 
+          error: e.toString(), stackTrace: stackTrace);
       if (context.mounted) {
         showErrorSnackBar(context, e.toString());
       }
+    } finally {
+      _isProcessing = false;
+      state = state.copyWith(loading: false);
     }
-
-    state = state.copyWith(loading: false);
   }
 }
 
@@ -98,6 +93,5 @@ final authControllerProvider = StateNotifierProvider<AuthController, AuthControl
   final userController = ref.watch(userControllerProvider.notifier);
   final authAPI = ref.watch(authAPIProvider);
   final contentController = ref.watch(contentControllerProvider.notifier);
-
   return AuthController(userController, authAPI, contentController);
 });
