@@ -8,12 +8,12 @@ import 'dart:developer' as developer;
 
 class SpeechExerciseScreen extends StatefulWidget {
   final SpeechExercise exercise;
-  final bool autoPlay;
+  final Function(YoutubePlayerController) onControllerInitialized;
 
   const SpeechExerciseScreen({
     super.key,
+    required this.onControllerInitialized,
     required this.exercise,
-    this.autoPlay = false,
   });
 
   @override

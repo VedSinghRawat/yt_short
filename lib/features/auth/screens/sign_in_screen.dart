@@ -4,8 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/core/router/router.dart';
+import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/widgets/loader.dart';
+import 'package:myapp/core/widgets/show_confirmation_dialog.dart';
+import 'package:myapp/features/content/content_controller.dart';
 import 'package:myapp/features/user/user_controller.dart';
+import 'package:myapp/models/models.dart';
 import '../auth_controller.dart';
 import '../../../core/widgets/custom_app_bar.dart';
 
@@ -92,4 +96,22 @@ class SignInScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+showLevelChangeConfirmationDialog(
+    BuildContext context, UserModel user, ContentController contentController) {
+  showConfirmationDialog(
+    context,
+    question:
+        'We notice that you are already at Level ${user.level}, Sublevel ${user.subLevel}. Do you want to continue from there?',
+    onResult: (result) async {
+      if (!result) return;
+      await SharedPref.setCurrProgress(user.level, user.subLevel);
+      await contentController.fetchContents();
+    },
+    yesButtonStyle: ElevatedButton.styleFrom(
+      backgroundColor: Colors.blue,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ),
+  );
 }
