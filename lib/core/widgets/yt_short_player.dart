@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/core/utils.dart';
 import 'package:myapp/core/widgets/loader.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:visibility_detector/visibility_detector.dart';
@@ -7,12 +8,14 @@ import 'dart:developer' as developer;
 
 class YtShortPlayer extends StatefulWidget {
   final String videoId;
+  final String? uniqueId;
   final void Function(YoutubePlayerController controller)? onControllerInitialized;
 
   const YtShortPlayer({
     super.key,
     required this.videoId,
     this.onControllerInitialized,
+    this.uniqueId,
   });
 
   @override
@@ -21,7 +24,7 @@ class YtShortPlayer extends StatefulWidget {
 
 class _YtShortPlayerState extends State<YtShortPlayer> {
   late YoutubePlayerController _controller;
-  bool _playVid = false;
+  bool _isVisible = false;
   bool _showPlayPauseIcon = false;
   IconData _iconData = Icons.play_arrow;
   Timer? _iconTimer;
@@ -55,7 +58,7 @@ class _YtShortPlayerState extends State<YtShortPlayer> {
 
   void _togglePlayPause() {
     setState(() {
-      _playVid = !_controller.value.isPlaying;
+      !_controller.value.isPlaying ? _controller.play() : _controller.pause();
       _iconData = _controller.value.isPlaying ? Icons.pause : Icons.play_arrow;
 
       _showPlayPauseIcon = true;
@@ -74,11 +77,9 @@ class _YtShortPlayerState extends State<YtShortPlayer> {
     if (!mounted) return;
     try {
       setState(() {
-        if (info.visibleFraction > 0.8 && !_playVid) {
-          _playVid = true;
-        } else if (info.visibleFraction <= 0.8 && _playVid) {
-          _playVid = false;
-        }
+        developer.log('onVisibilityChanged ${info.visibleFraction} ${widget.videoId}');
+        _isVisible = info.visibleFraction > 0.6;
+        _isVisible ? _controller.play() : _controller.pause();
       });
     } catch (e) {
       developer.log('Error in YtShortPlayer._onVisibilityChanged', error: e.toString());
@@ -87,10 +88,8 @@ class _YtShortPlayerState extends State<YtShortPlayer> {
 
   @override
   Widget build(BuildContext context) {
-    _playVid ? _controller.play() : _controller.pause();
-
     return VisibilityDetector(
-      key: Key(widget.videoId),
+      key: Key(widget.uniqueId ?? widget.videoId),
       onVisibilityChanged: _onVisibilityChanged,
       child: GestureDetector(
         onTap: _togglePlayPause,
@@ -102,7 +101,9 @@ class _YtShortPlayerState extends State<YtShortPlayer> {
               child: YoutubePlayer(
                 controller: _controller,
                 onReady: () {
-                  _playVid ? _controller.play() : _controller.pause();
+                  developer
+                      .log('onReady ${_controller.value.isPlaying} $_isVisible ${widget.videoId}');
+                  !_controller.value.isPlaying && _isVisible ? _controller.play() : null;
                 },
               ),
             ),
@@ -131,11 +132,7 @@ class _YtShortPlayerState extends State<YtShortPlayer> {
                     value.buffered == 0.0) {
                   return const Loader();
                 }
-                if (!_playVid) {
-                  setState(() {
-                    _playVid = true;
-                  });
-                }
+
                 return const SizedBox.shrink();
               },
             ),

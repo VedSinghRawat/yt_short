@@ -75,26 +75,30 @@ class ContentController extends StateNotifier<ContentControllerState> {
     final currUserLevel = progress?['level'] ?? userController.currentUser?.level ?? 1;
     final currUserSubLevel = progress?['subLevel'] ?? userController.currentUser?.subLevel ?? 1;
 
+    final fetchCurrLevel = !state.subLevelCountByLevel.containsKey(currUserLevel);
+
+    final currLevelKeys = state.subLevelCountByLevel[currUserLevel] ?? 0;
+    final nextLevel = currUserLevel + 1;
+    final fetchNextLevel = currUserSubLevel >= currLevelKeys - kSubLevelAPIBuffer &&
+        !state.subLevelCountByLevel.containsKey(nextLevel);
+
+    final prevLevel = currUserLevel - 1;
+    final fetchPrevLevel = currUserSubLevel <= kSubLevelAPIBuffer &&
+        prevLevel >= 1 &&
+        !state.subLevelCountByLevel.containsKey(prevLevel);
+
     // Fetch the current level if not already in cache
-    if (!state.subLevelCountByLevel.containsKey(currUserLevel)) {
+    if (fetchCurrLevel) {
       await _listByLevel(currUserLevel);
     }
 
     // Fetch previous level if near start of sublevels
-    final prevLevel = currUserLevel - 1;
-
-    if (currUserSubLevel <= kSubLevelAPIBuffer &&
-        prevLevel >= 1 &&
-        !state.subLevelCountByLevel.containsKey(prevLevel)) {
+    if (fetchPrevLevel) {
       await _listByLevel(prevLevel);
     }
 
     // Fetch next level if near the end of sublevels
-    final currLevelKeys = state.subLevelCountByLevel[currUserLevel] ?? 0;
-    final nextLevel = currUserLevel + 1;
-
-    if (currUserSubLevel >= currLevelKeys - kSubLevelAPIBuffer &&
-        !state.subLevelCountByLevel.containsKey(nextLevel)) {
+    if (fetchNextLevel) {
       await _listByLevel(nextLevel);
     }
   }

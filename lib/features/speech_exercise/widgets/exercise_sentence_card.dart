@@ -1,6 +1,6 @@
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
-import 'package:myapp/core/widgets/active_mic.dart';
-import 'package:myapp/features/speech_exercise/widgets/recognizer.dart';
+import 'package:myapp/features/speech_exercise/widgets/recognizer_button.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 
 class ExerciseSentenceCard extends StatefulWidget {
@@ -18,53 +18,50 @@ class ExerciseSentenceCard extends StatefulWidget {
 }
 
 class _ExerciseSentenceCardState extends State<ExerciseSentenceCard> {
-  late List<String> words;
-  late List<bool?> wordMarking;
-  int offset = 0;
-  late SpeechRecognizer _recognizer;
-  late List<String> recognizedWords;
-  bool get passed => wordMarking.every((mark) => mark == true);
+  late List<String> _words;
+  late List<bool?> _wordMarking;
+  int _offset = 0;
+  late List<String> _recognizedWords;
+  bool get passed => _wordMarking.every((mark) => mark == true);
   bool get failed =>
-      recognizedWords.where((word) => word.isNotEmpty).toList().length == words.length && !passed;
+      _recognizedWords.where((word) => word.isNotEmpty).toList().length == _words.length && !passed;
   bool get testCompleted => passed || failed;
 
   @override
   void initState() {
     super.initState();
-    words = widget.text.split(' ');
-    wordMarking = List.generate(words.length, (index) => null);
-    recognizedWords = List.filled(words.length, '');
-    _recognizer = SpeechRecognizer(
-      onResult: _onSpeechResult,
-      onStopListenting: _onStopListening,
-    );
+    _words = widget.text.split(' ');
+    _wordMarking = List.generate(_words.length, (index) => null);
+    _recognizedWords = List.filled(_words.length, '');
   }
 
   void _onStopListening() {
     setState(() {
-      wordMarking = List.generate(words.length, (index) => null);
-      recognizedWords = List.filled(words.length, '');
+      _wordMarking = List.generate(_words.length, (index) => null);
+      _recognizedWords = List.filled(_words.length, '');
     });
   }
 
   void _onSpeechResult(SpeechRecognitionResult result) {
+    developer.log('onSpeechResult ${result.toJson()}');
+    List<String> currRecognizedWords =
+        result.recognizedWords.split(' ').where((word) => word.isNotEmpty).toList();
+
     setState(() {
-      List<String> currRecognizedWords =
-          result.recognizedWords.split(' ').where((word) => word.isNotEmpty).toList();
       if (currRecognizedWords.isEmpty) {
-        offset = recognizedWords.where((word) => word.isNotEmpty).length;
+        _offset = _recognizedWords.where((word) => word.isNotEmpty).length;
         return;
       }
 
       for (var i = 0; i < currRecognizedWords.length; i++) {
-        recognizedWords[i + offset] = currRecognizedWords[i];
+        _recognizedWords[i + _offset] = currRecognizedWords[i];
       }
 
-      for (int i = 0; i < recognizedWords.where((word) => word.isNotEmpty).length; i++) {
-        String formatedTargetWord = formatWord(words[i]);
-        String formatedRecognizedWord = formatWord(recognizedWords[i]);
+      for (int i = 0; i < _recognizedWords.where((word) => word.isNotEmpty).length; i++) {
+        String formatedTargetWord = formatWord(_words[i]);
+        String formatedRecognizedWord = formatWord(_recognizedWords[i]);
 
-        wordMarking[i] = formatedTargetWord == formatedRecognizedWord;
+        _wordMarking[i] = formatedTargetWord == formatedRecognizedWord;
       }
     });
   }
@@ -118,14 +115,14 @@ class _ExerciseSentenceCardState extends State<ExerciseSentenceCard> {
                       alignment: WrapAlignment.center,
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        for (int i = 0; i < words.length; i++)
+                        for (int i = 0; i < _words.length; i++)
                           Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               // Recognized word
-                              recognizedWords[i].isNotEmpty
+                              _recognizedWords[i].isNotEmpty
                                   ? Text(
-                                      recognizedWords[i],
+                                      _recognizedWords[i],
                                       style: recognizedWordStyle.copyWith(
                                         textBaseline: TextBaseline.alphabetic,
                                       ),
@@ -134,18 +131,18 @@ class _ExerciseSentenceCardState extends State<ExerciseSentenceCard> {
 
                               // Target word
                               Text(
-                                words[i],
+                                _words[i],
                                 style: TextStyle(
-                                  color: wordMarking[i] == null
+                                  color: _wordMarking[i] == null
                                       ? Colors.white60
-                                      : wordMarking[i] == true
+                                      : _wordMarking[i] == true
                                           ? Colors.lightBlue[200]
-                                          : wordMarking[i] == false
+                                          : _wordMarking[i] == false
                                               ? Colors.red
                                               : Colors.white,
                                   fontSize: 24,
                                   fontWeight:
-                                      wordMarking[i] != null ? FontWeight.bold : FontWeight.normal,
+                                      _wordMarking[i] != null ? FontWeight.bold : FontWeight.normal,
                                   height: 1.4,
                                   textBaseline: TextBaseline.alphabetic,
                                 ),
@@ -178,73 +175,13 @@ class _ExerciseSentenceCardState extends State<ExerciseSentenceCard> {
           const Spacer(),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-            child: Container(
-              width: testCompleted ? 160 : 80,
-              height: testCompleted ? 60 : 80,
-              decoration: BoxDecoration(
-                shape: testCompleted ? BoxShape.rectangle : BoxShape.circle,
-                borderRadius: testCompleted ? BorderRadius.circular(40) : null,
-                color: failed
-                    ? Colors.red.shade100
-                    : _recognizer.isListening | passed
-                        ? Colors.green.shade100
-                        : Colors.blue.shade100,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.3),
-                    spreadRadius: 2,
-                    blurRadius: 5,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () async {
-                    if (passed) {
-                      widget.onContinue();
-                      _recognizer.stopListening();
-                    } else {
-                      if (_recognizer.isListening) {
-                        _recognizer.stopListening();
-                      } else {
-                        await _recognizer.startListening();
-                      }
-                      setState(() {
-                        _recognizer = _recognizer;
-                      });
-                    }
-                  },
-                  customBorder: passed ? null : const CircleBorder(),
-                  child: Container(
-                    width: passed ? 160 : 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      shape: passed ? BoxShape.rectangle : BoxShape.circle,
-                      borderRadius: passed ? BorderRadius.circular(40) : null,
-                    ),
-                    child: Center(
-                      child: testCompleted
-                          ? Text(
-                              passed ? 'Continue' : 'Retry',
-                              style: TextStyle(
-                                color: passed ? Colors.green.shade700 : Colors.red.shade700,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            )
-                          : _recognizer.isListening
-                              ? const ActiveMic()
-                              : const Icon(
-                                  Icons.mic_none,
-                                  color: Colors.blue,
-                                  size: 32,
-                                ),
-                    ),
-                  ),
-                ),
-              ),
+            child: RecognizerButton(
+              testCompleted: testCompleted,
+              passed: passed,
+              failed: failed,
+              onContinue: widget.onContinue,
+              onResult: _onSpeechResult,
+              onStopListening: _onStopListening,
             ),
           ),
         ],

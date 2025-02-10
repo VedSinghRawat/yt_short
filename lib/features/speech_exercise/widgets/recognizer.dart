@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'dart:developer' as developer;
 
 class SpeechRecognizer {
   final Function(SpeechRecognitionResult) onResult;
@@ -51,16 +52,18 @@ class SpeechRecognizer {
 
   void _onStatus(String status) {
     if (status == stt.SpeechToText.doneStatus && _isListening) {
-      _speech.listen(
-        pauseFor: const Duration(minutes: 1),
-        listenFor: const Duration(minutes: 1),
-        onResult: onResult,
-        listenOptions: stt.SpeechListenOptions(
-          partialResults: true,
-          listenMode: stt.ListenMode.dictation,
-        ),
-      );
+      // _speech.listen(
+      //   pauseFor: const Duration(minutes: 1),
+      //   listenFor: const Duration(minutes: 1),
+      //   onResult: onResult,
+      //   listenOptions: stt.SpeechListenOptions(
+      //     partialResults: true,
+      //     listenMode: stt.ListenMode.dictation,
+      //   ),
+      // );
       // stopListening();
+      _speech.stop();
+      _isListening = false;
     }
   }
 }

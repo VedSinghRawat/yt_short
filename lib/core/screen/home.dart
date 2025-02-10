@@ -95,6 +95,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       body: ContentsList(
         contents: contents,
         onVideoChange: (int index) async {
+          if (!mounted) return;
           // Get the user's email, return early if index is out of bounds
           if (index <= kSubLevelAPIBuffer || index >= contents.length - kSubLevelAPIBuffer) {
             await ref.read(contentControllerProvider.notifier).fetchContents();
@@ -127,10 +128,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           }
 
           // Sync the progress with db if the user moves to a new level
-          final previousContentLevel =
-              contents[index - 1].speechExercise?.level ?? contents[index - 1].video?.level;
-          if (userEmail.isNotEmpty && level != previousContentLevel) {
-            await ref.read(userControllerProvider.notifier).progressSync(level, subLevel);
+          if (index > 0) {
+            final previousContentLevel =
+                contents[index - 1].speechExercise?.level ?? contents[index - 1].video?.level;
+            if (userEmail.isNotEmpty && level != previousContentLevel) {
+              await ref.read(userControllerProvider.notifier).progressSync(level, subLevel);
+            }
           }
 
           // Check if enough time has passed since the last sync

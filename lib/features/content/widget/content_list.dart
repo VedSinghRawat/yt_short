@@ -4,6 +4,7 @@ import 'package:myapp/core/widgets/yt_short_player.dart';
 import 'package:myapp/features/content/widget/last_level.dart';
 import 'package:myapp/features/speech_exercise/screen/speech_exercise_screen.dart';
 import '../../../models/models.dart';
+import 'dart:developer' as developer;
 
 class ContentsList extends StatefulWidget {
   final List<Content> contents;
@@ -42,8 +43,7 @@ class _ContentsListState extends State<ContentsList> {
       if (jumpTo >= widget.contents.length || jumpTo < 0) return;
 
       _isAnimating = true;
-      await _pageController.animateToPage(jumpTo,
-          duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+      _pageController.jumpToPage(jumpTo);
       _isAnimating = false;
     });
   }

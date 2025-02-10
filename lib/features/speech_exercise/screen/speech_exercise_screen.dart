@@ -1,16 +1,19 @@
-import 'dart:ui';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:myapp/models/speech_exercise/speech_exercise.dart';
 import 'package:myapp/core/widgets/yt_short_player.dart';
 import 'package:myapp/features/speech_exercise/widgets/exercise_sentence_card.dart';
+import 'dart:developer' as developer;
 
 class SpeechExerciseScreen extends StatefulWidget {
   final SpeechExercise exercise;
+  final bool autoPlay;
 
   const SpeechExerciseScreen({
     super.key,
     required this.exercise,
+    this.autoPlay = false,
   });
 
   @override
@@ -21,42 +24,47 @@ class _SpeechExerciseScreenState extends State<SpeechExerciseScreen> {
   late YoutubePlayerController? _controller;
   bool _hasShownDialog = false;
 
+  late void Function() _pauseListener;
   void _onControllerInitialized(YoutubePlayerController controller) {
-    _controller = controller;
-
-    controller.addListener(() {
+    _pauseListener = () {
       if (!_hasShownDialog &&
           controller.value.position.inSeconds >= widget.exercise.pauseAt &&
           controller.value.isPlaying) {
         controller.pause();
         _showTestSentenceDialog();
       }
-    });
+    };
+    _controller = controller;
+
+    controller.addListener(_pauseListener);
   }
 
   void _showTestSentenceDialog() {
-    _hasShownDialog = true;
+    setState(() {
+      _hasShownDialog = true;
+    });
+    _controller!.removeListener(_pauseListener);
+
     showDialog(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible: kDebugMode,
       barrierColor: const Color.fromRGBO(0, 0, 0, 0.8),
       builder: (context) => PopScope(
-        canPop: false,
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-          child: Dialog(
-            backgroundColor: const Color.fromRGBO(255, 255, 255, 0.75),
-            insetPadding: const EdgeInsets.symmetric(
-              vertical: 48,
-              horizontal: 24,
-            ),
-            child: ExerciseSentenceCard(
-              text: widget.exercise.text,
-              onContinue: () {
+        canPop: kDebugMode,
+        child: Dialog(
+          backgroundColor: const Color.fromRGBO(255, 255, 255, 0.75),
+          insetPadding: const EdgeInsets.symmetric(
+            vertical: 48,
+            horizontal: 24,
+          ),
+          child: ExerciseSentenceCard(
+            text: widget.exercise.text,
+            onContinue: () {
+              setState(() {
                 _controller?.play();
-                Navigator.of(context).pop();
-              },
-            ),
+              });
+              Navigator.of(context).pop();
+            },
           ),
         ),
       ),
@@ -68,6 +76,7 @@ class _SpeechExerciseScreenState extends State<SpeechExerciseScreen> {
     return YtShortPlayer(
       videoId: widget.exercise.ytId,
       onControllerInitialized: _onControllerInitialized,
+      uniqueId: '${widget.exercise.ytId}exercise',
     );
   }
 }
