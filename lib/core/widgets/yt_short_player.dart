@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:myapp/core/utils.dart';
 import 'package:myapp/core/widgets/loader.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:visibility_detector/visibility_detector.dart';
@@ -77,7 +76,6 @@ class _YtShortPlayerState extends State<YtShortPlayer> {
     if (!mounted) return;
     try {
       setState(() {
-        developer.log('onVisibilityChanged ${info.visibleFraction} ${widget.videoId}');
         _isVisible = info.visibleFraction > 0.6;
         _isVisible ? _controller.play() : _controller.pause();
       });
@@ -101,8 +99,6 @@ class _YtShortPlayerState extends State<YtShortPlayer> {
               child: YoutubePlayer(
                 controller: _controller,
                 onReady: () {
-                  developer
-                      .log('onReady ${_controller.value.isPlaying} $_isVisible ${widget.videoId}');
                   !_controller.value.isPlaying && _isVisible ? _controller.play() : null;
                 },
               ),

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/utils.dart';
@@ -116,9 +117,7 @@ class _ContentsListState extends State<ContentsList> {
       onPageChanged: (index) {
         if (_isAnimating) return;
 
-        final isScrollingDown = index > _currentPage;
-
-        if (isScrollingDown) {
+        if (index > _currentPage && !kDebugMode) {
           if (_currentPage >= widget.contents.length) return;
 
           final currentContent = widget.contents[_currentPage];
@@ -151,13 +150,16 @@ class _ContentsListState extends State<ContentsList> {
           return LastLevelWidget(onRefresh: () => widget.onVideoChange?.call(index));
         }
 
+        final positionText =
+            '${content.video?.level ?? content.speechExercise?.level}-${content.video?.subLevel ?? content.speechExercise?.subLevel}';
+
         return Stack(
           children: [
             Center(
               child: content.video != null
                   ? YtShortPlayer(
                       // this is youtube_player_flutter custom widget
-                      key: ValueKey('${content.video!.level}-${content.video!.subLevel}'),
+                      key: ValueKey(positionText),
                       videoId: content.video!.ytId,
                       onControllerInitialized: (controller) =>
                           _onControllerInitialized(controller, content.video!.ytId),
@@ -166,8 +168,7 @@ class _ContentsListState extends State<ContentsList> {
                       ? SpeechExerciseScreen(
                           onControllerInitialized: (controller) =>
                               _onControllerInitialized(controller, content.speechExercise!.ytId),
-                          key: ValueKey(
-                              '${content.speechExercise!.level}-${content.speechExercise!.subLevel}'),
+                          key: ValueKey(positionText),
                           exercise: content.speechExercise!,
                         )
                       : const SizedBox.shrink(),
@@ -178,11 +179,11 @@ class _ContentsListState extends State<ContentsList> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.7),
+                  color: const Color.fromRGBO(0, 0, 0, 0.7),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'Level ${content.video?.level ?? content.speechExercise?.level}-${content.video?.subLevel ?? content.speechExercise?.subLevel}',
+                  'Level $positionText',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,
