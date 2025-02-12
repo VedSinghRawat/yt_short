@@ -35,3 +35,7 @@ String randomString(int n) {
 
   return buffer;
 }
+
+bool isLevelAfter(int levelA, int subLevelA, int levelB, int subLevelB) {
+  return levelA > levelB || (levelA == levelB && subLevelA > subLevelB);
+}

@@ -3,4 +3,4 @@ const String kRequiredAppVersion = '1.0.0'; // Minimum version required to run t
 const String kSuggestedAppVersion = '1.1.0'; // Version recommended for optimal experience
 const int kAuthRequiredLevel = 3;
 const int kSubLevelAPIBuffer = 3;
-const int kMinProgressSyncingDiffInMillis = Duration.millisecondsPerMinute * 10;
+const int kMinProgressSyncingDiffInMillis = Duration.millisecondsPerMinute * 1;

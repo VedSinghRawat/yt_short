@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/shared_pref.dart';
+import 'package:myapp/core/utils.dart';
 import 'package:myapp/features/activity_log/activity_log.controller.dart';
 import 'package:myapp/models/activity_log/activity_log.dart';
 import '../../features/content/content_controller.dart';
@@ -94,27 +95,42 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       body: ContentsList(
         contents: contents,
-        onVideoChange: (int index) async {
+        onVideoChange: (int index, PageController controller) async {
           if (!mounted) return;
-          // Get the user's email, return early if index is out of bounds
-          if (index <= kSubLevelAPIBuffer || index >= contents.length - kSubLevelAPIBuffer) {
-            await ref.read(contentControllerProvider.notifier).fetchContents();
-          }
-
-          if (index < 0 || index >= contents.length) return;
-          final userEmail = ref.read(userControllerProvider).currentUser?.email ?? '';
 
           // Get the content, level, and sublevel for the current index
           final content = contents[index];
           final level = (content.speechExercise?.level ?? content.video?.level)!;
           final subLevel = (content.speechExercise?.subLevel ?? content.video?.subLevel)!;
 
-          // Update the user's current progress in shared preferences
-          await SharedPref.setCurrProgress(level, subLevel);
+          // if (index < 0 || index >= contents.length) return;
+
+          // Get the user's email, return early if index is out of bounds
+          final user = ref.read(userControllerProvider).currentUser;
+          final userEmail = user?.email ?? '';
+
+          if (user != null &&
+              (!isLevelAfter(level, subLevel, user.maxLevel, user.maxSubLevel) || true)) {
+            await controller.animateToPage(
+              index - 1,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+            );
+
+            showSnackBar(context, 'Please complete the current content before proceeding');
+            return;
+          }
 
           // If the level requires auth and the user is not logged in, redirect to sign in
           if (level > kAuthRequiredLevel && userEmail.isEmpty && context.mounted) {
             context.go(Routes.signIn);
+          }
+
+          // Update the user's current progress in shared preferences
+          await SharedPref.setCurrProgress(level, subLevel);
+
+          if (index <= kSubLevelAPIBuffer || index >= contents.length - kSubLevelAPIBuffer) {
+            await ref.read(contentControllerProvider.notifier).fetchContents();
           }
 
           // If the user is logged in, add an activity log entry
@@ -131,6 +147,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           if (index > 0) {
             final previousContentLevel =
                 contents[index - 1].speechExercise?.level ?? contents[index - 1].video?.level;
+
             if (userEmail.isNotEmpty && level != previousContentLevel) {
               await ref.read(userControllerProvider.notifier).progressSync(level, subLevel);
             }

@@ -11,7 +11,7 @@ import 'dart:developer' as developer;
 
 class ContentsList extends StatefulWidget {
   final List<Content> contents;
-  final Function(int index)? onVideoChange;
+  final Function(int index, PageController controller)? onVideoChange;
 
   const ContentsList({
     super.key,
@@ -116,38 +116,17 @@ class _ContentsListState extends State<ContentsList> {
       scrollDirection: Axis.vertical,
       onPageChanged: (index) {
         if (_isAnimating) return;
-
-        if (index > _currentPage && !kDebugMode) {
-          if (_currentPage >= widget.contents.length) return;
-
-          final currentContent = widget.contents[_currentPage];
-          final currentContentId =
-              currentContent.video?.ytId ?? currentContent.speechExercise?.ytId;
-
-          if (currentContentId == null || !_completedContentIds.contains(currentContentId)) {
-            _isAnimating = true;
-            _pageController
-                .animateToPage(
-                  _currentPage,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeOut,
-                )
-                .then((_) => _isAnimating = false);
-
-            showSnackBar(context, 'Please complete the current content before proceeding');
-            return;
-          }
-        }
-
         setState(() => _currentPage = index);
-        widget.onVideoChange?.call(index);
+
+        widget.onVideoChange?.call(index, _pageController);
       },
       itemBuilder: (context, index) {
         final content = widget.contents.length > index ? widget.contents[index] : null;
         final isLastContent = index == widget.contents.length;
 
         if (isLastContent || content == null) {
-          return LastLevelWidget(onRefresh: () => widget.onVideoChange?.call(index));
+          return LastLevelWidget(
+              onRefresh: () => widget.onVideoChange?.call(index, _pageController));
         }
 
         final positionText =

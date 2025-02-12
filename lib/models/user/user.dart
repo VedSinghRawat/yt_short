@@ -8,6 +8,8 @@ class UserModel {
   final int subLevel;
   final String created;
   final String modified;
+  final int maxLevel;
+  final int maxSubLevel;
   final int lastSeen;
   final int lastProgress;
 
@@ -19,6 +21,8 @@ class UserModel {
     required this.subLevel,
     required this.lastSeen,
     required this.lastProgress,
+    required this.maxLevel,
+    required this.maxSubLevel,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) => _$UserModelFromJson(json);
@@ -32,6 +36,8 @@ class UserModel {
     int? subLevel,
     int? lastSeen,
     int? lastProgress,
+    int? maxLevel,
+    int? maxSubLevel,
   }) {
     return UserModel(
       email: email ?? this.email,
@@ -41,6 +47,8 @@ class UserModel {
       subLevel: subLevel ?? this.subLevel,
       lastSeen: lastSeen ?? this.lastSeen,
       lastProgress: lastProgress ?? this.lastProgress,
+      maxLevel: maxLevel ?? this.maxLevel,
+      maxSubLevel: maxSubLevel ?? this.maxSubLevel,
     );
   }
 }

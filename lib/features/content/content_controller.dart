@@ -11,6 +11,7 @@ class ContentControllerState {
   final Map<String, Content> contentMap;
   // level against the key attribute of content
   final Map<int, int> subLevelCountByLevel;
+  final bool hasFinishedVideo;
 
   final bool loading;
 
@@ -18,17 +19,20 @@ class ContentControllerState {
     this.contentMap = const {},
     this.subLevelCountByLevel = const {},
     this.loading = false,
+    this.hasFinishedVideo = false,
   });
 
   ContentControllerState copyWith({
     Map<String, Content>? contentMap,
     Map<int, int>? subLevelCountByLevel,
     bool? loading,
+    bool? hasFinishedVideo,
   }) {
     return ContentControllerState(
       contentMap: contentMap ?? this.contentMap,
       subLevelCountByLevel: subLevelCountByLevel ?? this.subLevelCountByLevel,
       loading: loading ?? this.loading,
+      hasFinishedVideo: hasFinishedVideo ?? this.hasFinishedVideo,
     );
   }
 }
@@ -101,6 +105,10 @@ class ContentController extends StateNotifier<ContentControllerState> {
     if (fetchNextLevel) {
       await _listByLevel(nextLevel);
     }
+  }
+
+  void setHasFinishedVideo(bool hasFinishedVideo) {
+    state = state.copyWith(hasFinishedVideo: hasFinishedVideo);
   }
 }
 
