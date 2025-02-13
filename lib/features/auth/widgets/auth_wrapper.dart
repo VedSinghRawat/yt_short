@@ -1,44 +1,39 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/widgets/loader.dart';
 import 'package:myapp/features/auth/screens/sign_in_screen.dart';
 import 'package:myapp/features/user/user_controller.dart';
-import 'dart:developer' as developer;
+
+final progressProvider = FutureProvider<Map<String, dynamic>?>((ref) async {
+  return await SharedPref.getCurrProgress();
+});
 
 class AuthWrapper extends ConsumerWidget {
   final Widget child;
 
-  const AuthWrapper({
-    super.key,
-    required this.child,
-  });
+  const AuthWrapper({super.key, required this.child});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userController = ref.watch(userControllerProvider);
+    final progressAsyncValue = ref.watch(progressProvider);
 
-    return FutureBuilder<Map<String, dynamic>?>(
-      future: SharedPref.getCurrProgress(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Loader(); 
-        }
-
-        final progress = snapshot.data;
-
+    return progressAsyncValue.when(
+      loading: () => const Loader(),
+      error: (err, stack) {
+        return const SignInScreen();
+      },
+      data: (progress) {
         if (progress?['level'] != null &&
             progress?['level']! > kAuthRequiredLevel &&
             userController.currentUser == null) {
-          return const SignInScreen(); 
+          return const SignInScreen();
         }
 
-        developer.log(userController.currentUser?.toString() ?? 'null',
-            name: 'userController.currentUser');
-
         if (userController.currentUser == null && userController.loading) {
-          return const Loader(); 
+          return const Loader();
         }
 
         return child;

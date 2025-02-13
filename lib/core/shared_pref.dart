@@ -30,11 +30,16 @@ class SharedPref {
     await _setValue(key, encoded);
   }
 
-  static Future<void> setCurrProgress(int level, int subLevel) async {
+  static Future<void> setCurrProgress(
+      {int? level, int? subLevel, int? maxLevel, int? maxSubLevel}) async {
+    final currProgress = await getCurrProgress();
+
     await _setObject('currProgress', {
-      'level': level,
-      'subLevel': subLevel,
+      'level': level ?? currProgress?['level'],
+      'subLevel': subLevel ?? currProgress?['subLevel'],
       'modified': DateTime.now().millisecondsSinceEpoch,
+      'maxLevel': maxLevel ?? currProgress?['maxLevel'],
+      'maxSubLevel': maxSubLevel ?? currProgress?['maxSubLevel'],
     });
   }
 

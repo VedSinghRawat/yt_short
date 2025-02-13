@@ -100,13 +100,18 @@ class SignInScreen extends ConsumerWidget {
 
 showLevelChangeConfirmationDialog(
     BuildContext context, UserModel user, ContentController contentController) {
-  showConfirmationDialog(
+  return showConfirmationDialog(
     context,
     question:
         'We notice that you are already at Level ${user.level}, Sublevel ${user.subLevel}. Do you want to continue from there?',
     onResult: (result) async {
       if (!result) return;
-      await SharedPref.setCurrProgress(user.level, user.subLevel);
+
+      await SharedPref.setCurrProgress(
+          level: user.level,
+          subLevel: user.subLevel,
+          maxLevel: user.maxLevel,
+          maxSubLevel: user.maxSubLevel);
       await contentController.fetchContents();
     },
     yesButtonStyle: ElevatedButton.styleFrom(

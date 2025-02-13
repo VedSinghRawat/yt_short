@@ -23,7 +23,8 @@ class InitializeService {
 
       localLastModified > apiLastModified
           ? await userController.progressSync(currProgress!['level'], currProgress['subLevel'])
-          : await SharedPref.setCurrProgress(apiUser!.level, apiUser.subLevel);
+          : await SharedPref.setCurrProgress(
+              level: apiUser?.level, subLevel: apiUser?.subLevel);
     } catch (e, stackTrace) {
       developer.log('Error during initialize', error: e.toString(), stackTrace: stackTrace);
     }

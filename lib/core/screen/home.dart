@@ -1,3 +1,6 @@
+import 'dart:developer';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,8 +8,10 @@ import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/utils.dart';
+import 'package:myapp/core/widgets/loader.dart';
 import 'package:myapp/features/activity_log/activity_log.controller.dart';
 import 'package:myapp/models/activity_log/activity_log.dart';
+import 'package:myapp/models/content/content.dart';
 import '../../features/content/content_controller.dart';
 import '../../features/content/widget/content_list.dart';
 import '../widgets/custom_app_bar.dart';
@@ -21,6 +26,8 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  List<Content>? _cachedContents;
+
   @override
   void initState() {
     super.initState();
@@ -29,6 +36,144 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (!mounted) return;
       await ref.read(contentControllerProvider.notifier).fetchContents();
     });
+  }
+
+  void cancelVideoChange(int index, PageController controller) {
+    controller.animateToPage(
+      index - 1,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+
+    try {
+      showSnackBar(context, 'Please complete the current content before proceeding');
+    } catch (e) {
+      log('error in cancelVideoChange: $e');
+    }
+  }
+
+  void onVideoChange(int index, PageController controller, List<Content> contents) async {
+    if (!mounted) return;
+
+    if (contents.length <= index) {
+      fetchContent(index, contents);
+      return;
+    }
+
+    // Get the content, level, and sublevel for the current index
+    final content = contents[index];
+    final level = (content.speechExercise?.level ?? content.video?.level)!;
+    final subLevel = (content.speechExercise?.subLevel ?? content.video?.subLevel)!;
+
+    // Get the user's email, return early if index is out of bounds
+    final user = ref.read(userControllerProvider).currentUser;
+    final userEmail = user?.email ?? '';
+
+    final hasFinishedVideo = ref.read(contentControllerProvider).hasFinishedVideo;
+    final localProgress = await SharedPref.getCurrProgress();
+
+    final levelAfter = localProgress == null ||
+        isLevelAfter(level, subLevel, getMax([user?.maxLevel, localProgress['maxLevel']]).toInt(),
+            getMax([user?.maxSubLevel, localProgress['maxSubLevel']]).toInt());
+
+    if (!hasFinishedVideo && levelAfter) {
+      cancelVideoChange(index, controller);
+      return;
+    }
+
+    ref.read(contentControllerProvider.notifier).setHasFinishedVideo(false);
+
+    // If the level requires auth and the user is not logged in, redirect to sign in
+    if (level > kAuthRequiredLevel && userEmail.isEmpty && mounted) {
+      context.go(Routes.signIn);
+    }
+
+    final isLocalLevelAfter = isLevelAfter(
+        level, subLevel, localProgress?['maxLevel'] ?? 0, localProgress?['maxSubLevel'] ?? 0);
+
+    // Update the user's current progress in shared preferences
+    await SharedPref.setCurrProgress(
+        level: level,
+        subLevel: subLevel,
+        maxLevel: isLocalLevelAfter ? level : localProgress?['maxLevel'],
+        maxSubLevel: isLocalLevelAfter ? subLevel : localProgress?['maxSubLevel']);
+
+    await fetchContent(index, contents);
+
+    // If the user is logged in, add an activity log entry
+    if (userEmail.isNotEmpty) {
+      await SharedPref.addActivityLog(ActivityLog(
+        subLevel: subLevel,
+        level: level,
+        userEmail: userEmail,
+        timestamp: DateTime.now().millisecondsSinceEpoch,
+      ));
+    }
+
+    // Sync the progress with db if the user moves to a new level
+    syncProgress(index, contents, userEmail, level, subLevel);
+
+    // Sync the last sync time with the server
+    syncLastSyncToServer();
+  }
+
+  Future<void> fetchContent(int index, List<Content> contents) async {
+    if (index <= kSubLevelAPIBuffer || index >= contents.length - kSubLevelAPIBuffer) {
+      await ref.read(contentControllerProvider.notifier).fetchContents();
+    }
+  }
+
+  Future<void> syncProgress(
+      int index, List<Content> contents, String userEmail, int level, int subLevel) async {
+    if (index > 0) {
+      final previousContentLevel =
+          contents[index - 1].speechExercise?.level ?? contents[index - 1].video?.level;
+
+      if (userEmail.isNotEmpty && level != previousContentLevel) {
+        ref.read(userControllerProvider.notifier).progressSync(level, subLevel);
+      }
+    }
+  }
+
+  void syncLastSyncToServer() async {
+    // Check if enough time has passed since the last sync
+    final lastSync = await SharedPref.getLastSync();
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    final diff = now - lastSync;
+
+    if (diff < kMinProgressSyncingDiffInMillis) return;
+
+    // If the user is logged in, sync their progress with the server
+    // Sync any pending activity logs with the server
+    final activityLogs = await SharedPref.getActivityLogs();
+
+    if (activityLogs == null || activityLogs.isEmpty) return;
+
+    await ref.read(activityLogControllerProvider.notifier).syncActivityLogs(activityLogs);
+
+    // Clear the activity logs and update the last sync time
+    await SharedPref.clearActivityLogs();
+    await SharedPref.setLastSync(DateTime.now().millisecondsSinceEpoch);
+  }
+
+  List<Content> _getSortedContents(Map<String, Content> contentMap) {
+    final contents = contentMap.values.toList();
+    contents.sort((a, b) {
+      final levelA = a.speechExercise?.level ?? a.video?.level ?? 0;
+      final levelB = b.speechExercise?.level ?? b.video?.level ?? 0;
+
+      if (levelA != levelB) {
+        return levelA.compareTo(levelB);
+      }
+
+      final subLevelA = a.speechExercise?.subLevel ?? a.video?.subLevel ?? 0;
+      final subLevelB = b.speechExercise?.subLevel ?? b.video?.subLevel ?? 0;
+
+      return subLevelA.compareTo(subLevelB);
+    });
+    return contents;
   }
 
   @override
@@ -40,23 +185,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final isLoggedIn =
         ref.watch(userControllerProvider.select((state) => state.currentUser))?.email.isNotEmpty ??
             false;
-    final contents = contentMap.values.toList()
-      ..sort((a, b) {
-        final levelA = a.speechExercise?.level ?? a.video?.level ?? 0;
-        final levelB = b.speechExercise?.level ?? b.video?.level ?? 0;
 
-        if (levelA != levelB) {
-          return levelA.compareTo(levelB);
-        }
+    // Only sort contents if they have changed
+    if (_cachedContents == null || !listEquals(_cachedContents, contentMap.values.toList())) {
+      _cachedContents = _getSortedContents(contentMap);
+    }
 
-        final subLevelA = a.speechExercise?.subLevel ?? a.video?.subLevel ?? 0;
-        final subLevelB = b.speechExercise?.subLevel ?? b.video?.subLevel ?? 0;
-
-        return subLevelA.compareTo(subLevelB);
-      });
-
-    if (loading && contents.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+    if (loading && _cachedContents!.isEmpty) {
+      return const Loader();
     }
 
     return Scaffold(
@@ -94,82 +230,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
       body: ContentsList(
-        contents: contents,
-        onVideoChange: (int index, PageController controller) async {
-          if (!mounted) return;
-
-          // Get the content, level, and sublevel for the current index
-          final content = contents[index];
-          final level = (content.speechExercise?.level ?? content.video?.level)!;
-          final subLevel = (content.speechExercise?.subLevel ?? content.video?.subLevel)!;
-
-          // if (index < 0 || index >= contents.length) return;
-
-          // Get the user's email, return early if index is out of bounds
-          final user = ref.read(userControllerProvider).currentUser;
-          final userEmail = user?.email ?? '';
-
-          if (user != null &&
-              (!isLevelAfter(level, subLevel, user.maxLevel, user.maxSubLevel) || true)) {
-            await controller.animateToPage(
-              index - 1,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOut,
-            );
-
-            showSnackBar(context, 'Please complete the current content before proceeding');
-            return;
-          }
-
-          // If the level requires auth and the user is not logged in, redirect to sign in
-          if (level > kAuthRequiredLevel && userEmail.isEmpty && context.mounted) {
-            context.go(Routes.signIn);
-          }
-
-          // Update the user's current progress in shared preferences
-          await SharedPref.setCurrProgress(level, subLevel);
-
-          if (index <= kSubLevelAPIBuffer || index >= contents.length - kSubLevelAPIBuffer) {
-            await ref.read(contentControllerProvider.notifier).fetchContents();
-          }
-
-          // If the user is logged in, add an activity log entry
-          if (userEmail.isNotEmpty) {
-            await SharedPref.addActivityLog(ActivityLog(
-              subLevel: subLevel,
-              level: level,
-              userEmail: userEmail,
-              timestamp: DateTime.now().millisecondsSinceEpoch,
-            ));
-          }
-
-          // Sync the progress with db if the user moves to a new level
-          if (index > 0) {
-            final previousContentLevel =
-                contents[index - 1].speechExercise?.level ?? contents[index - 1].video?.level;
-
-            if (userEmail.isNotEmpty && level != previousContentLevel) {
-              await ref.read(userControllerProvider.notifier).progressSync(level, subLevel);
-            }
-          }
-
-          // Check if enough time has passed since the last sync
-          final lastSync = await SharedPref.getLastSync();
-          final now = DateTime.now().millisecondsSinceEpoch;
-          final diff = now - lastSync;
-
-          if (diff < kMinProgressSyncingDiffInMillis) return;
-
-          // If the user is logged in, sync their progress with the server
-          // Sync any pending activity logs with the server
-          final activityLogs = await SharedPref.getActivityLogs();
-          if (activityLogs == null || activityLogs.isEmpty) return;
-          await ref.read(activityLogControllerProvider.notifier).syncActivityLogs(activityLogs);
-
-          // Clear the activity logs and update the last sync time
-          await SharedPref.clearActivityLogs();
-          await SharedPref.setLastSync(DateTime.now().millisecondsSinceEpoch);
-        },
+        contents: _cachedContents!,
+        onVideoChange: (int index, PageController controller) async =>
+            onVideoChange(index, controller, _cachedContents!),
       ),
     );
   }

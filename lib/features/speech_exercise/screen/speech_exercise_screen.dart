@@ -4,15 +4,14 @@ import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:myapp/models/speech_exercise/speech_exercise.dart';
 import 'package:myapp/core/widgets/yt_short_player.dart';
 import 'package:myapp/features/speech_exercise/widgets/exercise_sentence_card.dart';
-import 'dart:developer' as developer;
 
 class SpeechExerciseScreen extends StatefulWidget {
   final SpeechExercise exercise;
-  final Function(YoutubePlayerController) onControllerInitialized;
+  final Function(YoutubePlayerController)? onControllerInitialized;
 
   const SpeechExerciseScreen({
     super.key,
-    required this.onControllerInitialized,
+    this.onControllerInitialized,
     required this.exercise,
   });
 

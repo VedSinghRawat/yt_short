@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/core/widgets/loader.dart';
+import 'package:myapp/features/content/content_controller.dart';
+import 'package:myapp/features/user/user_controller.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'dart:async';
 import 'dart:developer' as developer;
 
-class YtShortPlayer extends StatefulWidget {
+class YtShortPlayer extends ConsumerStatefulWidget {
   final String videoId;
   final String? uniqueId;
   final void Function(YoutubePlayerController controller)? onControllerInitialized;
@@ -18,10 +21,10 @@ class YtShortPlayer extends StatefulWidget {
   });
 
   @override
-  State<YtShortPlayer> createState() => _YtShortPlayerState();
+  ConsumerState<YtShortPlayer> createState() => _YtShortPlayerState();
 }
 
-class _YtShortPlayerState extends State<YtShortPlayer> {
+class _YtShortPlayerState extends ConsumerState<YtShortPlayer> {
   late YoutubePlayerController _controller;
   bool _isVisible = false;
   bool _showPlayPauseIcon = false;
@@ -46,6 +49,25 @@ class _YtShortPlayerState extends State<YtShortPlayer> {
     );
 
     widget.onControllerInitialized?.call(_controller);
+  }
+
+  void _listenerVideoFinished() {
+    final videoDuration = _controller.value.metaData.duration;
+
+    final compareDuration = videoDuration.inSeconds - _controller.value.position.inSeconds;
+    if (_controller.value.hasPlayed &&
+        videoDuration != Duration.zero &&
+        compareDuration <= 1 &&
+        !ref.read(contentControllerProvider).hasFinishedVideo) {
+      ref.read(contentControllerProvider.notifier).setHasFinishedVideo(true);
+      _controller.removeListener(_listenerVideoFinished);
+    }
+  }
+
+  void changeListenerAsVisibility() {
+    _isVisible
+        ? _controller.addListener(_listenerVideoFinished)
+        : _controller.removeListener(_listenerVideoFinished);
   }
 
   @override
@@ -79,6 +101,8 @@ class _YtShortPlayerState extends State<YtShortPlayer> {
         _isVisible = info.visibleFraction > 0.6;
         _isVisible ? _controller.play() : _controller.pause();
       });
+
+      changeListenerAsVisibility();
     } catch (e) {
       developer.log('Error in YtShortPlayer._onVisibilityChanged', error: e.toString());
     }
@@ -99,7 +123,10 @@ class _YtShortPlayerState extends State<YtShortPlayer> {
               child: YoutubePlayer(
                 controller: _controller,
                 onReady: () {
-                  !_controller.value.isPlaying && _isVisible ? _controller.play() : null;
+                  if (_controller.value.isPlaying && !_isVisible) return;
+
+                  _controller.play();
+                  changeListenerAsVisibility();
                 },
               ),
             ),

@@ -1,13 +1,9 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:myapp/core/shared_pref.dart';
-import 'package:myapp/core/utils.dart';
 import 'package:myapp/core/widgets/yt_short_player.dart';
 import 'package:myapp/features/content/widget/last_level.dart';
 import 'package:myapp/features/speech_exercise/screen/speech_exercise_screen.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../../../models/models.dart';
-import 'dart:developer' as developer;
 
 class ContentsList extends StatefulWidget {
   final List<Content> contents;
@@ -26,8 +22,6 @@ class ContentsList extends StatefulWidget {
 class _ContentsListState extends State<ContentsList> {
   late PageController _pageController;
   bool _isAnimating = false;
-  int _currentPage = 0;
-  final Set<String> _completedContentIds = {};
 
   @override
   void initState() {
@@ -46,11 +40,6 @@ class _ContentsListState extends State<ContentsList> {
       );
 
       if (jumpTo >= widget.contents.length || jumpTo < 0) return;
-
-      _currentPage = jumpTo;
-      _completedContentIds.addAll(widget.contents
-          .sublist(0, jumpTo)
-          .map((content) => content.video?.ytId ?? content.speechExercise?.ytId ?? ''));
 
       _isAnimating = true;
       _pageController.jumpToPage(jumpTo);
@@ -83,30 +72,6 @@ class _ContentsListState extends State<ContentsList> {
     super.dispose();
   }
 
-  void _handleContentCompletion(String contentId) {
-    if (!_completedContentIds.contains(contentId)) {
-      setState(() {
-        _completedContentIds.add(contentId);
-      });
-    }
-  }
-
-  void _onControllerInitialized(YoutubePlayerController controller, String contentId) {
-    var isRunning = true;
-
-    controller.addListener(() {
-      if (!isRunning) return;
-
-      final videoDuration = controller.value.metaData.duration;
-      final compareDuration = videoDuration.inSeconds - controller.value.position.inSeconds;
-
-      if (controller.value.hasPlayed && videoDuration != Duration.zero && compareDuration <= 1) {
-        _handleContentCompletion(contentId);
-        isRunning = false;
-      }
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return PageView.builder(
@@ -116,7 +81,6 @@ class _ContentsListState extends State<ContentsList> {
       scrollDirection: Axis.vertical,
       onPageChanged: (index) {
         if (_isAnimating) return;
-        setState(() => _currentPage = index);
 
         widget.onVideoChange?.call(index, _pageController);
       },
@@ -137,16 +101,11 @@ class _ContentsListState extends State<ContentsList> {
             Center(
               child: content.video != null
                   ? YtShortPlayer(
-                      // this is youtube_player_flutter custom widget
                       key: ValueKey(positionText),
                       videoId: content.video!.ytId,
-                      onControllerInitialized: (controller) =>
-                          _onControllerInitialized(controller, content.video!.ytId),
                     )
                   : content.speechExercise != null
                       ? SpeechExerciseScreen(
-                          onControllerInitialized: (controller) =>
-                              _onControllerInitialized(controller, content.speechExercise!.ytId),
                           key: ValueKey(positionText),
                           exercise: content.speechExercise!,
                         )

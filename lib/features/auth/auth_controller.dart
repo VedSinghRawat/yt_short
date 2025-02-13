@@ -33,7 +33,7 @@ class AuthController extends StateNotifier<AuthControllerState> {
     if (_isProcessing) return;
     _isProcessing = true;
     state = state.copyWith(loading: true);
-    
+
     try {
       final user = await authAPI.signInWithGoogle();
       if (user == null) return;
@@ -45,14 +45,16 @@ class AuthController extends StateNotifier<AuthControllerState> {
       final level = progress?['level'] ?? kAuthRequiredLevel;
       final subLevel = progress?['subLevel'] ?? 0;
 
-      if (context.mounted && 
+      if (context.mounted &&
           (user.level > level || (user.level == level && user.subLevel >= subLevel))) {
         await showLevelChangeConfirmationDialog(context, user, contentController);
       }
+
+      await contentController.fetchContents();
     } catch (e, stackTrace) {
-      developer.log('Error in AuthController.signInWithGoogle', 
+      developer.log('Error in AuthController.signInWithGoogle',
           error: e.toString(), stackTrace: stackTrace);
-          
+
       userController.removeCurrentUser();
       if (context.mounted) {
         showErrorSnackBar(context, e.toString());
@@ -67,7 +69,7 @@ class AuthController extends StateNotifier<AuthControllerState> {
     if (_isProcessing) return;
     _isProcessing = true;
     state = state.copyWith(loading: true);
-    
+
     try {
       final user = userController.state.currentUser;
       if (user != null) {
@@ -77,8 +79,7 @@ class AuthController extends StateNotifier<AuthControllerState> {
         await Future.delayed(Duration.zero); // Allow UI to update
       }
     } catch (e, stackTrace) {
-      developer.log('Error in AuthController.signOut', 
-          error: e.toString(), stackTrace: stackTrace);
+      developer.log('Error in AuthController.signOut', error: e.toString(), stackTrace: stackTrace);
       if (context.mounted) {
         showErrorSnackBar(context, e.toString());
       }
