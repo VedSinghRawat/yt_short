@@ -36,21 +36,22 @@ class _ContentsListState extends State<ContentsList> {
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
       final progress = await SharedPref.getCurrProgress();
+      developer.log('progress: $progress init');
+      for (var content in widget.contents) {
+        developer.log('content: ${content.level} ${content.subLevel} init');
+      }
 
       final jumpTo = widget.contents.indexWhere(
         (content) =>
-            (content.speechExercise?.subLevel == progress?['subLevel'] &&
-                content.speechExercise?.level == progress?['level']) ||
-            (content.video?.subLevel == progress?['subLevel'] &&
-                content.video?.level == progress?['level']),
+            (content.subLevel == progress?['subLevel'] && content.level == progress?['level']),
       );
+      developer.log('jumpTo: $jumpTo ${DateTime.now().millisecondsSinceEpoch} init');
 
       if (jumpTo >= widget.contents.length || jumpTo < 0) return;
 
       _currentPage = jumpTo;
-      _completedContentIds.addAll(widget.contents
-          .sublist(0, jumpTo)
-          .map((content) => content.video?.ytId ?? content.speechExercise?.ytId ?? ''));
+      _completedContentIds
+          .addAll(widget.contents.sublist(0, jumpTo).map((content) => content.ytId));
 
       _isAnimating = true;
       _pageController.jumpToPage(jumpTo);
@@ -65,13 +66,20 @@ class _ContentsListState extends State<ContentsList> {
       if (oldWidget.contents.length == widget.contents.length) return;
 
       final progress = await SharedPref.getCurrProgress();
+
+      developer.log('progress: $progress init');
+      for (var content in widget.contents) {
+        developer.log('content: ${content.level} ${content.subLevel} init');
+      }
+
       final jumpTo = widget.contents.indexWhere(
         (content) =>
-            (content.speechExercise?.subLevel == progress?['subLevel'] &&
-                content.speechExercise?.level == progress?['level']) ||
-            (content.video?.subLevel == progress?['subLevel'] &&
-                content.video?.level == progress?['level']),
+            (content.subLevel == progress?['subLevel'] && content.level == progress?['level']) ||
+            (content.ytId == progress?['videoId']),
       );
+
+      developer.log('jumpTo: $jumpTo ${DateTime.now().millisecondsSinceEpoch} init');
+
       if (jumpTo >= widget.contents.length || jumpTo < 0) return;
       _pageController.jumpToPage(jumpTo);
     });
@@ -129,24 +137,22 @@ class _ContentsListState extends State<ContentsList> {
               onRefresh: () => widget.onVideoChange?.call(index, _pageController));
         }
 
-        final positionText =
-            '${content.video?.level ?? content.speechExercise?.level}-${content.video?.subLevel ?? content.speechExercise?.subLevel}';
+        final positionText = '${content.level}-${content.subLevel}';
 
         return Stack(
           children: [
             Center(
-              child: content.video != null
+              child: content.isVideo
                   ? YtShortPlayer(
-                      // this is youtube_player_flutter custom widget
                       key: ValueKey(positionText),
-                      videoId: content.video!.ytId,
+                      videoId: content.ytId,
                       onControllerInitialized: (controller) =>
-                          _onControllerInitialized(controller, content.video!.ytId),
+                          _onControllerInitialized(controller, content.ytId),
                     )
-                  : content.speechExercise != null
+                  : content.isSpeechExercise
                       ? SpeechExerciseScreen(
                           onControllerInitialized: (controller) =>
-                              _onControllerInitialized(controller, content.speechExercise!.ytId),
+                              _onControllerInitialized(controller, content.ytId),
                           key: ValueKey(positionText),
                           exercise: content.speechExercise!,
                         )

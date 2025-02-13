@@ -42,15 +42,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             false;
     final contents = contentMap.values.toList()
       ..sort((a, b) {
-        final levelA = a.speechExercise?.level ?? a.video?.level ?? 0;
-        final levelB = b.speechExercise?.level ?? b.video?.level ?? 0;
+        final levelA = a.level;
+        final levelB = b.level;
 
         if (levelA != levelB) {
           return levelA.compareTo(levelB);
         }
 
-        final subLevelA = a.speechExercise?.subLevel ?? a.video?.subLevel ?? 0;
-        final subLevelB = b.speechExercise?.subLevel ?? b.video?.subLevel ?? 0;
+        final subLevelA = a.subLevel;
+        final subLevelB = b.subLevel;
 
         return subLevelA.compareTo(subLevelB);
       });
@@ -100,8 +100,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
           // Get the content, level, and sublevel for the current index
           final content = contents[index];
-          final level = (content.speechExercise?.level ?? content.video?.level)!;
-          final subLevel = (content.speechExercise?.subLevel ?? content.video?.subLevel)!;
+          final level = content.level;
+          final subLevel = content.subLevel;
 
           // if (index < 0 || index >= contents.length) return;
 
@@ -109,8 +109,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           final user = ref.read(userControllerProvider).currentUser;
           final userEmail = user?.email ?? '';
 
-          if (user != null &&
-              (!isLevelAfter(level, subLevel, user.maxLevel, user.maxSubLevel) || true)) {
+          if (user != null && isLevelAfter(level, subLevel, user.maxLevel, user.maxSubLevel)) {
             await controller.animateToPage(
               index - 1,
               duration: const Duration(milliseconds: 300),
@@ -145,8 +144,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
           // Sync the progress with db if the user moves to a new level
           if (index > 0) {
-            final previousContentLevel =
-                contents[index - 1].speechExercise?.level ?? contents[index - 1].video?.level;
+            final previousContentLevel = contents[index - 1].level;
 
             if (userEmail.isNotEmpty && level != previousContentLevel) {
               await ref.read(userControllerProvider.notifier).progressSync(level, subLevel);

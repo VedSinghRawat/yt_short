@@ -12,8 +12,6 @@ class InitializeService {
     try {
       final currProgress = await SharedPref.getCurrProgress();
       final apiUser = await userController.getCurrentUser();
-      developer.log('currProgress: $currProgress');
-      developer.log('apiUser: ${apiUser?.toJson()}');
 
       if (currProgress == null && apiUser == null) return;
 

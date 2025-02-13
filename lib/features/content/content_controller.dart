@@ -55,9 +55,7 @@ class ContentController extends StateNotifier<ContentControllerState> {
 
       subLevelCountByLevel[level] = tempContents.length;
       for (var content in tempContents) {
-        final level = content.speechExercise?.level ?? content.video?.level;
-        final subLevel = content.speechExercise?.subLevel ?? content.video?.subLevel;
-        contentMap["$level-$subLevel"] = content;
+        contentMap["${content.level}-${content.subLevel}"] = content;
       }
 
       state = state.copyWith(
