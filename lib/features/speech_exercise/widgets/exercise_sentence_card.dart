@@ -1,4 +1,3 @@
-import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:myapp/features/speech_exercise/widgets/recognizer_button.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
@@ -43,7 +42,6 @@ class _ExerciseSentenceCardState extends State<ExerciseSentenceCard> {
   }
 
   void _onSpeechResult(SpeechRecognitionResult result) {
-    developer.log('onSpeechResult ${result.toJson()}');
     List<String> currRecognizedWords =
         result.recognizedWords.split(' ').where((word) => word.isNotEmpty).toList();
 

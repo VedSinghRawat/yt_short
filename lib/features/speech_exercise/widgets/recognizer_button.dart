@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:myapp/core/widgets/active_mic.dart';
 import 'package:myapp/features/speech_exercise/widgets/recognizer.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
-import 'dart:developer' as developer;
 
 class RecognizerButton extends StatefulWidget {
   final bool testCompleted;
@@ -44,10 +43,8 @@ class _RecognizerButtonState extends State<RecognizerButton> {
       _recognizer.stopListening();
     } else {
       if (_recognizer.isListening) {
-        developer.log('stopping listening');
         _recognizer.stopListening();
       } else {
-        developer.log('starting listening');
         await _recognizer.startListening();
       }
     }
@@ -59,8 +56,6 @@ class _RecognizerButtonState extends State<RecognizerButton> {
 
   @override
   Widget build(BuildContext context) {
-    developer.log('building button ${_recognizer.isListening}');
-
     return Container(
       width: widget.testCompleted ? 160 : 80,
       height: widget.testCompleted ? 60 : 80,

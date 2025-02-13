@@ -3,16 +3,19 @@ import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/widgets/yt_short_player.dart';
 import 'package:myapp/features/content/widget/last_level.dart';
 import 'package:myapp/features/speech_exercise/screen/speech_exercise_screen.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../../../models/models.dart';
 
 class ContentsList extends StatefulWidget {
   final List<Content> contents;
   final Function(int index, PageController controller)? onVideoChange;
+  final Function(YoutubePlayerController controller, String videoId)? onControllerInitialized;
 
   const ContentsList({
     super.key,
     required this.contents,
     this.onVideoChange,
+    this.onControllerInitialized,
   });
 
   @override
@@ -21,49 +24,40 @@ class ContentsList extends StatefulWidget {
 
 class _ContentsListState extends State<ContentsList> {
   late PageController _pageController;
-  bool _isAnimating = false;
+
+  void _jumpToPage(Duration timeStamp) async {
+    final progress = await SharedPref.getCurrProgress();
+
+    final jumpTo = widget.contents.indexWhere(
+      (content) =>
+          (content.subLevel == progress?['subLevel'] && content.level == progress?['level']) ||
+          (content.ytId == progress?['videoId']),
+    );
+
+    if (jumpTo >= widget.contents.length || jumpTo < 0) return;
+
+    final jumpContent = widget.contents[jumpTo];
+    _pageController.jumpToPage(jumpTo);
+    await SharedPref.setCurrProgress(
+      level: jumpContent.level,
+      subLevel: jumpContent.subLevel,
+    );
+  }
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
 
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
-      final progress = await SharedPref.getCurrProgress();
-
-      final jumpTo = widget.contents.indexWhere(
-        (content) =>
-            (content.speechExercise?.subLevel == progress?['subLevel'] &&
-                content.speechExercise?.level == progress?['level']) ||
-            (content.video?.subLevel == progress?['subLevel'] &&
-                content.video?.level == progress?['level']),
-      );
-
-      if (jumpTo >= widget.contents.length || jumpTo < 0) return;
-
-      _isAnimating = true;
-      _pageController.jumpToPage(jumpTo);
-      _isAnimating = false;
-    });
+    WidgetsBinding.instance.addPostFrameCallback(_jumpToPage);
   }
 
   @override
   void didUpdateWidget(covariant ContentsList oldWidget) {
     super.didUpdateWidget(oldWidget);
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
-      if (oldWidget.contents.length == widget.contents.length) return;
+    if (oldWidget.contents.length == widget.contents.length) return;
 
-      final progress = await SharedPref.getCurrProgress();
-      final jumpTo = widget.contents.indexWhere(
-        (content) =>
-            (content.speechExercise?.subLevel == progress?['subLevel'] &&
-                content.speechExercise?.level == progress?['level']) ||
-            (content.video?.subLevel == progress?['subLevel'] &&
-                content.video?.level == progress?['level']),
-      );
-      if (jumpTo >= widget.contents.length || jumpTo < 0) return;
-      _pageController.jumpToPage(jumpTo);
-    });
+    WidgetsBinding.instance.addPostFrameCallback(_jumpToPage);
   }
 
   @override
@@ -80,8 +74,6 @@ class _ContentsListState extends State<ContentsList> {
       itemCount: widget.contents.length + 1,
       scrollDirection: Axis.vertical,
       onPageChanged: (index) {
-        if (_isAnimating) return;
-
         widget.onVideoChange?.call(index, _pageController);
       },
       itemBuilder: (context, index) {
@@ -93,19 +85,22 @@ class _ContentsListState extends State<ContentsList> {
               onRefresh: () => widget.onVideoChange?.call(index, _pageController));
         }
 
-        final positionText =
-            '${content.video?.level ?? content.speechExercise?.level}-${content.video?.subLevel ?? content.speechExercise?.subLevel}';
+        final positionText = '${content.level}-${content.subLevel}';
 
         return Stack(
           children: [
             Center(
-              child: content.video != null
+              child: content.isVideo
                   ? YtShortPlayer(
                       key: ValueKey(positionText),
-                      videoId: content.video!.ytId,
+                      videoId: content.ytId,
+                      onControllerInitialized: (controller) =>
+                          widget.onControllerInitialized?.call(controller, content.ytId),
                     )
-                  : content.speechExercise != null
+                  : content.isSpeechExercise
                       ? SpeechExerciseScreen(
+                          onControllerInitialized: (controller) =>
+                              widget.onControllerInitialized?.call(controller, content.ytId),
                           key: ValueKey(positionText),
                           exercise: content.speechExercise!,
                         )

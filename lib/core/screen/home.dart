@@ -62,8 +62,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     // Get the content, level, and sublevel for the current index
     final content = contents[index];
-    final level = (content.speechExercise?.level ?? content.video?.level)!;
-    final subLevel = (content.speechExercise?.subLevel ?? content.video?.subLevel)!;
+    final level = content.level;
+    final subLevel = content.subLevel;
 
     // Get the user's email, return early if index is out of bounds
     final user = ref.read(userControllerProvider).currentUser;
@@ -126,8 +126,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> syncProgress(
       int index, List<Content> contents, String userEmail, int level, int subLevel) async {
     if (index > 0) {
-      final previousContentLevel =
-          contents[index - 1].speechExercise?.level ?? contents[index - 1].video?.level;
+      final previousContentLevel = contents[index - 1].level;
 
       if (userEmail.isNotEmpty && level != previousContentLevel) {
         ref.read(userControllerProvider.notifier).progressSync(level, subLevel);
@@ -161,15 +160,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   List<Content> _getSortedContents(Map<String, Content> contentMap) {
     final contents = contentMap.values.toList();
     contents.sort((a, b) {
-      final levelA = a.speechExercise?.level ?? a.video?.level ?? 0;
-      final levelB = b.speechExercise?.level ?? b.video?.level ?? 0;
+      final levelA = a.level;
+      final levelB = b.level;
 
       if (levelA != levelB) {
         return levelA.compareTo(levelB);
       }
 
-      final subLevelA = a.speechExercise?.subLevel ?? a.video?.subLevel ?? 0;
-      final subLevelB = b.speechExercise?.subLevel ?? b.video?.subLevel ?? 0;
+      final subLevelA = a.subLevel;
+      final subLevelB = b.subLevel;
 
       return subLevelA.compareTo(subLevelB);
     });
