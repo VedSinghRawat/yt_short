@@ -23,7 +23,7 @@ class AuthWrapper extends ConsumerWidget {
       future: SharedPref.getCurrProgress(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Loader(); 
+          return const Loader();
         }
 
         final progress = snapshot.data;
@@ -31,14 +31,11 @@ class AuthWrapper extends ConsumerWidget {
         if (progress?['level'] != null &&
             progress?['level']! > kAuthRequiredLevel &&
             userController.currentUser == null) {
-          return const SignInScreen(); 
+          return const SignInScreen();
         }
 
-        developer.log(userController.currentUser?.toString() ?? 'null',
-            name: 'userController.currentUser');
-
         if (userController.currentUser == null && userController.loading) {
-          return const Loader(); 
+          return const Loader();
         }
 
         return child;

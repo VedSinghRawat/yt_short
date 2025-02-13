@@ -12,6 +12,7 @@ import '../../features/content/widget/content_list.dart';
 import '../widgets/custom_app_bar.dart';
 import '../../features/user/user_controller.dart';
 import '../../features/auth/auth_controller.dart';
+import 'dart:developer' as developer;
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -102,8 +103,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           final content = contents[index];
           final level = content.level;
           final subLevel = content.subLevel;
-
-          // if (index < 0 || index >= contents.length) return;
 
           // Get the user's email, return early if index is out of bounds
           final user = ref.read(userControllerProvider).currentUser;

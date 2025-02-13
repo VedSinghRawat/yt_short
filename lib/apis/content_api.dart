@@ -29,9 +29,9 @@ class ContentAPI implements IContentAPI {
       subLevel++;
 
       if (json.containsKey('text')) {
-        return Content(speechExercise: SpeechExercise.fromJson(json));
+        return Content(null, SpeechExercise.fromJson(json));
       } else if (json.containsKey('ytId')) {
-        return Content(video: Video.fromJson(json));
+        return Content(Video.fromJson(json), null);
       } else {
         throw Exception("Invalid content type");
       }

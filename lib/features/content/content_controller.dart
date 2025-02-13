@@ -79,26 +79,24 @@ class ContentController extends StateNotifier<ContentControllerState> {
 
     final fetchCurrLevel = !state.subLevelCountByLevel.containsKey(currUserLevel);
 
-    final currLevelKeys = state.subLevelCountByLevel[currUserLevel] ?? 0;
-    final nextLevel = currUserLevel + 1;
-    final fetchNextLevel = currUserSubLevel >= currLevelKeys - kSubLevelAPIBuffer &&
-        !state.subLevelCountByLevel.containsKey(nextLevel);
-
-    final prevLevel = currUserLevel - 1;
-    final fetchPrevLevel = currUserSubLevel <= kSubLevelAPIBuffer &&
-        prevLevel >= 1 &&
-        !state.subLevelCountByLevel.containsKey(prevLevel);
-
     // Fetch the current level if not already in cache
     if (fetchCurrLevel) {
       await _listByLevel(currUserLevel);
     }
 
+    final prevLevel = currUserLevel - 1;
+    final fetchPrevLevel = currUserSubLevel < kSubLevelAPIBuffer &&
+        prevLevel >= 1 &&
+        !state.subLevelCountByLevel.containsKey(prevLevel);
     // Fetch previous level if near start of sublevels
     if (fetchPrevLevel) {
       await _listByLevel(prevLevel);
     }
 
+    final currLevelSublevelCount = state.subLevelCountByLevel[currUserLevel] ?? 0;
+    final nextLevel = currUserLevel + 1;
+    final fetchNextLevel = currUserSubLevel > currLevelSublevelCount - kSubLevelAPIBuffer &&
+        !state.subLevelCountByLevel.containsKey(nextLevel);
     // Fetch next level if near the end of sublevels
     if (fetchNextLevel) {
       await _listByLevel(nextLevel);

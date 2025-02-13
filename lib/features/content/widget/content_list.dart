@@ -1,7 +1,5 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:myapp/core/shared_pref.dart';
-import 'package:myapp/core/utils.dart';
 import 'package:myapp/core/widgets/yt_short_player.dart';
 import 'package:myapp/features/content/widget/last_level.dart';
 import 'package:myapp/features/speech_exercise/screen/speech_exercise_screen.dart';
@@ -25,64 +23,39 @@ class ContentsList extends StatefulWidget {
 
 class _ContentsListState extends State<ContentsList> {
   late PageController _pageController;
-  bool _isAnimating = false;
   int _currentPage = 0;
   final Set<String> _completedContentIds = {};
+
+  void _jumpToPage(Duration timeStamp) async {
+    final progress = await SharedPref.getCurrProgress();
+
+    final jumpTo = widget.contents.indexWhere(
+      (content) =>
+          (content.subLevel == progress?['subLevel'] && content.level == progress?['level']) ||
+          (content.ytId == progress?['videoId']),
+    );
+
+    if (jumpTo >= widget.contents.length || jumpTo < 0) return;
+
+    final jumpContent = widget.contents[jumpTo];
+    _pageController.jumpToPage(jumpTo);
+    await SharedPref.setCurrProgress(jumpContent.level, jumpContent.subLevel);
+  }
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
 
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
-      final progress = await SharedPref.getCurrProgress();
-      developer.log('progress: $progress init');
-      for (var content in widget.contents) {
-        developer.log('content: ${content.level} ${content.subLevel} init');
-      }
-
-      final jumpTo = widget.contents.indexWhere(
-        (content) =>
-            (content.subLevel == progress?['subLevel'] && content.level == progress?['level']),
-      );
-      developer.log('jumpTo: $jumpTo ${DateTime.now().millisecondsSinceEpoch} init');
-
-      if (jumpTo >= widget.contents.length || jumpTo < 0) return;
-
-      _currentPage = jumpTo;
-      _completedContentIds
-          .addAll(widget.contents.sublist(0, jumpTo).map((content) => content.ytId));
-
-      _isAnimating = true;
-      _pageController.jumpToPage(jumpTo);
-      _isAnimating = false;
-    });
+    WidgetsBinding.instance.addPostFrameCallback(_jumpToPage);
   }
 
   @override
   void didUpdateWidget(covariant ContentsList oldWidget) {
     super.didUpdateWidget(oldWidget);
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
-      if (oldWidget.contents.length == widget.contents.length) return;
+    if (oldWidget.contents.length == widget.contents.length) return;
 
-      final progress = await SharedPref.getCurrProgress();
-
-      developer.log('progress: $progress init');
-      for (var content in widget.contents) {
-        developer.log('content: ${content.level} ${content.subLevel} init');
-      }
-
-      final jumpTo = widget.contents.indexWhere(
-        (content) =>
-            (content.subLevel == progress?['subLevel'] && content.level == progress?['level']) ||
-            (content.ytId == progress?['videoId']),
-      );
-
-      developer.log('jumpTo: $jumpTo ${DateTime.now().millisecondsSinceEpoch} init');
-
-      if (jumpTo >= widget.contents.length || jumpTo < 0) return;
-      _pageController.jumpToPage(jumpTo);
-    });
+    WidgetsBinding.instance.addPostFrameCallback(_jumpToPage);
   }
 
   @override
@@ -123,7 +96,6 @@ class _ContentsListState extends State<ContentsList> {
       itemCount: widget.contents.length + 1,
       scrollDirection: Axis.vertical,
       onPageChanged: (index) {
-        if (_isAnimating) return;
         setState(() => _currentPage = index);
 
         widget.onVideoChange?.call(index, _pageController);

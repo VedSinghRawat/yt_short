@@ -43,7 +43,6 @@ class _ExerciseSentenceCardState extends State<ExerciseSentenceCard> {
   }
 
   void _onSpeechResult(SpeechRecognitionResult result) {
-    developer.log('onSpeechResult ${result.toJson()}');
     List<String> currRecognizedWords =
         result.recognizedWords.split(' ').where((word) => word.isNotEmpty).toList();
 
