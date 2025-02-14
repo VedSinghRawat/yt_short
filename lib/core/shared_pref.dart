@@ -67,9 +67,16 @@ class SharedPref {
     await _setValue('googleIdToken', token);
   }
 
-  static Future<void> addActivityLog(ActivityLog activityLog) async {
+  static Future<void> addActivityLog(int level, int subLevel, String email) async {
+    if (email.isEmpty) return;
     var activityLogs = await _getList('activityLogs') ?? [];
-    activityLogs.add(activityLog.toJson());
+    final newActivityLog = ActivityLog(
+      level: level,
+      subLevel: subLevel,
+      userEmail: email,
+      timestamp: DateTime.now().millisecondsSinceEpoch,
+    );
+    activityLogs.add(newActivityLog.toJson());
     await _setObject('activityLogs', activityLogs);
   }
 
