@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/core/controllers/version_controller.dart';
+import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/widgets/loader.dart';
 
 class VersionCheckWrapper extends ConsumerWidget {
@@ -24,7 +25,7 @@ class VersionCheckWrapper extends ConsumerWidget {
         if (snapshot.hasData && snapshot.data != null) {
           // Use go_router to navigate to the appropriate route
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (snapshot.data != '/') {
+            if (snapshot.data != Routes.home) {
               context.go(snapshot.data!);
             }
           });

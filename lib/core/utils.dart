@@ -57,3 +57,13 @@ num getMax(List<num?> numbers) {
   }
   return maxVal;
 }
+
+T? stringToEnum<T extends Enum>(String value, List<T> enumValues) {
+  try {
+    return enumValues.firstWhere(
+      (e) => e.name.toLowerCase() == value.toLowerCase(),
+    );
+  } catch (e) {
+    return null;
+  }
+}

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/core/controllers/version_controller.dart';
+import 'package:myapp/core/router/router.dart';
 
 class SuggestVersionUpdate extends ConsumerWidget {
   const SuggestVersionUpdate({super.key});
@@ -40,16 +41,15 @@ class SuggestVersionUpdate extends ConsumerWidget {
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: () {
-                  // TODO: Implement update logic - open store link
+                  ref.read(versionControllerProvider.notifier).openStore(context);
                 },
                 child: const Text('Update Now'),
               ),
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () {
-                  // Mark update as skipped before navigation
                   ref.read(versionControllerProvider.notifier).skipUpdate();
-                  context.go('/'); // Navigate to home route
+                  context.go(Routes.home);
                 },
                 child: const Text('Skip Update'),
               ),

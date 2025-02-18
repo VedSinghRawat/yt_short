@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:myapp/core/controllers/version_controller.dart';
 
-class RequireVersionUpdate extends StatelessWidget {
+class RequireVersionUpdate extends ConsumerWidget {
   const RequireVersionUpdate({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return PopScope(
       canPop: false,
       child: Scaffold(
@@ -39,7 +41,7 @@ class RequireVersionUpdate extends StatelessWidget {
                 const SizedBox(height: 32),
                 ElevatedButton(
                   onPressed: () {
-                    // TODO: Implement update logic - open store link
+                    ref.read(versionControllerProvider.notifier).openStore(context);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,

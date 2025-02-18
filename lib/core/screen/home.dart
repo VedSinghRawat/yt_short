@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -10,7 +9,6 @@ import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/core/widgets/loader.dart';
 import 'package:myapp/features/activity_log/activity_log.controller.dart';
-import 'package:myapp/models/activity_log/activity_log.dart';
 import 'package:myapp/models/content/content.dart';
 import '../../features/content/content_controller.dart';
 import '../../features/content/widget/content_list.dart';

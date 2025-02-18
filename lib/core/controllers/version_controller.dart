@@ -1,7 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:package_info_plus/package_info_plus.dart';
+import 'package:myapp/apis/version_api.dart';
 import 'package:myapp/constants/constants.dart';
+import 'package:myapp/core/router/router.dart';
+import 'package:myapp/core/utils.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 // State class to track version check state
 class VersionState {
@@ -21,49 +27,60 @@ class VersionState {
 }
 
 final versionControllerProvider = StateNotifierProvider<VersionController, VersionState>((ref) {
-  return VersionController();
+  return VersionController(ref.read(versionAPIService));
 });
 
 class VersionController extends StateNotifier<VersionState> {
-  VersionController() : super(const VersionState());
+  VersionController(this._versionAPI) : super(const VersionState());
+
+  final VersionAPI _versionAPI;
 
   Future<String?> checkVersion(BuildContext context) async {
-    // If user has skipped the update, proceed to app
-    if (state.hasSkippedUpdate) {
-      return '/';
+    try {
+      if (state.hasSkippedUpdate) {
+        return Routes.home;
+      }
+
+      final packageInfo = await PackageInfo.fromPlatform();
+
+      final currentVersion = packageInfo.version;
+
+      final versionType = await _versionAPI.getVersion(currentVersion);
+
+      if (versionType == VersionType.required) {
+        return Routes.versionRequired;
+      }
+
+      if (versionType == VersionType.suggested) {
+        return Routes.versionSuggest;
+      }
+
+      return Routes.home;
+    } catch (e) {
+      return Routes.home;
     }
-
-    final packageInfo = await PackageInfo.fromPlatform();
-    final currentVersion = packageInfo.version;
-
-    // Compare versions using semantic versioning
-    if (_isVersionLower(currentVersion, kRequiredAppVersion)) {
-      return '/version/required';
-    }
-
-    if (_isVersionLower(currentVersion, kSuggestedAppVersion)) {
-      return '/version/suggest';
-    }
-
-    return '/';
   }
 
   void skipUpdate() {
     state = state.copyWith(hasSkippedUpdate: true);
   }
 
-  bool _isVersionLower(String current, String target) {
-    final currentParts = current.split('.').map(int.parse).toList();
-    final targetParts = target.split('.').map(int.parse).toList();
+  Future<void> openStore(BuildContext context) async {
+    final packageInfo = await PackageInfo.fromPlatform();
 
-    for (var i = 0; i < 3; i++) {
-      final currentNum = i < currentParts.length ? currentParts[i] : 0;
-      final targetNum = i < targetParts.length ? targetParts[i] : 0;
+    final platformUrl = Platform.isAndroid
+        ? kPlayStoreBaseUrl + packageInfo.packageName
+        : kAppStoreBaseUrl + kIOSAppId;
 
-      if (currentNum < targetNum) return true;
-      if (currentNum > targetNum) return false;
+    final Uri url = Uri.parse(Uri.encodeFull(platformUrl));
+
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url);
+      return;
     }
 
-    return false;
+    if (!context.mounted) return;
+
+    showErrorSnackBar(context, 'Could not open the store');
   }
 }

@@ -24,7 +24,7 @@ class YtShortPlayer extends ConsumerStatefulWidget {
   ConsumerState<YtShortPlayer> createState() => _YtShortPlayerState();
 }
 
-class _YtShortPlayerState extends ConsumerState<YtShortPlayer> {
+class _YtShortPlayerState extends ConsumerState<YtShortPlayer> with WidgetsBindingObserver {
   late YoutubePlayerController _controller;
   bool _isVisible = false;
   bool _showPlayPauseIcon = false;
@@ -49,6 +49,15 @@ class _YtShortPlayerState extends ConsumerState<YtShortPlayer> {
     );
 
     widget.onControllerInitialized?.call(_controller);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _controller.play();
+    } else if (state == AppLifecycleState.paused) {
+      _controller.pause();
+    }
   }
 
   void _listenerVideoFinished() {

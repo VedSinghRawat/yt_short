@@ -42,11 +42,11 @@ class AuthController extends StateNotifier<AuthControllerState> {
       await Future.delayed(Duration.zero); // Yield control to UI
 
       final progress = await SharedPref.getCurrProgress();
-      final level = progress?['level'] ?? kAuthRequiredLevel;
-      final subLevel = progress?['subLevel'] ?? 0;
+      final level = progress?['maxLevel'] ?? kAuthRequiredLevel;
+      final subLevel = progress?['maxSubLevel'] ?? 0;
 
       if (context.mounted &&
-          (user.level > level || (user.level == level && user.subLevel >= subLevel))) {
+          (user.maxLevel > level || (user.maxLevel == level && user.maxSubLevel >= subLevel))) {
         await showLevelChangeConfirmationDialog(context, user, contentController);
       }
 
