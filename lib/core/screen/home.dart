@@ -8,7 +8,6 @@ import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/core/widgets/loader.dart';
-import 'package:myapp/core/widgets/video_player.dart';
 import 'package:myapp/features/activity_log/activity_log.controller.dart';
 import 'package:myapp/models/content/content.dart';
 import '../../features/content/content_controller.dart';
@@ -122,13 +121,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  void onVideoChange(int index, PageController controller, List<Content> contents) async {
-    if (!mounted) return;
+  void onVideoChange(int index, PageController controller) async {
+    if (!mounted || _cachedContents == null) return;
 
-    if (await fetchContent(index, contents)) return;
+    if (await fetchContent(index, _cachedContents!)) return;
 
     // Get the content, level, and sublevel for the current index
-    final content = contents[index];
+    final content = _cachedContents![index];
     final level = content.level;
     final subLevel = content.subLevel;
 
@@ -163,13 +162,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     await syncLocalProgress(level, subLevel, localMaxLevel, localMaxSubLevel);
 
-    await fetchContent(index, contents);
+    await fetchContent(index, _cachedContents!);
 
     // If the user is logged in, add an activity log entry
     await SharedPref.addActivityLog(level, subLevel, userEmail);
 
     // Sync the progress with db if the user moves to a new level
-    await syncProgress(index, contents, userEmail, level, subLevel);
+    await syncProgress(index, _cachedContents!, userEmail, level, subLevel);
 
     // Sync the last sync time with the server
     await syncActivityLogs();
@@ -246,7 +245,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
         ],
       ),
-      body: const VideoPlayer(videoUrl: '0Jx8ymnOvxQ'),
+      body: ContentsList(
+        contents: _cachedContents!,
+        onVideoChange: onVideoChange,
+      ),
     );
   }
 }

@@ -1,58 +1,62 @@
 import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart' as video_player;
-import 'package:chewie/chewie.dart';
+import 'package:video_player/video_player.dart';
 
-/// Stateful widget to fetch and then display video content.
-class VideoPlayer extends StatefulWidget {
-  final String videoUrl;
-  const VideoPlayer({super.key, required this.videoUrl});
+// Stateful widget to fetch and then display video content.
+class MediaPlayer extends StatefulWidget {
+  final String mediaUrl;
+  final void Function(VideoPlayerController)? onControllerCreated;
+  const MediaPlayer({
+    super.key,
+    required this.mediaUrl,
+    this.onControllerCreated,
+  });
 
   @override
-  State<VideoPlayer> createState() => _VideoPlayerState();
+  State<MediaPlayer> createState() => _MediaPlayerState();
 }
 
-class _VideoPlayerState extends State<VideoPlayer> {
-  late video_player.VideoPlayerController _videoPlayerController;
-  ChewieController? _controller;
+class _MediaPlayerState extends State<MediaPlayer> {
+  VideoPlayerController? _mediaPlayerController;
 
-  void _initVideoPlayer() async {
-    _videoPlayerController =
-        video_player.VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
-
-    await _videoPlayerController.initialize();
-
-    final chewieController = ChewieController(
-      videoPlayerController: _videoPlayerController,
-      autoPlay: false,
-      looping: true,
-      showControls: false,
-      aspectRatio: 9 / 16,
-      allowFullScreen: false,
-      draggableProgressBar: false,
+  _initVideoPlayer() async {
+    _mediaPlayerController = VideoPlayerController.networkUrl(
+      Uri.parse(widget.mediaUrl),
+      videoPlayerOptions: VideoPlayerOptions(
+        allowBackgroundPlayback: false,
+        mixWithOthers: true,
+      ),
     );
 
-    setState(() {
-      _controller = chewieController;
-    });
+    _mediaPlayerController!.setLooping(true);
+
+    await _mediaPlayerController!.initialize();
+
+    if (mounted) {
+      setState(() {
+        // Notify parent when controller is created
+        widget.onControllerCreated?.call(_mediaPlayerController!);
+      });
+    }
   }
 
   @override
   void initState() {
     super.initState();
-    _initVideoPlayer();
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
+      await _initVideoPlayer();
+    });
   }
 
   @override
-  void dispose() {
-    _videoPlayerController.dispose();
-    _controller?.dispose();
+  Future<void> dispose() async {
     super.dispose();
+    await _mediaPlayerController?.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return _controller == null
+    return _mediaPlayerController == null
         ? const Center(child: CircularProgressIndicator())
-        : Chewie(controller: _controller!);
+        : VideoPlayer(_mediaPlayerController!);
   }
 }

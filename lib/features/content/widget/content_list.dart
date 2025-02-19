@@ -1,24 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/shared_pref.dart';
-import 'package:myapp/core/widgets/video_player.dart';
-import 'package:myapp/core/widgets/yt_short_player.dart';
+import 'package:myapp/core/widgets/yt_player.dart';
 import 'package:myapp/features/content/widget/last_level.dart';
 import 'package:myapp/features/speech_exercise/screen/speech_exercise_screen.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../../../models/models.dart';
 import 'dart:developer' as developer;
 
 class ContentsList extends StatefulWidget {
   final List<Content> contents;
-  final Function(int index, PageController controller)? onVideoChange;
-  final Function(YoutubePlayerController controller, String videoId)? onControllerInitialized;
+  final void Function(int index, PageController controller)? onVideoChange;
 
   const ContentsList({
     super.key,
     required this.contents,
     this.onVideoChange,
-    this.onControllerInitialized,
   });
 
   @override
@@ -27,6 +22,7 @@ class ContentsList extends StatefulWidget {
 
 class _ContentsListState extends State<ContentsList> {
   late PageController _pageController;
+  int currIndex = 0;
 
   void _jumpToPage(Duration timeStamp) async {
     final progress = await SharedPref.getCurrProgress();
@@ -78,6 +74,9 @@ class _ContentsListState extends State<ContentsList> {
       scrollDirection: Axis.vertical,
       onPageChanged: (index) {
         widget.onVideoChange?.call(index, _pageController);
+        setState(() {
+          currIndex = index;
+        });
       },
       itemBuilder: (context, index) {
         final content = widget.contents.length > index ? widget.contents[index] : null;
@@ -89,21 +88,25 @@ class _ContentsListState extends State<ContentsList> {
         }
 
         final positionText = '${content.level}-${content.subLevel}';
+        final isVisible = currIndex == index;
+
+        developer.log(
+            'build item $index, currIndex: $currIndex, content: $positionText, isVisible: $isVisible');
 
         return Stack(
           children: [
             Center(
               child: content.isVideo
-                  ? VideoPlayer(
-                      key: ValueKey(positionText),
-                      videoUrl: kVideoIdToUrlMap[content.ytId]!,
+                  ? YtPlayer(
+                      key: Key('${content.level}-${content.subLevel}-${content.ytId}'),
+                      ytVidId: content.ytId,
+                      isVisible: isVisible,
                     )
                   : content.isSpeechExercise
                       ? SpeechExerciseScreen(
-                          onControllerInitialized: (controller) =>
-                              widget.onControllerInitialized?.call(controller, content.ytId),
-                          key: ValueKey(positionText),
+                          key: Key('${content.level}-${content.subLevel}-${content.ytId}'),
                           exercise: content.speechExercise!,
+                          isVisible: isVisible,
                         )
                       : const SizedBox.shrink(),
             ),

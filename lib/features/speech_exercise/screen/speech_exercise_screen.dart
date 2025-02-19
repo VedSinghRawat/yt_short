@@ -1,20 +1,20 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:myapp/constants/constants.dart';
-import 'package:myapp/core/widgets/video_player.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:myapp/core/widgets/yt_player.dart';
+import 'package:video_player/video_player.dart';
 import 'package:myapp/models/speech_exercise/speech_exercise.dart';
-import 'package:myapp/core/widgets/yt_short_player.dart';
 import 'package:myapp/features/speech_exercise/widgets/exercise_sentence_card.dart';
 
 class SpeechExerciseScreen extends StatefulWidget {
   final SpeechExercise exercise;
-  final Function(YoutubePlayerController)? onControllerInitialized;
+  final Function(VideoPlayerController)? onControllerInitialized;
+  final bool isVisible;
 
   const SpeechExerciseScreen({
     super.key,
     this.onControllerInitialized,
     required this.exercise,
+    this.isVisible = false,
   });
 
   @override
@@ -22,11 +22,11 @@ class SpeechExerciseScreen extends StatefulWidget {
 }
 
 class _SpeechExerciseScreenState extends State<SpeechExerciseScreen> {
-  late YoutubePlayerController? _controller;
+  late VideoPlayerController? _controller;
   bool _hasShownDialog = false;
 
   late void Function() _pauseListener;
-  void _onControllerInitialized(YoutubePlayerController controller) {
+  void _onControllerInitialized(VideoPlayerController controller) {
     _pauseListener = () {
       if (!_hasShownDialog &&
           controller.value.position.inSeconds >= widget.exercise.pauseAt &&
@@ -74,8 +74,11 @@ class _SpeechExerciseScreenState extends State<SpeechExerciseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return VideoPlayer(
-      videoUrl: kVideoIdToUrlMap[widget.exercise.ytId]!,
+    return YtPlayer(
+      key: Key('${widget.exercise.level}-${widget.exercise.subLevel}-${widget.exercise.ytId}'),
+      ytVidId: widget.exercise.ytId,
+      isVisible: widget.isVisible,
+      onControllerInitialized: _onControllerInitialized,
     );
   }
 }

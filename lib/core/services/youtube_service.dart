@@ -1,42 +1,31 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:myapp/core/services/api_service.dart';
+import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'dart:developer' as developer;
 
 class YoutubeService {
-  final ApiService apiService;
+  Future<Map<String, Uri>> getVideoMp4Url(String videoId) async {
+    final yt = YoutubeExplode();
+    final manifest = await yt.videos.streamsClient.getManifest(videoId);
 
-  YoutubeService({required this.apiService});
+    final audioStreamInfo = manifest.audioOnly.withHighestBitrate();
+    final videoStreamInfo = manifest.videoOnly.firstWhere((element) {
+      return element.container == StreamContainer.mp4 &&
+          element.videoCodec.startsWith('avc1.') &&
+          element.qualityLabel == '720p';
+    });
 
-  final String _baseVideoInfoUrl =
-      'https://youtubei.googleapis.com/youtubei/v1/player?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8';
-  final Map<String, dynamic> _videoInfoBasePayload = {
-    "context": {
-      "client": {
-        "hl": "en",
-        "clientName": "WEB",
-        "clientVersion": "2.20210721.00.00",
-        "mainAppWebInfo": {"graftUrl": ""}
-      }
-    },
-    "videoId": ""
-  };
+    developer.log('videoStreamInfo: ${videoStreamInfo.toString()}, videoId: $videoId');
 
-  Future<String> getVideoMp4Url(String videoId) async {
-    _videoInfoBasePayload['videoId'] = videoId;
-    _videoInfoBasePayload['context']['client']['mainAppWebInfo']['graftUrl'] = '/watch?v=$videoId';
+    final data = {
+      'audio': audioStreamInfo.url,
+      'video': videoStreamInfo.url,
+    };
 
-    final response = await apiService.call(
-      endpoint: _baseVideoInfoUrl,
-      method: Method.get,
-      body: _videoInfoBasePayload,
-    );
-
-    developer.log('response: ${response.data}');
-
-    return response.data['streamingData']['formats'][0]['url'];
+    yt.close();
+    return data;
   }
 }
 
 final youtubeServiceProvider = Provider<YoutubeService>((ref) {
-  return YoutubeService(apiService: ref.read(apiServiceProvider));
+  return YoutubeService();
 });
