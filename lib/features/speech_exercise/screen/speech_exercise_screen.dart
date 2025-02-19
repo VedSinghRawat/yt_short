@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:myapp/constants/constants.dart';
+import 'package:myapp/core/widgets/video_player.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:myapp/models/speech_exercise/speech_exercise.dart';
 import 'package:myapp/core/widgets/yt_short_player.dart';
@@ -72,10 +74,8 @@ class _SpeechExerciseScreenState extends State<SpeechExerciseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return YtShortPlayer(
-      videoId: widget.exercise.ytId,
-      onControllerInitialized: _onControllerInitialized,
-      uniqueId: '${widget.exercise.ytId}exercise',
+    return VideoPlayer(
+      videoUrl: kVideoIdToUrlMap[widget.exercise.ytId]!,
     );
   }
 }

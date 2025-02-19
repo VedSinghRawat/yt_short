@@ -8,6 +8,7 @@ import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/core/widgets/loader.dart';
+import 'package:myapp/core/widgets/video_player.dart';
 import 'package:myapp/features/activity_log/activity_log.controller.dart';
 import 'package:myapp/models/content/content.dart';
 import '../../features/content/content_controller.dart';
@@ -245,11 +246,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
         ],
       ),
-      body: ContentsList(
-        contents: _cachedContents!,
-        onVideoChange: (int index, PageController controller) async =>
-            onVideoChange(index, controller, _cachedContents!),
-      ),
+      body: const VideoPlayer(videoUrl: '0Jx8ymnOvxQ'),
     );
   }
 }

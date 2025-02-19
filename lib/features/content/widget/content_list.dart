@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/shared_pref.dart';
+import 'package:myapp/core/widgets/video_player.dart';
 import 'package:myapp/core/widgets/yt_short_player.dart';
 import 'package:myapp/features/content/widget/last_level.dart';
 import 'package:myapp/features/speech_exercise/screen/speech_exercise_screen.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../../../models/models.dart';
+import 'dart:developer' as developer;
 
 class ContentsList extends StatefulWidget {
   final List<Content> contents;
@@ -91,11 +94,9 @@ class _ContentsListState extends State<ContentsList> {
           children: [
             Center(
               child: content.isVideo
-                  ? YtShortPlayer(
+                  ? VideoPlayer(
                       key: ValueKey(positionText),
-                      videoId: content.ytId,
-                      onControllerInitialized: (controller) =>
-                          widget.onControllerInitialized?.call(controller, content.ytId),
+                      videoUrl: kVideoIdToUrlMap[content.ytId]!,
                     )
                   : content.isSpeechExercise
                       ? SpeechExerciseScreen(
