@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
-import 'dart:developer' as developer;
 
 class YoutubeService {
   Future<Map<String, Uri>> getVideoMp4Url(String videoId) async {
@@ -11,10 +10,8 @@ class YoutubeService {
     final videoStreamInfo = manifest.videoOnly.firstWhere((element) {
       return element.container == StreamContainer.mp4 &&
           element.videoCodec.startsWith('avc1.') &&
-          element.qualityLabel == '720p';
+          element.qualityLabel == '480p';
     });
-
-    developer.log('videoStreamInfo: ${videoStreamInfo.toString()}, videoId: $videoId');
 
     final data = {
       'audio': audioStreamInfo.url,

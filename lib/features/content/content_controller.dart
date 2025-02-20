@@ -18,7 +18,7 @@ class ContentControllerState {
   ContentControllerState({
     this.contentMap = const {},
     this.subLevelCountByLevel = const {},
-    this.loading = false,
+    this.loading = true,
     this.hasFinishedVideo = false,
   });
 

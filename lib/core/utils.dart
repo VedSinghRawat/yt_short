@@ -1,5 +1,5 @@
 import 'dart:math';
-
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 
 void showErrorSnackBar(BuildContext context, String message) {
@@ -65,5 +65,13 @@ T? stringToEnum<T extends Enum>(String value, List<T> enumValues) {
     );
   } catch (e) {
     return null;
+  }
+}
+
+void tryCall(Function function) {
+  try {
+    function();
+  } catch (e) {
+    developer.log('error in tryCall: $e');
   }
 }

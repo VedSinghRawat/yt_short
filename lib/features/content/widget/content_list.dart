@@ -1,10 +1,11 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/widgets/yt_player.dart';
 import 'package:myapp/features/content/widget/last_level.dart';
 import 'package:myapp/features/speech_exercise/screen/speech_exercise_screen.dart';
 import '../../../models/models.dart';
-import 'dart:developer' as developer;
 
 class ContentsList extends StatefulWidget {
   final List<Content> contents;
@@ -36,7 +37,9 @@ class _ContentsListState extends State<ContentsList> {
     if (jumpTo >= widget.contents.length || jumpTo < 0) return;
 
     final jumpContent = widget.contents[jumpTo];
+
     _pageController.jumpToPage(jumpTo);
+
     await SharedPref.setCurrProgress(
       level: jumpContent.level,
       subLevel: jumpContent.subLevel,
@@ -90,8 +93,7 @@ class _ContentsListState extends State<ContentsList> {
         final positionText = '${content.level}-${content.subLevel}';
         final isVisible = currIndex == index;
 
-        developer.log(
-            'build item $index, currIndex: $currIndex, content: $positionText, isVisible: $isVisible');
+        log('build item $index, currIndex: $currIndex, content: $positionText, isVisible: $isVisible');
 
         return Stack(
           children: [

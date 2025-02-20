@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/core/services/youtube_service.dart';
@@ -57,14 +56,16 @@ class _YtPlayerState extends ConsumerState<YtPlayer> with WidgetsBindingObserver
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (!mounted || _videoController == null || _audioController == null) return;
+    if (!mounted || !_isControllerInitialized) return;
 
     if (state == AppLifecycleState.resumed) {
-      _videoController!.play();
-      _audioController!.play();
-    } else if (state == AppLifecycleState.paused) {
-      _videoController!.pause();
-      _audioController!.pause();
+      _changePlayingState(changeToPlay: true);
+
+      return;
+    }
+
+    if (state == AppLifecycleState.paused) {
+      _changePlayingState(changeToPlay: false);
     }
   }
 
@@ -83,25 +84,20 @@ class _YtPlayerState extends ConsumerState<YtPlayer> with WidgetsBindingObserver
     }
   }
 
-  void _togglePlayPause() {
-    if (_videoController == null || _audioController == null) return;
+  void _changePlayingState({bool changeToPlay = true}) {
+    if (!_isControllerInitialized) return;
+
+    _changePlaying(changeToPlay);
 
     setState(() {
-      if (_videoController!.value.isPlaying) {
-        _videoController!.pause();
-        _audioController!.pause();
-      } else {
-        _videoController!.play();
-        _audioController!.play();
-      }
-
       _iconData = _videoController!.value.isPlaying ? Icons.pause : Icons.play_arrow;
+
       _showPlayPauseIcon = true;
     });
 
-    // Hide the icon after 2 seconds
     _iconTimer?.cancel();
-    _iconTimer = Timer(Duration(seconds: _iconData == Icons.play_arrow ? 1 : 2), () {
+
+    _iconTimer = Timer(Duration(milliseconds: _iconData == Icons.play_arrow ? 700 : 2000), () {
       if (mounted) {
         setState(() {
           _showPlayPauseIcon = false;
@@ -110,32 +106,47 @@ class _YtPlayerState extends ConsumerState<YtPlayer> with WidgetsBindingObserver
     });
   }
 
+  bool get _isControllerInitialized => _videoController != null && _audioController != null;
+
+  void _changePlaying(bool changeToPlay) {
+    if (!_isControllerInitialized) return;
+
+    if (_videoController!.value.isPlaying || !changeToPlay) {
+      _videoController!.pause();
+      _audioController!.pause();
+    } else {
+      _videoController!.play();
+      _audioController!.play();
+    }
+  }
+
   @override
   void didUpdateWidget(covariant YtPlayer oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.isVisible != oldWidget.isVisible &&
-        _videoController != null &&
-        _audioController != null) {
-      if (widget.isVisible) {
-        _videoController!.addListener(_listenerVideoFinished);
-        _videoController!.play();
-        _audioController!.play();
-      } else {
-        _videoController!.removeListener(_listenerVideoFinished);
-        _videoController!.pause();
-        _audioController!.pause();
-      }
+
+    if (widget.isVisible == oldWidget.isVisible || !_isControllerInitialized) {
+      return;
     }
+
+    _handleListener();
+  }
+
+  void _handleListener() {
+    if (_videoController == null) return;
+
+    widget.isVisible
+        ? _videoController!.addListener(_listenerVideoFinished)
+        : _videoController!.removeListener(_listenerVideoFinished);
+
+    _changePlaying(widget.isVisible);
   }
 
   @override
   Widget build(BuildContext context) {
     if (_vidUrl == null || _audioUrl == null) return const Loader();
-    developer.log(
-        'build YtPlayer ${widget.key.toString()}, init: ${_videoController?.value.isInitialized ?? _audioController?.value.isInitialized}, visible: ${widget.isVisible}');
 
     return GestureDetector(
-      onTap: _togglePlayPause,
+      onTap: _changePlayingState,
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -155,16 +166,10 @@ class _YtPlayerState extends ConsumerState<YtPlayer> with WidgetsBindingObserver
                   setState(() {
                     _videoController = controller;
                   });
-                  widget.onControllerInitialized?.call(controller);
-                  if (_videoController == null || _audioController == null) return;
 
-                  if (widget.isVisible) {
-                    _videoController!.play();
-                    _audioController!.play();
-                  } else {
-                    _videoController!.pause();
-                    _audioController!.pause();
-                  }
+                  _handleListener();
+
+                  widget.onControllerInitialized?.call(controller);
                 },
               ),
             ],
