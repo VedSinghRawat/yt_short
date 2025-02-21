@@ -50,11 +50,8 @@ class _MediaPlayerState extends State<MediaPlayer> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        if (_mediaPlayerController == null) const Loader(),
-        VideoPlayer(_mediaPlayerController!),
-      ],
-    );
+    return _mediaPlayerController?.value.isInitialized == true
+        ? VideoPlayer(_mediaPlayerController!)
+        : const Loader();
   }
 }

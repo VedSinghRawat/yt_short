@@ -11,17 +11,17 @@ import 'package:url_launcher/url_launcher.dart';
 
 // State class to track version check state
 class VersionState {
-  final bool hasSkippedUpdate;
+  final bool checkedVersion;
 
   const VersionState({
-    this.hasSkippedUpdate = false,
+    this.checkedVersion = false,
   });
 
   VersionState copyWith({
-    bool? hasSkippedUpdate,
+    bool? checkedVersion,
   }) {
     return VersionState(
-      hasSkippedUpdate: hasSkippedUpdate ?? this.hasSkippedUpdate,
+      checkedVersion: checkedVersion ?? this.checkedVersion,
     );
   }
 }
@@ -37,8 +37,8 @@ class VersionController extends StateNotifier<VersionState> {
 
   Future<String?> checkVersion(BuildContext context) async {
     try {
-      if (state.hasSkippedUpdate) {
-        return Routes.home;
+      if (state.checkedVersion) {
+        return null;
       }
 
       final packageInfo = await PackageInfo.fromPlatform();
@@ -55,14 +55,18 @@ class VersionController extends StateNotifier<VersionState> {
         return Routes.versionSuggest;
       }
 
-      return Routes.home;
+      return null;
     } catch (e) {
-      return Routes.home;
+      return null;
+    } finally {
+      if (!state.checkedVersion) {
+        doneVersionCheck();
+      }
     }
   }
 
-  void skipUpdate() {
-    state = state.copyWith(hasSkippedUpdate: true);
+  void doneVersionCheck() {
+    state = state.copyWith(checkedVersion: true);
   }
 
   Future<void> openStore(BuildContext context) async {

@@ -8,13 +8,13 @@ import 'package:myapp/features/speech_exercise/widgets/exercise_sentence_card.da
 class SpeechExerciseScreen extends StatefulWidget {
   final SpeechExercise exercise;
   final Function(VideoPlayerController)? onControllerInitialized;
-  final bool isVisible;
+  final String? uniqueId;
 
   const SpeechExerciseScreen({
     super.key,
     this.onControllerInitialized,
     required this.exercise,
-    this.isVisible = false,
+    this.uniqueId,
   });
 
   @override
@@ -23,20 +23,24 @@ class SpeechExerciseScreen extends StatefulWidget {
 
 class _SpeechExerciseScreenState extends State<SpeechExerciseScreen> {
   late VideoPlayerController? _controller;
+  late VideoPlayerController? _audioController;
   bool _hasShownDialog = false;
 
   late void Function() _pauseListener;
-  void _onControllerInitialized(VideoPlayerController controller) {
+
+  void _onControllerInitialized(
+      VideoPlayerController controller, VideoPlayerController? audioController) {
     _pauseListener = () {
       if (!_hasShownDialog &&
           controller.value.position.inSeconds >= widget.exercise.pauseAt &&
           controller.value.isPlaying) {
         controller.pause();
+        audioController?.pause();
         _showTestSentenceDialog();
       }
     };
     _controller = controller;
-
+    _audioController = audioController;
     controller.addListener(_pauseListener);
   }
 
@@ -63,6 +67,7 @@ class _SpeechExerciseScreenState extends State<SpeechExerciseScreen> {
             onContinue: () {
               setState(() {
                 _controller?.play();
+                _audioController?.play();
               });
               Navigator.of(context).pop();
             },
@@ -77,7 +82,7 @@ class _SpeechExerciseScreenState extends State<SpeechExerciseScreen> {
     return YtPlayer(
       key: Key('${widget.exercise.level}-${widget.exercise.subLevel}-${widget.exercise.ytId}'),
       ytVidId: widget.exercise.ytId,
-      isVisible: widget.isVisible,
+      uniqueId: widget.uniqueId,
       onControllerInitialized: _onControllerInitialized,
     );
   }

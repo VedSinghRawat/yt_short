@@ -1,15 +1,16 @@
-import 'dart:developer';
-
+import 'dart:math';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/widgets/yt_player.dart';
 import 'package:myapp/features/content/widget/last_level.dart';
 import 'package:myapp/features/speech_exercise/screen/speech_exercise_screen.dart';
 import '../../../models/models.dart';
+import 'dart:developer' as dev;
 
 class ContentsList extends StatefulWidget {
   final List<Content> contents;
-  final void Function(int index, PageController controller)? onVideoChange;
+  final Future<void> Function(int index, PageController controller)? onVideoChange;
 
   const ContentsList({
     super.key,
@@ -23,7 +24,6 @@ class ContentsList extends StatefulWidget {
 
 class _ContentsListState extends State<ContentsList> {
   late PageController _pageController;
-  int currIndex = 0;
 
   void _jumpToPage(Duration timeStamp) async {
     final progress = await SharedPref.getCurrProgress();
@@ -73,13 +73,11 @@ class _ContentsListState extends State<ContentsList> {
     return PageView.builder(
       controller: _pageController,
       allowImplicitScrolling: true,
+      dragStartBehavior: DragStartBehavior.down,
       itemCount: widget.contents.length + 1,
       scrollDirection: Axis.vertical,
-      onPageChanged: (index) {
-        widget.onVideoChange?.call(index, _pageController);
-        setState(() {
-          currIndex = index;
-        });
+      onPageChanged: (index) async {
+        await widget.onVideoChange?.call(index, _pageController);
       },
       itemBuilder: (context, index) {
         final content = widget.contents.length > index ? widget.contents[index] : null;
@@ -91,49 +89,57 @@ class _ContentsListState extends State<ContentsList> {
         }
 
         final positionText = '${content.level}-${content.subLevel}';
-        final isVisible = currIndex == index;
-
-        log('build item $index, currIndex: $currIndex, content: $positionText, isVisible: $isVisible');
 
         return Stack(
           children: [
             Center(
               child: content.isVideo
                   ? YtPlayer(
-                      key: Key('${content.level}-${content.subLevel}-${content.ytId}'),
+                      key: Key(positionText),
+                      uniqueId: positionText,
                       ytVidId: content.ytId,
-                      isVisible: isVisible,
                     )
                   : content.isSpeechExercise
                       ? SpeechExerciseScreen(
-                          key: Key('${content.level}-${content.subLevel}-${content.ytId}'),
+                          key: Key(positionText),
+                          uniqueId: positionText,
                           exercise: content.speechExercise!,
-                          isVisible: isVisible,
                         )
                       : const SizedBox.shrink(),
             ),
             Positioned(
               top: 16,
               right: 16,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: const Color.fromRGBO(0, 0, 0, 0.7),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'Level $positionText',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+              child: _LevelText(positionText: positionText),
             ),
           ],
         );
       },
+    );
+  }
+}
+
+class _LevelText extends StatelessWidget {
+  final String positionText;
+
+  const _LevelText({required this.positionText});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color.fromRGBO(0, 0, 0, 0.7),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        'Level $positionText',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 }

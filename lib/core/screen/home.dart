@@ -30,7 +30,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Fetch videos when the screen is first loaded
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       await ref.read(contentControllerProvider.notifier).fetchContents();
@@ -121,7 +121,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  void onVideoChange(int index, PageController controller) async {
+  Future<void> onVideoChange(int index, PageController controller) async {
     if (!mounted || _cachedContents == null) return;
 
     if (await fetchContent(index, _cachedContents!)) return;
@@ -194,9 +194,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = ref.watch(contentControllerProvider);
-    final loading = provider.loading;
-    final contentMap = provider.contentMap;
+    final loading = ref.watch(contentControllerProvider.select((state) => state.loading));
+    final contentMap = ref.watch(contentControllerProvider.select((state) => state.contentMap));
 
     final isLoggedIn =
         ref.watch(userControllerProvider.select((state) => state.currentUser))?.email.isNotEmpty ??

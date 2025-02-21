@@ -48,7 +48,7 @@ class SuggestVersionUpdate extends ConsumerWidget {
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () {
-                  ref.read(versionControllerProvider.notifier).skipUpdate();
+                  ref.read(versionControllerProvider.notifier).doneVersionCheck();
                   context.go(Routes.home);
                 },
                 child: const Text('Skip Update'),
