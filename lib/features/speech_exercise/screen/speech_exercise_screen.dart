@@ -9,11 +9,15 @@ class SpeechExerciseScreen extends StatefulWidget {
   final SpeechExercise exercise;
   final Function(VideoPlayerController)? onControllerInitialized;
   final String? uniqueId;
+  final String audioUrl;
+  final String videoUrl;
 
   const SpeechExerciseScreen({
     super.key,
     this.onControllerInitialized,
     required this.exercise,
+    required this.audioUrl,
+    required this.videoUrl,
     this.uniqueId,
   });
 
@@ -29,13 +33,13 @@ class _SpeechExerciseScreenState extends State<SpeechExerciseScreen> {
   late void Function() _pauseListener;
 
   void _onControllerInitialized(
-      VideoPlayerController controller, VideoPlayerController? audioController) {
+      VideoPlayerController controller, VideoPlayerController audioController) {
     _pauseListener = () {
       if (!_hasShownDialog &&
           controller.value.position.inSeconds >= widget.exercise.pauseAt &&
           controller.value.isPlaying) {
         controller.pause();
-        audioController?.pause();
+        audioController.pause();
         _showTestSentenceDialog();
       }
     };
@@ -81,7 +85,8 @@ class _SpeechExerciseScreenState extends State<SpeechExerciseScreen> {
   Widget build(BuildContext context) {
     return YtPlayer(
       key: Key('${widget.exercise.level}-${widget.exercise.subLevel}-${widget.exercise.ytId}'),
-      ytVidId: widget.exercise.ytId,
+      audioUrl: widget.audioUrl,
+      videoUrl: widget.videoUrl,
       uniqueId: widget.uniqueId,
       onControllerInitialized: _onControllerInitialized,
     );

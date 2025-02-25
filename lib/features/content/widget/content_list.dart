@@ -1,22 +1,18 @@
-import 'dart:math';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:myapp/core/shared_pref.dart';
+import 'package:myapp/core/widgets/loader.dart';
 import 'package:myapp/core/widgets/yt_player.dart';
 import 'package:myapp/features/content/widget/last_level.dart';
 import 'package:myapp/features/speech_exercise/screen/speech_exercise_screen.dart';
 import '../../../models/models.dart';
-import 'dart:developer' as dev;
 
 class ContentsList extends StatefulWidget {
   final List<Content> contents;
   final Future<void> Function(int index, PageController controller)? onVideoChange;
+  final Map<String, Map<String, String>> ytUrls;
 
-  const ContentsList({
-    super.key,
-    required this.contents,
-    this.onVideoChange,
-  });
+  const ContentsList({super.key, required this.contents, this.onVideoChange, required this.ytUrls});
 
   @override
   State<ContentsList> createState() => _ContentsListState();
@@ -90,6 +86,12 @@ class _ContentsListState extends State<ContentsList> {
 
         final positionText = '${content.level}-${content.subLevel}';
 
+        final urls = widget.ytUrls[content.ytId];
+
+        if (urls == null) {
+          return const Loader();
+        }
+
         return Stack(
           children: [
             Center(
@@ -97,13 +99,16 @@ class _ContentsListState extends State<ContentsList> {
                   ? YtPlayer(
                       key: Key(positionText),
                       uniqueId: positionText,
-                      ytVidId: content.ytId,
+                      audioUrl: urls['audio']!,
+                      videoUrl: urls['video']!,
                     )
                   : content.isSpeechExercise
                       ? SpeechExerciseScreen(
                           key: Key(positionText),
                           uniqueId: positionText,
                           exercise: content.speechExercise!,
+                          audioUrl: urls['audio']!,
+                          videoUrl: urls['video']!,
                         )
                       : const SizedBox.shrink(),
             ),

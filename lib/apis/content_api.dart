@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,13 +13,13 @@ class ContentAPI implements IContentAPI {
   @override
   Future<List<Content>> listByLevel(int level) async {
     final dio = Dio();
-    final response = await dio.get('${dotenv.env['S3_BASE_URL']}/content/$level.json');
+    final response = await dio.get('${dotenv.env['S3_BASE_URL']}/levels/$level.json');
 
     if (response.statusCode != 200) {
       throw Exception("Failed to fetch content for level $level");
     }
 
-    final List<dynamic> jsonList = jsonDecode(response.data) as List<dynamic>;
+    final List<dynamic> jsonList = (response.data['sub_levels']);
     int subLevel = 1;
 
     return jsonList.map((json) {

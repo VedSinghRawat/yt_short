@@ -18,7 +18,7 @@ class SignInScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isLoading = ref.watch(authControllerProvider).loading;
+    final isLoading = ref.watch(authControllerProvider.select((state) => state.loading));
 
     log('sign in screen', name: 'sign in screen');
 

@@ -2,22 +2,22 @@ import 'dart:async';
 import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:myapp/core/services/youtube_service.dart';
-import 'package:myapp/core/widgets/loader.dart';
 import 'package:myapp/core/widgets/video_player.dart';
 import 'package:myapp/features/content/content_controller.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 class YtPlayer extends ConsumerStatefulWidget {
-  final String ytVidId;
+  final String audioUrl;
+  final String videoUrl;
   final String? uniqueId;
-  final void Function(VideoPlayerController controller, VideoPlayerController? audioController)?
+  final void Function(VideoPlayerController controller, VideoPlayerController audioController)?
       onControllerInitialized;
 
   const YtPlayer({
     super.key,
-    required this.ytVidId,
+    required this.audioUrl,
+    required this.videoUrl,
     this.uniqueId,
     this.onControllerInitialized,
   });
@@ -28,8 +28,6 @@ class YtPlayer extends ConsumerStatefulWidget {
 
 class _YtPlayerState extends ConsumerState<YtPlayer>
     with WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
-  String? _vidUrl;
-  String? _audioUrl;
   VideoPlayerController? _videoController;
   VideoPlayerController? _audioController;
   bool _showPlayPauseIcon = false;
@@ -43,15 +41,6 @@ class _YtPlayerState extends ConsumerState<YtPlayer>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
-      final data = await ref.read(youtubeServiceProvider).getVideoMp4Url(widget.ytVidId);
-
-      if (!mounted) return;
-      setState(() {
-        _vidUrl = data['video'].toString();
-        _audioUrl = data['audio'].toString();
-      });
-    });
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -160,23 +149,20 @@ class _YtPlayerState extends ConsumerState<YtPlayer>
     }
   }
 
-  @override
-  void didUpdateWidget(YtPlayer oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.ytVidId != widget.ytVidId) {
-      _vidUrl = null;
-      _audioUrl = null;
-    }
+  void _onControllerInitialized(
+      VideoPlayerController? videoController, VideoPlayerController? audioController) {
+    if (videoController == null || audioController == null) return;
+
+    _handleListener();
+    widget.onControllerInitialized?.call(videoController, audioController);
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
 
-    if (_vidUrl == null || _audioUrl == null) return const Loader();
-
     return VisibilityDetector(
-      key: Key(widget.uniqueId ?? widget.ytVidId),
+      key: Key(widget.uniqueId ?? widget.audioUrl),
       onVisibilityChanged: _onVisibilityChanged,
       child: GestureDetector(
         onTap: _changePlayingState,
@@ -184,28 +170,26 @@ class _YtPlayerState extends ConsumerState<YtPlayer>
           alignment: Alignment.center,
           children: [
             MediaPlayer(
-              mediaUrl: _audioUrl!,
+              mediaUrl: widget.audioUrl,
               onControllerCreated: (controller) {
                 if (_audioController != controller) {
                   setState(() {
                     _audioController = controller;
                   });
+
+                  _onControllerInitialized(_videoController, controller);
                 }
               },
             ),
             MediaPlayer(
-              mediaUrl: _vidUrl!,
+              mediaUrl: widget.videoUrl,
               onControllerCreated: (controller) {
                 if (_videoController != controller) {
                   setState(() {
                     _videoController = controller;
                   });
-
-                  developer.log('controller created');
-                  _handleListener();
+                  _onControllerInitialized(controller, _audioController);
                 }
-
-                widget.onControllerInitialized?.call(controller, _audioController);
               },
             ),
             PlayPauseButton(showPlayPauseIcon: _showPlayPauseIcon, iconData: _iconData),

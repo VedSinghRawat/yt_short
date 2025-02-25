@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
+import 'package:myapp/core/services/youtube_service.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'dart:developer' as developer;
@@ -12,6 +13,7 @@ class ContentControllerState {
   // level against the key attribute of content
   final Map<int, int> subLevelCountByLevel;
   final bool hasFinishedVideo;
+  final Map<String, Map<String, String>> ytUrls;
 
   final bool loading;
 
@@ -20,6 +22,7 @@ class ContentControllerState {
     this.subLevelCountByLevel = const {},
     this.loading = true,
     this.hasFinishedVideo = false,
+    this.ytUrls = const {},
   });
 
   ContentControllerState copyWith({
@@ -27,12 +30,14 @@ class ContentControllerState {
     Map<int, int>? subLevelCountByLevel,
     bool? loading,
     bool? hasFinishedVideo,
+    Map<String, Map<String, String>>? ytUrls,
   }) {
     return ContentControllerState(
       contentMap: contentMap ?? this.contentMap,
       subLevelCountByLevel: subLevelCountByLevel ?? this.subLevelCountByLevel,
       loading: loading ?? this.loading,
       hasFinishedVideo: hasFinishedVideo ?? this.hasFinishedVideo,
+      ytUrls: ytUrls ?? this.ytUrls,
     );
   }
 }
@@ -40,9 +45,13 @@ class ContentControllerState {
 class ContentController extends StateNotifier<ContentControllerState> {
   final UserControllerState userController;
   final IContentAPI contentAPI;
+  final YoutubeService ytService;
 
-  ContentController({required this.userController, required this.contentAPI})
-      : super(ContentControllerState());
+  ContentController({
+    required this.userController,
+    required this.contentAPI,
+    required this.ytService,
+  }) : super(ContentControllerState());
 
   Future<List<Content>> _listByLevel(int level) async {
     if (state.subLevelCountByLevel.containsKey(level)) return [];
@@ -53,6 +62,8 @@ class ContentController extends StateNotifier<ContentControllerState> {
       Map<String, Content> contentMap = Map.from(state.contentMap);
       Map<int, int> subLevelCountByLevel = Map.from(state.subLevelCountByLevel);
 
+      final ytUrls = await ytService.listMediaVideoUrls(tempContents.map((e) => e.ytId).toList());
+
       subLevelCountByLevel[level] = tempContents.length;
       for (var content in tempContents) {
         contentMap["${content.level}-${content.subLevel}"] = content;
@@ -61,6 +72,7 @@ class ContentController extends StateNotifier<ContentControllerState> {
       state = state.copyWith(
         contentMap: contentMap,
         subLevelCountByLevel: subLevelCountByLevel,
+        ytUrls: {...state.ytUrls, ...ytUrls},
       );
     } catch (e, stackTrace) {
       developer.log('Error in ContentController._listByLevel',
@@ -112,5 +124,7 @@ final contentControllerProvider =
     StateNotifierProvider<ContentController, ContentControllerState>((ref) {
   final userController = ref.read(userControllerProvider);
   final contentAPI = ref.read(contentAPIProvider);
-  return ContentController(contentAPI: contentAPI, userController: userController);
+  final ytService = ref.read(youtubeServiceProvider);
+  return ContentController(
+      contentAPI: contentAPI, userController: userController, ytService: ytService);
 });

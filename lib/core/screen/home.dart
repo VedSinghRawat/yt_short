@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/router/router.dart';
+import 'package:myapp/core/screen/app_bar.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/core/widgets/loader.dart';
@@ -12,9 +13,7 @@ import 'package:myapp/features/activity_log/activity_log.controller.dart';
 import 'package:myapp/models/content/content.dart';
 import '../../features/content/content_controller.dart';
 import '../../features/content/widget/content_list.dart';
-import '../widgets/custom_app_bar.dart';
 import '../../features/user/user_controller.dart';
-import '../../features/auth/auth_controller.dart';
 import 'dart:developer' as developer;
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -37,6 +36,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
+  bool _canChangeVideo(
+      int level, int subLevel, int maxLevel, int maxSubLevel, bool hasLocalProgress) {
+    final hasFinishedVideo = ref.read(contentControllerProvider).hasFinishedVideo;
+    final levelAfter = !hasLocalProgress || isLevelAfter(level, subLevel, maxLevel, maxSubLevel);
+    return hasFinishedVideo || !levelAfter;
+  }
+
   Future<bool> cancelVideoChange(
     int index,
     PageController controller,
@@ -46,12 +52,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     int subLevel,
     bool hasLocalProgress,
   ) async {
-    final hasFinishedVideo = ref.read(contentControllerProvider).hasFinishedVideo;
-
-    final levelAfter = !hasLocalProgress || isLevelAfter(level, subLevel, maxLevel, maxSubLevel);
-
-    if (hasFinishedVideo || !levelAfter) return false;
-
     controller.animateToPage(
       index - 1,
       duration: const Duration(milliseconds: 300),
@@ -59,7 +59,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
 
     try {
-      showSnackBar(context, 'Please complete the current content before proceeding');
+      if (mounted) {
+        showSnackBar(context, 'Please complete the current content before proceeding');
+      }
     } catch (e) {
       developer.log('error in cancelVideoChange: $e');
     }
@@ -124,7 +126,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> onVideoChange(int index, PageController controller) async {
     if (!mounted || _cachedContents == null) return;
 
-    if (await fetchContent(index, _cachedContents!)) return;
+    // If the index is greater than the length of the cached contents, fetch the contents and return
+    if (index >= _cachedContents!.length) {
+      await fetchContent(index, _cachedContents!);
+      return;
+    }
 
     // Get the content, level, and sublevel for the current index
     final content = _cachedContents![index];
@@ -138,17 +144,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final localMaxLevel = localProgress?['maxLevel'] ?? 0;
     final localMaxSubLevel = localProgress?['maxSubLevel'] ?? 0;
 
-    // Cancel the video change if the user has not finished the video and the level is
-    // after the max user progress
-    if (await cancelVideoChange(
-      index,
-      controller,
-      max(user?.maxLevel ?? 0, localMaxLevel),
-      max(user?.maxSubLevel ?? 0, localMaxSubLevel),
-      level,
-      subLevel,
-      localProgress != null,
-    )) {
+    // Early return if user cannot change video
+    if (!_canChangeVideo(level, subLevel, max(user?.maxLevel ?? 0, localMaxLevel),
+        max(user?.maxSubLevel ?? 0, localMaxSubLevel), localProgress != null)) {
+      await cancelVideoChange(
+        index,
+        controller,
+        max(user?.maxLevel ?? 0, localMaxLevel),
+        max(user?.maxSubLevel ?? 0, localMaxSubLevel),
+        level,
+        subLevel,
+        localProgress != null,
+      );
+
       return;
     }
 
@@ -158,6 +166,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // If the level requires auth and the user is not logged in, redirect to sign in
     if (level > kAuthRequiredLevel && userEmail.isEmpty && mounted) {
       context.go(Routes.signIn);
+      return;
     }
 
     await syncLocalProgress(level, subLevel, localMaxLevel, localMaxSubLevel);
@@ -196,10 +205,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final loading = ref.watch(contentControllerProvider.select((state) => state.loading));
     final contentMap = ref.watch(contentControllerProvider.select((state) => state.contentMap));
-
-    final isLoggedIn =
-        ref.watch(userControllerProvider.select((state) => state.currentUser))?.email.isNotEmpty ??
-            false;
+    final ytUrls = ref.watch(contentControllerProvider.select((state) => state.ytUrls));
 
     // Only sort contents if they have changed
     if (_cachedContents == null || !listEquals(_cachedContents, contentMap.values.toList())) {
@@ -211,42 +217,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     return Scaffold(
-      appBar: CustomAppBar(
-        title: 'Learn English',
-        actions: [
-          !isLoggedIn
-              ? IconButton(
-                  onPressed: () {
-                    context.push(Routes.signIn);
-                  },
-                  icon: const Icon(Icons.account_circle),
-                )
-              : PopupMenuButton<String>(
-                  icon: const Icon(Icons.account_circle),
-                  onSelected: (value) {
-                    if (value == 'signout') {
-                      ref.read(authControllerProvider.notifier).signOut(context);
-                      context.go(Routes.signIn);
-                    }
-                  },
-                  itemBuilder: (BuildContext context) => [
-                    const PopupMenuItem<String>(
-                      value: 'signout',
-                      child: Row(
-                        children: [
-                          Icon(Icons.logout, color: Colors.white),
-                          SizedBox(width: 8),
-                          Text('Sign Out'),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-        ],
-      ),
+      appBar: const HomeScreenAppBar(),
       body: ContentsList(
         contents: _cachedContents!,
         onVideoChange: onVideoChange,
+        ytUrls: ytUrls,
       ),
     );
   }
