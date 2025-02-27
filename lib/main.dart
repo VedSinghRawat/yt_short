@@ -6,6 +6,8 @@ import 'package:myapp/core/services/initialize_service.dart';
 import 'package:myapp/core/widgets/loader.dart';
 
 Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
   await dotenv.load(fileName: '.env');
 
   runApp(const ProviderScope(child: MyApp()));

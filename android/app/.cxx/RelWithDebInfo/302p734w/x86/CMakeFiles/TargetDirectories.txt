@@ -1,0 +1,2 @@
+C:/Users/devslane/Desktop/codeyogi/yt_short/android/app/.cxx/RelWithDebInfo/302p734w/x86/CMakeFiles/edit_cache.dir
+C:/Users/devslane/Desktop/codeyogi/yt_short/android/app/.cxx/RelWithDebInfo/302p734w/x86/CMakeFiles/rebuild_cache.dir

@@ -146,7 +146,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     // Early return if user cannot change video
     if (!_canChangeVideo(level, subLevel, max(user?.maxLevel ?? 0, localMaxLevel),
-        max(user?.maxSubLevel ?? 0, localMaxSubLevel), localProgress != null)) {
+            max(user?.maxSubLevel ?? 0, localMaxSubLevel), localProgress != null) &&
+        !kDebugMode) {
       await cancelVideoChange(
         index,
         controller,
@@ -212,13 +213,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       _cachedContents = _getSortedContents(contentMap);
     }
 
-    if (loading && _cachedContents!.isEmpty) {
+    if (loading == true && _cachedContents!.isEmpty) {
       return const Loader();
     }
 
     return Scaffold(
       appBar: const HomeScreenAppBar(),
       body: ContentsList(
+        isLoading: loading ?? false,
         contents: _cachedContents!,
         onVideoChange: onVideoChange,
         ytUrls: ytUrls,

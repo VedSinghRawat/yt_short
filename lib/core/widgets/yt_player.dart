@@ -11,6 +11,7 @@ class YtPlayer extends ConsumerStatefulWidget {
   final String audioUrl;
   final String videoUrl;
   final String? uniqueId;
+
   final void Function(VideoPlayerController controller, VideoPlayerController audioController)?
       onControllerInitialized;
 
@@ -26,46 +27,30 @@ class YtPlayer extends ConsumerStatefulWidget {
   ConsumerState<YtPlayer> createState() => _YtPlayerState();
 }
 
-class _YtPlayerState extends ConsumerState<YtPlayer>
-    with WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
+class _YtPlayerState extends ConsumerState<YtPlayer> with AutomaticKeepAliveClientMixin {
   VideoPlayerController? _videoController;
   VideoPlayerController? _audioController;
   bool _showPlayPauseIcon = false;
   IconData _iconData = Icons.play_arrow;
   Timer? _iconTimer;
+
   bool _isVisible = false;
 
   @override
   bool get wantKeepAlive => true;
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-  }
-
-  @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
+    _videoController?.removeListener(_listenerVideoFinished);
+    _videoController?.dispose();
+    _videoController = null;
+
+    _audioController?.dispose();
+    _audioController = null;
+
     _iconTimer?.cancel();
+    developer.log('yt player disposed');
     super.dispose();
-  }
-
-  // stop and start video when app close or start
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (!mounted || !_isControllerInitialized) return;
-
-    // start only current video
-    if (state == AppLifecycleState.resumed && _isVisible) {
-      _changePlayingState(changeToPlay: true);
-
-      return;
-    }
-
-    if (state == AppLifecycleState.paused) {
-      _changePlayingState(changeToPlay: false);
-    }
   }
 
   void _listenerVideoFinished() {
@@ -138,7 +123,6 @@ class _YtPlayerState extends ConsumerState<YtPlayer>
     if (_isVisible == isVisible) return;
 
     try {
-      developer.log('VisibilityInfo: ${info.visibleFraction} $isVisible, $_isVisible');
       setState(() {
         _isVisible = isVisible;
       });
@@ -192,6 +176,7 @@ class _YtPlayerState extends ConsumerState<YtPlayer>
                 }
               },
             ),
+            PlayPauseButton(showPlayPauseIcon: _showPlayPauseIcon, iconData: _iconData),
           ],
         ),
       ),
@@ -223,7 +208,7 @@ class PlayPauseButton extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: Icon(
           _iconData,
-          size: MediaQuery.of(context).size.width * 0.1,
+          size: MediaQuery.of(context).size.width * 0.12,
           color: Colors.white,
         ),
       ),

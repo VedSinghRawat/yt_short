@@ -15,12 +15,12 @@ class ContentControllerState {
   final bool hasFinishedVideo;
   final Map<String, Map<String, String>> ytUrls;
 
-  final bool loading;
+  final bool? loading;
 
   ContentControllerState({
     this.contentMap = const {},
     this.subLevelCountByLevel = const {},
-    this.loading = true,
+    this.loading,
     this.hasFinishedVideo = false,
     this.ytUrls = const {},
   });
@@ -54,7 +54,7 @@ class ContentController extends StateNotifier<ContentControllerState> {
   }) : super(ContentControllerState());
 
   Future<List<Content>> _listByLevel(int level) async {
-    if (state.subLevelCountByLevel.containsKey(level)) return [];
+    if (state.subLevelCountByLevel.containsKey(level) || state.loading == true) return [];
 
     state = state.copyWith(loading: true);
     try {
@@ -62,7 +62,15 @@ class ContentController extends StateNotifier<ContentControllerState> {
       Map<String, Content> contentMap = Map.from(state.contentMap);
       Map<int, int> subLevelCountByLevel = Map.from(state.subLevelCountByLevel);
 
+      developer.log('fetching level: $level');
+      final startTime = DateTime.now();
+
       final ytUrls = await ytService.listMediaVideoUrls(tempContents.map((e) => e.ytId).toList());
+
+      developer.log('ytUrls: ${ytUrls.length}');
+      final endTime = DateTime.now();
+      final duration = endTime.difference(startTime);
+      developer.log('Duration: $duration');
 
       subLevelCountByLevel[level] = tempContents.length;
       for (var content in tempContents) {

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/core/widgets/loader.dart';
 import 'package:video_player/video_player.dart';
+import 'dart:developer' as developer;
 
 // Stateful widget to fetch and then display video content.
 class MediaPlayer extends StatefulWidget {
   final String mediaUrl;
   final void Function(VideoPlayerController)? onControllerCreated;
+
   const MediaPlayer({
     super.key,
     required this.mediaUrl,
@@ -33,25 +35,35 @@ class _MediaPlayerState extends State<MediaPlayer> {
     await _mediaPlayerController!.initialize();
 
     // Notify parent when controller is created
+    developer.log('controller created');
     widget.onControllerCreated?.call(_mediaPlayerController!);
   }
 
   @override
   void initState() {
     super.initState();
+
     _initVideoPlayer();
   }
 
   @override
   Future<void> dispose() async {
+    if (_mediaPlayerController != null) {
+      _mediaPlayerController!.dispose();
+    }
+
     super.dispose();
-    await _mediaPlayerController?.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return _mediaPlayerController?.value.isInitialized == true
-        ? VideoPlayer(_mediaPlayerController!)
+        ? Stack(
+            children: [
+              if (_mediaPlayerController!.value.isBuffering) const Loader(),
+              VideoPlayer(_mediaPlayerController!),
+            ],
+          )
         : const Loader();
   }
 }

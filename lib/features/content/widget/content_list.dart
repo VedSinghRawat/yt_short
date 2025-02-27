@@ -9,10 +9,17 @@ import '../../../models/models.dart';
 
 class ContentsList extends StatefulWidget {
   final List<Content> contents;
+  final bool isLoading;
   final Future<void> Function(int index, PageController controller)? onVideoChange;
   final Map<String, Map<String, String>> ytUrls;
 
-  const ContentsList({super.key, required this.contents, this.onVideoChange, required this.ytUrls});
+  const ContentsList({
+    super.key,
+    required this.contents,
+    this.onVideoChange,
+    required this.ytUrls,
+    this.isLoading = false,
+  });
 
   @override
   State<ContentsList> createState() => _ContentsListState();
@@ -79,16 +86,16 @@ class _ContentsListState extends State<ContentsList> {
         final content = widget.contents.length > index ? widget.contents[index] : null;
         final isLastContent = index == widget.contents.length;
 
-        if (isLastContent || content == null) {
+        if ((isLastContent || content == null) && !widget.isLoading) {
           return LastLevelWidget(
               onRefresh: () => widget.onVideoChange?.call(index, _pageController));
         }
 
-        final positionText = '${content.level}-${content.subLevel}';
+        final positionText = '${content?.level}-${content?.subLevel}';
 
-        final urls = widget.ytUrls[content.ytId];
+        final urls = widget.ytUrls[content?.ytId ?? ''];
 
-        if (urls == null) {
+        if (urls == null || content == null) {
           return const Loader();
         }
 
