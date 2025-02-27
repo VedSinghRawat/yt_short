@@ -192,7 +192,6 @@ class _YtPlayerState extends ConsumerState<YtPlayer>
                 }
               },
             ),
-            PlayPauseButton(showPlayPauseIcon: _showPlayPauseIcon, iconData: _iconData),
           ],
         ),
       ),
