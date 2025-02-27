@@ -27,7 +27,7 @@ class YtPlayer extends ConsumerStatefulWidget {
   ConsumerState<YtPlayer> createState() => _YtPlayerState();
 }
 
-class _YtPlayerState extends ConsumerState<YtPlayer> with AutomaticKeepAliveClientMixin {
+class _YtPlayerState extends ConsumerState<YtPlayer> {
   VideoPlayerController? _videoController;
   VideoPlayerController? _audioController;
   bool _showPlayPauseIcon = false;
@@ -37,20 +37,8 @@ class _YtPlayerState extends ConsumerState<YtPlayer> with AutomaticKeepAliveClie
   bool _isVisible = false;
 
   @override
-  bool get wantKeepAlive => true;
-
-  @override
-  void dispose() {
-    _videoController?.removeListener(_listenerVideoFinished);
-    _videoController?.dispose();
-    _videoController = null;
-
-    _audioController?.dispose();
-    _audioController = null;
-
-    _iconTimer?.cancel();
-    developer.log('yt player disposed');
-    super.dispose();
+  void initState() {
+    super.initState();
   }
 
   void _listenerVideoFinished() {
@@ -114,7 +102,6 @@ class _YtPlayerState extends ConsumerState<YtPlayer> with AutomaticKeepAliveClie
     _changePlaying(_isVisible);
   }
 
-  // need because when we navigate to another route this will stop video
   void _onVisibilityChanged(VisibilityInfo info) {
     if (!mounted) return;
 
@@ -143,8 +130,6 @@ class _YtPlayerState extends ConsumerState<YtPlayer> with AutomaticKeepAliveClie
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
-
     return VisibilityDetector(
       key: Key(widget.uniqueId ?? widget.audioUrl),
       onVisibilityChanged: _onVisibilityChanged,
