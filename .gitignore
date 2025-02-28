@@ -30,6 +30,7 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+android/app/.cxx/
 
 # Android related
 **/android/**/gradle-wrapper.jar

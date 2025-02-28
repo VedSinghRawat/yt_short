@@ -1,2 +1,0 @@
-C:/Users/devslane/Desktop/codeyogi/yt_short/android/app/.cxx/RelWithDebInfo/302p734w/armeabi-v7a/CMakeFiles/edit_cache.dir
-C:/Users/devslane/Desktop/codeyogi/yt_short/android/app/.cxx/RelWithDebInfo/302p734w/armeabi-v7a/CMakeFiles/rebuild_cache.dir

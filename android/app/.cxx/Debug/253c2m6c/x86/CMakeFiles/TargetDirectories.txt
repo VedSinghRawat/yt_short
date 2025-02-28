@@ -1,2 +1,0 @@
-C:/Users/devslane/Desktop/codeyogi/yt_short/android/app/.cxx/Debug/253c2m6c/x86/CMakeFiles/edit_cache.dir
-C:/Users/devslane/Desktop/codeyogi/yt_short/android/app/.cxx/Debug/253c2m6c/x86/CMakeFiles/rebuild_cache.dir
