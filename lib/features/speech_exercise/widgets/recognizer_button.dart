@@ -55,6 +55,12 @@ class _RecognizerButtonState extends State<RecognizerButton> {
   }
 
   @override
+  void dispose() {
+    _recognizer.stopListening();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       width: widget.testCompleted ? 160 : 80,

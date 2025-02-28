@@ -17,7 +17,8 @@ class AuthWrapper extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final userController = ref.watch(userControllerProvider);
+    final currentUser = ref.watch(userControllerProvider.select((state) => state.currentUser));
+    final loading = ref.watch(userControllerProvider.select((state) => state.loading));
     final progressAsyncValue = ref.watch(progressProvider);
 
     return progressAsyncValue.when(
@@ -28,11 +29,11 @@ class AuthWrapper extends ConsumerWidget {
       data: (progress) {
         if (progress?['level'] != null &&
             progress?['level']! > kAuthRequiredLevel &&
-            userController.currentUser == null) {
+            currentUser == null) {
           return const SignInScreen();
         }
 
-        if (userController.currentUser == null && userController.loading) {
+        if (currentUser == null && loading) {
           return const Loader();
         }
 

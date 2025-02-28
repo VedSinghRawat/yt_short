@@ -1,6 +1,4 @@
 import 'dart:convert';
-import 'dart:developer' as developer;
-import 'package:flutter/material.dart';
 import 'package:myapp/models/activity_log/activity_log.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -93,5 +91,16 @@ class SharedPref {
   static Future<void> clearAll() async {
     final instance = await SharedPreferences.getInstance();
     await instance.clear();
+  }
+
+  static Future<Map<String, dynamic>?> getCachedVideoUrl(String videoId) async {
+    return await _getObject('video_$videoId');
+  }
+
+  static Future<void> cacheVideoUrl(String videoId, Map<String, dynamic> data) async {
+    await _setObject('video_$videoId', {
+      ...data,
+      'timestamp': DateTime.now().millisecondsSinceEpoch,
+    });
   }
 }

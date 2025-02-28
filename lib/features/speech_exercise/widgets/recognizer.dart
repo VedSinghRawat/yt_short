@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
-import 'dart:developer' as developer;
 
 class SpeechRecognizer {
   final Function(SpeechRecognitionResult) onResult;
