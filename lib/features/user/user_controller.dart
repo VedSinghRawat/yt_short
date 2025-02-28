@@ -15,6 +15,18 @@ class UserControllerState {
     this.currentUser,
   });
 
+  Future<int> get level async {
+    final progress = await SharedPref.getCurrProgress();
+
+    return currentUser?.level ?? progress?['level'] ?? 1;
+  }
+
+  Future<int> get subLevel async {
+    final progress = await SharedPref.getCurrProgress();
+
+    return currentUser?.subLevel ?? progress?['subLevel'] ?? 0;
+  }
+
   UserControllerState copyWith({
     bool? loading,
     UserModel? currentUser,
@@ -43,8 +55,6 @@ class UserController extends StateNotifier<UserControllerState> {
 
       if (user == null) return null;
 
-      await updateCurrentUser(user);
-
       updateCurrentUser(user);
 
       return user;
@@ -58,11 +68,11 @@ class UserController extends StateNotifier<UserControllerState> {
     return null;
   }
 
-  updateCurrentUser(UserModel user) {
+  void updateCurrentUser(UserModel user) {
     state = state.copyWith(currentUser: user);
   }
 
-  removeCurrentUser() {
+  void removeCurrentUser() {
     state = state.copyWith(currentUser: null);
   }
 
@@ -71,7 +81,7 @@ class UserController extends StateNotifier<UserControllerState> {
       final user = await userAPI.progressSync(level, subLevel);
       if (user == null) return;
 
-      await updateCurrentUser(user);
+      updateCurrentUser(user);
     } catch (e, stackTrace) {
       developer.log('Error in UserController.updateLastViewedVideo',
           error: e.toString(), stackTrace: stackTrace);

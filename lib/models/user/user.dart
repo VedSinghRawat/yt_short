@@ -12,6 +12,7 @@ class UserModel {
   final int maxSubLevel;
   final int lastSeen;
   final int lastProgress;
+  final UserRole role;
 
   const UserModel({
     required this.email,
@@ -23,7 +24,10 @@ class UserModel {
     required this.lastProgress,
     required this.maxLevel,
     required this.maxSubLevel,
+    required this.role,
   });
+
+  bool get isAdmin => role == UserRole.admin;
 
   factory UserModel.fromJson(Map<String, dynamic> json) => _$UserModelFromJson(json);
   Map<String, dynamic> toJson() => _$UserModelToJson(this);
@@ -38,6 +42,7 @@ class UserModel {
     int? lastProgress,
     int? maxLevel,
     int? maxSubLevel,
+    UserRole? role,
   }) {
     return UserModel(
       email: email ?? this.email,
@@ -49,6 +54,12 @@ class UserModel {
       lastProgress: lastProgress ?? this.lastProgress,
       maxLevel: maxLevel ?? this.maxLevel,
       maxSubLevel: maxSubLevel ?? this.maxSubLevel,
+      role: role ?? this.role,
     );
   }
+}
+
+enum UserRole {
+  admin,
+  user,
 }

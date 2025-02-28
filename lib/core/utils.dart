@@ -21,21 +21,8 @@ void showSnackBar(BuildContext context, String text) {
   if (!context.mounted) return;
 
   ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
+    ..removeCurrentSnackBar()
     ..showSnackBar(SnackBar(content: Text(text)));
-}
-
-// function to create a random string of length n
-String randomString(int n) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  final random = Random();
-  var buffer = '';
-
-  for (var i = 0; i < n; i++) {
-    buffer += chars[random.nextInt(chars.length)];
-  }
-
-  return buffer;
 }
 
 bool isLevelAfter(int levelA, int subLevelA, int levelB, int subLevelB) {
@@ -56,22 +43,4 @@ num getMax(List<num?> numbers) {
     }
   }
   return maxVal;
-}
-
-T? stringToEnum<T extends Enum>(String value, List<T> enumValues) {
-  try {
-    return enumValues.firstWhere(
-      (e) => e.name.toLowerCase() == value.toLowerCase(),
-    );
-  } catch (e) {
-    return null;
-  }
-}
-
-void tryCall(Function function) {
-  try {
-    function();
-  } catch (e) {
-    developer.log('error in tryCall: $e');
-  }
 }

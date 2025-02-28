@@ -16,6 +16,7 @@ UserModel _$UserModelFromJson(Map<String, dynamic> json) => UserModel(
       lastProgress: (json['lastProgress'] as num).toInt(),
       maxLevel: (json['maxLevel'] as num).toInt(),
       maxSubLevel: (json['maxSubLevel'] as num).toInt(),
+      role: $enumDecode(_$UserRoleEnumMap, json['role']),
     );
 
 Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
@@ -28,4 +29,10 @@ Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
       'maxSubLevel': instance.maxSubLevel,
       'lastSeen': instance.lastSeen,
       'lastProgress': instance.lastProgress,
+      'role': _$UserRoleEnumMap[instance.role]!,
     };
+
+const _$UserRoleEnumMap = {
+  UserRole.admin: 'admin',
+  UserRole.user: 'user',
+};

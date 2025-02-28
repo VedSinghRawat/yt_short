@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/core/services/api_service.dart';
-import 'package:myapp/core/utils.dart';
 
 abstract class IVersionAPI {
   Future<VersionType> getVersion(String currentVersion);
@@ -32,11 +31,7 @@ class VersionAPI implements IVersionAPI {
         return VersionType.latest;
       }
 
-      final versionType = stringToEnum(versionTypeString, VersionType.values);
-
-      if (versionType == null) {
-        throw Exception('Unknown version type: $versionTypeString');
-      }
+      final versionType = VersionType.values.byName(versionTypeString);
 
       return versionType;
     } on DioException catch (e) {

@@ -38,10 +38,12 @@ class AuthController extends StateNotifier<AuthControllerState> {
       final user = await authAPI.signInWithGoogle();
       if (user == null) return;
 
-      await userController.updateCurrentUser(user);
+      userController.updateCurrentUser(user);
+
       await Future.delayed(Duration.zero); // Yield control to UI
 
       final progress = await SharedPref.getCurrProgress();
+
       final level = progress?['maxLevel'] ?? kAuthRequiredLevel;
       final subLevel = progress?['maxSubLevel'] ?? 0;
 
@@ -75,7 +77,7 @@ class AuthController extends StateNotifier<AuthControllerState> {
       if (user != null) {
         await userController.progressSync(user.level, user.subLevel);
         await authAPI.signOut();
-        await userController.removeCurrentUser();
+        userController.removeCurrentUser();
         await Future.delayed(Duration.zero); // Allow UI to update
       }
     } catch (e, stackTrace) {

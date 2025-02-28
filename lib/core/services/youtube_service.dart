@@ -5,7 +5,7 @@ import '../shared_pref.dart';
 import 'dart:developer' as developer;
 
 class YoutubeService {
-  static const cacheValidityPeriod = Duration(minutes: 30);
+  static const cacheValidityPeriod = Duration(hours: 1);
 
   Future<Map<String, String>?> _checkCachedIds(String videoId) async {
     final cachedData = await SharedPref.getCachedVideoUrl(videoId);
@@ -58,31 +58,39 @@ class YoutubeService {
       final List<String> videoIds = message[0] as List<String>;
       final SendPort responsePort = message[1] as SendPort;
       final yt = YoutubeExplode();
+
       final results = <String, Map<String, String>>{};
 
-      await Future.wait(videoIds.map((videoId) async {
-        try {
-          final manifest = await yt.videos.streamsClient.getManifest(videoId);
-
-          final audioStreamInfo = manifest.audioOnly.withHighestBitrate();
-          final videoStreamInfo = manifest.videoOnly.firstWhere(
-            (e) =>
-                e.container == StreamContainer.mp4 &&
-                e.videoCodec.startsWith('avc1.') &&
-                e.qualityLabel == '480p',
-          );
-
-          results[videoId] = {
-            'audio': audioStreamInfo.url.toString(),
-            'video': videoStreamInfo.url.toString(),
-          };
-        } catch (e) {
-          developer.log('Error fetching video: $videoId - $e');
-        }
-      }));
+      await Future.wait(videoIds.map((videoId) => getMedia(videoId, yt: yt, results: results)));
 
       yt.close();
       responsePort.send(results);
+    }
+  }
+
+  static Future<void> getMedia(String videoId,
+      {YoutubeExplode? yt, Map<String, Map<String, String>>? results}) async {
+    try {
+      final localYt = yt ?? YoutubeExplode();
+
+      final manifest = await localYt.videos.streamsClient.getManifest(videoId);
+
+      final audioStreamInfo = manifest.audioOnly.withHighestBitrate();
+      final videoStreamInfo = manifest.videoOnly.firstWhere(
+        (e) =>
+            e.container == StreamContainer.mp4 &&
+            e.videoCodec.startsWith('avc1.') &&
+            e.qualityLabel == '480p',
+      );
+
+      if (yt == null) localYt.close();
+
+      results![videoId] = {
+        'audio': audioStreamInfo.url.toString(),
+        'video': videoStreamInfo.url.toString(),
+      };
+    } catch (e) {
+      developer.log('Error fetching video: $videoId - $e');
     }
   }
 }

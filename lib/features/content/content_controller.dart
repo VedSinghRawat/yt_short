@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/services/youtube_service.dart';
-import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'dart:developer' as developer;
 import '../../apis/content_api.dart';
@@ -59,43 +58,58 @@ class ContentController extends StateNotifier<ContentControllerState> {
     state = state.copyWith(loading: true);
     try {
       final tempContents = await contentAPI.listByLevel(level);
-      Map<String, Content> contentMap = Map.from(state.contentMap);
-      Map<int, int> subLevelCountByLevel = Map.from(state.subLevelCountByLevel);
 
-      developer.log('fetching level: $level');
-      final startTime = DateTime.now();
+      Map<String, Content> contentMap = {...state.contentMap};
+      Map<int, int> subLevelCountByLevel = {...state.subLevelCountByLevel};
 
-      final ytUrls = await ytService.listMediaVideoUrls(tempContents.map((e) => e.ytId).toList());
-
-      developer.log('ytUrls: ${ytUrls.length}');
-      final endTime = DateTime.now();
-      final duration = endTime.difference(startTime);
-      developer.log('Duration: $duration');
+      await fetchRelavantYturls(tempContents);
 
       subLevelCountByLevel[level] = tempContents.length;
-      for (var content in tempContents) {
-        contentMap["${content.level}-${content.subLevel}"] = content;
-      }
+
+      contentMap.addEntries(tempContents.map(
+        (content) => MapEntry("${content.level}-${content.subLevel}", content),
+      ));
 
       state = state.copyWith(
         contentMap: contentMap,
         subLevelCountByLevel: subLevelCountByLevel,
-        ytUrls: {...state.ytUrls, ...ytUrls},
       );
+
+      await fetchYtUrls(tempContents.map((e) => e.ytId).toList());
+
+      return tempContents;
     } catch (e, stackTrace) {
       developer.log('Error in ContentController._listByLevel',
           error: e.toString(), stackTrace: stackTrace);
+      return [];
     } finally {
       state = state.copyWith(loading: false);
     }
-    return [];
+  }
+
+  Future<void> fetchRelavantYturls(List<Content> tempContents) async {
+    final userSubLevel = await userController.subLevel;
+
+    if (state.ytUrls.isNotEmpty) return;
+
+    final relevantSubLevels = {userSubLevel - 1, userSubLevel, userSubLevel + 1};
+
+    final ytIds = tempContents
+        .where((e) => relevantSubLevels.contains(e.subLevel))
+        .map((e) => e.ytId)
+        .toList();
+
+    await fetchYtUrls(ytIds);
+  }
+
+  Future<void> fetchYtUrls(List<String> ytIds) async {
+    final ytUrls = await ytService.listMediaVideoUrls(ytIds);
+    state = state.copyWith(ytUrls: {...state.ytUrls, ...ytUrls});
   }
 
   Future<void> fetchContents() async {
-    final progress = await SharedPref.getCurrProgress();
-
-    final currUserLevel = progress?['level'] ?? userController.currentUser?.level ?? 1;
-    final currUserSubLevel = progress?['subLevel'] ?? userController.currentUser?.subLevel ?? 1;
+    final currUserLevel = await userController.level;
+    final currUserSubLevel = await userController.subLevel;
 
     final fetchCurrLevel = !state.subLevelCountByLevel.containsKey(currUserLevel);
 
