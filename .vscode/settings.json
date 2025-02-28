@@ -1,7 +1,0 @@
-{
-  "dart.lineLength": 100,
-  "dart.flutterRunAdditionalArgs": ["--no-enable-impeller"],
-  "IDX.aI.enableInlineCompletion": true,
-  "IDX.aI.enableCodebaseIndexing": true,
-  "java.configuration.updateBuildConfiguration": "interactive"
-}
