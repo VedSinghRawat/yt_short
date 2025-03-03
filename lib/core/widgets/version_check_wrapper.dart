@@ -24,7 +24,7 @@ final Map<VersionType, String> routeToVersionType = {
 };
 
 class _VersionCheckWrapperState extends ConsumerState<VersionCheckWrapper> {
-  final bool _isLoading = true;
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -37,6 +37,10 @@ class _VersionCheckWrapperState extends ConsumerState<VersionCheckWrapper> {
       if (route != null) {
         context.go(route);
       }
+
+      setState(() {
+        _isLoading = false;
+      });
     });
   }
 

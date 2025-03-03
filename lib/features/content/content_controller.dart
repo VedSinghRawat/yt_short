@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/services/youtube_service.dart';
@@ -101,7 +100,7 @@ class ContentController extends StateNotifier<ContentControllerState> {
   }
 
   Future<void> fetchYtUrls(List<String> ytIds) async {
-    final ytUrls = await compute(ytService.listMediaUrls, ytIds);
+    final ytUrls = await ytService.listMediaUrls(ytIds);
     state = state.copyWith(ytUrls: {...state.ytUrls, ...ytUrls});
   }
 
