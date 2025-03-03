@@ -3,13 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/core/services/api_service.dart';
 
 abstract class IVersionAPI {
-  Future<VersionType> getVersion(String currentVersion);
+  Future<VersionType?> getVersion(String currentVersion);
 }
 
 enum VersionType {
   required,
   suggested,
-  latest,
 }
 
 class VersionAPI implements IVersionAPI {
@@ -18,7 +17,7 @@ class VersionAPI implements IVersionAPI {
   VersionAPI(this._apiService);
 
   @override
-  Future<VersionType> getVersion(String currentVersion) async {
+  Future<VersionType?> getVersion(String currentVersion) async {
     try {
       final response = await _apiService.call(
         endpoint: '/check_version?version=$currentVersion',
@@ -28,7 +27,7 @@ class VersionAPI implements IVersionAPI {
       final versionTypeString = response.data?['status'] as String?;
 
       if (versionTypeString == null) {
-        return VersionType.latest;
+        return null;
       }
 
       final versionType = VersionType.values.byName(versionTypeString);

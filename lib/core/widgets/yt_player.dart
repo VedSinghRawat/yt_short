@@ -122,6 +122,16 @@ class _YtPlayerState extends ConsumerState<YtPlayer> {
 
   void _onControllerInitialized(
       VideoPlayerController? videoController, VideoPlayerController? audioController) {
+    setState(() {
+      if (_audioController != audioController) {
+        _audioController = audioController ?? _audioController;
+      }
+
+      if (_videoController != videoController) {
+        _videoController = videoController ?? _videoController;
+      }
+    });
+
     if (videoController == null || audioController == null) return;
 
     _handleListener();
@@ -141,24 +151,13 @@ class _YtPlayerState extends ConsumerState<YtPlayer> {
             MediaPlayer(
               mediaUrl: widget.audioUrl,
               onControllerCreated: (controller) {
-                if (_audioController != controller) {
-                  setState(() {
-                    _audioController = controller;
-                  });
-
-                  _onControllerInitialized(_videoController, controller);
-                }
+                _onControllerInitialized(_videoController, controller);
               },
             ),
             MediaPlayer(
               mediaUrl: widget.videoUrl,
               onControllerCreated: (controller) {
-                if (_videoController != controller) {
-                  setState(() {
-                    _videoController = controller;
-                  });
-                  _onControllerInitialized(controller, _audioController);
-                }
+                _onControllerInitialized(controller, _audioController);
               },
             ),
             PlayPauseButton(showPlayPauseIcon: _showPlayPauseIcon, iconData: _iconData),

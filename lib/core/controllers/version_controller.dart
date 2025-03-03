@@ -1,5 +1,5 @@
+import 'dart:developer' as developer;
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/apis/version_api.dart';
@@ -31,31 +31,29 @@ final versionControllerProvider = StateNotifierProvider<VersionController, Versi
 });
 
 class VersionController extends StateNotifier<VersionState> {
-  VersionController(this._versionAPI) : super(const VersionState());
-
   final VersionAPI _versionAPI;
 
-  Future<String?> checkVersion(BuildContext context) async {
+  late PackageInfo packageInfo;
+
+  VersionController(this._versionAPI) : super(const VersionState()) {
+    _initPackageInfo().catchError((e) {
+      developer.log(e);
+    });
+  }
+
+  Future<void> _initPackageInfo() async {
+    packageInfo = await PackageInfo.fromPlatform();
+  }
+
+  Future<VersionType?> checkVersion(BuildContext context) async {
     try {
       if (state.checkedVersion) {
         return null;
       }
 
-      final packageInfo = await PackageInfo.fromPlatform();
-
       final currentVersion = packageInfo.version;
 
-      final versionType = await _versionAPI.getVersion(currentVersion);
-
-      if (versionType == VersionType.required) {
-        return Routes.versionRequired;
-      }
-
-      if (versionType == VersionType.suggested) {
-        return Routes.versionSuggest;
-      }
-
-      return null;
+      return await _versionAPI.getVersion(currentVersion);
     } catch (e) {
       return null;
     } finally {
@@ -70,8 +68,6 @@ class VersionController extends StateNotifier<VersionState> {
   }
 
   Future<void> openStore(BuildContext context) async {
-    final packageInfo = await PackageInfo.fromPlatform();
-
     final platformUrl = Platform.isAndroid
         ? kPlayStoreBaseUrl + packageInfo.packageName
         : kAppStoreBaseUrl + kIOSAppId;
@@ -82,8 +78,6 @@ class VersionController extends StateNotifier<VersionState> {
       await launchUrl(url);
       return;
     }
-
-    if (!context.mounted) return;
 
     showErrorSnackBar(context, 'Could not open the store');
   }

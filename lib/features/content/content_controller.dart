@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/services/youtube_service.dart';
@@ -52,8 +53,8 @@ class ContentController extends StateNotifier<ContentControllerState> {
     required this.ytService,
   }) : super(ContentControllerState());
 
-  Future<List<Content>> _listByLevel(int level) async {
-    if (state.subLevelCountByLevel.containsKey(level) || state.loading == true) return [];
+  Future<void> _listByLevel(int level) async {
+    if (state.subLevelCountByLevel.containsKey(level) || state.loading == true) return;
 
     state = state.copyWith(loading: true);
     try {
@@ -66,9 +67,9 @@ class ContentController extends StateNotifier<ContentControllerState> {
 
       subLevelCountByLevel[level] = tempContents.length;
 
-      contentMap.addEntries(tempContents.map(
-        (content) => MapEntry("${content.level}-${content.subLevel}", content),
-      ));
+      for (var content in tempContents) {
+        contentMap["${content.level}-${content.subLevel}"] = content;
+      }
 
       state = state.copyWith(
         contentMap: contentMap,
@@ -76,12 +77,9 @@ class ContentController extends StateNotifier<ContentControllerState> {
       );
 
       await fetchYtUrls(tempContents.map((e) => e.ytId).toList());
-
-      return tempContents;
     } catch (e, stackTrace) {
       developer.log('Error in ContentController._listByLevel',
           error: e.toString(), stackTrace: stackTrace);
-      return [];
     } finally {
       state = state.copyWith(loading: false);
     }
@@ -103,7 +101,7 @@ class ContentController extends StateNotifier<ContentControllerState> {
   }
 
   Future<void> fetchYtUrls(List<String> ytIds) async {
-    final ytUrls = await ytService.listMediaVideoUrls(ytIds);
+    final ytUrls = await compute(ytService.listMediaUrls, ytIds);
     state = state.copyWith(ytUrls: {...state.ytUrls, ...ytUrls});
   }
 

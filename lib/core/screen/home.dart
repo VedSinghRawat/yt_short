@@ -36,13 +36,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
-  bool _canChangeVideo(
-      int level, int subLevel, int maxLevel, int maxSubLevel, bool hasLocalProgress) {
-    final hasFinishedVideo = ref.read(contentControllerProvider).hasFinishedVideo;
-    final levelAfter = !hasLocalProgress || isLevelAfter(level, subLevel, maxLevel, maxSubLevel);
-    return hasFinishedVideo || !levelAfter;
-  }
-
   Future<bool> cancelVideoChange(
     int index,
     PageController controller,
@@ -51,7 +44,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     int level,
     int subLevel,
     bool hasLocalProgress,
+    bool isAdmin,
   ) async {
+    // Inline the logic from _canChangeVideo
+    final hasFinishedVideo = ref.read(contentControllerProvider).hasFinishedVideo;
+    final levelAfter = !hasLocalProgress || isLevelAfter(level, subLevel, maxLevel, maxSubLevel);
+    final canChangeVideo = hasFinishedVideo || !levelAfter;
+
+    if (canChangeVideo || isAdmin) {
+      return false;
+    }
+
     controller.animateToPage(
       index - 1,
       duration: const Duration(milliseconds: 300),
@@ -59,9 +62,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
 
     try {
-      if (mounted) {
-        showSnackBar(context, 'Please complete the current content before proceeding');
-      }
+      showSnackBar(context, 'Please complete the current content before proceeding');
     } catch (e) {
       developer.log('error in cancelVideoChange: $e');
     }
@@ -69,9 +70,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return true;
   }
 
-  Future<bool> fetchContent(int index, List<Content> contents) async {
+  Future<bool> handleFetchContents(int index, List<Content> contents) async {
+    if (index < _cachedContents!.length) return false;
     await ref.read(contentControllerProvider.notifier).fetchContents();
-    return contents.length <= index;
+
+    return true;
   }
 
   Future<void> syncProgress(
@@ -127,10 +130,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (!mounted || _cachedContents == null) return;
 
     // If the index is greater than the length of the cached contents, fetch the contents and return
-    if (index >= _cachedContents!.length) {
-      await fetchContent(index, _cachedContents!);
-      return;
-    }
+    if (await handleFetchContents(index, _cachedContents!)) return;
 
     // Get the content, level, and sublevel for the current index
     final content = _cachedContents![index];
@@ -144,35 +144,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final localMaxLevel = localProgress?['maxLevel'] ?? 0;
     final localMaxSubLevel = localProgress?['maxSubLevel'] ?? 0;
 
-    // Early return if user cannot change video
-    if (!_canChangeVideo(level, subLevel, max(user?.maxLevel ?? 0, localMaxLevel),
-            max(user?.maxSubLevel ?? 0, localMaxSubLevel), localProgress != null) &&
-        user?.isAdmin != true) {
-      await cancelVideoChange(
-        index,
-        controller,
-        max(user?.maxLevel ?? 0, localMaxLevel),
-        max(user?.maxSubLevel ?? 0, localMaxSubLevel),
-        level,
-        subLevel,
-        localProgress != null,
-      );
-
-      return;
-    }
+    // Check if video change should be cancelled
+    if (await cancelVideoChange(
+      index,
+      controller,
+      max(user?.maxLevel ?? 0, localMaxLevel),
+      max(user?.maxSubLevel ?? 0, localMaxSubLevel),
+      level,
+      subLevel,
+      localProgress != null,
+      user?.isAdmin == true,
+    )) return;
 
     ref.read(contentControllerProvider.notifier).setHasFinishedVideo(false);
 
     final userEmail = user?.email ?? '';
+
     // If the level requires auth and the user is not logged in, redirect to sign in
     if (level > kAuthRequiredLevel && userEmail.isEmpty && mounted) {
       context.go(Routes.signIn);
       return;
     }
 
+    // Sync the local progress
     await syncLocalProgress(level, subLevel, localMaxLevel, localMaxSubLevel);
 
-    await fetchContent(index, _cachedContents!);
+    // Fetch the contents if needed
+    await handleFetchContents(index, _cachedContents!);
 
     // If the user is logged in, add an activity log entry
     await SharedPref.addActivityLog(level, subLevel, userEmail);
@@ -205,13 +203,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final loading = ref.watch(contentControllerProvider.select((state) => state.loading));
-    final contentMap = ref.watch(contentControllerProvider.select((state) => state.contentMap));
     final ytUrls = ref.watch(contentControllerProvider.select((state) => state.ytUrls));
 
-    // Only sort contents if they have changed
-    if (_cachedContents == null || !listEquals(_cachedContents, contentMap.values.toList())) {
-      _cachedContents = _getSortedContents(contentMap);
-    }
+    ref.watch(contentControllerProvider.select((state) {
+      final contentMap = state.contentMap;
+      // Only sort contents if they have changed
+      if (_cachedContents == null || !listEquals(_cachedContents, contentMap.values.toList())) {
+        _cachedContents = _getSortedContents(contentMap);
+      }
+    }));
 
     if (loading != false && _cachedContents!.isEmpty) {
       return const Loader();

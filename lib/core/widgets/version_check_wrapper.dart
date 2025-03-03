@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:myapp/apis/version_api.dart';
 import 'package:myapp/core/controllers/version_controller.dart';
+import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/widgets/loader.dart';
 
 class VersionCheckWrapper extends ConsumerStatefulWidget {
@@ -16,34 +18,34 @@ class VersionCheckWrapper extends ConsumerStatefulWidget {
   ConsumerState<VersionCheckWrapper> createState() => _VersionCheckWrapperState();
 }
 
+final Map<VersionType, String> routeToVersionType = {
+  VersionType.required: Routes.versionRequired,
+  VersionType.suggested: Routes.versionSuggest,
+};
+
 class _VersionCheckWrapperState extends ConsumerState<VersionCheckWrapper> {
-  String? route;
-  bool isLoading = true;
+  final bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
 
-    ref.read(versionControllerProvider.notifier).checkVersion(context).then((value) {
-      setState(() {
-        route = value;
-        isLoading = false;
-      });
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final versionType = await ref.read(versionControllerProvider.notifier).checkVersion(context);
+      final route = routeToVersionType[versionType];
+
+      if (route != null) {
+        context.go(route);
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (route != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        context.go(route!);
-      });
+    if (_isLoading) {
+      return const Loader();
     }
 
-    if (route == null) {
-      return widget.child;
-    }
-
-    return const Loader();
+    return widget.child;
   }
 }

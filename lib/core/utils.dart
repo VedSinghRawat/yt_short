@@ -1,8 +1,8 @@
-import 'dart:math';
-import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 
 void showErrorSnackBar(BuildContext context, String message) {
+  if (!context.mounted) return;
+
   // Remove mounted check since ScaffoldMessenger handles this internally
   final messenger = ScaffoldMessenger.of(context);
   messenger.clearSnackBars();
