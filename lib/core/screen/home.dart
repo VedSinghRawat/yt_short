@@ -154,20 +154,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       subLevel,
       localProgress != null,
       user?.isAdmin == true,
-    )) return;
+    )) {
+      return;
+    }
 
     ref.read(contentControllerProvider.notifier).setHasFinishedVideo(false);
 
     final userEmail = user?.email ?? '';
+
+    // Sync the local progress
+    await syncLocalProgress(level, subLevel, localMaxLevel, localMaxSubLevel);
 
     // If the level requires auth and the user is not logged in, redirect to sign in
     if (level > kAuthRequiredLevel && userEmail.isEmpty && mounted) {
       context.go(Routes.signIn);
       return;
     }
-
-    // Sync the local progress
-    await syncLocalProgress(level, subLevel, localMaxLevel, localMaxSubLevel);
 
     // Fetch the contents if needed
     await handleFetchContents(index, _cachedContents!);
@@ -203,15 +205,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final loading = ref.watch(contentControllerProvider.select((state) => state.loading));
+    final contentMap = ref.watch(contentControllerProvider.select((state) => state.contentMap));
     final ytUrls = ref.watch(contentControllerProvider.select((state) => state.ytUrls));
 
-    ref.watch(contentControllerProvider.select((state) {
-      final contentMap = state.contentMap;
-      // Only sort contents if they have changed
-      if (_cachedContents == null || !listEquals(_cachedContents, contentMap.values.toList())) {
-        _cachedContents = _getSortedContents(contentMap);
-      }
-    }));
+    // Only sort contents if they have changed
+    if (_cachedContents == null || !listEquals(_cachedContents, contentMap.values.toList())) {
+      _cachedContents = _getSortedContents(contentMap);
+    }
 
     if (loading != false && _cachedContents!.isEmpty) {
       return const Loader();

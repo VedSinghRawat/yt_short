@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:myapp/core/util_classes.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/widgets/loader.dart';
 import 'package:myapp/core/widgets/yt_player.dart';
@@ -11,7 +12,7 @@ class ContentsList extends StatefulWidget {
   final List<Content> contents;
   final bool isLoading;
   final Future<void> Function(int index, PageController controller)? onVideoChange;
-  final Map<String, Map<String, String>> ytUrls;
+  final Map<String, Media> ytUrls;
 
   const ContentsList({
     super.key,
@@ -106,16 +107,16 @@ class _ContentsListState extends State<ContentsList> {
                   ? YtPlayer(
                       key: Key(positionText),
                       uniqueId: positionText,
-                      audioUrl: urls['audio']!,
-                      videoUrl: urls['video']!,
+                      audioUrl: urls.audio,
+                      videoUrl: urls.video,
                     )
                   : content.isSpeechExercise
                       ? SpeechExerciseScreen(
                           key: Key(positionText),
                           uniqueId: positionText,
                           exercise: content.speechExercise!,
-                          audioUrl: urls['audio']!,
-                          videoUrl: urls['video']!,
+                          audioUrl: urls.audio,
+                          videoUrl: urls.video,
                         )
                       : const SizedBox.shrink(),
             ),

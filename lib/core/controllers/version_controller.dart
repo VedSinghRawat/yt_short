@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/apis/version_api.dart';
 import 'package:myapp/constants/constants.dart';
-import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -78,6 +77,8 @@ class VersionController extends StateNotifier<VersionState> {
       await launchUrl(url);
       return;
     }
+
+    if (!context.mounted) return;
 
     showErrorSnackBar(context, 'Could not open the store');
   }

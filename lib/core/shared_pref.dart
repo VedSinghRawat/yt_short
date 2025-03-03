@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:myapp/core/util_classes.dart';
 import 'package:myapp/models/activity_log/activity_log.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -93,13 +94,20 @@ class SharedPref {
     await instance.clear();
   }
 
-  static Future<Map<String, dynamic>?> getCachedVideoUrl(String videoId) async {
-    return await _getObject('video_$videoId');
+  static Future<CachedData?> getCachedVideoUrl(String videoId) async {
+    final data = await _getObject('video_$videoId');
+
+    return CachedData(
+      audio: data?['audio'] ?? '',
+      video: data?['video'] ?? '',
+      timestamp: data?['timestamp'] ?? 0,
+    );
   }
 
-  static Future<void> cacheVideoUrl(String videoId, Map<String, dynamic> data) async {
+  static Future<void> cacheVideoUrl(String videoId, Media data) async {
     await _setObject('video_$videoId', {
-      ...data,
+      'audio': data.audio,
+      'video': data.video,
       'timestamp': DateTime.now().millisecondsSinceEpoch,
     });
   }
