@@ -1,0 +1,5 @@
+{
+  "dart.lineLength": 100,
+  "dart.flutterRunAdditionalArgs": ["--no-enable-impeller"],
+  "java.configuration.updateBuildConfiguration": "interactive"
+}
