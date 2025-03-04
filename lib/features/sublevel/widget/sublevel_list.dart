@@ -4,49 +4,49 @@ import 'package:myapp/core/util_classes.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/widgets/loader.dart';
 import 'package:myapp/core/widgets/yt_player.dart';
-import 'package:myapp/features/content/widget/last_level.dart';
+import 'package:myapp/features/sublevel/widget/last_level.dart';
 import 'package:myapp/features/speech_exercise/screen/speech_exercise_screen.dart';
-import '../../../models/models.dart';
+import 'package:myapp/models/sublevel/sublevel.dart';
 
-class ContentsList extends StatefulWidget {
-  final List<Content> contents;
+class SublevelsList extends StatefulWidget {
+  final List<Sublevel> sublevels;
   final bool isLoading;
   final Future<void> Function(int index, PageController controller)? onVideoChange;
   final Map<String, Media> ytUrls;
 
-  const ContentsList({
+  const SublevelsList({
     super.key,
-    required this.contents,
+    required this.sublevels,
     this.onVideoChange,
     required this.ytUrls,
     this.isLoading = false,
   });
 
   @override
-  State<ContentsList> createState() => _ContentsListState();
+  State<SublevelsList> createState() => _SublevelsListState();
 }
 
-class _ContentsListState extends State<ContentsList> {
+class _SublevelsListState extends State<SublevelsList> {
   late PageController _pageController;
 
   void _jumpToPage(Duration timeStamp) async {
     final progress = await SharedPref.getCurrProgress();
 
-    final jumpTo = widget.contents.indexWhere(
-      (content) =>
-          (content.subLevel == progress?['subLevel'] && content.level == progress?['level']) ||
-          (content.ytId == progress?['videoId']),
+    final jumpTo = widget.sublevels.indexWhere(
+      (sublevel) =>
+          (sublevel.subLevel == progress?['subLevel'] && sublevel.level == progress?['level']) ||
+          (sublevel.ytId == progress?['videoId']),
     );
 
-    if (jumpTo >= widget.contents.length || jumpTo < 0) return;
+    if (jumpTo >= widget.sublevels.length || jumpTo < 0) return;
 
-    final jumpContent = widget.contents[jumpTo];
+    final jumpSublevel = widget.sublevels[jumpTo];
 
     _pageController.jumpToPage(jumpTo);
 
     await SharedPref.setCurrProgress(
-      level: jumpContent.level,
-      subLevel: jumpContent.subLevel,
+      level: jumpSublevel.level,
+      subLevel: jumpSublevel.subLevel,
     );
   }
 
@@ -59,9 +59,9 @@ class _ContentsListState extends State<ContentsList> {
   }
 
   @override
-  void didUpdateWidget(covariant ContentsList oldWidget) {
+  void didUpdateWidget(covariant SublevelsList oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.contents.length == widget.contents.length) return;
+    if (oldWidget.sublevels.length == widget.sublevels.length) return;
 
     WidgetsBinding.instance.addPostFrameCallback(_jumpToPage);
   }
@@ -78,43 +78,43 @@ class _ContentsListState extends State<ContentsList> {
       controller: _pageController,
       allowImplicitScrolling: true,
       dragStartBehavior: DragStartBehavior.down,
-      itemCount: widget.contents.length + 1,
+      itemCount: widget.sublevels.length + 1,
       scrollDirection: Axis.vertical,
       onPageChanged: (index) async {
         await widget.onVideoChange?.call(index, _pageController);
       },
       itemBuilder: (context, index) {
-        final content = widget.contents.length > index ? widget.contents[index] : null;
-        final isLastContent = index == widget.contents.length;
+        final sublevel = widget.sublevels.length > index ? widget.sublevels[index] : null;
+        final isLastSublevel = index == widget.sublevels.length;
 
-        if ((isLastContent || content == null) && !widget.isLoading) {
+        if ((isLastSublevel || sublevel == null) && !widget.isLoading) {
           return LastLevelWidget(
               onRefresh: () => widget.onVideoChange?.call(index, _pageController));
         }
 
-        final positionText = '${content?.level}-${content?.subLevel}';
+        final positionText = '${sublevel?.level}-${sublevel?.subLevel}';
 
-        final urls = widget.ytUrls[content?.ytId ?? ''];
+        final urls = widget.ytUrls[sublevel?.ytId ?? ''];
 
-        if (urls == null || content == null) {
+        if (urls == null || sublevel == null) {
           return const Loader();
         }
 
         return Stack(
           children: [
             Center(
-              child: content.isVideo
+              child: sublevel.isVideo
                   ? YtPlayer(
                       key: Key(positionText),
                       uniqueId: positionText,
                       audioUrl: urls.audio,
                       videoUrl: urls.video,
                     )
-                  : content.isSpeechExercise
+                  : sublevel.isSpeechExercise
                       ? SpeechExerciseScreen(
                           key: Key(positionText),
                           uniqueId: positionText,
-                          exercise: content.speechExercise!,
+                          exercise: sublevel.speechExercise!,
                           audioUrl: urls.audio,
                           videoUrl: urls.video,
                         )

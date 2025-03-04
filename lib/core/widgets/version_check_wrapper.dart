@@ -34,7 +34,7 @@ class _VersionCheckWrapperState extends ConsumerState<VersionCheckWrapper> {
       final versionType = await ref.read(versionControllerProvider.notifier).checkVersion(context);
       final route = routeToVersionType[versionType];
 
-      if (route != null) {
+      if (route != null && mounted) {
         context.go(route);
       }
 

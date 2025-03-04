@@ -3,7 +3,7 @@ import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/core/widgets/video_player.dart';
-import 'package:myapp/features/content/content_controller.dart';
+import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
@@ -50,8 +50,8 @@ class _YtPlayerState extends ConsumerState<YtPlayer> {
 
     if (videoDuration != Duration.zero &&
         compareDuration <= 1 &&
-        !ref.read(contentControllerProvider).hasFinishedVideo) {
-      ref.read(contentControllerProvider.notifier).setHasFinishedVideo(true);
+        !ref.read(sublevelControllerProvider).hasFinishedVideo) {
+      ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
       _videoController!.removeListener(_listenerVideoFinished);
     }
   }

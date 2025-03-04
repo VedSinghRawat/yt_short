@@ -1,31 +1,30 @@
 import 'dart:developer' as developer;
-
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/models/models.dart';
 
-abstract class IContentAPI {
-  Future<List<Content>> listPublishedByLevel(int level);
+abstract class ISublevelAPI {
+  Future<List<Sublevel>> listPublishedByLevel(int level);
   Future<Map<String, dynamic>?> getUnpulishedSublevel(int level);
-  Future<List<Content>> listByLevel(int level);
+  Future<List<Sublevel>> listByLevel(int level);
 }
 
-class ContentAPI implements IContentAPI {
-  ContentAPI();
+class SublevelAPI implements ISublevelAPI {
+  SublevelAPI();
 
   @override
-  Future<List<Content>> listPublishedByLevel(int level) async {
+  Future<List<Sublevel>> listPublishedByLevel(int level) async {
     final jsonList = await _getLevel(level);
 
     int subLevel = 0;
 
-    final contents = jsonList.map((json) {
+    final sublevels = jsonList.map((json) {
       subLevel++;
-      return jsonToContent(json, level, subLevel);
+      return jsonToSublevel(json, level, subLevel);
     }).toList();
 
-    return contents;
+    return sublevels;
   }
 
   Future<List<dynamic>> _getLevel(int level) async {
@@ -33,7 +32,7 @@ class ContentAPI implements IContentAPI {
     final response = await dio.get('${dotenv.env['S3_BASE_URL']}/levels/$level.json');
 
     if (response.statusCode != 200) {
-      throw Exception("Failed to fetch content for level $level");
+      throw Exception("Failed to fetch sublevel for level $level");
     }
 
     final List<dynamic> jsonList = (response.data['sub_levels']);
@@ -41,16 +40,16 @@ class ContentAPI implements IContentAPI {
     return jsonList;
   }
 
-  Content jsonToContent(json, int level, int subLevel) {
+  Sublevel jsonToSublevel(json, int level, int subLevel) {
     json['level'] = level;
     json['subLevel'] = subLevel;
 
     if (json.containsKey('text')) {
-      return Content(null, SpeechExercise.fromJson(json));
+      return Sublevel(null, SpeechExercise.fromJson(json));
     } else if (json.containsKey('ytId')) {
-      return Content(Video.fromJson(json), null);
+      return Sublevel(Video.fromJson(json), null);
     } else {
-      throw Exception("Invalid content type");
+      throw Exception("Invalid sublevel type");
     }
   }
 
@@ -62,7 +61,7 @@ class ContentAPI implements IContentAPI {
           '${dotenv.env['S3_BASE_URL']}/levels/${dotenv.env['VITE_AWS_RANDOM_KEY']}_$level.json');
 
       if (response.statusCode != 200) {
-        throw Exception("Failed to fetch unpublished content for level $level");
+        throw Exception("Failed to fetch unpublished sublevel for level $level");
       }
       return response.data;
     } catch (e) {
@@ -72,7 +71,7 @@ class ContentAPI implements IContentAPI {
   }
 
   @override
-  Future<List<Content>> listByLevel(int level) async {
+  Future<List<Sublevel>> listByLevel(int level) async {
     try {
       final results = await Future.wait([
         _getLevel(level),
@@ -82,11 +81,11 @@ class ContentAPI implements IContentAPI {
       final jsonList = results[0] as List<dynamic>;
       final unpublished = results[1] as Map<String, dynamic>;
 
-      final List<Content> contents = [];
+      final List<Sublevel> sublevels = [];
 
       for (var i = 0; i < jsonList.length + unpublished.length; i++) {
-        contents.add(
-          jsonToContent(
+        sublevels.add(
+          jsonToSublevel(
             unpublished.containsKey(i.toString())
                 ? unpublished[i.toString()]
                 : jsonList.removeAt(0),
@@ -96,15 +95,15 @@ class ContentAPI implements IContentAPI {
         );
       }
 
-      return contents;
+      return sublevels;
     } on DioException catch (e) {
-      developer.log('Error fetching content for level $level', error: e);
+      developer.log('Error fetching sublevel for level $level', error: e);
 
       rethrow;
     }
   }
 }
 
-final contentAPIProvider = Provider<IContentAPI>((ref) {
-  return ContentAPI();
+final sublevelAPIProvider = Provider<ISublevelAPI>((ref) {
+  return SublevelAPI();
 });

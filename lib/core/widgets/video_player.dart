@@ -3,7 +3,7 @@ import 'package:myapp/core/widgets/loader.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:developer' as developer;
 
-// Stateful widget to fetch and then display video content.
+// Stateful widget to fetch and then display video sublevel.
 class MediaPlayer extends StatefulWidget {
   final String mediaUrl;
   final void Function(VideoPlayerController)? onControllerCreated;

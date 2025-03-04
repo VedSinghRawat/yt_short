@@ -36,7 +36,7 @@ class ApiService {
     final String? token = await getToken();
 
     final effectiveHeaders = {
-      'Content-Type': 'application/json',
+      'Sublevel-Type': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
       ...?headers
     };
