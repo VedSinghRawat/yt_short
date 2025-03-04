@@ -58,7 +58,9 @@ class ContentController extends StateNotifier<ContentControllerState> {
 
     state = state.copyWith(loading: true);
     try {
-      final tempContents = await contentAPI.listByLevel(level);
+      final tempContents = userController.currentUser?.isAdmin ?? false
+          ? await contentAPI.listByLevel(level)
+          : await contentAPI.listPublishedByLevel(level);
 
       Map<String, Content> contentMap = {...state.contentMap};
       Map<int, int> subLevelCountByLevel = {...state.subLevelCountByLevel};
