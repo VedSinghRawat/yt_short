@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/core/services/api_service.dart';
+import 'dart:developer' as developer;
 
 abstract class IVersionAPI {
   Future<VersionType?> getVersion(String currentVersion);
@@ -25,6 +26,7 @@ class VersionAPI implements IVersionAPI {
       );
 
       final versionTypeString = response.data?['status'] as String?;
+      developer.log('versionTypeString: $versionTypeString');
 
       if (versionTypeString == null) {
         return null;

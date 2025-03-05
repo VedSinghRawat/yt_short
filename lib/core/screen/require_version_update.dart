@@ -45,6 +45,7 @@ class RequireVersionUpdate extends ConsumerWidget {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
                   ),
                   child: const Text('Update Now'),
                 ),
