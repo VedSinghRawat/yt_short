@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:myapp/core/util_classes.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import '../shared_pref.dart';
 import 'dart:developer' as developer;
@@ -7,18 +8,18 @@ import 'dart:developer' as developer;
 class YoutubeService {
   final cacheValidityPeriod = Duration.millisecondsPerDay;
 
-  Future<Map<String, String>?> _getCachedYtMediaUrls(String videoId) async {
+  Future<CachedData?> _getCachedYtMediaUrls(String videoId) async {
     final cachedData = await SharedPref.getCachedVideoUrl(videoId);
     if (cachedData == null) return null;
 
-    final cachedTime = cachedData['timestamp'];
+    final cachedTime = cachedData.timestamp;
     if (DateTime.now().millisecondsSinceEpoch - cachedTime > cacheValidityPeriod) return null;
 
-    return {'audio': cachedData['audio'], 'video': cachedData['video']};
+    return cachedData;
   }
 
-  Future<Map<String, Map<String, String>>> listMediaUrls(List<String> videoIds) async {
-    final results = <String, Map<String, String>>{};
+  Future<Map<String, Media>> listMediaUrls(List<String> videoIds) async {
+    final results = <String, Media>{};
 
     await Future.wait(
       videoIds.map((videoId) async {
@@ -30,8 +31,8 @@ class YoutubeService {
     return results;
   }
 
-  Future<Map<String, String>> _getMediaUrls(Map<String, dynamic> params) async {
-    final videoId = params['videoId'];
+  Future<Media> _getMediaUrls(Map<String, dynamic> params) async {
+    final videoId = params['videoId'] as String;
     final yt = params['yt'] as YoutubeExplode?;
 
     final ytClient = yt ?? YoutubeExplode();
@@ -48,15 +49,15 @@ class YoutubeService {
 
     if (yt == null) ytClient.close();
 
-    final results = {
-      'audio': audioStreamInfo.url.toString(),
-      'video': videoStreamInfo.url.toString(),
-    };
+    final results = Media(
+      audio: audioStreamInfo.url.toString(),
+      video: videoStreamInfo.url.toString(),
+    );
 
     return results;
   }
 
-  Future<Map<String, String>?> handleGetMediaUrls(String videoId, {YoutubeExplode? yt}) async {
+  Future<Media?> handleGetMediaUrls(String videoId, {YoutubeExplode? yt}) async {
     final cachedData = await _getCachedYtMediaUrls(videoId);
     if (cachedData != null) return cachedData;
 

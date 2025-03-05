@@ -69,6 +69,8 @@ class VersionController extends StateNotifier<VersionState> {
       return;
     }
 
+    if (!context.mounted) return;
+
     showErrorSnackBar(context, 'Could not open the store');
   }
 }

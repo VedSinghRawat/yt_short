@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
+import 'package:myapp/core/util_classes.dart';
 import 'package:myapp/core/services/youtube_service.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'dart:developer' as developer;
@@ -12,7 +13,7 @@ class ContentControllerState {
   // level against the key attribute of content
   final Map<int, int> subLevelCountByLevel;
   final bool hasFinishedVideo;
-  final Map<String, Map<String, String>> ytUrls;
+  final Map<String, Media> ytUrls;
 
   final bool? loading;
 
@@ -29,7 +30,7 @@ class ContentControllerState {
     Map<int, int>? subLevelCountByLevel,
     bool? loading,
     bool? hasFinishedVideo,
-    Map<String, Map<String, String>>? ytUrls,
+    Map<String, Media>? ytUrls,
   }) {
     return ContentControllerState(
       contentMap: contentMap ?? this.contentMap,
