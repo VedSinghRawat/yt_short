@@ -1,15 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/core/services/api_service.dart';
-import 'dart:developer' as developer;
 
 abstract class IVersionAPI {
-  Future<VersionType?> getVersion(String currentVersion);
-}
-
-enum VersionType {
-  required,
-  suggested,
+  Future<Map<String, dynamic>> getVersion(String currentVersion);
 }
 
 class VersionAPI implements IVersionAPI {
@@ -18,22 +12,14 @@ class VersionAPI implements IVersionAPI {
   VersionAPI(this._apiService);
 
   @override
-  Future<VersionType?> getVersion(String currentVersion) async {
+  Future<Map<String, dynamic>> getVersion(String currentVersion) async {
     try {
       final response = await _apiService.call(
         endpoint: '/check_version?version=$currentVersion',
         method: Method.get,
       );
 
-      final versionTypeString = response.data?['status'] as String?;
-
-      if (versionTypeString == null) {
-        return null;
-      }
-
-      final versionType = VersionType.values.byName(versionTypeString);
-
-      return versionType;
+      return response.data!;
     } on DioException catch (e) {
       throw e.response?.data?['message'] ?? 'Failed to get version';
     }

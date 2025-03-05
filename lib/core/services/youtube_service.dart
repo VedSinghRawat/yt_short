@@ -8,14 +8,38 @@ import 'dart:developer' as developer;
 class YoutubeService {
   final cacheValidityPeriod = Duration.millisecondsPerDay;
 
-  Future<CachedData?> _getCachedYtMediaUrls(String videoId) async {
+  Future<Media?> _getCachedYtMediaUrls(String videoId) async {
     final cachedData = await SharedPref.getCachedVideoUrl(videoId);
     if (cachedData == null) return null;
 
-    final cachedTime = cachedData.timestamp;
-    if (DateTime.now().millisecondsSinceEpoch - cachedTime > cacheValidityPeriod) return null;
+    // Extract expiration times from URLs
+    int audioExpiry = _getExpiryFromUrl(cachedData.audio);
+    int videoExpiry = _getExpiryFromUrl(cachedData.video);
+
+    // Get the latest expiry time
+    int latestExpiry = audioExpiry > videoExpiry ? audioExpiry : videoExpiry;
+
+    // Check if URL will expire in less than 10 minutes
+    int currentTime = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    int tenMinutesInSeconds = 10 * 60;
+
+    if (latestExpiry - currentTime < tenMinutesInSeconds) return null;
 
     return cachedData;
+  }
+
+  int _getExpiryFromUrl(String url) {
+    try {
+      Uri uri = Uri.parse(url);
+      String? expireParam = uri.queryParameters['expire'];
+      if (expireParam != null) {
+        return int.parse(expireParam);
+      }
+    } catch (e) {
+      developer.log('Error parsing URL expiry: $e');
+    }
+
+    return 0;
   }
 
   Future<Map<String, Media>> listMediaUrls(List<String> videoIds) async {

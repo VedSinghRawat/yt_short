@@ -11,12 +11,23 @@ import 'package:url_launcher/url_launcher.dart';
 
 // State class to track version check state
 class VersionState {
-  final bool checkedVersion;
+  final String? content;
+  final bool closable;
 
-  const VersionState({this.checkedVersion = false});
+  const VersionState({this.content, this.closable = false});
 
-  VersionState copyWith({bool? checkedVersion}) {
-    return VersionState(checkedVersion: checkedVersion ?? this.checkedVersion);
+  VersionState copyWith({String? content, bool? closable}) {
+    return VersionState(
+      content: content ?? this.content,
+      closable: closable ?? this.closable,
+    );
+  }
+
+  VersionState clearContent() {
+    return VersionState(
+      content: null,
+      closable: closable,
+    );
   }
 }
 
@@ -34,25 +45,17 @@ class VersionController extends StateNotifier<VersionState> {
 
   VersionController(this._versionAPI, this._packageInfo) : super(const VersionState());
 
-  Future<VersionType?> checkVersion(BuildContext context) async {
+  Future<void> checkVersion(BuildContext context) async {
     try {
-      if (state.checkedVersion) {
-        return null;
-      }
+      final versionRes = await _versionAPI.getVersion(_packageInfo.version);
 
-      return await _versionAPI.getVersion(_packageInfo.version);
+      state = state.copyWith(
+        content: versionRes['content'],
+        closable: versionRes['closable'],
+      );
     } catch (e) {
       developer.log(e.toString());
-      return null;
-    } finally {
-      if (mounted && !state.checkedVersion) {
-        doneVersionCheck();
-      }
     }
-  }
-
-  void doneVersionCheck() {
-    state = state.copyWith(checkedVersion: true);
   }
 
   Future<void> openStore(BuildContext context) async {
@@ -70,5 +73,10 @@ class VersionController extends StateNotifier<VersionState> {
     if (!context.mounted) return;
 
     showErrorSnackBar(context, 'Could not open the store');
+  }
+
+  // Method to dismiss the version message by clearing the content
+  void dismissMessage() {
+    state = state.clearContent();
   }
 }

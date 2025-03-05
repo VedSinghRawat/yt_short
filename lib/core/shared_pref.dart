@@ -94,13 +94,12 @@ class SharedPref {
     await instance.clear();
   }
 
-  static Future<CachedData?> getCachedVideoUrl(String videoId) async {
+  static Future<Media?> getCachedVideoUrl(String videoId) async {
     final data = await _getObject('video_$videoId');
 
-    return CachedData(
+    return Media(
       audio: data?['audio'] ?? '',
       video: data?['video'] ?? '',
-      timestamp: data?['timestamp'] ?? 0,
     );
   }
 
@@ -108,7 +107,6 @@ class SharedPref {
     await _setObject('video_$videoId', {
       'audio': data.audio,
       'video': data.video,
-      'timestamp': DateTime.now().millisecondsSinceEpoch,
     });
   }
 }

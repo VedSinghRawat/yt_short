@@ -1,9 +1,8 @@
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:myapp/apis/version_api.dart';
+import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:myapp/core/controllers/version_controller.dart';
-import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/widgets/loader.dart';
 
 class VersionCheckWrapper extends ConsumerStatefulWidget {
@@ -18,11 +17,6 @@ class VersionCheckWrapper extends ConsumerStatefulWidget {
   ConsumerState<VersionCheckWrapper> createState() => _VersionCheckWrapperState();
 }
 
-final Map<VersionType, String> routeToVersionType = {
-  VersionType.required: Routes.versionRequired,
-  VersionType.suggested: Routes.versionSuggest,
-};
-
 class _VersionCheckWrapperState extends ConsumerState<VersionCheckWrapper> {
   bool _isLoading = true;
 
@@ -31,12 +25,7 @@ class _VersionCheckWrapperState extends ConsumerState<VersionCheckWrapper> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final versionType = await ref.read(versionControllerProvider.notifier).checkVersion(context);
-      final route = routeToVersionType[versionType];
-
-      if (route != null) {
-        context.go(route);
-      }
+      await ref.read(versionControllerProvider.notifier).checkVersion(context);
 
       setState(() {
         _isLoading = false;
@@ -50,6 +39,53 @@ class _VersionCheckWrapperState extends ConsumerState<VersionCheckWrapper> {
       return const Loader();
     }
 
-    return widget.child;
+    final state = ref.watch(versionControllerProvider);
+    final content = state.content;
+    final closable = state.closable;
+
+    if (content == null) {
+      return widget.child;
+    }
+
+    return Scaffold(
+      appBar: closable
+          ? AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () {
+                    ref.read(versionControllerProvider.notifier).dismissMessage();
+                  },
+                ),
+              ],
+            )
+          : null,
+      body: Center(
+        child: HtmlWidget(
+          content,
+          onTapUrl: (url) {
+            final prov = ref.read(versionControllerProvider.notifier);
+            url == 'closeAction' ? prov.dismissMessage() : prov.openStore(context);
+            return true;
+          },
+          customWidgetBuilder: (element) {
+            if (element.attributes['image'] != null) {
+              return SizedBox(
+                width: 100,
+                height: 100,
+                child: Image.network(
+                  element.attributes['src']!,
+                  fit: BoxFit.contain,
+                ),
+              );
+            }
+
+            return null;
+          },
+        ),
+      ),
+    );
   }
 }
