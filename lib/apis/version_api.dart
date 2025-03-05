@@ -26,7 +26,6 @@ class VersionAPI implements IVersionAPI {
       );
 
       final versionTypeString = response.data?['status'] as String?;
-      developer.log('versionTypeString: $versionTypeString');
 
       if (versionTypeString == null) {
         return null;

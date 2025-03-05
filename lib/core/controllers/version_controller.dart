@@ -40,8 +40,6 @@ class VersionController extends StateNotifier<VersionState> {
         return null;
       }
 
-      developer.log('Checking version: ${_packageInfo.version}');
-
       return await _versionAPI.getVersion(_packageInfo.version);
     } catch (e) {
       developer.log(e.toString());
