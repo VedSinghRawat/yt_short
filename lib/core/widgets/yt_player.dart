@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
@@ -24,7 +24,7 @@ class YtPlayer extends ConsumerStatefulWidget {
 }
 
 class _YtPlayerState extends ConsumerState<YtPlayer> {
-  late YoutubePlayerController _controller;
+  late final YoutubePlayerController _controller;
   bool _showPlayPauseIcon = false;
   IconData _iconData = Icons.play_arrow;
   Timer? _iconTimer;
@@ -40,77 +40,90 @@ class _YtPlayerState extends ConsumerState<YtPlayer> {
     _initializeYoutubePlayer();
   }
 
-  void _initializeYoutubePlayer() {
+  void _initializeYoutubePlayer() async {
     String videoId = widget.videoId;
 
-    // Handle YouTube URLs by extracting video ID
-    final extractedId = YoutubePlayer.convertUrlToId(videoId);
-    if (extractedId != null) {
-      videoId = extractedId;
+    // Handle YouTube URLs by extracting video ID if needed
+    if (videoId.contains('youtube.com') || videoId.contains('youtu.be')) {
+      videoId = YoutubePlayerController.convertUrlToId(videoId) ?? videoId;
     }
 
     _controller = YoutubePlayerController(
-      initialVideoId: videoId,
-      flags: const YoutubePlayerFlags(
+      params: const YoutubePlayerParams(
         mute: false,
-        autoPlay: false,
-        disableDragSeek: false,
         loop: true,
-        hideControls: true,
+        showControls: false,
+        showFullscreenButton: false,
         enableCaption: false,
-        hideThumbnail: false,
       ),
     );
 
-    _controller.addListener(_youtubeListener);
-  }
+    // Load the video
+    await _controller.loadVideoById(videoId: videoId);
 
-  void _youtubeListener() {
-    if (!_isPlayerReady || _isDisposed) return;
-
-    // Check if video finished
-    if (_controller.value.playerState == PlayerState.ended &&
-        !ref.read(sublevelControllerProvider).hasFinishedVideo) {
-      ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
-    }
-
-    // Handle errors and retry if needed
-    if (_controller.value.hasError && _retryCount < _maxRetries) {
-      _retryCount++;
-      _reloadVideo();
-      return;
-    }
-
-    // Update play/pause icon
-    if (_controller.value.isPlaying != (_iconData == Icons.pause)) {
-      if (mounted) {
+    // Mark the player as ready after a short delay
+    // This ensures the controller has properly initialized
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (!_isDisposed && mounted) {
         setState(() {
-          _iconData = _controller.value.isPlaying ? Icons.pause : Icons.play_arrow;
+          _isPlayerReady = true;
+        });
+        widget.onControllerInitialized?.call(_controller);
+        _handleVisibilityChange();
+      }
+    });
+
+    // Set up fullscreen handling
+    _controller.setFullScreenListener((_) {
+      // Handle fullscreen changes if needed
+    });
+
+    // Listen to player value changes
+    _controller.listen((event) {
+      if (!_isPlayerReady || _isDisposed) return;
+
+      // Check if video finished
+      if (event.playerState == PlayerState.ended &&
+          !ref.read(sublevelControllerProvider).hasFinishedVideo) {
+        ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
+      }
+
+      // Update play/pause icon
+      final isPlaying = event.playerState == PlayerState.playing;
+      if (isPlaying != (_iconData == Icons.pause) && mounted) {
+        setState(() {
+          _iconData = isPlaying ? Icons.pause : Icons.play_arrow;
         });
       }
-    }
+    });
   }
 
   void _reloadVideo() {
     Future.delayed(const Duration(seconds: 1), () {
       if (!_isDisposed && mounted) {
-        _controller.load(widget.videoId);
+        _controller.loadVideoById(videoId: widget.videoId);
       }
     });
   }
 
-  void _changePlayingState() {
+  void _changePlayingState() async {
     if (!_isPlayerReady) return;
 
-    if (_controller.value.isPlaying) {
-      _controller.pause();
+    final playerState = await _controller.playerState;
+    if (playerState == PlayerState.playing) {
+      _controller.pauseVideo();
+      setState(() {
+        _iconData = Icons.play_arrow;
+      });
     } else {
-      _controller.play();
+      _controller.playVideo();
+      setState(() {
+        _iconData = Icons.pause;
+      });
     }
 
     if (mounted) {
       setState(() {
-        _iconData = _controller.value.isPlaying ? Icons.pause : Icons.play_arrow;
         _showPlayPauseIcon = true;
       });
     }
@@ -129,9 +142,9 @@ class _YtPlayerState extends ConsumerState<YtPlayer> {
     if (!_isPlayerReady || _isDisposed) return;
 
     if (_isVisible) {
-      _controller.play();
+      _controller.playVideo();
     } else {
-      _controller.pause();
+      _controller.pauseVideo();
     }
   }
 
@@ -157,8 +170,7 @@ class _YtPlayerState extends ConsumerState<YtPlayer> {
   void dispose() {
     _isDisposed = true;
     _iconTimer?.cancel();
-    _controller.removeListener(_youtubeListener);
-    _controller.dispose();
+    _controller.close();
     super.dispose();
   }
 
@@ -167,39 +179,27 @@ class _YtPlayerState extends ConsumerState<YtPlayer> {
     return VisibilityDetector(
       key: Key(widget.uniqueId ?? widget.videoId),
       onVisibilityChanged: _onVisibilityChanged,
-      child: YoutubePlayerBuilder(
-        player: YoutubePlayer(
-          controller: _controller,
-          showVideoProgressIndicator: true,
-          progressIndicatorColor: Theme.of(context).colorScheme.primary,
-          progressColors: ProgressBarColors(
-            playedColor: Theme.of(context).colorScheme.primary,
-            handleColor: Theme.of(context).colorScheme.primary,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          YoutubePlayer(
+            controller: _controller,
+            aspectRatio: 16 / 9,
+            backgroundColor: Colors.black,
           ),
-          onReady: () {
-            _isPlayerReady = true;
-            widget.onControllerInitialized?.call(_controller);
-            _handleVisibilityChange();
-          },
-          onEnded: (_) {
-            // Ensure video completion is tracked
-            if (!ref.read(sublevelControllerProvider).hasFinishedVideo) {
-              ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
-            }
-          },
-        ),
-        builder: (context, player) {
-          return GestureDetector(
+          GestureDetector(
             onTap: _changePlayingState,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                player,
-                PlayPauseButton(showPlayPauseIcon: _showPlayPauseIcon, iconData: _iconData),
-              ],
+            child: Container(
+              color: Colors.transparent,
+              width: double.infinity,
+              height: double.infinity,
+              child: PlayPauseButton(
+                showPlayPauseIcon: _showPlayPauseIcon,
+                iconData: _iconData,
+              ),
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
