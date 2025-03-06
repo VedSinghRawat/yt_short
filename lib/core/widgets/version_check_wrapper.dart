@@ -1,4 +1,3 @@
-import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
@@ -62,28 +61,16 @@ class _VersionCheckWrapperState extends ConsumerState<VersionCheckWrapper> {
               ],
             )
           : null,
-      body: Center(
-        child: HtmlWidget(
-          content,
-          onTapUrl: (url) {
-            final prov = ref.read(versionControllerProvider.notifier);
-            url == 'closeAction' ? prov.dismissMessage() : prov.openStore(context);
-            return true;
-          },
-          customWidgetBuilder: (element) {
-            if (element.attributes['image'] != null) {
-              return SizedBox(
-                width: 100,
-                height: 100,
-                child: Image.network(
-                  element.attributes['src']!,
-                  fit: BoxFit.contain,
-                ),
-              );
-            }
-
-            return null;
-          },
+      body: SafeArea(
+        child: Center(
+          child: HtmlWidget(
+            content,
+            onTapUrl: (url) {
+              final prov = ref.read(versionControllerProvider.notifier);
+              url == 'closeAction' ? prov.dismissMessage() : prov.openStore(context);
+              return true;
+            },
+          ),
         ),
       ),
     );
