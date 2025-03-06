@@ -94,9 +94,7 @@ class _SublevelsListState extends State<SublevelsList> {
 
         final positionText = '${sublevel?.level}-${sublevel?.subLevel}';
 
-        final urls = widget.ytUrls[sublevel?.ytId ?? ''];
-
-        if (urls == null || sublevel == null) {
+        if (sublevel == null) {
           return const Loader();
         }
 
@@ -107,16 +105,13 @@ class _SublevelsListState extends State<SublevelsList> {
                   ? YtPlayer(
                       key: Key(positionText),
                       uniqueId: positionText,
-                      audioUrl: urls.audio,
-                      videoUrl: urls.video,
+                      videoId: sublevel.ytId,
                     )
                   : sublevel.isSpeechExercise
                       ? SpeechExerciseScreen(
                           key: Key(positionText),
                           uniqueId: positionText,
                           exercise: sublevel.speechExercise!,
-                          audioUrl: urls.audio,
-                          videoUrl: urls.video,
                         )
                       : const SizedBox.shrink(),
             ),

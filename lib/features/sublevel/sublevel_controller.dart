@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/util_classes.dart';
-import 'package:myapp/core/services/youtube_service.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'dart:developer' as developer;
 import '../../apis/sub_level_api.dart';
@@ -45,12 +44,10 @@ class SublevelControllerState {
 class SublevelController extends StateNotifier<SublevelControllerState> {
   final UserControllerState userController;
   final ISublevelAPI sublevelAPI;
-  final YoutubeService ytService;
 
   SublevelController({
     required this.userController,
     required this.sublevelAPI,
-    required this.ytService,
   }) : super(SublevelControllerState());
 
   Future<void> _listByLevel(int level) async {
@@ -65,8 +62,6 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
       Map<String, Sublevel> sublevelMap = {...state.sublevelMap};
       Map<int, int> subLevelCountByLevel = {...state.subLevelCountByLevel};
 
-      await fetchRelavantYturls(tempSublevels);
-
       subLevelCountByLevel[level] = tempSublevels.length;
 
       for (var sublevel in tempSublevels) {
@@ -77,34 +72,12 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
         sublevelMap: sublevelMap,
         subLevelCountByLevel: subLevelCountByLevel,
       );
-
-      await fetchYtUrls(tempSublevels.map((e) => e.ytId).toList());
     } catch (e, stackTrace) {
       developer.log('Error in SublevelController._listByLevel',
           error: e.toString(), stackTrace: stackTrace);
     } finally {
       state = state.copyWith(loading: false);
     }
-  }
-
-  Future<void> fetchRelavantYturls(List<Sublevel> tempSublevels) async {
-    final userSubLevel = await userController.subLevel;
-
-    if (state.ytUrls.isNotEmpty) return;
-
-    final relevantSubLevels = {userSubLevel - 1, userSubLevel, userSubLevel + 1};
-
-    final ytIds = tempSublevels
-        .where((e) => relevantSubLevels.contains(e.subLevel))
-        .map((e) => e.ytId)
-        .toList();
-
-    await fetchYtUrls(ytIds);
-  }
-
-  Future<void> fetchYtUrls(List<String> ytIds) async {
-    final ytUrls = await ytService.listMediaUrls(ytIds);
-    state = state.copyWith(ytUrls: {...state.ytUrls, ...ytUrls});
   }
 
   Future<void> fetchSublevels() async {
@@ -146,7 +119,8 @@ final sublevelControllerProvider =
     StateNotifierProvider<SublevelController, SublevelControllerState>((ref) {
   final userController = ref.read(userControllerProvider);
   final sublevelAPI = ref.read(sublevelAPIProvider);
-  final ytService = ref.read(youtubeServiceProvider);
   return SublevelController(
-      sublevelAPI: sublevelAPI, userController: userController, ytService: ytService);
+    sublevelAPI: sublevelAPI,
+    userController: userController,
+  );
 });
