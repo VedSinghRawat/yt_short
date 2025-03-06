@@ -1,43 +1,65 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/features/speech_exercise/widgets/recognizer_button.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
+import 'dart:developer' as developer;
 
-class ExerciseSentenceCard extends StatefulWidget {
+class SpeechExerciseCard extends StatefulWidget {
   final String text;
   final VoidCallback onContinue;
 
-  const ExerciseSentenceCard({
+  const SpeechExerciseCard({
     super.key,
     required this.text,
     required this.onContinue,
   });
 
   @override
-  State<ExerciseSentenceCard> createState() => _ExerciseSentenceCardState();
+  State<SpeechExerciseCard> createState() => _SpeechExerciseCardState();
 }
 
-class _ExerciseSentenceCardState extends State<ExerciseSentenceCard> {
-  late List<String> _words;
+class _SpeechExerciseCardState extends State<SpeechExerciseCard> {
+  late List<List<String>> _words;
   late List<bool?> _wordMarking;
   int _offset = 0;
   late List<String> _recognizedWords;
+  late int _totalWordCount;
+
   bool get passed => _wordMarking.every((mark) => mark == true);
   bool get failed =>
-      _recognizedWords.where((word) => word.isNotEmpty).toList().length == _words.length && !passed;
+      _recognizedWords.where((word) => word.isNotEmpty).toList().length == _totalWordCount &&
+      !passed;
   bool get testCompleted => passed || failed;
 
   @override
   void initState() {
     super.initState();
-    _words = widget.text.split(' ');
-    _wordMarking = List.generate(_words.length, (index) => null);
-    _recognizedWords = List.filled(_words.length, '');
+    _words = [];
+    _totalWordCount = 0;
+
+    // Split text by new lines to maintain line structure
+    final lines = widget.text.split('\n');
+    for (var line in lines) {
+      List<String> lineWords = [];
+      for (var word in line.split(' ')) {
+        word = word.trim();
+        if (word.isNotEmpty) {
+          lineWords.add(word);
+          _totalWordCount++;
+        }
+      }
+      if (lineWords.isNotEmpty) {
+        _words.add(lineWords);
+      }
+    }
+
+    _wordMarking = List.generate(_totalWordCount, (index) => null);
+    _recognizedWords = List.filled(_totalWordCount, '');
   }
 
   void _onStopListening() {
     setState(() {
-      _wordMarking = List.generate(_words.length, (index) => null);
-      _recognizedWords = List.filled(_words.length, '');
+      _wordMarking = List.generate(_totalWordCount, (index) => null);
+      _recognizedWords = List.filled(_totalWordCount, '');
     });
   }
 
@@ -56,12 +78,26 @@ class _ExerciseSentenceCardState extends State<ExerciseSentenceCard> {
       }
 
       for (int i = 0; i < _recognizedWords.where((word) => word.isNotEmpty).length; i++) {
-        String formatedTargetWord = formatWord(_words[i]);
+        // Get the actual word from the nested structure
+        String targetWord = _getWordAtIndex(i);
+        String formatedTargetWord = formatWord(targetWord);
         String formatedRecognizedWord = formatWord(_recognizedWords[i]);
 
         _wordMarking[i] = formatedTargetWord == formatedRecognizedWord;
       }
     });
+  }
+
+  // Helper method to get word at a flat index from the nested structure
+  String _getWordAtIndex(int flatIndex) {
+    int wordsSoFar = 0;
+    for (var line in _words) {
+      if (flatIndex < wordsSoFar + line.length) {
+        return line[flatIndex - wordsSoFar];
+      }
+      wordsSoFar += line.length;
+    }
+    return ''; // Should not reach here if index is valid
   }
 
   String formatWord(String word) {
@@ -107,45 +143,70 @@ class _ExerciseSentenceCardState extends State<ExerciseSentenceCard> {
                       ),
                     ),
                     const SizedBox(height: 48),
-                    Wrap(
-                      spacing: 8, // horizontal spacing between items
-                      runSpacing: 16, // vertical spacing between lines
-                      alignment: WrapAlignment.center,
-                      crossAxisAlignment: WrapCrossAlignment.center,
+                    // Display each line in its own Wrap
+                    Column(
                       children: [
-                        for (int i = 0; i < _words.length; i++)
-                          Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Recognized word
-                              _recognizedWords[i].isNotEmpty
-                                  ? Text(
-                                      _recognizedWords[i],
-                                      style: recognizedWordStyle.copyWith(
-                                        textBaseline: TextBaseline.alphabetic,
-                                      ),
-                                    )
-                                  : const SizedBox(height: recognizedWordHeight),
+                        for (int lineIndex = 0; lineIndex < _words.length; lineIndex++)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 16.0),
+                            child: Wrap(
+                              spacing: 8,
+                              runSpacing: 16,
+                              alignment: WrapAlignment.center,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                for (int wordIndex = 0;
+                                    wordIndex < _words[lineIndex].length;
+                                    wordIndex++)
+                                  Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      // Calculate the flat index for this word
+                                      Builder(builder: (context) {
+                                        int flatIndex = 0;
+                                        for (int i = 0; i < lineIndex; i++) {
+                                          flatIndex += _words[i].length;
+                                        }
+                                        flatIndex += wordIndex;
 
-                              // Target word
-                              Text(
-                                _words[i],
-                                style: TextStyle(
-                                  color: _wordMarking[i] == null
-                                      ? Colors.white60
-                                      : _wordMarking[i] == true
-                                          ? Colors.lightBlue[200]
-                                          : _wordMarking[i] == false
-                                              ? Colors.red
-                                              : Colors.white,
-                                  fontSize: 24,
-                                  fontWeight:
-                                      _wordMarking[i] != null ? FontWeight.bold : FontWeight.normal,
-                                  height: 1.4,
-                                  textBaseline: TextBaseline.alphabetic,
-                                ),
-                              ),
-                            ],
+                                        // Recognized word
+                                        return Column(
+                                          children: [
+                                            _recognizedWords[flatIndex].isNotEmpty
+                                                ? Text(
+                                                    _recognizedWords[flatIndex],
+                                                    style: recognizedWordStyle.copyWith(
+                                                      textBaseline: TextBaseline.alphabetic,
+                                                    ),
+                                                  )
+                                                : const SizedBox(height: recognizedWordHeight),
+
+                                            // Target word
+                                            Text(
+                                              _words[lineIndex][wordIndex],
+                                              style: TextStyle(
+                                                color: _wordMarking[flatIndex] == null
+                                                    ? Colors.white60
+                                                    : _wordMarking[flatIndex] == true
+                                                        ? Colors.lightBlue[200]
+                                                        : _wordMarking[flatIndex] == false
+                                                            ? Colors.red
+                                                            : Colors.white,
+                                                fontSize: 24,
+                                                fontWeight: _wordMarking[flatIndex] != null
+                                                    ? FontWeight.bold
+                                                    : FontWeight.normal,
+                                                height: 1.4,
+                                                textBaseline: TextBaseline.alphabetic,
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      }),
+                                    ],
+                                  ),
+                              ],
+                            ),
                           ),
                       ],
                     ),

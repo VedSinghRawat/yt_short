@@ -17,13 +17,13 @@ class YoutubeService {
     int videoExpiry = _getExpiryFromUrl(cachedData.video);
 
     // Get the latest expiry time
-    int latestExpiry = audioExpiry > videoExpiry ? audioExpiry : videoExpiry;
+    int earliestExpiry = audioExpiry > videoExpiry ? videoExpiry : audioExpiry;
 
     // Check if URL will expire in less than 10 minutes
     int currentTime = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    int tenMinutesInSeconds = 10 * 60;
+    int tenMinutesInSeconds = Duration.secondsPerMinute * 10;
 
-    if (latestExpiry - currentTime < tenMinutesInSeconds) return null;
+    if (earliestExpiry - currentTime < tenMinutesInSeconds) return null;
 
     return cachedData;
   }
