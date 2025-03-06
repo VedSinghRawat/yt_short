@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/core/widgets/loader.dart';
 import 'package:video_player/video_player.dart';
-import 'dart:developer' as developer;
 
 // Stateful widget to fetch and then display video sublevel.
 class MediaPlayer extends StatefulWidget {
@@ -35,7 +34,6 @@ class _MediaPlayerState extends State<MediaPlayer> {
     await _mediaPlayerController!.initialize();
 
     // Notify parent when controller is created
-    developer.log('controller created');
     widget.onControllerCreated?.call(_mediaPlayerController!);
   }
 

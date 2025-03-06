@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:myapp/core/controllers/version_controller.dart';
-import 'package:myapp/core/router/router.dart';
 
 class SuggestVersionUpdate extends ConsumerWidget {
   const SuggestVersionUpdate({super.key});
@@ -46,13 +44,6 @@ class SuggestVersionUpdate extends ConsumerWidget {
                 child: const Text('Update Now'),
               ),
               const SizedBox(height: 16),
-              TextButton(
-                onPressed: () {
-                  ref.read(versionControllerProvider.notifier).doneVersionCheck();
-                  context.go(Routes.home);
-                },
-                child: const Text('Skip Update'),
-              ),
             ],
           ),
         ),

@@ -4,71 +4,63 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/apis/version_api.dart';
 import 'package:myapp/constants/constants.dart';
+import 'package:myapp/core/services/initialize_service.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 // State class to track version check state
 class VersionState {
-  final bool checkedVersion;
+  final String? content;
+  final bool closable;
 
-  const VersionState({
-    this.checkedVersion = false,
-  });
+  const VersionState({this.content, this.closable = false});
 
-  VersionState copyWith({
-    bool? checkedVersion,
-  }) {
+  VersionState copyWith({String? content, bool? closable}) {
     return VersionState(
-      checkedVersion: checkedVersion ?? this.checkedVersion,
+      content: content ?? this.content,
+      closable: closable ?? this.closable,
+    );
+  }
+
+  VersionState clearContent() {
+    return VersionState(
+      content: null,
+      closable: closable,
     );
   }
 }
 
+// Remove the separate packageInfoProvider as we now use globalPackageInfo
 final versionControllerProvider = StateNotifierProvider<VersionController, VersionState>((ref) {
-  return VersionController(ref.read(versionAPIService));
+  // Wait for initialization to complete
+  ref.watch(initializeServiceProvider);
+  // Use the global package info that's guaranteed to be loaded
+  return VersionController(ref.read(versionAPIService), globalPackageInfo!);
 });
 
 class VersionController extends StateNotifier<VersionState> {
   final VersionAPI _versionAPI;
+  final PackageInfo _packageInfo;
 
-  late PackageInfo packageInfo;
+  VersionController(this._versionAPI, this._packageInfo) : super(const VersionState());
 
-  VersionController(this._versionAPI) : super(const VersionState()) {
-    _initPackageInfo().catchError((e) {
-      developer.log(e);
-    });
-  }
-
-  Future<void> _initPackageInfo() async {
-    packageInfo = await PackageInfo.fromPlatform();
-  }
-
-  Future<VersionType?> checkVersion(BuildContext context) async {
+  Future<void> checkVersion(BuildContext context) async {
     try {
-      if (state.checkedVersion) {
-        return null;
-      }
+      final versionRes = await _versionAPI.getVersion(_packageInfo.version);
 
-      final currentVersion = packageInfo.version;
-
-      return await _versionAPI.getVersion(currentVersion);
+      state = state.copyWith(
+        content: versionRes['content'],
+        closable: versionRes['closable'],
+      );
     } catch (e) {
-      return null;
-    } finally {
-      if (!state.checkedVersion) {
-        doneVersionCheck();
-      }
+      developer.log(e.toString());
     }
-  }
-
-  void doneVersionCheck() {
-    state = state.copyWith(checkedVersion: true);
   }
 
   Future<void> openStore(BuildContext context) async {
     final platformUrl = Platform.isAndroid
-        ? kPlayStoreBaseUrl + packageInfo.packageName
+        ? kPlayStoreBaseUrl + _packageInfo.packageName
         : kAppStoreBaseUrl + kIOSAppId;
 
     final Uri url = Uri.parse(Uri.encodeFull(platformUrl));
@@ -81,5 +73,10 @@ class VersionController extends StateNotifier<VersionState> {
     if (!context.mounted) return;
 
     showErrorSnackBar(context, 'Could not open the store');
+  }
+
+  // Method to dismiss the version message by clearing the content
+  void dismissMessage() {
+    state = state.clearContent();
   }
 }
