@@ -89,7 +89,8 @@ class _SublevelsListState extends State<SublevelsList> {
 
         if ((isLastSublevel || sublevel == null) && !widget.isLoading) {
           return LastLevelWidget(
-              onRefresh: () => widget.onVideoChange?.call(index, _pageController));
+            onRefresh: () => widget.onVideoChange?.call(index, _pageController),
+          );
         }
 
         final positionText = '${sublevel?.level}-${sublevel?.subLevel}';
