@@ -217,11 +217,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return const Loader();
     }
 
+    final tempLevels = _cachedSublevels!.first;
+
     return Scaffold(
       appBar: const HomeScreenAppBar(),
       body: SublevelsList(
         isLoading: loading ?? false,
-        sublevels: _cachedSublevels!,
+        sublevels: [tempLevels],
         onVideoChange: onVideoChange,
         ytUrls: ytUrls,
       ),
