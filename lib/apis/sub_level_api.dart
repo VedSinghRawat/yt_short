@@ -79,11 +79,12 @@ class SublevelAPI implements ISublevelAPI {
       ]);
 
       final jsonList = results[0] as List<dynamic>;
-      final unpublished = results[1] as Map<String, dynamic>;
+      final jsonListLength = jsonList.length;
+      final unpublished = results[1] as Map<String, dynamic>? ?? {};
 
       final List<Sublevel> sublevels = [];
 
-      for (var i = 0; i < jsonList.length + unpublished.length; i++) {
+      for (var i = 0; i < jsonListLength + unpublished.length; i++) {
         sublevels.add(
           jsonToSublevel(
             unpublished.containsKey(i.toString())
