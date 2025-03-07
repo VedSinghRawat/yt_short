@@ -1,10 +1,13 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/core/widgets/yt_player.dart';
+import 'package:myapp/features/speech_exercise/widgets/speech_exercise_card.dart';
+import 'package:myapp/features/user/user_controller.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import 'package:myapp/models/speech_exercise/speech_exercise.dart';
-import 'package:myapp/features/speech_exercise/widgets/exercise_sentence_card.dart';
 
-class SpeechExerciseScreen extends StatefulWidget {
+class SpeechExerciseScreen extends ConsumerStatefulWidget {
   final SpeechExercise exercise;
   final Function(YoutubePlayerController)? onControllerInitialized;
   final String? uniqueId;
@@ -17,10 +20,10 @@ class SpeechExerciseScreen extends StatefulWidget {
   });
 
   @override
-  State<SpeechExerciseScreen> createState() => _SpeechExerciseScreenState();
+  ConsumerState<SpeechExerciseScreen> createState() => _SpeechExerciseScreenState();
 }
 
-class _SpeechExerciseScreenState extends State<SpeechExerciseScreen> {
+class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
   YoutubePlayerController? _controller;
   bool _hasShownDialog = false;
   bool _isDisposed = false;
@@ -69,21 +72,44 @@ class _SpeechExerciseScreenState extends State<SpeechExerciseScreen> {
   Future<void> _showExerciseDialog() async {
     if (_isDisposed || !mounted) return;
 
-    await showDialog(
+    final isAdmin = ref.read(userControllerProvider).currentUser?.isAdmin ?? false;
+
+    showDialog(
       context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(widget.exercise.text),
-          content: ExerciseSentenceCard(
-            onContinue: () {
-              if (_isDisposed) return;
-              Navigator.of(context).pop();
-              _controller?.playVideo();
-            },
+      barrierDismissible: isAdmin || kDebugMode,
+      barrierColor: const Color.fromRGBO(0, 0, 0, 0.9),
+      builder: (context) => PopScope(
+        canPop: isAdmin || kDebugMode,
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(
+            vertical: 48,
+            horizontal: 24,
           ),
-        );
-      },
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color.fromRGBO(255, 255, 255, 0.75),
+              borderRadius: BorderRadius.circular(30),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color.fromRGBO(255, 255, 255, 0.2),
+                  blurRadius: 12.0,
+                  spreadRadius: 4.0,
+                ),
+              ],
+            ),
+            child: SpeechExerciseCard(
+              text: widget.exercise.text,
+              onContinue: () {
+                setState(() {
+                  _controller?.playVideo();
+                });
+                Navigator.of(context).pop();
+              },
+            ),
+          ),
+        ),
+      ),
     );
   }
 
