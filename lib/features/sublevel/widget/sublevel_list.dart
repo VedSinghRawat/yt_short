@@ -9,7 +9,7 @@ import 'package:myapp/features/speech_exercise/screen/speech_exercise_screen.dar
 import 'package:myapp/models/sublevel/sublevel.dart';
 
 class SublevelsList extends StatefulWidget {
-  final List<Sublevel> sublevels;
+  final List<SubLevel> sublevels;
   final bool isLoading;
   final Future<void> Function(int index, PageController controller)? onVideoChange;
   final Map<String, Media> ytUrls;

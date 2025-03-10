@@ -24,7 +24,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  List<Sublevel>? _cachedSublevels;
+  List<SubLevel>? _cachedSublevels;
 
   @override
   void initState() {
@@ -70,7 +70,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return true;
   }
 
-  Future<bool> handleFetchSublevels(int index, List<Sublevel> sublevels) async {
+  Future<bool> handleFetchSublevels(int index, List<SubLevel> sublevels) async {
     if (index < _cachedSublevels!.length) return false;
     await ref.read(sublevelControllerProvider.notifier).fetchSublevels();
 
@@ -79,7 +79,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Future<void> syncProgress(
     int index,
-    List<Sublevel> sublevels,
+    List<SubLevel> sublevels,
     String userEmail,
     int level,
     int subLevel,
@@ -184,7 +184,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     await syncActivityLogs();
   }
 
-  List<Sublevel> _getSortedSublevels(Map<String, Sublevel> sublevelMap) {
+  List<SubLevel> _getSortedSublevels(Map<String, SubLevel> sublevelMap) {
     final sublevels = sublevelMap.values.toList();
     sublevels.sort((a, b) {
       final levelA = a.level;

@@ -9,7 +9,7 @@ import 'package:myapp/models/sublevel/sublevel.dart';
 
 class SublevelControllerState {
   // the key will be $level-$subLevel
-  final Map<String, Sublevel> sublevelMap;
+  final Map<String, SubLevel> sublevelMap;
   // level against the key attribute of sublevel
   final Map<int, int> subLevelCountByLevel;
   final bool hasFinishedVideo;
@@ -26,7 +26,7 @@ class SublevelControllerState {
   });
 
   SublevelControllerState copyWith({
-    Map<String, Sublevel>? sublevelMap,
+    Map<String, SubLevel>? sublevelMap,
     Map<int, int>? subLevelCountByLevel,
     bool? loading,
     bool? hasFinishedVideo,
@@ -44,12 +44,12 @@ class SublevelControllerState {
 
 class SublevelController extends StateNotifier<SublevelControllerState> {
   final UserControllerState userController;
-  final ISublevelAPI sublevelAPI;
+  final ISubLevelAPI subLevelAPI;
   final YoutubeService ytService;
 
   SublevelController({
     required this.userController,
-    required this.sublevelAPI,
+    required this.subLevelAPI,
     required this.ytService,
   }) : super(SublevelControllerState());
 
@@ -58,11 +58,9 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
 
     state = state.copyWith(loading: true);
     try {
-      final tempSublevels = userController.currentUser?.isAdmin ?? false
-          ? await sublevelAPI.listByLevel(level)
-          : await sublevelAPI.listPublishedByLevel(level);
+      final tempSublevels = await subLevelAPI.listByLevel(level);
 
-      Map<String, Sublevel> sublevelMap = {...state.sublevelMap};
+      Map<String, SubLevel> sublevelMap = {...state.sublevelMap};
       Map<int, int> subLevelCountByLevel = {...state.subLevelCountByLevel};
 
       await fetchRelavantYturls(tempSublevels);
@@ -87,7 +85,7 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
     }
   }
 
-  Future<void> fetchRelavantYturls(List<Sublevel> tempSublevels) async {
+  Future<void> fetchRelavantYturls(List<SubLevel> tempSublevels) async {
     final userSubLevel = await userController.subLevel;
 
     if (state.ytUrls.isNotEmpty) return;
@@ -145,8 +143,8 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
 final sublevelControllerProvider =
     StateNotifierProvider<SublevelController, SublevelControllerState>((ref) {
   final userController = ref.read(userControllerProvider);
-  final sublevelAPI = ref.read(sublevelAPIProvider);
+  final subLevelAPI = ref.read(subLevelAPIProvider);
   final ytService = ref.read(youtubeServiceProvider);
   return SublevelController(
-      sublevelAPI: sublevelAPI, userController: userController, ytService: ytService);
+      subLevelAPI: subLevelAPI, userController: userController, ytService: ytService);
 });
