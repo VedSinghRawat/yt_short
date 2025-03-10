@@ -1,11 +1,11 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import '../models.dart';
 
-class Content {
+class Sublevel {
   final Video? video;
   final SpeechExercise? speechExercise;
 
-  Content(
+  Sublevel(
     this.video,
     this.speechExercise,
   );
@@ -18,11 +18,11 @@ class Content {
   bool get isSpeechExercise => speechExercise != null;
   bool get isVideo => video != null;
 
-  Content copyWith({
+  Sublevel copyWith({
     Video? video,
     SpeechExercise? speechExercise,
   }) {
-    return Content(
+    return Sublevel(
       video ?? this.video,
       speechExercise ?? this.speechExercise,
     );

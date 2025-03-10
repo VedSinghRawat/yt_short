@@ -18,13 +18,13 @@ class UserControllerState {
   Future<int> get level async {
     final progress = await SharedPref.getCurrProgress();
 
-    return currentUser?.level ?? progress?['level'] ?? 1;
+    return progress?['level'] ?? currentUser?.level ?? 1;
   }
 
   Future<int> get subLevel async {
     final progress = await SharedPref.getCurrProgress();
 
-    return currentUser?.subLevel ?? progress?['subLevel'] ?? 0;
+    return progress?['subLevel'] ?? currentUser?.subLevel ?? 0;
   }
 
   UserControllerState copyWith({

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/features/auth/screens/sign_in_screen.dart';
-import 'package:myapp/features/content/content_controller.dart';
+import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'dart:developer' as developer;
 import '../../apis/auth_api.dart';
 import '../../core/utils.dart';
@@ -23,10 +23,10 @@ class AuthControllerState {
 class AuthController extends StateNotifier<AuthControllerState> {
   final UserController userController;
   final AuthAPI authAPI;
-  final ContentController contentController;
+  final SublevelController sublevelController;
   bool _isProcessing = false;
 
-  AuthController(this.userController, this.authAPI, this.contentController)
+  AuthController(this.userController, this.authAPI, this.sublevelController)
       : super(AuthControllerState(loading: false));
 
   Future<void> signInWithGoogle(BuildContext context) async {
@@ -49,10 +49,10 @@ class AuthController extends StateNotifier<AuthControllerState> {
 
       if (context.mounted &&
           (user.maxLevel > level || (user.maxLevel == level && user.maxSubLevel >= subLevel))) {
-        await showLevelChangeConfirmationDialog(context, user, contentController);
+        await showLevelChangeConfirmationDialog(context, user, sublevelController);
       }
 
-      await contentController.fetchContents();
+      await sublevelController.fetchSublevels();
     } catch (e, stackTrace) {
       developer.log('Error in AuthController.signInWithGoogle',
           error: e.toString(), stackTrace: stackTrace);
@@ -95,6 +95,6 @@ class AuthController extends StateNotifier<AuthControllerState> {
 final authControllerProvider = StateNotifierProvider<AuthController, AuthControllerState>((ref) {
   final userController = ref.watch(userControllerProvider.notifier);
   final authAPI = ref.watch(authAPIProvider);
-  final contentController = ref.watch(contentControllerProvider.notifier);
-  return AuthController(userController, authAPI, contentController);
+  final sublevelController = ref.watch(sublevelControllerProvider.notifier);
+  return AuthController(userController, authAPI, sublevelController);
 });

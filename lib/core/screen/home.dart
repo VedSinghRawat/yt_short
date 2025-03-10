@@ -10,9 +10,9 @@ import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/core/widgets/loader.dart';
 import 'package:myapp/features/activity_log/activity_log.controller.dart';
-import 'package:myapp/models/content/content.dart';
-import '../../features/content/content_controller.dart';
-import '../../features/content/widget/content_list.dart';
+import 'package:myapp/models/sublevel/sublevel.dart';
+import '../../features/sublevel/sublevel_controller.dart';
+import '../../features/sublevel/widget/sublevel_list.dart';
 import '../../features/user/user_controller.dart';
 import 'dart:developer' as developer;
 
@@ -24,7 +24,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  List<Content>? _cachedContents;
+  List<Sublevel>? _cachedSublevels;
 
   @override
   void initState() {
@@ -32,7 +32,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      await ref.read(contentControllerProvider.notifier).fetchContents();
+      await ref.read(sublevelControllerProvider.notifier).fetchSublevels();
     });
   }
 
@@ -47,7 +47,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     bool isAdmin,
   ) async {
     // Inline the logic from _canChangeVideo
-    final hasFinishedVideo = ref.read(contentControllerProvider).hasFinishedVideo;
+    final hasFinishedVideo = ref.read(sublevelControllerProvider).hasFinishedVideo;
     final levelAfter = !hasLocalProgress || isLevelAfter(level, subLevel, maxLevel, maxSubLevel);
     final canChangeVideo = hasFinishedVideo || !levelAfter;
 
@@ -62,7 +62,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
 
     try {
-      showSnackBar(context, 'Please complete the current content before proceeding');
+      showSnackBar(context, 'Please complete the current sublevel before proceeding');
     } catch (e) {
       developer.log('error in cancelVideoChange: $e');
     }
@@ -70,25 +70,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return true;
   }
 
-  Future<bool> handleFetchContents(int index, List<Content> contents) async {
-    if (index < _cachedContents!.length) return false;
-    await ref.read(contentControllerProvider.notifier).fetchContents();
+  Future<bool> handleFetchSublevels(int index, List<Sublevel> sublevels) async {
+    if (index < _cachedSublevels!.length) return false;
+    await ref.read(sublevelControllerProvider.notifier).fetchSublevels();
 
     return true;
   }
 
   Future<void> syncProgress(
     int index,
-    List<Content> contents,
+    List<Sublevel> sublevels,
     String userEmail,
     int level,
     int subLevel,
   ) async {
     if (index <= 0) return;
 
-    final previousContentLevel = contents[index - 1].level;
+    final previousSublevelLevel = sublevels[index - 1].level;
 
-    if (userEmail.isNotEmpty && level != previousContentLevel) {
+    if (userEmail.isNotEmpty && level != previousSublevelLevel) {
       ref.read(userControllerProvider.notifier).progressSync(level, subLevel);
     }
   }
@@ -127,15 +127,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> onVideoChange(int index, PageController controller) async {
-    if (!mounted || _cachedContents == null) return;
+    if (!mounted || _cachedSublevels == null) return;
 
-    // If the index is greater than the length of the cached contents, fetch the contents and return
-    if (await handleFetchContents(index, _cachedContents!)) return;
+    // If the index is greater than the length of the cached sublevels, fetch the sublevels and return
+    if (await handleFetchSublevels(index, _cachedSublevels!)) return;
 
-    // Get the content, level, and sublevel for the current index
-    final content = _cachedContents![index];
-    final level = content.level;
-    final subLevel = content.subLevel;
+    // Get the sublevel, level, and sublevel for the current index
+    final sublevel = _cachedSublevels![index];
+    final level = sublevel.level;
+    final subLevel = sublevel.subLevel;
 
     // Get the user's email
     final user = ref.read(userControllerProvider).currentUser;
@@ -158,7 +158,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return;
     }
 
-    ref.read(contentControllerProvider.notifier).setHasFinishedVideo(false);
+    ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(false);
 
     final userEmail = user?.email ?? '';
 
@@ -171,22 +171,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return;
     }
 
-    // Fetch the contents if needed
-    await handleFetchContents(index, _cachedContents!);
+    // Fetch the sublevels if needed
+    await handleFetchSublevels(index, _cachedSublevels!);
 
     // If the user is logged in, add an activity log entry
     await SharedPref.addActivityLog(level, subLevel, userEmail);
 
     // Sync the progress with db if the user moves to a new level
-    await syncProgress(index, _cachedContents!, userEmail, level, subLevel);
+    await syncProgress(index, _cachedSublevels!, userEmail, level, subLevel);
 
     // Sync the last sync time with the server
     await syncActivityLogs();
   }
 
-  List<Content> _getSortedContents(Map<String, Content> contentMap) {
-    final contents = contentMap.values.toList();
-    contents.sort((a, b) {
+  List<Sublevel> _getSortedSublevels(Map<String, Sublevel> sublevelMap) {
+    final sublevels = sublevelMap.values.toList();
+    sublevels.sort((a, b) {
       final levelA = a.level;
       final levelB = b.level;
 
@@ -199,29 +199,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
       return subLevelA.compareTo(subLevelB);
     });
-    return contents;
+    return sublevels;
   }
 
   @override
   Widget build(BuildContext context) {
-    final loading = ref.watch(contentControllerProvider.select((state) => state.loading));
-    final contentMap = ref.watch(contentControllerProvider.select((state) => state.contentMap));
-    final ytUrls = ref.watch(contentControllerProvider.select((state) => state.ytUrls));
+    final loading = ref.watch(sublevelControllerProvider.select((state) => state.loading));
+    final sublevelMap = ref.watch(sublevelControllerProvider.select((state) => state.sublevelMap));
+    final ytUrls = ref.watch(sublevelControllerProvider.select((state) => state.ytUrls));
 
-    // Only sort contents if they have changed
-    if (_cachedContents == null || !listEquals(_cachedContents, contentMap.values.toList())) {
-      _cachedContents = _getSortedContents(contentMap);
+    // Only sort sublevels if they have changed
+    if (_cachedSublevels == null || !listEquals(_cachedSublevels, sublevelMap.values.toList())) {
+      _cachedSublevels = _getSortedSublevels(sublevelMap);
     }
 
-    if (loading != false && _cachedContents!.isEmpty) {
+    if (loading != false && _cachedSublevels!.isEmpty) {
       return const Loader();
     }
 
     return Scaffold(
       appBar: const HomeScreenAppBar(),
-      body: ContentsList(
+      body: SublevelsList(
         isLoading: loading ?? false,
-        contents: _cachedContents!,
+        sublevels: _cachedSublevels!,
         onVideoChange: onVideoChange,
         ytUrls: ytUrls,
       ),

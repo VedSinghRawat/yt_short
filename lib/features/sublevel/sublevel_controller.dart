@@ -4,36 +4,36 @@ import 'package:myapp/core/util_classes.dart';
 import 'package:myapp/core/services/youtube_service.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'dart:developer' as developer;
-import '../../apis/content_api.dart';
-import '../../models/models.dart';
+import '../../apis/sub_level_api.dart';
+import 'package:myapp/models/sublevel/sublevel.dart';
 
-class ContentControllerState {
+class SublevelControllerState {
   // the key will be $level-$subLevel
-  final Map<String, Content> contentMap;
-  // level against the key attribute of content
+  final Map<String, Sublevel> sublevelMap;
+  // level against the key attribute of sublevel
   final Map<int, int> subLevelCountByLevel;
   final bool hasFinishedVideo;
   final Map<String, Media> ytUrls;
 
   final bool? loading;
 
-  ContentControllerState({
-    this.contentMap = const {},
+  SublevelControllerState({
+    this.sublevelMap = const {},
     this.subLevelCountByLevel = const {},
     this.loading,
     this.hasFinishedVideo = false,
     this.ytUrls = const {},
   });
 
-  ContentControllerState copyWith({
-    Map<String, Content>? contentMap,
+  SublevelControllerState copyWith({
+    Map<String, Sublevel>? sublevelMap,
     Map<int, int>? subLevelCountByLevel,
     bool? loading,
     bool? hasFinishedVideo,
     Map<String, Media>? ytUrls,
   }) {
-    return ContentControllerState(
-      contentMap: contentMap ?? this.contentMap,
+    return SublevelControllerState(
+      sublevelMap: sublevelMap ?? this.sublevelMap,
       subLevelCountByLevel: subLevelCountByLevel ?? this.subLevelCountByLevel,
       loading: loading ?? this.loading,
       hasFinishedVideo: hasFinishedVideo ?? this.hasFinishedVideo,
@@ -42,57 +42,59 @@ class ContentControllerState {
   }
 }
 
-class ContentController extends StateNotifier<ContentControllerState> {
+class SublevelController extends StateNotifier<SublevelControllerState> {
   final UserControllerState userController;
-  final IContentAPI contentAPI;
+  final ISublevelAPI sublevelAPI;
   final YoutubeService ytService;
 
-  ContentController({
+  SublevelController({
     required this.userController,
-    required this.contentAPI,
+    required this.sublevelAPI,
     required this.ytService,
-  }) : super(ContentControllerState());
+  }) : super(SublevelControllerState());
 
   Future<void> _listByLevel(int level) async {
     if (state.subLevelCountByLevel.containsKey(level) || state.loading == true) return;
 
     state = state.copyWith(loading: true);
     try {
-      final tempContents = await contentAPI.listByLevel(level);
+      final tempSublevels = userController.currentUser?.isAdmin ?? false
+          ? await sublevelAPI.listByLevel(level)
+          : await sublevelAPI.listPublishedByLevel(level);
 
-      Map<String, Content> contentMap = {...state.contentMap};
+      Map<String, Sublevel> sublevelMap = {...state.sublevelMap};
       Map<int, int> subLevelCountByLevel = {...state.subLevelCountByLevel};
 
-      await fetchRelavantYturls(tempContents);
+      await fetchRelavantYturls(tempSublevels);
 
-      subLevelCountByLevel[level] = tempContents.length;
+      subLevelCountByLevel[level] = tempSublevels.length;
 
-      for (var content in tempContents) {
-        contentMap["${content.level}-${content.subLevel}"] = content;
+      for (var sublevel in tempSublevels) {
+        sublevelMap["${sublevel.level}-${sublevel.subLevel}"] = sublevel;
       }
 
       state = state.copyWith(
-        contentMap: contentMap,
+        sublevelMap: sublevelMap,
         subLevelCountByLevel: subLevelCountByLevel,
       );
 
-      await fetchYtUrls(tempContents.map((e) => e.ytId).toList());
+      await fetchYtUrls(tempSublevels.map((e) => e.ytId).toList());
     } catch (e, stackTrace) {
-      developer.log('Error in ContentController._listByLevel',
+      developer.log('Error in SublevelController._listByLevel',
           error: e.toString(), stackTrace: stackTrace);
     } finally {
       state = state.copyWith(loading: false);
     }
   }
 
-  Future<void> fetchRelavantYturls(List<Content> tempContents) async {
+  Future<void> fetchRelavantYturls(List<Sublevel> tempSublevels) async {
     final userSubLevel = await userController.subLevel;
 
     if (state.ytUrls.isNotEmpty) return;
 
     final relevantSubLevels = {userSubLevel - 1, userSubLevel, userSubLevel + 1};
 
-    final ytIds = tempContents
+    final ytIds = tempSublevels
         .where((e) => relevantSubLevels.contains(e.subLevel))
         .map((e) => e.ytId)
         .toList();
@@ -105,7 +107,7 @@ class ContentController extends StateNotifier<ContentControllerState> {
     state = state.copyWith(ytUrls: {...state.ytUrls, ...ytUrls});
   }
 
-  Future<void> fetchContents() async {
+  Future<void> fetchSublevels() async {
     final currUserLevel = await userController.level;
     final currUserSubLevel = await userController.subLevel;
 
@@ -140,11 +142,11 @@ class ContentController extends StateNotifier<ContentControllerState> {
   }
 }
 
-final contentControllerProvider =
-    StateNotifierProvider<ContentController, ContentControllerState>((ref) {
+final sublevelControllerProvider =
+    StateNotifierProvider<SublevelController, SublevelControllerState>((ref) {
   final userController = ref.read(userControllerProvider);
-  final contentAPI = ref.read(contentAPIProvider);
+  final sublevelAPI = ref.read(sublevelAPIProvider);
   final ytService = ref.read(youtubeServiceProvider);
-  return ContentController(
-      contentAPI: contentAPI, userController: userController, ytService: ytService);
+  return SublevelController(
+      sublevelAPI: sublevelAPI, userController: userController, ytService: ytService);
 });

@@ -7,7 +7,7 @@ import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/widgets/loader.dart';
 import 'package:myapp/core/widgets/show_confirmation_dialog.dart';
-import 'package:myapp/features/content/content_controller.dart';
+import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'package:myapp/models/models.dart';
 import '../auth_controller.dart';
@@ -99,7 +99,7 @@ class SignInScreen extends ConsumerWidget {
 }
 
 showLevelChangeConfirmationDialog(
-    BuildContext context, UserModel user, ContentController contentController) {
+    BuildContext context, UserModel user, SublevelController sublevelController) {
   return showConfirmationDialog(
     context,
     question:
@@ -114,7 +114,7 @@ showLevelChangeConfirmationDialog(
 
       await SharedPref.setCurrProgress(maxLevel: user.maxLevel, maxSubLevel: user.maxSubLevel);
 
-      await contentController.fetchContents();
+      await sublevelController.fetchSublevels();
     },
     yesButtonStyle: ElevatedButton.styleFrom(
       backgroundColor: Colors.blue,
