@@ -1,56 +1,33 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:myapp/core/services/api_service.dart';
 import 'package:myapp/models/models.dart';
 
 abstract class ISubLevelAPI {
-  Future<List<SubLevel>> listByLevel(int level);
+  Future<String> getZip(int zipId);
 }
 
 class SubLevelAPI implements ISubLevelAPI {
-  SubLevelAPI();
+  SubLevelAPI(this.apiService);
+
+  final ApiService apiService;
 
   @override
-  Future<List<SubLevel>> listByLevel(int level) async {
-    final jsonList = await _getLevel(level);
-
-    int subLevel = 0;
-
-    final sublevels = jsonList.map((json) {
-      subLevel++;
-      return jsonToSublevel(json, level, subLevel);
-    }).toList();
-
-    return sublevels;
-  }
-
-  Future<List<dynamic>> _getLevel(int level) async {
-    final dio = Dio();
-    final response = await dio.get('${dotenv.env['S3_BASE_URL']}/levels/$level.json');
+  Future<String> getZip(int zipId) async {
+    final response = await apiService.call(
+      endpoint: '/zips/$zipId.zip',
+      customBaseUrl: dotenv.env['S3_BASE_URL'],
+      method: ApiMethod.get,
+    );
 
     if (response.statusCode != 200) {
-      throw Exception("Failed to fetch sublevel for level $level");
+      throw Exception("Failed to fetch zip for zipId $zipId");
     }
 
-    final List<dynamic> jsonList = (response.data['sub_levels']);
-
-    return jsonList;
-  }
-
-  SubLevel jsonToSublevel(Map<String, dynamic> json, int level, int subLevel) {
-    json['level'] = level;
-    json['subLevel'] = subLevel;
-
-    if (json.containsKey('text')) {
-      return SubLevel(null, SpeechExercise.fromJson(json));
-    } else if (json.containsKey('ytId')) {
-      return SubLevel(Video.fromJson(json), null);
-    } else {
-      throw Exception("Invalid sublevel type");
-    }
+    return response.data;
   }
 }
 
 final subLevelAPIProvider = Provider<ISubLevelAPI>((ref) {
-  return SubLevelAPI();
+  return SubLevelAPI(ref.read(apiServiceProvider));
 });

@@ -6,7 +6,7 @@ import 'package:myapp/core/shared_pref.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:developer' as developer;
 
-enum Method { get, post, put, delete }
+enum ApiMethod { get, post, put, delete }
 
 final apiServiceProvider = Provider<ApiService>((ref) {
   return ApiService(googleSignIn: ref.read(googleSignInProvider));
@@ -29,9 +29,10 @@ class ApiService {
 
   Future<Response<T>> _makeRequest<T>({
     required String endpoint,
-    required Method method,
+    required ApiMethod method,
     Map<String, dynamic>? body,
     Map<String, String>? headers,
+    String? customBaseUrl,
   }) async {
     final String? token = await getToken();
 
@@ -43,7 +44,10 @@ class ApiService {
 
     try {
       final options = Options(method: method.name.toUpperCase(), headers: effectiveHeaders);
-      return await _dio.request('$baseUrl$endpoint', data: body, options: options);
+      return await _dio.request(
+          customBaseUrl != null ? '$customBaseUrl$endpoint' : '$baseUrl$endpoint',
+          data: body,
+          options: options);
     } catch (e) {
       if (e is DioException) {
         // Handle Dio specific errors if needed
@@ -57,13 +61,18 @@ class ApiService {
 
   Future<Response<T>> call<T>({
     required String endpoint,
-    required Method method,
+    required ApiMethod method,
     Map<String, dynamic>? body,
+    String? customBaseUrl,
     Map<String, String>? headers,
   }) async {
     try {
       return await _makeRequest<T>(
-          endpoint: endpoint, method: method, body: body, headers: headers);
+          endpoint: endpoint,
+          method: method,
+          body: body,
+          headers: headers,
+          customBaseUrl: customBaseUrl);
     } on DioException catch (e) {
       developer.log('DioException: ${e.response}');
       if (e.response?.data == null ||

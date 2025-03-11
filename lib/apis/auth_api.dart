@@ -34,7 +34,7 @@ class AuthAPI implements IAuthAPI {
 
       await _apiService.setToken(auth.idToken ?? '');
 
-      final response = await _apiService.call(endpoint: '/auth/google', method: Method.get);
+      final response = await _apiService.call(endpoint: '/auth/google', method: ApiMethod.get);
 
       final user = UserModel.fromJson(response.data['user']);
 

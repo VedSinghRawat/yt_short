@@ -8,7 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/features/user/user_controller.dart';
 
 class SpeechExerciseScreen extends ConsumerStatefulWidget {
-  final SpeechExercise exercise;
+  final SpeechExerciseDTO exercise;
   final Function(VideoPlayerController)? onControllerInitialized;
   final String? uniqueId;
   final String audioUrl;

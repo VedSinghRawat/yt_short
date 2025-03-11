@@ -16,7 +16,7 @@ class UserAPI implements IUserAPI {
   Future<UserModel?> getUser() async {
     try {
       final response = await _apiService.call(
-        method: Method.get,
+        method: ApiMethod.get,
         endpoint: '/user/me',
       );
 
@@ -34,7 +34,7 @@ class UserAPI implements IUserAPI {
     developer.log('level: $level, subLevel: $subLevel', name: 'progressSync');
     try {
       final response = await _apiService.call(
-        method: Method.post,
+        method: ApiMethod.post,
         endpoint: '/user/sync',
         body: {
           'level': level,

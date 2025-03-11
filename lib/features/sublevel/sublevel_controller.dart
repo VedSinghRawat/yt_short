@@ -58,12 +58,10 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
 
     state = state.copyWith(loading: true);
     try {
-      final tempSublevels = await subLevelAPI.listByLevel(level);
+      final tempSublevels = await subLevelAPI.listByLevel(firstLevelId);
 
       Map<String, SubLevel> sublevelMap = {...state.sublevelMap};
       Map<int, int> subLevelCountByLevel = {...state.subLevelCountByLevel};
-
-      await fetchRelavantYturls(tempSublevels);
 
       subLevelCountByLevel[level] = tempSublevels.length;
 
@@ -75,8 +73,6 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
         sublevelMap: sublevelMap,
         subLevelCountByLevel: subLevelCountByLevel,
       );
-
-      await fetchYtUrls(tempSublevels.map((e) => e.ytId).toList());
     } catch (e, stackTrace) {
       developer.log('Error in SublevelController._listByLevel',
           error: e.toString(), stackTrace: stackTrace);

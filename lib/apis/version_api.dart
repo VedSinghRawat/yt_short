@@ -16,7 +16,7 @@ class VersionAPI implements IVersionAPI {
     try {
       final response = await _apiService.call(
         endpoint: '/check_version?version=$currentVersion',
-        method: Method.get,
+        method: ApiMethod.get,
       );
 
       return response.data!;

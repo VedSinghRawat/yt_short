@@ -3,16 +3,16 @@ import '../models.dart';
 
 class SubLevel {
   final Video? video;
-  final SpeechExercise? speechExercise;
+  final SpeechExerciseDTO? speechExercise;
 
-  SubLevel(
+  SubLevel({
     this.video,
     this.speechExercise,
-  );
+  });
 
-  int get level => speechExercise?.level ?? video?.level ?? 0;
+  String get levelId => speechExercise?.levelId ?? video?.levelId ?? '';
   int get subLevel => speechExercise?.subLevel ?? video?.subLevel ?? 0;
-  String get ytId => speechExercise?.ytId ?? video?.ytId ?? '';
+  String get id => speechExercise?.id ?? video?.id ?? '';
   DateTime get createdAt => speechExercise?.createdAt ?? video?.createdAt ?? DateTime.now();
   DateTime get modifiedAt => speechExercise?.updatedAt ?? video?.updatedAt ?? DateTime.now();
   bool get isSpeechExercise => speechExercise != null;
@@ -20,11 +20,29 @@ class SubLevel {
 
   SubLevel copyWith({
     Video? video,
-    SpeechExercise? speechExercise,
+    SpeechExerciseDTO? speechExercise,
   }) {
     return SubLevel(
-      video ?? this.video,
-      speechExercise ?? this.speechExercise,
+      video: video ?? this.video,
+      speechExercise: speechExercise ?? this.speechExercise,
     );
+  }
+
+  factory SubLevel.fromJson(Map<String, dynamic> json) {
+    if (json.containsKey('text')) {
+      return SubLevel(speechExercise: SpeechExerciseDTO.fromJson(json));
+    } else if (json.containsKey('ytId')) {
+      return SubLevel(video: Video.fromJson(json));
+    }
+    throw Exception("Invalid sublevel type");
+  }
+
+  Map<String, dynamic> toJson() {
+    if (speechExercise != null) {
+      return speechExercise!.toJson();
+    } else if (video != null) {
+      return video!.toJson();
+    }
+    throw Exception("Invalid sublevel type");
   }
 }
