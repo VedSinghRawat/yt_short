@@ -32,7 +32,7 @@ class SharedPref {
   }
 
   static Future<void> setCurrProgress(
-      {int? level, int? subLevel, int? maxLevel, int? maxSubLevel}) async {
+      {int? level, int? subLevel, int? maxLevel, int? maxSubLevel, String? levelId}) async {
     final currProgress = await getCurrProgress();
 
     await _setObject('currProgress', {
@@ -41,6 +41,7 @@ class SharedPref {
       'modified': DateTime.now().millisecondsSinceEpoch,
       'maxLevel': maxLevel ?? currProgress?['maxLevel'],
       'maxSubLevel': maxSubLevel ?? currProgress?['maxSubLevel'],
+      'levelId': levelId ?? currProgress?['levelId'],
     });
   }
 
@@ -108,5 +109,13 @@ class SharedPref {
       'audio': data.audio,
       'video': data.video,
     });
+  }
+
+  static Future<void> storeETag(String levelId, int zipId, String eTag) async {
+    await _setValue('eTag_$levelId$zipId', eTag);
+  }
+
+  static Future<String?> getETag(String levelId, int zipId) async {
+    return await _getValue('eTag_$levelId$zipId');
   }
 }

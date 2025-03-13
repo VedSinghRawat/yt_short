@@ -6,24 +6,41 @@ part of 'speech_exercise.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-SpeechExerciseDTO _$SpeechExerciseFromJson(Map<String, dynamic> json) => SpeechExerciseDTO(
-      id: json['id'] as String,
+_$SpeechExerciseImpl _$$SpeechExerciseImplFromJson(Map<String, dynamic> json) =>
+    _$SpeechExerciseImpl(
       text: json['text'] as String,
       pauseAt: (json['pauseAt'] as num).toInt(),
-      audioUrl: json['audioUrl'] as String,
-      levelId: json['levelId'] as String,
+      level: (json['level'] as num).toInt(),
       subLevel: (json['subLevel'] as num).toInt(),
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      levelId: json['levelId'] as String,
+      videoFileName: json['videoFileName'] as String,
     );
 
-Map<String, dynamic> _$SpeechExerciseToJson(SpeechExerciseDTO instance) => <String, dynamic>{
-      'id': instance.id,
+Map<String, dynamic> _$$SpeechExerciseImplToJson(
+        _$SpeechExerciseImpl instance) =>
+    <String, dynamic>{
       'text': instance.text,
       'pauseAt': instance.pauseAt,
-      'audioUrl': instance.audioUrl,
-      'levelId': instance.levelId,
+      'level': instance.level,
       'subLevel': instance.subLevel,
-      'createdAt': instance.createdAt.toIso8601String(),
-      'updatedAt': instance.updatedAt.toIso8601String(),
+      'levelId': instance.levelId,
+      'videoFileName': instance.videoFileName,
+    };
+
+_$SpeechExerciseDTOImpl _$$SpeechExerciseDTOImplFromJson(
+        Map<String, dynamic> json) =>
+    _$SpeechExerciseDTOImpl(
+      videoFileName: json['videoFileName'] as String,
+      text: json['text'] as String,
+      pauseAt: (json['pauseAt'] as num).toInt(),
+      zip: (json['zip'] as num).toInt(),
+    );
+
+Map<String, dynamic> _$$SpeechExerciseDTOImplToJson(
+        _$SpeechExerciseDTOImpl instance) =>
+    <String, dynamic>{
+      'videoFileName': instance.videoFileName,
+      'text': instance.text,
+      'pauseAt': instance.pauseAt,
+      'zip': instance.zip,
     };

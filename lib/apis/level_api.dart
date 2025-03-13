@@ -1,10 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/core/services/api_service.dart';
-import 'package:myapp/models/Level/level_dto.dart';
+import 'package:myapp/models/level/level.dart';
 
 abstract class ILevelApi {
-  Future<LevelDto> getById(String id);
+  Future<LevelDTO> getById(String id);
 }
 
 class LevelApi implements ILevelApi {
@@ -13,7 +14,7 @@ class LevelApi implements ILevelApi {
   LevelApi({required this.apiService});
 
   @override
-  Future<LevelDto> getById(String id) async {
+  Future<LevelDTO> getById(String id) async {
     try {
       final response = await apiService.call(
         endpoint: '/levels/$id.json',
@@ -21,9 +22,13 @@ class LevelApi implements ILevelApi {
         customBaseUrl: dotenv.env['S3_BASE_URL'],
       );
 
-      return LevelDto.fromJson(response.data);
+      return LevelDTO.fromJson(response.data);
     } on DioException catch (e) {
       throw Exception(e.response?.data?.toString() ?? e.toString());
     }
   }
 }
+
+final levelApiProvider = Provider<LevelApi>((ref) {
+  return LevelApi(apiService: ref.read(apiServiceProvider));
+});

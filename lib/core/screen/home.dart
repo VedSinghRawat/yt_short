@@ -206,7 +206,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final loading = ref.watch(sublevelControllerProvider.select((state) => state.loading));
     final sublevelMap = ref.watch(sublevelControllerProvider.select((state) => state.sublevelMap));
-    final ytUrls = ref.watch(sublevelControllerProvider.select((state) => state.ytUrls));
 
     // Only sort sublevels if they have changed
     if (_cachedSublevels == null || !listEquals(_cachedSublevels, sublevelMap.values.toList())) {
@@ -223,7 +222,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         isLoading: loading ?? false,
         sublevels: _cachedSublevels!,
         onVideoChange: onVideoChange,
-        ytUrls: ytUrls,
       ),
     );
   }

@@ -1,48 +1,32 @@
-import 'package:json_annotation/json_annotation.dart';
-import 'package:myapp/models/sublevel/sublevel_dto.dart';
-import 'package:myapp/models/video/video.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:flutter/foundation.dart';
 
 part 'speech_exercise.g.dart';
+part 'speech_exercise.freezed.dart';
 
-@JsonSerializable()
-class SpeechExerciseDTO extends SubLevelDto {
-  final String text;
-  final int pauseAt;
-  final String audioUrl;
+@freezed
+class SpeechExercise with _$SpeechExercise {
+  const factory SpeechExercise({
+    required String text,
+    required int pauseAt,
+    required int level,
+    required int subLevel,
+    required String levelId,
+    required String videoFileName,
+  }) = _SpeechExercise;
 
-  const SpeechExerciseDTO({
-    required super.id,
-    required super.zipNumber,
-    required this.text,
-    required this.pauseAt,
-    required this.audioUrl,
-    required super.createdAt,
-    required super.updatedAt,
-  });
+  factory SpeechExercise.fromJson(Map<String, dynamic> json) => _$SpeechExerciseFromJson(json);
+}
 
-  factory SpeechExerciseDTO.fromJson(Map<String, dynamic> json) => _$SpeechExerciseFromJson(json);
+@freezed
+class SpeechExerciseDTO with _$SpeechExerciseDTO {
+  const factory SpeechExerciseDTO({
+    required String videoFileName,
+    required String text,
+    required int pauseAt,
+    required int zip,
+  }) = _SpeechExerciseDTO;
 
-  @override
-  Map<String, dynamic> toJson() => _$SpeechExerciseToJson(this);
-
-  @override
-  SpeechExerciseDTO copyWith({
-    String? id,
-    String? text,
-    int? pauseAt,
-    String? audioUrl,
-    int? zipNumber,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-  }) {
-    return SpeechExerciseDTO(
-      id: id ?? this.id,
-      text: text ?? this.text,
-      pauseAt: pauseAt ?? this.pauseAt,
-      audioUrl: audioUrl ?? this.audioUrl,
-      zipNumber: zipNumber ?? this.zipNumber,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-    );
-  }
+  factory SpeechExerciseDTO.fromJson(Map<String, dynamic> json) =>
+      _$SpeechExerciseDTOFromJson(json);
 }

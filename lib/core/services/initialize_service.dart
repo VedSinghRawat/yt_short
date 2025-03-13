@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:myapp/core/services/file_service.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'dart:developer' as developer;
@@ -17,6 +18,8 @@ class InitializeService {
     try {
       // Set global package info for use throughout the app
       globalPackageInfo = packageInfo;
+
+      await FileService.instance.init();
 
       final currProgress = await SharedPref.getCurrProgress();
       final apiUser = await userController.getCurrentUser();

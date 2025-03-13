@@ -6,18 +6,29 @@ part of 'video.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-Video _$VideoFromJson(Map<String, dynamic> json) => Video(
-      id: json['id'] as String,
-      levelId: json['levelId'] as String,
+_$VideoImpl _$$VideoImplFromJson(Map<String, dynamic> json) => _$VideoImpl(
+      level: (json['level'] as num).toInt(),
       subLevel: (json['subLevel'] as num).toInt(),
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      levelId: json['levelId'] as String,
+      videoFileName: json['videoFileName'] as String,
     );
 
-Map<String, dynamic> _$VideoToJson(Video instance) => <String, dynamic>{
-      'id': instance.id,
-      'levelId': instance.levelId,
+Map<String, dynamic> _$$VideoImplToJson(_$VideoImpl instance) =>
+    <String, dynamic>{
+      'level': instance.level,
       'subLevel': instance.subLevel,
-      'createdAt': instance.createdAt.toIso8601String(),
-      'updatedAt': instance.updatedAt.toIso8601String(),
+      'levelId': instance.levelId,
+      'videoFileName': instance.videoFileName,
+    };
+
+_$VideoDTOImpl _$$VideoDTOImplFromJson(Map<String, dynamic> json) =>
+    _$VideoDTOImpl(
+      videoFileName: json['videoFileName'] as String,
+      zip: (json['zip'] as num).toInt(),
+    );
+
+Map<String, dynamic> _$$VideoDTOImplToJson(_$VideoDTOImpl instance) =>
+    <String, dynamic>{
+      'videoFileName': instance.videoFileName,
+      'zip': instance.zip,
     };

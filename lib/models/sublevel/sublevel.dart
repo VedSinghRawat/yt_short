@@ -1,48 +1,89 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
-import '../models.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:myapp/models/speech_exercise/speech_exercise.dart';
+import 'package:myapp/models/video/video.dart';
 
-class SubLevel {
-  final Video? video;
-  final SpeechExerciseDTO? speechExercise;
+part 'sublevel.freezed.dart';
 
-  SubLevel({
-    this.video,
-    this.speechExercise,
-  });
+@freezed
+class SubLevel with _$SubLevel {
+  const factory SubLevel.speechExercise(SpeechExercise speechExercise) = _SpeechExercise;
+  const factory SubLevel.video(Video video) = _Video;
 
-  String get levelId => speechExercise?.levelId ?? video?.levelId ?? '';
-  int get subLevel => speechExercise?.subLevel ?? video?.subLevel ?? 0;
-  String get id => speechExercise?.id ?? video?.id ?? '';
-  DateTime get createdAt => speechExercise?.createdAt ?? video?.createdAt ?? DateTime.now();
-  DateTime get modifiedAt => speechExercise?.updatedAt ?? video?.updatedAt ?? DateTime.now();
-  bool get isSpeechExercise => speechExercise != null;
-  bool get isVideo => video != null;
-
-  SubLevel copyWith({
-    Video? video,
-    SpeechExerciseDTO? speechExercise,
-  }) {
-    return SubLevel(
-      video: video ?? this.video,
-      speechExercise: speechExercise ?? this.speechExercise,
-    );
-  }
+  const SubLevel._();
 
   factory SubLevel.fromJson(Map<String, dynamic> json) {
-    if (json.containsKey('text')) {
-      return SubLevel(speechExercise: SpeechExerciseDTO.fromJson(json));
-    } else if (json.containsKey('ytId')) {
-      return SubLevel(video: Video.fromJson(json));
+    if (json["text"] != null) {
+      return SubLevel.speechExercise(SpeechExercise.fromJson(json));
+    } else {
+      return SubLevel.video(Video.fromJson(json));
     }
-    throw Exception("Invalid sublevel type");
+  }
+
+  factory SubLevel.fromSubLevelDTO(
+      SubLevelDTO subLevelDTO, int level, int subLevel, String levelId) {
+    final json = subLevelDTO.toJson();
+
+    json["level"] = level;
+    json["subLevel"] = subLevel;
+    json["levelId"] = levelId;
+
+    return SubLevel.fromJson(json);
+  }
+
+  String get levelId => when(
+        speechExercise: (speechExercise) => speechExercise.levelId,
+        video: (video) => video.levelId,
+      );
+
+  int get level => when(
+        speechExercise: (speechExercise) => speechExercise.level,
+        video: (video) => video.level,
+      );
+
+  int get subLevel => when(
+        speechExercise: (speechExercise) => speechExercise.subLevel,
+        video: (video) => video.subLevel,
+      );
+
+  String get videoFileName => when(
+        speechExercise: (speechExercise) => speechExercise.videoFileName,
+        video: (video) => video.videoFileName,
+      );
+
+  bool get isVideo => this is _Video;
+
+  bool get isSpeechExercise => this is _SpeechExercise;
+}
+
+@freezed
+class SubLevelDTO with _$SubLevelDTO {
+  const factory SubLevelDTO.speechExercise(SpeechExerciseDTO speechExercise) = _SpeechExerciseDTO;
+  const factory SubLevelDTO.video(VideoDTO video) = _VideoDTO;
+
+  const SubLevelDTO._();
+
+  factory SubLevelDTO.fromJson(Map<String, dynamic> json) {
+    if (json["text"] != null) {
+      return SubLevelDTO.speechExercise(SpeechExerciseDTO.fromJson(json));
+    } else {
+      return SubLevelDTO.video(VideoDTO.fromJson(json));
+    }
   }
 
   Map<String, dynamic> toJson() {
-    if (speechExercise != null) {
-      return speechExercise!.toJson();
-    } else if (video != null) {
-      return video!.toJson();
-    }
-    throw Exception("Invalid sublevel type");
+    return when(
+      speechExercise: (speechExercise) => speechExercise.toJson(),
+      video: (video) => video.toJson(),
+    );
   }
+
+  int get zip => when(
+        speechExercise: (speechExercise) => speechExercise.zip,
+        video: (video) => video.zip,
+      );
+
+  String get videoFileName => when(
+        speechExercise: (speechExercise) => speechExercise.videoFileName,
+        video: (video) => video.videoFileName,
+      );
 }

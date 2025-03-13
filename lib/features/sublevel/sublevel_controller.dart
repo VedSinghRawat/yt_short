@@ -1,78 +1,94 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:myapp/apis/level_api.dart';
 import 'package:myapp/constants/constants.dart';
-import 'package:myapp/core/util_classes.dart';
-import 'package:myapp/core/services/youtube_service.dart';
+import 'package:myapp/core/services/file_service.dart';
+import 'package:myapp/core/services/sub_level_service.dart';
 import 'package:myapp/features/user/user_controller.dart';
+import 'package:myapp/models/level/level.dart';
 import 'dart:developer' as developer;
 import '../../apis/sub_level_api.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
+import 'package:flutter/foundation.dart';
 
-class SublevelControllerState {
-  // the key will be $level-$subLevel
-  final Map<String, SubLevel> sublevelMap;
-  // level against the key attribute of sublevel
-  final Map<int, int> subLevelCountByLevel;
-  final bool hasFinishedVideo;
-  final Map<String, Media> ytUrls;
+part 'sublevel_controller.freezed.dart';
 
-  final bool? loading;
-
-  SublevelControllerState({
-    this.sublevelMap = const {},
-    this.subLevelCountByLevel = const {},
-    this.loading,
-    this.hasFinishedVideo = false,
-    this.ytUrls = const {},
-  });
-
-  SublevelControllerState copyWith({
-    Map<String, SubLevel>? sublevelMap,
-    Map<int, int>? subLevelCountByLevel,
+@freezed
+class SublevelControllerState with _$SublevelControllerState {
+  const factory SublevelControllerState({
+    @Default({}) Map<String, SubLevel> sublevelMap,
+    @Default({}) Map<int, int> subLevelCountByLevel,
     bool? loading,
-    bool? hasFinishedVideo,
-    Map<String, Media>? ytUrls,
-  }) {
-    return SublevelControllerState(
-      sublevelMap: sublevelMap ?? this.sublevelMap,
-      subLevelCountByLevel: subLevelCountByLevel ?? this.subLevelCountByLevel,
-      loading: loading ?? this.loading,
-      hasFinishedVideo: hasFinishedVideo ?? this.hasFinishedVideo,
-      ytUrls: ytUrls ?? this.ytUrls,
-    );
-  }
+    @Default(false) bool hasFinishedVideo,
+    Level? currentLevel,
+  }) = _SublevelControllerState;
 }
 
 class SublevelController extends StateNotifier<SublevelControllerState> {
   final UserControllerState userController;
   final ISubLevelAPI subLevelAPI;
-  final YoutubeService ytService;
+  final LevelApi levelApi;
+  final SubLevelService subLevelService;
+  final FileService fileService;
 
   SublevelController({
     required this.userController,
     required this.subLevelAPI,
-    required this.ytService,
-  }) : super(SublevelControllerState());
+    required this.levelApi,
+    required this.subLevelService,
+    required this.fileService,
+  }) : super(const SublevelControllerState());
 
-  Future<void> _listByLevel(int level) async {
-    if (state.subLevelCountByLevel.containsKey(level) || state.loading == true) return;
+  Future<void> _listByLevel(String levelId, int level) async {
+    if (state.subLevelCountByLevel.containsKey(levelId) || state.loading == true) return;
 
     state = state.copyWith(loading: true);
     try {
-      final tempSublevels = await subLevelAPI.listByLevel(firstLevelId);
+      final levelDTO = await levelApi.getById(levelId);
 
       Map<String, SubLevel> sublevelMap = {...state.sublevelMap};
       Map<int, int> subLevelCountByLevel = {...state.subLevelCountByLevel};
 
-      subLevelCountByLevel[level] = tempSublevels.length;
+      subLevelCountByLevel[level] = levelDTO.subLevels.length;
 
-      for (var sublevel in tempSublevels) {
-        sublevelMap["${sublevel.level}-${sublevel.subLevel}"] = sublevel;
+      final currSubLevel = await userController.subLevel;
+
+      final isFirstLounch = subLevelCountByLevel.isEmpty;
+
+      if (isFirstLounch) {
+        final subLevelDTO = await _fetchCurrSubLevel(levelDTO);
+
+        if (await fileService.isVideoExists(levelDTO.id, subLevelDTO.videoFileName)) {
+          sublevelMap["${levelDTO.id}-$currSubLevel"] =
+              SubLevel.fromSubLevelDTO(subLevelDTO, level, currSubLevel, levelId);
+        }
       }
 
+      final zipNumbers = levelDTO.subLevels.map((subLevelDTO) => subLevelDTO.zip).toSet();
+
+      await subLevelService.getZipFiles(levelDTO.id, zipNumbers);
+
+      for (var (index, sublevelDTO) in levelDTO.subLevels.indexed) {
+        final subLevelNumber = index + 1;
+
+        if (!await fileService.isVideoExists(levelDTO.id, sublevelDTO.videoFileName)) continue;
+
+        SubLevel subLevel = SubLevel.fromSubLevelDTO(sublevelDTO, level, subLevelNumber, levelId);
+
+        sublevelMap["${levelDTO.id}-$subLevelNumber"] = subLevel;
+      }
+
+      // Update state
       state = state.copyWith(
         sublevelMap: sublevelMap,
         subLevelCountByLevel: subLevelCountByLevel,
       );
+
+      // Fetch next and previous levels if first launch
+      if (isFirstLounch) {
+        await _listByLevel(levelDTO.nextId, level + 1);
+        await _listByLevel(levelDTO.prevId, level - 1);
+      }
     } catch (e, stackTrace) {
       developer.log('Error in SublevelController._listByLevel',
           error: e.toString(), stackTrace: stackTrace);
@@ -81,24 +97,14 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
     }
   }
 
-  Future<void> fetchRelavantYturls(List<SubLevel> tempSublevels) async {
-    final userSubLevel = await userController.subLevel;
+  Future<SubLevelDTO> _fetchCurrSubLevel(LevelDTO currLevelDTO) async {
+    final currUserSubLevel = await userController.subLevel;
 
-    if (state.ytUrls.isNotEmpty) return;
+    final subLevelDTO = currLevelDTO.subLevels[currUserSubLevel - 1];
 
-    final relevantSubLevels = {userSubLevel - 1, userSubLevel, userSubLevel + 1};
+    await subLevelService.getSubLevelFile(currLevelDTO.id, subLevelDTO.zip);
 
-    final ytIds = tempSublevels
-        .where((e) => relevantSubLevels.contains(e.subLevel))
-        .map((e) => e.ytId)
-        .toList();
-
-    await fetchYtUrls(ytIds);
-  }
-
-  Future<void> fetchYtUrls(List<String> ytIds) async {
-    final ytUrls = await ytService.listMediaUrls(ytIds);
-    state = state.copyWith(ytUrls: {...state.ytUrls, ...ytUrls});
+    return subLevelDTO;
   }
 
   Future<void> fetchSublevels() async {
@@ -106,10 +112,11 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
     final currUserSubLevel = await userController.subLevel;
 
     final fetchCurrLevel = !state.subLevelCountByLevel.containsKey(currUserLevel);
+    final currLevel = state.currentLevel;
 
     // Fetch the current level if not already in cache
     if (fetchCurrLevel) {
-      await _listByLevel(currUserLevel);
+      await _listByLevel(currLevel!.id, currUserLevel);
     }
 
     final prevLevel = currUserLevel - 1;
@@ -118,7 +125,7 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
         !state.subLevelCountByLevel.containsKey(prevLevel);
     // Fetch previous level if near start of sublevels
     if (fetchPrevLevel) {
-      await _listByLevel(prevLevel);
+      await _listByLevel(currLevel!.prevId, prevLevel);
     }
 
     final currLevelSublevelCount = state.subLevelCountByLevel[currUserLevel] ?? 0;
@@ -127,7 +134,7 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
         !state.subLevelCountByLevel.containsKey(nextLevel);
     // Fetch next level if near the end of sublevels
     if (fetchNextLevel) {
-      await _listByLevel(nextLevel);
+      await _listByLevel(currLevel!.nextId, nextLevel);
     }
   }
 
@@ -140,7 +147,15 @@ final sublevelControllerProvider =
     StateNotifierProvider<SublevelController, SublevelControllerState>((ref) {
   final userController = ref.read(userControllerProvider);
   final subLevelAPI = ref.read(subLevelAPIProvider);
-  final ytService = ref.read(youtubeServiceProvider);
+  final levelApi = ref.read(levelApiProvider);
+  final subLevelService = ref.read(subLevelServiceProvider);
+  final fileService = ref.read(fileServiceProvider);
+
   return SublevelController(
-      subLevelAPI: subLevelAPI, userController: userController, ytService: ytService);
+    subLevelAPI: subLevelAPI,
+    userController: userController,
+    levelApi: levelApi,
+    subLevelService: subLevelService,
+    fileService: fileService,
+  );
 });

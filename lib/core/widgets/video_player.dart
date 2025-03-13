@@ -1,15 +1,17 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:myapp/core/widgets/loader.dart';
 import 'package:video_player/video_player.dart';
 
 // Stateful widget to fetch and then display video sublevel.
 class MediaPlayer extends StatefulWidget {
-  final String mediaUrl;
+  final String mediaPath;
   final void Function(VideoPlayerController)? onControllerCreated;
 
   const MediaPlayer({
     super.key,
-    required this.mediaUrl,
+    required this.mediaPath,
     this.onControllerCreated,
   });
 
@@ -21,8 +23,8 @@ class _MediaPlayerState extends State<MediaPlayer> {
   VideoPlayerController? _mediaPlayerController;
 
   _initVideoPlayer() async {
-    _mediaPlayerController = VideoPlayerController.networkUrl(
-      Uri.parse(widget.mediaUrl),
+    _mediaPlayerController = VideoPlayerController.file(
+      File(widget.mediaPath),
       videoPlayerOptions: VideoPlayerOptions(
         allowBackgroundPlayback: false,
         mixWithOthers: true,

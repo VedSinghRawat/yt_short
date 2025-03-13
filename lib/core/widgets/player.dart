@@ -8,17 +8,14 @@ import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 class YtPlayer extends ConsumerStatefulWidget {
-  final String audioUrl;
-  final String videoUrl;
+  final String videoPath;
   final String? uniqueId;
 
-  final void Function(VideoPlayerController controller, VideoPlayerController audioController)?
-      onControllerInitialized;
+  final void Function(VideoPlayerController controller)? onControllerInitialized;
 
   const YtPlayer({
     super.key,
-    required this.audioUrl,
-    required this.videoUrl,
+    required this.videoPath,
     this.uniqueId,
     this.onControllerInitialized,
   });
@@ -29,7 +26,7 @@ class YtPlayer extends ConsumerStatefulWidget {
 
 class _YtPlayerState extends ConsumerState<YtPlayer> {
   VideoPlayerController? _videoController;
-  VideoPlayerController? _audioController;
+
   bool _showPlayPauseIcon = false;
   IconData _iconData = Icons.play_arrow;
   Timer? _iconTimer;
@@ -78,17 +75,15 @@ class _YtPlayerState extends ConsumerState<YtPlayer> {
     });
   }
 
-  bool get _isControllerInitialized => _videoController != null && _audioController != null;
+  bool get _isControllerInitialized => _videoController != null;
 
   void _changePlaying(bool changeToPlay) {
     if (!_isControllerInitialized) return;
 
     if (_videoController!.value.isPlaying || !changeToPlay) {
       _videoController!.pause();
-      _audioController!.pause();
     } else {
       _videoController!.play();
-      _audioController!.play();
     }
   }
 
@@ -116,32 +111,26 @@ class _YtPlayerState extends ConsumerState<YtPlayer> {
 
       _handleListener();
     } catch (e) {
-      developer.log('Error in YtShortPlayer._onVisibilityChanged', error: e.toString());
+      developer.log('Error in Player._onVisibilityChanged', error: e.toString());
     }
   }
 
-  void _onControllerInitialized(
-      VideoPlayerController? videoController, VideoPlayerController? audioController) {
+  void _onControllerInitialized(VideoPlayerController controller) {
     setState(() {
-      if (_audioController != audioController) {
-        _audioController = audioController ?? _audioController;
-      }
-
-      if (_videoController != videoController) {
-        _videoController = videoController ?? _videoController;
+      if (_videoController != controller) {
+        _videoController = controller;
       }
     });
 
-    if (videoController == null || audioController == null) return;
-
     _handleListener();
-    widget.onControllerInitialized?.call(videoController, audioController);
+
+    widget.onControllerInitialized?.call(controller);
   }
 
   @override
   Widget build(BuildContext context) {
     return VisibilityDetector(
-      key: Key(widget.uniqueId ?? widget.audioUrl),
+      key: Key(widget.uniqueId ?? widget.videoPath),
       onVisibilityChanged: _onVisibilityChanged,
       child: GestureDetector(
         onTap: _changePlayingState,
@@ -149,16 +138,8 @@ class _YtPlayerState extends ConsumerState<YtPlayer> {
           alignment: Alignment.center,
           children: [
             MediaPlayer(
-              mediaUrl: widget.audioUrl,
-              onControllerCreated: (controller) {
-                _onControllerInitialized(_videoController, controller);
-              },
-            ),
-            MediaPlayer(
-              mediaUrl: widget.videoUrl,
-              onControllerCreated: (controller) {
-                _onControllerInitialized(controller, _audioController);
-              },
+              mediaPath: widget.videoPath,
+              onControllerCreated: _onControllerInitialized,
             ),
             PlayPauseButton(showPlayPauseIcon: _showPlayPauseIcon, iconData: _iconData),
           ],

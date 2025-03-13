@@ -1,32 +1,33 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:myapp/core/services/file_service.dart';
 import 'package:myapp/core/util_classes.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/widgets/loader.dart';
-import 'package:myapp/core/widgets/yt_player.dart';
+import 'package:myapp/core/widgets/player.dart';
+import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'package:myapp/features/sublevel/widget/last_level.dart';
 import 'package:myapp/features/speech_exercise/screen/speech_exercise_screen.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 
-class SublevelsList extends StatefulWidget {
+class SublevelsList extends ConsumerStatefulWidget {
   final List<SubLevel> sublevels;
   final bool isLoading;
   final Future<void> Function(int index, PageController controller)? onVideoChange;
-  final Map<String, Media> ytUrls;
 
   const SublevelsList({
     super.key,
     required this.sublevels,
     this.onVideoChange,
-    required this.ytUrls,
     this.isLoading = false,
   });
 
   @override
-  State<SublevelsList> createState() => _SublevelsListState();
+  ConsumerState<SublevelsList> createState() => _SublevelsListState();
 }
 
-class _SublevelsListState extends State<SublevelsList> {
+class _SublevelsListState extends ConsumerState<SublevelsList> {
   late PageController _pageController;
 
   void _jumpToPage(Duration timeStamp) async {
@@ -34,8 +35,7 @@ class _SublevelsListState extends State<SublevelsList> {
 
     final jumpTo = widget.sublevels.indexWhere(
       (sublevel) =>
-          (sublevel.subLevel == progress?['subLevel'] && sublevel.level == progress?['level']) ||
-          (sublevel.ytId == progress?['videoId']),
+          (sublevel.subLevel == progress?['subLevel'] && sublevel.level == progress?['level']),
     );
 
     if (jumpTo >= widget.sublevels.length || jumpTo < 0) return;
@@ -92,33 +92,36 @@ class _SublevelsListState extends State<SublevelsList> {
               onRefresh: () => widget.onVideoChange?.call(index, _pageController));
         }
 
-        final positionText = '${sublevel?.level}-${sublevel?.subLevel}';
-
-        final urls = widget.ytUrls[sublevel?.ytId ?? ''];
-
-        if (urls == null || sublevel == null) {
+        if (sublevel == null && widget.isLoading) {
           return const Loader();
+        } else if (sublevel == null) {
+          ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
+
+          return const SizedBox.shrink();
         }
+
+        final positionText = '${sublevel.level}-${sublevel.subLevel}';
+
+        final url = ref
+            .read(fileServiceProvider)
+            .getUnzippedVideoPath(sublevel.levelId, sublevel.videoFileName);
 
         return Stack(
           children: [
             Center(
-              child: sublevel.isVideo
-                  ? YtPlayer(
-                      key: Key(positionText),
-                      uniqueId: positionText,
-                      audioUrl: urls.audio,
-                      videoUrl: urls.video,
-                    )
-                  : sublevel.isSpeechExercise
-                      ? SpeechExerciseScreen(
-                          key: Key(positionText),
-                          uniqueId: positionText,
-                          exercise: sublevel.speechExercise!,
-                          audioUrl: urls.audio,
-                          videoUrl: urls.video,
-                        )
-                      : const SizedBox.shrink(),
+              child: sublevel.when(
+                video: (video) => YtPlayer(
+                  key: Key(positionText),
+                  uniqueId: positionText,
+                  videoPath: url,
+                ),
+                speechExercise: (speechExercise) => SpeechExerciseScreen(
+                  key: Key(positionText),
+                  uniqueId: positionText,
+                  exercise: speechExercise,
+                  videoPath: url,
+                ),
+              ),
             ),
             Positioned(
               top: 16,
