@@ -7,6 +7,7 @@ import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/screen/app_bar.dart';
 import 'package:myapp/core/shared_pref.dart';
+import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/core/widgets/loader.dart';
 import 'package:myapp/features/activity_log/activity_log.controller.dart';
@@ -124,11 +125,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     // Update the user's current progress in shared preferences
     await SharedPref.setCurrProgress(
-      level: level,
-      subLevel: sublevelIndex,
-      levelId: levelId,
-      maxLevel: isLocalLevelAfter ? level : localMaxLevel,
-      maxSubLevel: isLocalLevelAfter ? sublevelIndex : localMaxSubLevel,
+      Progress(
+        level: level,
+        subLevel: sublevelIndex,
+        levelId: levelId,
+        maxLevel: isLocalLevelAfter ? level : localMaxLevel,
+        maxSubLevel: isLocalLevelAfter ? sublevelIndex : localMaxSubLevel,
+      ),
     );
   }
 
@@ -147,8 +150,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final user = ref.read(userControllerProvider).currentUser;
 
     final localProgress = await SharedPref.getCurrProgress();
-    final localMaxLevel = localProgress?['maxLevel'] ?? 0;
-    final localMaxSubLevel = localProgress?['maxSubLevel'] ?? 0;
+    final localMaxLevel = localProgress?.maxLevel ?? 0;
+    final localMaxSubLevel = localProgress?.maxSubLevel ?? 0;
 
     // Check if video change should be cancelled
     if (await cancelVideoChange(

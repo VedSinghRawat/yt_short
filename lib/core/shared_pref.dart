@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'package:myapp/core/util_classes.dart';
+import 'package:myapp/core/util_types/progress.dart';
+import 'package:myapp/models/Level/level.dart';
 import 'package:myapp/models/activity_log/activity_log.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -26,27 +27,37 @@ class SharedPref {
     return jsonDecode(value);
   }
 
-  static Future<void> _setObject(String key, dynamic value) async {
+  static Future<void> _setObject(String key, Object value) async {
     final encoded = jsonEncode(value);
     await _setValue(key, encoded);
   }
 
-  static Future<void> setCurrProgress(
-      {int? level, int? subLevel, int? maxLevel, int? maxSubLevel, String? levelId}) async {
+  static Future<void> setCurrProgress(Progress progress) async {
     final currProgress = await getCurrProgress();
 
-    await _setObject('currProgress', {
-      'level': level ?? currProgress?['level'],
-      'subLevel': subLevel ?? currProgress?['subLevel'],
-      'modified': DateTime.now().millisecondsSinceEpoch,
-      'maxLevel': maxLevel ?? currProgress?['maxLevel'],
-      'maxSubLevel': maxSubLevel ?? currProgress?['maxSubLevel'],
-      'levelId': levelId ?? currProgress?['levelId'],
-    });
+    // Convert both to maps
+    final progressMap = progress.toJson();
+    final currProgressMap = currProgress?.toJson() ?? {};
+
+    // Merge maps: Use existing values if they are null
+    final mergedProgressMap = {
+      ...currProgressMap, // Previous progress values
+      ...progressMap, // New values (overwriting non-null values)
+      'modified': DateTime.now().millisecondsSinceEpoch, // Always update timestamp
+    };
+
+    // Convert back to Progress object
+    final updatedProgress = Progress.fromJson(mergedProgressMap);
+
+    await _setObject('currProgress', updatedProgress.toJson());
   }
 
-  static Future<Map<String, dynamic>?> getCurrProgress() async {
-    return await _getObject('currProgress');
+  static Future<Progress?> getCurrProgress() async {
+    final data = await _getObject('currProgress');
+
+    if (data == null) return null;
+
+    return Progress.fromJson(data);
   }
 
   static Future<int> getLastSync() async {
@@ -65,6 +76,20 @@ class SharedPref {
 
   static Future<void> setGoogleIdToken(String token) async {
     await _setValue('googleIdToken', token);
+  }
+
+  static Future<List<Level>> getCachedLevels() async {
+    final cachedLevels = await _getList('cachedLevels');
+
+    return cachedLevels?.map((e) => Level.fromJson(e)).toList() ?? [];
+  }
+
+  static Future<void> addCachedLevel(Level level) async {
+    final cachedLevels = await getCachedLevels();
+
+    cachedLevels.add(level);
+
+    await _setObject('cachedLevels', cachedLevels);
   }
 
   static Future<void> addActivityLog(int level, int subLevel, String email) async {
@@ -93,22 +118,6 @@ class SharedPref {
   static Future<void> clearAll() async {
     final instance = await SharedPreferences.getInstance();
     await instance.clear();
-  }
-
-  static Future<Media?> getCachedVideoUrl(String videoId) async {
-    final data = await _getObject('video_$videoId');
-
-    return Media(
-      audio: data?['audio'] ?? '',
-      video: data?['video'] ?? '',
-    );
-  }
-
-  static Future<void> cacheVideoUrl(String videoId, Media data) async {
-    await _setObject('video_$videoId', {
-      'audio': data.audio,
-      'video': data.video,
-    });
   }
 
   static Future<void> storeETag(String levelId, int zipId, String eTag) async {

@@ -44,8 +44,8 @@ class AuthController extends StateNotifier<AuthControllerState> {
 
       final progress = await SharedPref.getCurrProgress();
 
-      final level = progress?['maxLevel'] ?? kAuthRequiredLevel;
-      final subLevel = progress?['maxSubLevel'] ?? 0;
+      final level = progress?.maxLevel ?? kAuthRequiredLevel;
+      final subLevel = progress?.maxSubLevel ?? 0;
 
       if (context.mounted &&
           (user.maxLevel > level || (user.maxLevel == level && user.maxSubLevel >= subLevel))) {

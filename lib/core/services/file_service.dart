@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:flutter_archive/flutter_archive.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,8 +20,10 @@ class FileService {
   static FileService get instance => _instance;
 
   String getLevelZipPath(String levelId, int zipId) {
-    return '${documentsDirectory.path}/levels/zips/$levelId/$zipId.zip';
+    return '$baseZipPath/$levelId/$zipId.zip';
   }
+
+  String get baseZipPath => '${documentsDirectory.path}/levels/zips';
 
   String getLevelVideoDirPath(String levelId) {
     return '${cacheDirectory.path}/levels/videos/$levelId';
@@ -70,6 +73,22 @@ class FileService {
 
   String getUnzippedVideoPath(String levelId, String videoId) {
     return '${getLevelVideoDirPath(levelId)}/$videoId.mp4';
+  }
+
+  int getDirectorySize(Directory directory) {
+    int totalSize = 0;
+    try {
+      List<FileSystemEntity> files = directory.listSync(recursive: true);
+
+      for (var file in files) {
+        if (file is File) {
+          totalSize += file.lengthSync();
+        }
+      }
+    } catch (e) {
+      developer.log("Error calculating directory size: $e", name: 'FileService');
+    }
+    return totalSize;
   }
 }
 

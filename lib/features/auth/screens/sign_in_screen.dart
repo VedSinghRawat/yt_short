@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/shared_pref.dart';
+import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/widgets/loader.dart';
 import 'package:myapp/core/widgets/show_confirmation_dialog.dart';
 import 'package:myapp/features/sublevel/sublevel_controller.dart';
@@ -107,12 +108,19 @@ showLevelChangeConfirmationDialog(
     onResult: (result) async {
       if (result) {
         await SharedPref.setCurrProgress(
-          level: user.maxLevel,
-          subLevel: user.maxSubLevel,
+          Progress(
+            level: user.maxLevel,
+            subLevel: user.maxSubLevel,
+          ),
         );
       }
 
-      await SharedPref.setCurrProgress(maxLevel: user.maxLevel, maxSubLevel: user.maxSubLevel);
+      await SharedPref.setCurrProgress(
+        Progress(
+          maxLevel: user.maxLevel,
+          maxSubLevel: user.maxSubLevel,
+        ),
+      );
 
       await sublevelController.fetchSublevels();
     },
