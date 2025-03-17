@@ -93,7 +93,7 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return YtPlayer(
+    return Player(
       key: Key(widget.uniqueId ?? widget.videoPath),
       videoPath: widget.videoPath,
       uniqueId: widget.uniqueId,

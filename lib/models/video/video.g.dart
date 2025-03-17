@@ -8,7 +8,7 @@ part of 'video.dart';
 
 _$VideoImpl _$$VideoImplFromJson(Map<String, dynamic> json) => _$VideoImpl(
       level: (json['level'] as num).toInt(),
-      subLevel: (json['subLevel'] as num).toInt(),
+      index: (json['index'] as num).toInt(),
       levelId: json['levelId'] as String,
       videoFileName: json['videoFileName'] as String,
     );
@@ -16,7 +16,7 @@ _$VideoImpl _$$VideoImplFromJson(Map<String, dynamic> json) => _$VideoImpl(
 Map<String, dynamic> _$$VideoImplToJson(_$VideoImpl instance) =>
     <String, dynamic>{
       'level': instance.level,
-      'subLevel': instance.subLevel,
+      'index': instance.index,
       'levelId': instance.levelId,
       'videoFileName': instance.videoFileName,
     };

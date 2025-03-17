@@ -1,25 +1,24 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fpdart/fpdart.dart';
+import 'package:myapp/apis/initialize_api.dart';
 import 'package:myapp/core/services/file_service.dart';
+import 'package:myapp/core/services/info_service.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'dart:developer' as developer;
-import 'package:package_info_plus/package_info_plus.dart';
-
-// Global package info that will be set during initialization
-PackageInfo? globalPackageInfo;
 
 class InitializeService {
   UserController userController;
-  PackageInfo packageInfo;
+  InitializeAPI initializeAPI;
 
-  InitializeService({required this.userController, required this.packageInfo});
+  InitializeService({required this.userController, required this.initializeAPI});
 
   Future<void> initialize() async {
     try {
-      // Set global package info for use throughout the app
-      globalPackageInfo = packageInfo;
-
       await FileService.instance.init();
+      await InfoService.instance.init();
+
+      await initializeVersion();
 
       final currProgress = await SharedPref.getCurrProgress();
       final apiUser = await userController.getCurrentUser();
@@ -37,15 +36,25 @@ class InitializeService {
       developer.log('Error during initialize', error: e.toString(), stackTrace: stackTrace);
     }
   }
+
+  Future<void> initializeVersion() async {
+    final version = InfoService.instance.packageInfo.version;
+
+    final versionDataEither = await initializeAPI.initialize(version);
+
+    switch (versionDataEither) {
+      case Left(value: final l):
+        developer.log(l.toString());
+      case Right(value: final r):
+        await InfoService.instance.initVersionData(r);
+    }
+  }
 }
 
 final initializeServiceProvider = FutureProvider<InitializeService>((ref) async {
-  // Load package info early
-  final packageInfo = await PackageInfo.fromPlatform();
-
   final service = InitializeService(
     userController: ref.read(userControllerProvider.notifier),
-    packageInfo: packageInfo,
+    initializeAPI: ref.read(initializeAPIService),
   );
 
   await service.initialize();

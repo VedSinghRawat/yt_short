@@ -11,7 +11,7 @@ _$SpeechExerciseImpl _$$SpeechExerciseImplFromJson(Map<String, dynamic> json) =>
       text: json['text'] as String,
       pauseAt: (json['pauseAt'] as num).toInt(),
       level: (json['level'] as num).toInt(),
-      subLevel: (json['subLevel'] as num).toInt(),
+      index: (json['index'] as num).toInt(),
       levelId: json['levelId'] as String,
       videoFileName: json['videoFileName'] as String,
     );
@@ -22,7 +22,7 @@ Map<String, dynamic> _$$SpeechExerciseImplToJson(
       'text': instance.text,
       'pauseAt': instance.pauseAt,
       'level': instance.level,
-      'subLevel': instance.subLevel,
+      'index': instance.index,
       'levelId': instance.levelId,
       'videoFileName': instance.videoFileName,
     };

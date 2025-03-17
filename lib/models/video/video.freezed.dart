@@ -21,7 +21,7 @@ Video _$VideoFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$Video {
   int get level => throw _privateConstructorUsedError;
-  int get subLevel => throw _privateConstructorUsedError;
+  int get index => throw _privateConstructorUsedError;
   String get levelId => throw _privateConstructorUsedError;
   String get videoFileName => throw _privateConstructorUsedError;
 
@@ -39,7 +39,7 @@ abstract class $VideoCopyWith<$Res> {
   factory $VideoCopyWith(Video value, $Res Function(Video) then) =
       _$VideoCopyWithImpl<$Res, Video>;
   @useResult
-  $Res call({int level, int subLevel, String levelId, String videoFileName});
+  $Res call({int level, int index, String levelId, String videoFileName});
 }
 
 /// @nodoc
@@ -58,7 +58,7 @@ class _$VideoCopyWithImpl<$Res, $Val extends Video>
   @override
   $Res call({
     Object? level = null,
-    Object? subLevel = null,
+    Object? index = null,
     Object? levelId = null,
     Object? videoFileName = null,
   }) {
@@ -67,9 +67,9 @@ class _$VideoCopyWithImpl<$Res, $Val extends Video>
           ? _value.level
           : level // ignore: cast_nullable_to_non_nullable
               as int,
-      subLevel: null == subLevel
-          ? _value.subLevel
-          : subLevel // ignore: cast_nullable_to_non_nullable
+      index: null == index
+          ? _value.index
+          : index // ignore: cast_nullable_to_non_nullable
               as int,
       levelId: null == levelId
           ? _value.levelId
@@ -90,7 +90,7 @@ abstract class _$$VideoImplCopyWith<$Res> implements $VideoCopyWith<$Res> {
       __$$VideoImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({int level, int subLevel, String levelId, String videoFileName});
+  $Res call({int level, int index, String levelId, String videoFileName});
 }
 
 /// @nodoc
@@ -107,7 +107,7 @@ class __$$VideoImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? level = null,
-    Object? subLevel = null,
+    Object? index = null,
     Object? levelId = null,
     Object? videoFileName = null,
   }) {
@@ -116,9 +116,9 @@ class __$$VideoImplCopyWithImpl<$Res>
           ? _value.level
           : level // ignore: cast_nullable_to_non_nullable
               as int,
-      subLevel: null == subLevel
-          ? _value.subLevel
-          : subLevel // ignore: cast_nullable_to_non_nullable
+      index: null == index
+          ? _value.index
+          : index // ignore: cast_nullable_to_non_nullable
               as int,
       levelId: null == levelId
           ? _value.levelId
@@ -137,7 +137,7 @@ class __$$VideoImplCopyWithImpl<$Res>
 class _$VideoImpl with DiagnosticableTreeMixin implements _Video {
   const _$VideoImpl(
       {required this.level,
-      required this.subLevel,
+      required this.index,
       required this.levelId,
       required this.videoFileName});
 
@@ -147,7 +147,7 @@ class _$VideoImpl with DiagnosticableTreeMixin implements _Video {
   @override
   final int level;
   @override
-  final int subLevel;
+  final int index;
   @override
   final String levelId;
   @override
@@ -155,7 +155,7 @@ class _$VideoImpl with DiagnosticableTreeMixin implements _Video {
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'Video(level: $level, subLevel: $subLevel, levelId: $levelId, videoFileName: $videoFileName)';
+    return 'Video(level: $level, index: $index, levelId: $levelId, videoFileName: $videoFileName)';
   }
 
   @override
@@ -164,7 +164,7 @@ class _$VideoImpl with DiagnosticableTreeMixin implements _Video {
     properties
       ..add(DiagnosticsProperty('type', 'Video'))
       ..add(DiagnosticsProperty('level', level))
-      ..add(DiagnosticsProperty('subLevel', subLevel))
+      ..add(DiagnosticsProperty('index', index))
       ..add(DiagnosticsProperty('levelId', levelId))
       ..add(DiagnosticsProperty('videoFileName', videoFileName));
   }
@@ -175,8 +175,7 @@ class _$VideoImpl with DiagnosticableTreeMixin implements _Video {
         (other.runtimeType == runtimeType &&
             other is _$VideoImpl &&
             (identical(other.level, level) || other.level == level) &&
-            (identical(other.subLevel, subLevel) ||
-                other.subLevel == subLevel) &&
+            (identical(other.index, index) || other.index == index) &&
             (identical(other.levelId, levelId) || other.levelId == levelId) &&
             (identical(other.videoFileName, videoFileName) ||
                 other.videoFileName == videoFileName));
@@ -185,7 +184,7 @@ class _$VideoImpl with DiagnosticableTreeMixin implements _Video {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode =>
-      Object.hash(runtimeType, level, subLevel, levelId, videoFileName);
+      Object.hash(runtimeType, level, index, levelId, videoFileName);
 
   /// Create a copy of Video
   /// with the given fields replaced by the non-null parameter values.
@@ -206,7 +205,7 @@ class _$VideoImpl with DiagnosticableTreeMixin implements _Video {
 abstract class _Video implements Video {
   const factory _Video(
       {required final int level,
-      required final int subLevel,
+      required final int index,
       required final String levelId,
       required final String videoFileName}) = _$VideoImpl;
 
@@ -215,7 +214,7 @@ abstract class _Video implements Video {
   @override
   int get level;
   @override
-  int get subLevel;
+  int get index;
   @override
   String get levelId;
   @override

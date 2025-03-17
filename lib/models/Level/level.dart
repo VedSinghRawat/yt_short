@@ -10,8 +10,9 @@ class Level with _$Level {
   const factory Level({
     required String id,
     required String title,
-    required String nextId,
-    required String prevId,
+    String? nextId,
+    String? prevId,
+    required int subLevelCount,
   }) = _Level;
 
   factory Level.fromJson(Map<String, dynamic> json) => _$LevelFromJson(json);
@@ -22,6 +23,7 @@ class Level with _$Level {
       title: levelDTO.title,
       nextId: levelDTO.nextId,
       prevId: levelDTO.prevId,
+      subLevelCount: levelDTO.subLevels.length,
     );
   }
 }
@@ -31,8 +33,8 @@ class LevelDTO with _$LevelDTO {
   const factory LevelDTO({
     required String id,
     required String title,
-    required String nextId,
-    required String prevId,
+    String? nextId,
+    String? prevId,
     required List<SubLevelDTO> subLevels,
   }) = _LevelDTO;
 

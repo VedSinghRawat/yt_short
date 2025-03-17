@@ -1,4 +1,9 @@
+import 'dart:developer' as dev;
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:fpdart/fpdart.dart';
+import 'package:myapp/core/error/failure.dart';
 
 void showErrorSnackBar(BuildContext context, String message) {
   if (!context.mounted) return;
@@ -44,3 +49,8 @@ num getMax(List<num?> numbers) {
   }
   return maxVal;
 }
+
+// type alias for fpdart
+typedef FutureEither<T> = Future<Either<Failure, T>>;
+
+typedef FutureVoid = FutureEither<void>;

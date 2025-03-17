@@ -16,11 +16,10 @@ final _privateConstructorUsedError = UnsupportedError(
 
 /// @nodoc
 mixin _$SublevelControllerState {
-  Map<String, SubLevel> get sublevelMap => throw _privateConstructorUsedError;
-  Map<int, int> get subLevelCountByLevel => throw _privateConstructorUsedError;
+  Set<SubLevel> get sublevels => throw _privateConstructorUsedError;
   bool? get loading => throw _privateConstructorUsedError;
   bool get hasFinishedVideo => throw _privateConstructorUsedError;
-  Level? get currentLevel => throw _privateConstructorUsedError;
+  Map<int, Level?>? get levelByLevelNum => throw _privateConstructorUsedError;
 
   /// Create a copy of SublevelControllerState
   /// with the given fields replaced by the non-null parameter values.
@@ -36,13 +35,10 @@ abstract class $SublevelControllerStateCopyWith<$Res> {
       _$SublevelControllerStateCopyWithImpl<$Res, SublevelControllerState>;
   @useResult
   $Res call(
-      {Map<String, SubLevel> sublevelMap,
-      Map<int, int> subLevelCountByLevel,
+      {Set<SubLevel> sublevels,
       bool? loading,
       bool hasFinishedVideo,
-      Level? currentLevel});
-
-  $LevelCopyWith<$Res>? get currentLevel;
+      Map<int, Level?>? levelByLevelNum});
 }
 
 /// @nodoc
@@ -61,21 +57,16 @@ class _$SublevelControllerStateCopyWithImpl<$Res,
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? sublevelMap = null,
-    Object? subLevelCountByLevel = null,
+    Object? sublevels = null,
     Object? loading = freezed,
     Object? hasFinishedVideo = null,
-    Object? currentLevel = freezed,
+    Object? levelByLevelNum = freezed,
   }) {
     return _then(_value.copyWith(
-      sublevelMap: null == sublevelMap
-          ? _value.sublevelMap
-          : sublevelMap // ignore: cast_nullable_to_non_nullable
-              as Map<String, SubLevel>,
-      subLevelCountByLevel: null == subLevelCountByLevel
-          ? _value.subLevelCountByLevel
-          : subLevelCountByLevel // ignore: cast_nullable_to_non_nullable
-              as Map<int, int>,
+      sublevels: null == sublevels
+          ? _value.sublevels
+          : sublevels // ignore: cast_nullable_to_non_nullable
+              as Set<SubLevel>,
       loading: freezed == loading
           ? _value.loading
           : loading // ignore: cast_nullable_to_non_nullable
@@ -84,25 +75,11 @@ class _$SublevelControllerStateCopyWithImpl<$Res,
           ? _value.hasFinishedVideo
           : hasFinishedVideo // ignore: cast_nullable_to_non_nullable
               as bool,
-      currentLevel: freezed == currentLevel
-          ? _value.currentLevel
-          : currentLevel // ignore: cast_nullable_to_non_nullable
-              as Level?,
+      levelByLevelNum: freezed == levelByLevelNum
+          ? _value.levelByLevelNum
+          : levelByLevelNum // ignore: cast_nullable_to_non_nullable
+              as Map<int, Level?>?,
     ) as $Val);
-  }
-
-  /// Create a copy of SublevelControllerState
-  /// with the given fields replaced by the non-null parameter values.
-  @override
-  @pragma('vm:prefer-inline')
-  $LevelCopyWith<$Res>? get currentLevel {
-    if (_value.currentLevel == null) {
-      return null;
-    }
-
-    return $LevelCopyWith<$Res>(_value.currentLevel!, (value) {
-      return _then(_value.copyWith(currentLevel: value) as $Val);
-    });
   }
 }
 
@@ -116,14 +93,10 @@ abstract class _$$SublevelControllerStateImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {Map<String, SubLevel> sublevelMap,
-      Map<int, int> subLevelCountByLevel,
+      {Set<SubLevel> sublevels,
       bool? loading,
       bool hasFinishedVideo,
-      Level? currentLevel});
-
-  @override
-  $LevelCopyWith<$Res>? get currentLevel;
+      Map<int, Level?>? levelByLevelNum});
 }
 
 /// @nodoc
@@ -141,21 +114,16 @@ class __$$SublevelControllerStateImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? sublevelMap = null,
-    Object? subLevelCountByLevel = null,
+    Object? sublevels = null,
     Object? loading = freezed,
     Object? hasFinishedVideo = null,
-    Object? currentLevel = freezed,
+    Object? levelByLevelNum = freezed,
   }) {
     return _then(_$SublevelControllerStateImpl(
-      sublevelMap: null == sublevelMap
-          ? _value._sublevelMap
-          : sublevelMap // ignore: cast_nullable_to_non_nullable
-              as Map<String, SubLevel>,
-      subLevelCountByLevel: null == subLevelCountByLevel
-          ? _value._subLevelCountByLevel
-          : subLevelCountByLevel // ignore: cast_nullable_to_non_nullable
-              as Map<int, int>,
+      sublevels: null == sublevels
+          ? _value._sublevels
+          : sublevels // ignore: cast_nullable_to_non_nullable
+              as Set<SubLevel>,
       loading: freezed == loading
           ? _value.loading
           : loading // ignore: cast_nullable_to_non_nullable
@@ -164,10 +132,10 @@ class __$$SublevelControllerStateImplCopyWithImpl<$Res>
           ? _value.hasFinishedVideo
           : hasFinishedVideo // ignore: cast_nullable_to_non_nullable
               as bool,
-      currentLevel: freezed == currentLevel
-          ? _value.currentLevel
-          : currentLevel // ignore: cast_nullable_to_non_nullable
-              as Level?,
+      levelByLevelNum: freezed == levelByLevelNum
+          ? _value._levelByLevelNum
+          : levelByLevelNum // ignore: cast_nullable_to_non_nullable
+              as Map<int, Level?>?,
     ));
   }
 }
@@ -178,31 +146,20 @@ class _$SublevelControllerStateImpl
     with DiagnosticableTreeMixin
     implements _SublevelControllerState {
   const _$SublevelControllerStateImpl(
-      {final Map<String, SubLevel> sublevelMap = const {},
-      final Map<int, int> subLevelCountByLevel = const {},
+      {final Set<SubLevel> sublevels = const {},
       this.loading,
       this.hasFinishedVideo = false,
-      this.currentLevel})
-      : _sublevelMap = sublevelMap,
-        _subLevelCountByLevel = subLevelCountByLevel;
+      final Map<int, Level?>? levelByLevelNum = null})
+      : _sublevels = sublevels,
+        _levelByLevelNum = levelByLevelNum;
 
-  final Map<String, SubLevel> _sublevelMap;
+  final Set<SubLevel> _sublevels;
   @override
   @JsonKey()
-  Map<String, SubLevel> get sublevelMap {
-    if (_sublevelMap is EqualUnmodifiableMapView) return _sublevelMap;
+  Set<SubLevel> get sublevels {
+    if (_sublevels is EqualUnmodifiableSetView) return _sublevels;
     // ignore: implicit_dynamic_type
-    return EqualUnmodifiableMapView(_sublevelMap);
-  }
-
-  final Map<int, int> _subLevelCountByLevel;
-  @override
-  @JsonKey()
-  Map<int, int> get subLevelCountByLevel {
-    if (_subLevelCountByLevel is EqualUnmodifiableMapView)
-      return _subLevelCountByLevel;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableMapView(_subLevelCountByLevel);
+    return EqualUnmodifiableSetView(_sublevels);
   }
 
   @override
@@ -210,12 +167,20 @@ class _$SublevelControllerStateImpl
   @override
   @JsonKey()
   final bool hasFinishedVideo;
+  final Map<int, Level?>? _levelByLevelNum;
   @override
-  final Level? currentLevel;
+  @JsonKey()
+  Map<int, Level?>? get levelByLevelNum {
+    final value = _levelByLevelNum;
+    if (value == null) return null;
+    if (_levelByLevelNum is EqualUnmodifiableMapView) return _levelByLevelNum;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(value);
+  }
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'SublevelControllerState(sublevelMap: $sublevelMap, subLevelCountByLevel: $subLevelCountByLevel, loading: $loading, hasFinishedVideo: $hasFinishedVideo, currentLevel: $currentLevel)';
+    return 'SublevelControllerState(sublevels: $sublevels, loading: $loading, hasFinishedVideo: $hasFinishedVideo, levelByLevelNum: $levelByLevelNum)';
   }
 
   @override
@@ -223,11 +188,10 @@ class _$SublevelControllerStateImpl
     super.debugFillProperties(properties);
     properties
       ..add(DiagnosticsProperty('type', 'SublevelControllerState'))
-      ..add(DiagnosticsProperty('sublevelMap', sublevelMap))
-      ..add(DiagnosticsProperty('subLevelCountByLevel', subLevelCountByLevel))
+      ..add(DiagnosticsProperty('sublevels', sublevels))
       ..add(DiagnosticsProperty('loading', loading))
       ..add(DiagnosticsProperty('hasFinishedVideo', hasFinishedVideo))
-      ..add(DiagnosticsProperty('currentLevel', currentLevel));
+      ..add(DiagnosticsProperty('levelByLevelNum', levelByLevelNum));
   }
 
   @override
@@ -236,24 +200,21 @@ class _$SublevelControllerStateImpl
         (other.runtimeType == runtimeType &&
             other is _$SublevelControllerStateImpl &&
             const DeepCollectionEquality()
-                .equals(other._sublevelMap, _sublevelMap) &&
-            const DeepCollectionEquality()
-                .equals(other._subLevelCountByLevel, _subLevelCountByLevel) &&
+                .equals(other._sublevels, _sublevels) &&
             (identical(other.loading, loading) || other.loading == loading) &&
             (identical(other.hasFinishedVideo, hasFinishedVideo) ||
                 other.hasFinishedVideo == hasFinishedVideo) &&
-            (identical(other.currentLevel, currentLevel) ||
-                other.currentLevel == currentLevel));
+            const DeepCollectionEquality()
+                .equals(other._levelByLevelNum, _levelByLevelNum));
   }
 
   @override
   int get hashCode => Object.hash(
       runtimeType,
-      const DeepCollectionEquality().hash(_sublevelMap),
-      const DeepCollectionEquality().hash(_subLevelCountByLevel),
+      const DeepCollectionEquality().hash(_sublevels),
       loading,
       hasFinishedVideo,
-      currentLevel);
+      const DeepCollectionEquality().hash(_levelByLevelNum));
 
   /// Create a copy of SublevelControllerState
   /// with the given fields replaced by the non-null parameter values.
@@ -267,22 +228,19 @@ class _$SublevelControllerStateImpl
 
 abstract class _SublevelControllerState implements SublevelControllerState {
   const factory _SublevelControllerState(
-      {final Map<String, SubLevel> sublevelMap,
-      final Map<int, int> subLevelCountByLevel,
+      {final Set<SubLevel> sublevels,
       final bool? loading,
       final bool hasFinishedVideo,
-      final Level? currentLevel}) = _$SublevelControllerStateImpl;
+      final Map<int, Level?>? levelByLevelNum}) = _$SublevelControllerStateImpl;
 
   @override
-  Map<String, SubLevel> get sublevelMap;
-  @override
-  Map<int, int> get subLevelCountByLevel;
+  Set<SubLevel> get sublevels;
   @override
   bool? get loading;
   @override
   bool get hasFinishedVideo;
   @override
-  Level? get currentLevel;
+  Map<int, Level?>? get levelByLevelNum;
 
   /// Create a copy of SublevelControllerState
   /// with the given fields replaced by the non-null parameter values.

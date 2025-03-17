@@ -7,13 +7,13 @@ import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
-class YtPlayer extends ConsumerStatefulWidget {
+class Player extends ConsumerStatefulWidget {
   final String videoPath;
   final String? uniqueId;
 
   final void Function(VideoPlayerController controller)? onControllerInitialized;
 
-  const YtPlayer({
+  const Player({
     super.key,
     required this.videoPath,
     this.uniqueId,
@@ -21,10 +21,10 @@ class YtPlayer extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<YtPlayer> createState() => _YtPlayerState();
+  ConsumerState<Player> createState() => _PlayerState();
 }
 
-class _YtPlayerState extends ConsumerState<YtPlayer> {
+class _PlayerState extends ConsumerState<Player> {
   VideoPlayerController? _videoController;
 
   bool _showPlayPauseIcon = false;

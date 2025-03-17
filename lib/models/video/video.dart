@@ -8,7 +8,7 @@ part 'video.freezed.dart';
 class Video with _$Video {
   const factory Video({
     required int level,
-    required int subLevel,
+    required int index,
     required String levelId,
     required String videoFileName,
   }) = _Video;

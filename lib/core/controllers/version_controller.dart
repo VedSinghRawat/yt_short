@@ -2,8 +2,9 @@ import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:myapp/apis/version_api.dart';
+import 'package:myapp/apis/initialize_api.dart';
 import 'package:myapp/constants/constants.dart';
+import 'package:myapp/core/services/info_service.dart';
 import 'package:myapp/core/services/initialize_service.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -36,18 +37,19 @@ final versionControllerProvider = StateNotifierProvider<VersionController, Versi
   // Wait for initialization to complete
   ref.watch(initializeServiceProvider);
   // Use the global package info that's guaranteed to be loaded
-  return VersionController(ref.read(versionAPIService), globalPackageInfo!);
+  return VersionController(ref.read(infoServiceProvider));
 });
 
 class VersionController extends StateNotifier<VersionState> {
-  final VersionAPI _versionAPI;
-  final PackageInfo _packageInfo;
+  final InfoService _infoService;
 
-  VersionController(this._versionAPI, this._packageInfo) : super(const VersionState());
+  VersionController(this._infoService) : super(const VersionState());
 
   Future<void> checkVersion(BuildContext context) async {
     try {
-      final versionRes = await _versionAPI.getVersion(_packageInfo.version);
+      final versionRes = _infoService.versionData;
+
+      if (versionRes == null) return;
 
       state = state.copyWith(
         content: versionRes['content'],
@@ -60,7 +62,7 @@ class VersionController extends StateNotifier<VersionState> {
 
   Future<void> openStore(BuildContext context) async {
     final platformUrl = Platform.isAndroid
-        ? kPlayStoreBaseUrl + _packageInfo.packageName
+        ? kPlayStoreBaseUrl + _infoService.packageInfo.packageName
         : kAppStoreBaseUrl + kIOSAppId;
 
     final Uri url = Uri.parse(Uri.encodeFull(platformUrl));

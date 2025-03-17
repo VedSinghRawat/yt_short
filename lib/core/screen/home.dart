@@ -114,15 +114,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> syncLocalProgress(
-      int level, int subLevel, int localMaxLevel, int localMaxSubLevel) async {
-    final isLocalLevelAfter = isLevelAfter(level, subLevel, localMaxLevel, localMaxSubLevel);
+    int level,
+    int sublevelIndex,
+    String levelId,
+    int localMaxLevel,
+    int localMaxSubLevel,
+  ) async {
+    final isLocalLevelAfter = isLevelAfter(level, sublevelIndex, localMaxLevel, localMaxSubLevel);
 
     // Update the user's current progress in shared preferences
     await SharedPref.setCurrProgress(
       level: level,
-      subLevel: subLevel,
+      subLevel: sublevelIndex,
+      levelId: levelId,
       maxLevel: isLocalLevelAfter ? level : localMaxLevel,
-      maxSubLevel: isLocalLevelAfter ? subLevel : localMaxSubLevel,
+      maxSubLevel: isLocalLevelAfter ? sublevelIndex : localMaxSubLevel,
     );
   }
 
@@ -135,7 +141,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // Get the sublevel, level, and sublevel for the current index
     final sublevel = _cachedSublevels![index];
     final level = sublevel.level;
-    final subLevel = sublevel.subLevel;
+    final sublevelIndex = sublevel.index;
 
     // Get the user's email
     final user = ref.read(userControllerProvider).currentUser;
@@ -151,7 +157,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       max(user?.maxLevel ?? 0, localMaxLevel),
       max(user?.maxSubLevel ?? 0, localMaxSubLevel),
       level,
-      subLevel,
+      sublevelIndex,
       localProgress != null,
       user?.isAdmin == true,
     )) {
@@ -163,7 +169,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final userEmail = user?.email ?? '';
 
     // Sync the local progress
-    await syncLocalProgress(level, subLevel, localMaxLevel, localMaxSubLevel);
+    await syncLocalProgress(
+      level,
+      sublevelIndex,
+      sublevel.levelId,
+      localMaxLevel,
+      localMaxSubLevel,
+    );
 
     // If the level requires auth and the user is not logged in, redirect to sign in
     if (level > kAuthRequiredLevel && userEmail.isEmpty && mounted) {
@@ -175,41 +187,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     await handleFetchSublevels(index, _cachedSublevels!);
 
     // If the user is logged in, add an activity log entry
-    await SharedPref.addActivityLog(level, subLevel, userEmail);
+    await SharedPref.addActivityLog(level, sublevelIndex, userEmail);
 
     // Sync the progress with db if the user moves to a new level
-    await syncProgress(index, _cachedSublevels!, userEmail, level, subLevel);
+    await syncProgress(index, _cachedSublevels!, userEmail, level, sublevelIndex);
 
     // Sync the last sync time with the server
     await syncActivityLogs();
   }
 
-  List<SubLevel> _getSortedSublevels(Map<String, SubLevel> sublevelMap) {
-    final sublevels = sublevelMap.values.toList();
-    sublevels.sort((a, b) {
-      final levelA = a.level;
-      final levelB = b.level;
+  List<SubLevel> _getSortedSublevels(List<SubLevel> sublevels) {
+    return [...sublevels]..sort((a, b) {
+        final levelA = a.level;
+        final levelB = b.level;
 
-      if (levelA != levelB) {
-        return levelA.compareTo(levelB);
-      }
+        if (levelA != levelB) {
+          return levelA.compareTo(levelB);
+        }
 
-      final subLevelA = a.subLevel;
-      final subLevelB = b.subLevel;
+        final subLevelA = a.index;
+        final subLevelB = b.index;
 
-      return subLevelA.compareTo(subLevelB);
-    });
-    return sublevels;
+        return subLevelA.compareTo(subLevelB);
+      });
   }
 
   @override
   Widget build(BuildContext context) {
     final loading = ref.watch(sublevelControllerProvider.select((state) => state.loading));
-    final sublevelMap = ref.watch(sublevelControllerProvider.select((state) => state.sublevelMap));
+    final sublevels = ref.watch(sublevelControllerProvider.select((state) => state.sublevels));
 
     // Only sort sublevels if they have changed
-    if (_cachedSublevels == null || !listEquals(_cachedSublevels, sublevelMap.values.toList())) {
-      _cachedSublevels = _getSortedSublevels(sublevelMap);
+    if (_cachedSublevels == null || !listEquals(_cachedSublevels, sublevels.toList())) {
+      _cachedSublevels = _getSortedSublevels(sublevels.toList());
     }
 
     if (loading != false && _cachedSublevels!.isEmpty) {

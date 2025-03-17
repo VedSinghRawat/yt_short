@@ -33,6 +33,7 @@ class ApiService {
     Map<String, dynamic>? body,
     Map<String, String>? headers,
     String? customBaseUrl,
+    ResponseType? responseType,
   }) async {
     final String? token = await getToken();
 
@@ -43,7 +44,8 @@ class ApiService {
     };
 
     try {
-      final options = Options(method: method.name.toUpperCase(), headers: effectiveHeaders);
+      final options = Options(
+          method: method.name.toUpperCase(), headers: effectiveHeaders, responseType: responseType);
       return await _dio.request(
           customBaseUrl != null ? '$customBaseUrl$endpoint' : '$baseUrl$endpoint',
           data: body,
@@ -65,14 +67,17 @@ class ApiService {
     Map<String, dynamic>? body,
     String? customBaseUrl,
     Map<String, String>? headers,
+    ResponseType? responseType,
   }) async {
     try {
       return await _makeRequest<T>(
-          endpoint: endpoint,
-          method: method,
-          body: body,
-          headers: headers,
-          customBaseUrl: customBaseUrl);
+        endpoint: endpoint,
+        method: method,
+        body: body,
+        headers: headers,
+        customBaseUrl: customBaseUrl,
+        responseType: responseType,
+      );
     } on DioException catch (e) {
       developer.log('DioException: ${e.response}');
       if (e.response?.data == null ||

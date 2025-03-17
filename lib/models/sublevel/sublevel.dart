@@ -20,11 +20,15 @@ class SubLevel with _$SubLevel {
   }
 
   factory SubLevel.fromSubLevelDTO(
-      SubLevelDTO subLevelDTO, int level, int subLevel, String levelId) {
+    SubLevelDTO subLevelDTO,
+    int level,
+    int index,
+    String levelId,
+  ) {
     final json = subLevelDTO.toJson();
 
     json["level"] = level;
-    json["subLevel"] = subLevel;
+    json["index"] = index;
     json["levelId"] = levelId;
 
     return SubLevel.fromJson(json);
@@ -40,9 +44,9 @@ class SubLevel with _$SubLevel {
         video: (video) => video.level,
       );
 
-  int get subLevel => when(
-        speechExercise: (speechExercise) => speechExercise.subLevel,
-        video: (video) => video.subLevel,
+  int get index => when(
+        speechExercise: (speechExercise) => speechExercise.index,
+        video: (video) => video.index,
       );
 
   String get videoFileName => when(

@@ -10,7 +10,7 @@ class SpeechExercise with _$SpeechExercise {
     required String text,
     required int pauseAt,
     required int level,
-    required int subLevel,
+    required int index,
     required String levelId,
     required String videoFileName,
   }) = _SpeechExercise;

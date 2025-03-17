@@ -2,7 +2,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/core/services/file_service.dart';
-import 'package:myapp/core/util_classes.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/widgets/loader.dart';
 import 'package:myapp/core/widgets/player.dart';
@@ -35,7 +34,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
 
     final jumpTo = widget.sublevels.indexWhere(
       (sublevel) =>
-          (sublevel.subLevel == progress?['subLevel'] && sublevel.level == progress?['level']),
+          (sublevel.index == progress?['subLevel'] && sublevel.level == progress?['level']),
     );
 
     if (jumpTo >= widget.sublevels.length || jumpTo < 0) return;
@@ -46,7 +45,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
 
     await SharedPref.setCurrProgress(
       level: jumpSublevel.level,
-      subLevel: jumpSublevel.subLevel,
+      subLevel: jumpSublevel.index,
     );
   }
 
@@ -100,7 +99,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
           return const SizedBox.shrink();
         }
 
-        final positionText = '${sublevel.level}-${sublevel.subLevel}';
+        final positionText = '${sublevel.level}-${sublevel.index}';
 
         final url = ref
             .read(fileServiceProvider)
@@ -110,7 +109,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
           children: [
             Center(
               child: sublevel.when(
-                video: (video) => YtPlayer(
+                video: (video) => Player(
                   key: Key(positionText),
                   uniqueId: positionText,
                   videoPath: url,

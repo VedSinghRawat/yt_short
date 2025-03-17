@@ -23,26 +23,27 @@ class FileService {
   }
 
   String getLevelVideoDirPath(String levelId) {
-    return '${cacheDirectory.path}/levels/videos/$levelId/';
+    return '${cacheDirectory.path}/levels/videos/$levelId';
   }
 
-  Future<Directory?> unzip(Directory zipDir) async {
-    final file = File(zipDir.path);
+  Future<Directory?> unzip(File zipFile, Directory destinationDir) async {
+    if (!zipFile.existsSync()) return null;
 
-    if (!file.existsSync()) return null;
+    await destinationDir.create(recursive: true);
 
     await ZipFile.extractToDirectory(
-      zipFile: file,
-      destinationDir: zipDir,
+      zipFile: zipFile,
+      destinationDir: destinationDir,
     );
-
-    return zipDir;
+    return destinationDir;
   }
 
   Future<Directory?> extrectStoredZip(String levelId, int zipId) async {
     final file = File(getLevelZipPath(levelId, zipId));
 
-    return unzip(Directory(file.path));
+    final destinationDir = Directory(getLevelVideoDirPath(levelId));
+
+    return unzip(file, destinationDir);
   }
 
   Future<void> deleteStoredZip(String levelId, int zipId) async {

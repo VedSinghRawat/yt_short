@@ -1,11 +1,13 @@
-import 'dart:developer' as developer;
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:myapp/apis/sub_level_api.dart';
+import 'package:myapp/core/console.dart';
 import 'package:myapp/core/services/file_service.dart';
 import 'package:myapp/core/shared_pref.dart';
-import 'package:myapp/models/sublevel/sublevel.dart';
+import 'package:myapp/core/utils.dart';
 
 class SubLevelService {
   final FileService fileService;
@@ -27,9 +29,13 @@ class SubLevelService {
   }
 
   Future<String?> getSubLevelFile(String levelId, int zipNumber) async {
+    Console.timeStart('getSubLevelFile');
     await getZip(levelId, zipNumber);
+    Console.timeEnd('getSubLevelFile');
 
+    Console.timeStart('extrectStoredZip');
     final unzipDir = await fileService.extrectStoredZip(levelId, zipNumber);
+    Console.timeEnd('extrectStoredZip');
 
     return unzipDir?.path;
   }
@@ -37,9 +43,11 @@ class SubLevelService {
   Future<String?> getZip(String levelId, int zipNumber) async {
     final eTag = await SharedPref.getETag(levelId, zipNumber);
 
-    final zipData = await subLevelAPI.getZipData(levelId, zipNumber, eTag: eTag);
+    final zipDataEither = await subLevelAPI.getZipData(levelId, zipNumber, eTag: eTag);
 
-    if (zipData == null) {
+    final zipData = zipDataEither.getRight().toNullable();
+
+    if (zipDataEither.isLeft() || zipData == null) {
       return fileService.getLevelZipPath(levelId, zipNumber);
     }
 
@@ -47,7 +55,9 @@ class SubLevelService {
 
     final file = File(fileService.getLevelZipPath(levelId, zipNumber));
 
-    await file.writeAsBytes(zipData.zipFile.codeUnits);
+    await Directory(file.parent.path).create(recursive: true);
+
+    await file.writeAsBytes(zipData.zipFile);
 
     return file.path;
   }

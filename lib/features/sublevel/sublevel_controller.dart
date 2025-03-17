@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:myapp/apis/level_api.dart';
 import 'package:myapp/constants/constants.dart';
+import 'package:myapp/core/console.dart';
 import 'package:myapp/core/services/file_service.dart';
 import 'package:myapp/core/services/sub_level_service.dart';
 import 'package:myapp/features/user/user_controller.dart';
@@ -16,11 +17,10 @@ part 'sublevel_controller.freezed.dart';
 @freezed
 class SublevelControllerState with _$SublevelControllerState {
   const factory SublevelControllerState({
-    @Default({}) Map<String, SubLevel> sublevelMap,
-    @Default({}) Map<int, int> subLevelCountByLevel,
+    @Default({}) Set<SubLevel> sublevels,
     bool? loading,
     @Default(false) bool hasFinishedVideo,
-    Level? currentLevel,
+    @Default(null) Map<int, Level?>? levelByLevelNum,
   }) = _SublevelControllerState;
 }
 
@@ -40,27 +40,25 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
   }) : super(const SublevelControllerState());
 
   Future<void> _listByLevel(String levelId, int level) async {
-    if (state.subLevelCountByLevel.containsKey(levelId) || state.loading == true) return;
+    if (state.levelByLevelNum?[level] != null || state.loading == true) return;
 
     state = state.copyWith(loading: true);
     try {
+      Console.timeStart('getById $levelId');
       final levelDTO = await levelApi.getById(levelId);
 
-      Map<String, SubLevel> sublevelMap = {...state.sublevelMap};
-      Map<int, int> subLevelCountByLevel = {...state.subLevelCountByLevel};
-
-      subLevelCountByLevel[level] = levelDTO.subLevels.length;
+      final sublevels = {...state.sublevels};
+      final isFirstLaunch = sublevels.isEmpty;
 
       final currSubLevel = await userController.subLevel;
 
-      final isFirstLounch = subLevelCountByLevel.isEmpty;
-
-      if (isFirstLounch) {
+      if (isFirstLaunch) {
         final subLevelDTO = await _fetchCurrSubLevel(levelDTO);
+        final isVideoExists =
+            await fileService.isVideoExists(levelDTO.id, subLevelDTO.videoFileName);
 
-        if (await fileService.isVideoExists(levelDTO.id, subLevelDTO.videoFileName)) {
-          sublevelMap["${levelDTO.id}-$currSubLevel"] =
-              SubLevel.fromSubLevelDTO(subLevelDTO, level, currSubLevel, levelId);
+        if (isVideoExists) {
+          sublevels.add(SubLevel.fromSubLevelDTO(subLevelDTO, level, currSubLevel, levelId));
         }
       }
 
@@ -70,31 +68,53 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
 
       for (var (index, sublevelDTO) in levelDTO.subLevels.indexed) {
         final subLevelNumber = index + 1;
+        final isVideoExists =
+            await fileService.isVideoExists(levelDTO.id, sublevelDTO.videoFileName);
 
-        if (!await fileService.isVideoExists(levelDTO.id, sublevelDTO.videoFileName)) continue;
+        if (!isVideoExists) continue;
 
         SubLevel subLevel = SubLevel.fromSubLevelDTO(sublevelDTO, level, subLevelNumber, levelId);
 
-        sublevelMap["${levelDTO.id}-$subLevelNumber"] = subLevel;
+        sublevels.add(subLevel);
       }
 
-      // Update state
-      state = state.copyWith(
-        sublevelMap: sublevelMap,
-        subLevelCountByLevel: subLevelCountByLevel,
-      );
+      _updateState(level, levelId, levelDTO, sublevels);
 
       // Fetch next and previous levels if first launch
-      if (isFirstLounch) {
-        await _listByLevel(levelDTO.nextId, level + 1);
-        await _listByLevel(levelDTO.prevId, level - 1);
+      if (isFirstLaunch) {
+        if (levelDTO.nextId != null) await _listByLevel(levelDTO.nextId!, level + 1);
+        if (levelDTO.prevId != null) await _listByLevel(levelDTO.prevId!, level - 1);
       }
+
+      Console.timeEnd('getById $levelId');
     } catch (e, stackTrace) {
       developer.log('Error in SublevelController._listByLevel',
           error: e.toString(), stackTrace: stackTrace);
     } finally {
       state = state.copyWith(loading: false);
     }
+  }
+
+  void _updateState(int level, String levelId, LevelDTO levelDTO, Set<SubLevel> sublevels) {
+    final Map<int, Level?> levelByLevelNum = {
+      if (state.levelByLevelNum != null) ...state.levelByLevelNum!,
+      level: Level.fromLevelDTO(levelDTO),
+    };
+
+    if (levelDTO.nextId != null && levelByLevelNum[level + 1] == null) {
+      levelByLevelNum[level + 1] = null;
+    }
+
+    if (levelDTO.prevId != null && levelByLevelNum[level - 1] == null) {
+      levelByLevelNum[level - 1] = null;
+    }
+
+    // Update state
+    state = state.copyWith(
+      sublevels: sublevels,
+      levelByLevelNum: levelByLevelNum,
+      loading: false,
+    );
   }
 
   Future<SubLevelDTO> _fetchCurrSubLevel(LevelDTO currLevelDTO) async {
@@ -107,34 +127,46 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
     return subLevelDTO;
   }
 
+  bool _isLevelInCache(int level) {
+    return state.levelByLevelNum?[level] != null;
+  }
+
   Future<void> fetchSublevels() async {
     final currUserLevel = await userController.level;
     final currUserSubLevel = await userController.subLevel;
 
-    final fetchCurrLevel = !state.subLevelCountByLevel.containsKey(currUserLevel);
-    final currLevel = state.currentLevel;
+    final fetchCurrLevel = !_isLevelInCache(currUserLevel);
+
+    final currLevelId = state.levelByLevelNum?[currUserLevel]?.id ??
+        userController.currentUser?.levelId ??
+        'lS_7kKC2Etk'; // TODO: change from info service not its dummy
+
+    final prevLevelId = state.levelByLevelNum?[currUserLevel - 1]?.id;
+    final nextLevelId = state.levelByLevelNum?[currUserLevel + 1]?.id;
 
     // Fetch the current level if not already in cache
     if (fetchCurrLevel) {
-      await _listByLevel(currLevel!.id, currUserLevel);
+      await _listByLevel(currLevelId, currUserLevel);
     }
 
     final prevLevel = currUserLevel - 1;
-    final fetchPrevLevel = currUserSubLevel < kSubLevelAPIBuffer &&
-        prevLevel >= 1 &&
-        !state.subLevelCountByLevel.containsKey(prevLevel);
+    final fetchPrevLevel =
+        currUserSubLevel < kSubLevelAPIBuffer && prevLevel >= 1 && !_isLevelInCache(prevLevel);
     // Fetch previous level if near start of sublevels
-    if (fetchPrevLevel) {
-      await _listByLevel(currLevel!.prevId, prevLevel);
+    if (fetchPrevLevel && prevLevelId != null) {
+      await _listByLevel(prevLevelId, prevLevel);
     }
 
-    final currLevelSublevelCount = state.subLevelCountByLevel[currUserLevel] ?? 0;
+    final currLevelSublevelCount = state.levelByLevelNum?[currUserLevel]?.subLevelCount ?? 0;
+
     final nextLevel = currUserLevel + 1;
+
     final fetchNextLevel = currUserSubLevel > currLevelSublevelCount - kSubLevelAPIBuffer &&
-        !state.subLevelCountByLevel.containsKey(nextLevel);
+        !_isLevelInCache(nextLevel);
+
     // Fetch next level if near the end of sublevels
-    if (fetchNextLevel) {
-      await _listByLevel(currLevel!.nextId, nextLevel);
+    if (fetchNextLevel && nextLevelId != null) {
+      await _listByLevel(nextLevelId, nextLevel);
     }
   }
 
