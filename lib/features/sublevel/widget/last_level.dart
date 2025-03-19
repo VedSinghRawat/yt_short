@@ -12,14 +12,14 @@ class LastLevelWidget extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Text(
-            'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+            'These are all the lessons for now, Check in after sometime for new content',
             style: TextStyle(fontSize: 18, color: Colors.white),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),
           ElevatedButton(
             onPressed: onRefresh,
-            child: const Text('Refresh Data'),
+            child: const Text('Reload Videos!'),
           ),
         ],
       ),

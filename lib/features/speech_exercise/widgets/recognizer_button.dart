@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:myapp/core/widgets/active_mic.dart';
 import 'package:myapp/features/speech_exercise/widgets/recognizer.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class RecognizerButton extends StatefulWidget {
   final bool testCompleted;
@@ -27,6 +28,7 @@ class RecognizerButton extends StatefulWidget {
 
 class _RecognizerButtonState extends State<RecognizerButton> {
   late SpeechRecognizer _recognizer;
+  bool isListening = false;
 
   @override
   void initState() {
@@ -34,24 +36,42 @@ class _RecognizerButtonState extends State<RecognizerButton> {
     _recognizer = SpeechRecognizer(
       onResult: widget.onResult,
       onStopListenting: widget.onStopListening,
+      onStatusChange: (status) {
+        if (status == stt.SpeechToText.doneStatus && isListening) {
+          setState(() {
+            isListening = false;
+          });
+        }
+      },
     );
+  }
+
+  Future<void> stopListening() async {
+    await _recognizer.stopListening();
+
+    setState(() {
+      isListening = false;
+    });
   }
 
   Future<void> _handleButtonPress() async {
     if (widget.passed) {
+      await stopListening();
       widget.onContinue();
-      _recognizer.stopListening();
     } else {
-      if (_recognizer.isListening) {
-        _recognizer.stopListening();
+      if (isListening || widget.testCompleted) {
+        await stopListening();
       } else {
-        await _recognizer.startListening();
+        await startListening();
       }
     }
+  }
 
+  Future<void> startListening() async {
     setState(() {
-      _recognizer = _recognizer;
+      isListening = true;
     });
+    await _recognizer.startListening();
   }
 
   @override
@@ -70,7 +90,7 @@ class _RecognizerButtonState extends State<RecognizerButton> {
         borderRadius: widget.testCompleted ? BorderRadius.circular(40) : null,
         color: widget.failed
             ? Colors.red.shade100
-            : _recognizer.isListening | widget.passed
+            : isListening | widget.passed
                 ? Colors.green.shade100
                 : Colors.blue.shade100,
         boxShadow: const [
@@ -104,7 +124,7 @@ class _RecognizerButtonState extends State<RecognizerButton> {
                         fontWeight: FontWeight.bold,
                       ),
                     )
-                  : _recognizer.isListening
+                  : isListening
                       ? const ActiveMic()
                       : const Icon(
                           Icons.mic_none,

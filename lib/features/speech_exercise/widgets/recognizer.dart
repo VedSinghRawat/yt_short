@@ -6,11 +6,12 @@ class SpeechRecognizer {
   final Function(SpeechRecognitionResult) onResult;
   final VoidCallback? onStopListenting;
   final Function(String)? onError;
+  final Function(String) onStatusChange;
 
   late stt.SpeechToText _speech;
-  bool _isListening = false;
 
   SpeechRecognizer({
+    required this.onStatusChange,
     required this.onResult,
     this.onError,
     this.onStopListenting,
@@ -18,16 +19,13 @@ class SpeechRecognizer {
     _speech = stt.SpeechToText();
   }
 
-  bool get isListening => _isListening;
-
   Future<void> startListening() async {
     bool available = await _speech.initialize(
-      onStatus: _onStatus,
+      onStatus: onStatusChange,
       onError: (error) => {if (onError != null) onError!(error.errorMsg)},
     );
 
     if (available) {
-      _isListening = true;
       _speech.listen(
         pauseFor: const Duration(minutes: 1),
         listenFor: const Duration(minutes: 1),
@@ -38,28 +36,14 @@ class SpeechRecognizer {
         ),
       );
     } else {
-      _isListening = false;
       if (onError != null) onError!('Speech recognition is not available!');
     }
   }
 
-  void stopListening() {
-    _speech.stop();
-    if (onStopListenting != null) onStopListenting!();
-    _isListening = false;
-  }
-
-  void _onStatus(String status) {
-    if (status == stt.SpeechToText.doneStatus && _isListening) {
-      _speech.listen(
-        pauseFor: const Duration(minutes: 1),
-        listenFor: const Duration(minutes: 1),
-        onResult: onResult,
-        listenOptions: stt.SpeechListenOptions(
-          partialResults: true,
-          listenMode: stt.ListenMode.dictation,
-        ),
-      );
-    }
+  Future<void> stopListening() async {
+    await _speech.stop();
+    try {
+      if (onStopListenting != null) onStopListenting!();
+    } catch (e) {}
   }
 }

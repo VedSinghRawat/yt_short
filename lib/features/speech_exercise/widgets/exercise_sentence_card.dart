@@ -57,6 +57,8 @@ class _SpeechExerciseCardState extends State<SpeechExerciseCard> {
   }
 
   void _onStopListening() {
+    if (!context.mounted) return;
+
     setState(() {
       _wordMarking = List.generate(_totalWordCount, (index) => null);
       _recognizedWords = List.filled(_totalWordCount, '');
