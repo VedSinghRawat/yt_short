@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:myapp/core/util_types/progress.dart';
-import 'package:myapp/models/Level/level.dart';
 import 'package:myapp/models/activity_log/activity_log.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -52,6 +51,14 @@ class SharedPref {
     await _setObject('currProgress', updatedProgress.toJson());
   }
 
+  static Future<void> setCyId(String cyId) async {
+    await _setValue('cyId', cyId);
+  }
+
+  static Future<String?> getCyId() async {
+    return await _getValue('cyId');
+  }
+
   static Future<Progress?> getCurrProgress() async {
     final data = await _getObject('currProgress');
 
@@ -78,18 +85,31 @@ class SharedPref {
     await _setValue('googleIdToken', token);
   }
 
-  static Future<List<Level>> getCachedLevels() async {
-    final cachedLevels = await _getList('cachedLevels');
+  static Future<Set<String>> getCachedIds() async {
+    final ids = await _getList('cachedIds');
 
-    return cachedLevels?.map((e) => Level.fromJson(e)).toList() ?? [];
+    return ids as Set<String>;
   }
 
-  static Future<void> addCachedLevel(Level level) async {
-    final cachedLevels = await getCachedLevels();
+  static Future<void> addCachedIds(Set<String> ids) async {
+    final levels = await getCachedIds();
 
-    cachedLevels.add(level);
+    levels.addAll(ids);
 
-    await _setObject('cachedLevels', cachedLevels);
+    await _setObject('cachedIds', levels);
+  }
+
+  static Future<void> setCachedIds(Set<String> ids) async {
+    await _setObject('cachedIds', ids);
+  }
+
+  static Future<bool> isFirstLaunch() async {
+    final isFirstLaunch = await _getValue('isFirstLaunch');
+    return isFirstLaunch == null || isFirstLaunch == 'true';
+  }
+
+  static Future<void> setIsFirstLaunch(bool isFirstLaunch) async {
+    await _setValue('isFirstLaunch', isFirstLaunch.toString());
   }
 
   static Future<void> addActivityLog(int level, int subLevel, String email) async {
@@ -120,11 +140,28 @@ class SharedPref {
     await instance.clear();
   }
 
-  static Future<void> storeETag(String levelId, int zipId, String eTag) async {
-    await _setValue('eTag_$levelId$zipId', eTag);
+  static Future<void> storeETag(String id, String eTag) async {
+    await _setValue('eTag_$id', eTag);
   }
 
-  static Future<String?> getETag(String levelId, int zipId) async {
-    return await _getValue('eTag_$levelId$zipId');
+  static Future<String?> getETag(String id) async {
+    return await _getValue('eTag_$id');
+  }
+
+  static Future<List<String>?> getOrderedIds() async {
+    final ids = await _getList('orderedIds') as List<String>?;
+
+    if (ids == null) {
+      return null;
+    }
+
+    return ids;
+  }
+
+  static setOrderedIds(List<String> orderedIds) async {
+    return await _setObject(
+      'orderedIds',
+      orderedIds,
+    );
   }
 }

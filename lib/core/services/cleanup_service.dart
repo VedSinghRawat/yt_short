@@ -1,101 +1,105 @@
+import 'dart:developer' as developer show log;
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/services/file_service.dart';
-import 'package:myapp/core/shared_pref.dart';
-import 'package:myapp/models/Level/level.dart';
 
 class StorageCleanupService {
   final FileService fileService;
 
   StorageCleanupService(this.fileService);
 
-  Future<void> cleanUpStorage(List<String> folderList) async {
+  Future<List<String>> cleanLevels(List<String> orderedIds) async {
     try {
-      // Get base zip path from FileService
-      String baseZipPath = fileService.baseZipPath;
-
-      Directory targetDir = Directory(baseZipPath);
+      Directory targetDir = Directory(fileService.levelsDocDirPath);
 
       // Ensure directory exists
       if (!await targetDir.exists()) {
-        return;
+        return orderedIds;
       }
 
-      // Get folder names inside target directory
-      List<String> existingFolders = targetDir
-          .listSync()
-          .whereType<Directory>()
-          .map((dir) => dir.path.split('/').last)
-          .toList();
-
-      // Get total size of target directory
-      int totalSize = await compute(fileService.getDirectorySize, targetDir);
-
-      double totalSizeMB = totalSize / (1024 * 1024);
+      double totalSizeMB = await checkStorageSize(targetDir);
 
       if (totalSizeMB < kMaxStorageSizeMB) {
-        return;
+        return orderedIds;
       }
 
       // Delete folders until size is under MAX_SIZE_MB
-      int index = 0;
-      while (totalSizeMB > kMaxStorageSizeMB && index < folderList.length) {
-        String folderName = folderList[index];
-        String folderPath = '$baseZipPath/$folderName';
+      List<String> remainingIds = orderedIds;
+
+      while (totalSizeMB > kDeleteCacheThresholdMB && remainingIds.isNotEmpty) {
+        final id = remainingIds.removeAt(0);
+
+        String folderPath = fileService.getLevelPath(id);
+
         Directory folder = Directory(folderPath);
 
         if (await folder.exists()) {
           await folder.delete(recursive: true);
 
-          totalSize = await compute(fileService.getDirectorySize, targetDir);
+          final folderSize = await checkStorageSize(folder);
 
-          totalSizeMB = totalSize / (1024 * 1024);
+          totalSizeMB = totalSizeMB - folderSize;
         }
-
-        index++;
       }
 
-      print("Final Directory Size: ${totalSizeMB.toStringAsFixed(2)} MB");
+      return remainingIds;
     } catch (e) {
-      print("Error in cleanup process: $e");
+      developer.log("Error in cleanup process: $e");
+      return orderedIds;
     }
   }
 
-  // TODO working here have to improw it
-  Future<void> cleanUpCachedLevels() async {
-    final cachedLevels = await SharedPref.getCachedLevels();
-    final currProgress = await SharedPref.getCurrProgress();
+  Future<double> checkStorageSize(Directory targetDir) async {
+    final totalSize = await compute(fileService.getDirectorySize, targetDir);
 
-    if (cachedLevels.isEmpty || currProgress == null) return;
-
-    // Create a map for quick lookups
-    final Map<String, Level> levelMap = {for (var level in cachedLevels) level.id: level};
-
-    final String? currentLevelId = currProgress.levelId;
-    if (currentLevelId == null || !levelMap.containsKey(currentLevelId)) return;
-
-    List<String> orderedLevelIds = [];
-    String? prevId = levelMap[currentLevelId]?.prevId;
-    String? nextId = levelMap[currentLevelId]?.nextId;
-
-    // Single loop to traverse both previous and next levels
-    while (prevId != null || nextId != null) {
-      if (prevId != null && levelMap.containsKey(prevId)) {
-        orderedLevelIds.insert(0, prevId); // Insert at the beginning
-        prevId = levelMap[prevId]?.prevId;
-      } else {
-        prevId = null; // Stop if no more previous levels
-      }
-
-      if (nextId != null && levelMap.containsKey(nextId)) {
-        orderedLevelIds.add(nextId); // Append to the end
-        nextId = levelMap[nextId]?.nextId;
-      } else {
-        nextId = null; // Stop if no more next levels
-      }
-    }
-
-    await cleanUpStorage(orderedLevelIds);
+    return totalSize / (1024 * 1024);
   }
+
+  Future<List<String>> removeFurthestCachedIds(
+    List<String> cachedIds,
+    List<String> orderedIds,
+    String currentId,
+  ) async {
+    // Step 1: Build an index lookup for faster access
+    final Map<String, int> indexLookup = {
+      for (int i = 0; i < orderedIds.length; i++) orderedIds[i]: i
+    };
+
+    // Step 2: Get currentId index once
+    final int currentIndex = indexLookup[currentId] ?? -1;
+    if (currentIndex == -1) return cachedIds; // Edge case: If currentId is not found
+
+    final List<String> protected = [];
+
+    // Step 3: Sort based on distance from currentIndex
+    cachedIds.sort((a, b) {
+      final int aI = indexLookup[a] ?? -1;
+      final int bI = indexLookup[b] ?? -1;
+
+      final int distA = (aI - currentIndex).abs();
+      final int distB = (bI - currentIndex).abs();
+
+      if (_isProtectedLevel(currentIndex, aI)) protected.add(a);
+      if (_isProtectedLevel(currentIndex, bI)) protected.add(b);
+
+      return distA.compareTo(distB);
+    });
+
+    // Step 4: Remove protected items
+    cachedIds.removeWhere(protected.contains);
+
+    // Step 5: Clean remaining IDs asynchronously
+    final List<String> remainingIds = await compute(cleanLevels, cachedIds);
+
+    return [...protected, ...remainingIds];
+  }
+
+  bool _isProtectedLevel(int currIndex, int idIndex) =>
+      const {-1, 0, 1, 2}.contains(idIndex - currIndex);
 }
+
+final storageCleanupServiceProvider = Provider<StorageCleanupService>((ref) {
+  return StorageCleanupService(ref.read(fileServiceProvider));
+});

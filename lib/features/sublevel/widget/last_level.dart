@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
 
-class LastLevelWidget extends StatelessWidget {
+class ErrorPage extends StatelessWidget {
   final VoidCallback onRefresh;
+  final String text;
+  final String buttonText;
 
-  const LastLevelWidget({super.key, required this.onRefresh});
+  const ErrorPage({
+    super.key,
+    required this.onRefresh,
+    required this.text,
+    required this.buttonText,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -11,15 +18,15 @@ class LastLevelWidget extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text(
-            'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-            style: TextStyle(fontSize: 18, color: Colors.white),
+          Text(
+            text,
+            style: const TextStyle(fontSize: 18, color: Colors.white),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),
           ElevatedButton(
             onPressed: onRefresh,
-            child: const Text('Refresh Data'),
+            child: Text(buttonText),
           ),
         ],
       ),

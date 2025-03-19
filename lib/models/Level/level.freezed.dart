@@ -22,8 +22,6 @@ Level _$LevelFromJson(Map<String, dynamic> json) {
 mixin _$Level {
   String get id => throw _privateConstructorUsedError;
   String get title => throw _privateConstructorUsedError;
-  String? get nextId => throw _privateConstructorUsedError;
-  String? get prevId => throw _privateConstructorUsedError;
   int get subLevelCount => throw _privateConstructorUsedError;
 
   /// Serializes this Level to a JSON map.
@@ -40,12 +38,7 @@ abstract class $LevelCopyWith<$Res> {
   factory $LevelCopyWith(Level value, $Res Function(Level) then) =
       _$LevelCopyWithImpl<$Res, Level>;
   @useResult
-  $Res call(
-      {String id,
-      String title,
-      String? nextId,
-      String? prevId,
-      int subLevelCount});
+  $Res call({String id, String title, int subLevelCount});
 }
 
 /// @nodoc
@@ -65,8 +58,6 @@ class _$LevelCopyWithImpl<$Res, $Val extends Level>
   $Res call({
     Object? id = null,
     Object? title = null,
-    Object? nextId = freezed,
-    Object? prevId = freezed,
     Object? subLevelCount = null,
   }) {
     return _then(_value.copyWith(
@@ -78,14 +69,6 @@ class _$LevelCopyWithImpl<$Res, $Val extends Level>
           ? _value.title
           : title // ignore: cast_nullable_to_non_nullable
               as String,
-      nextId: freezed == nextId
-          ? _value.nextId
-          : nextId // ignore: cast_nullable_to_non_nullable
-              as String?,
-      prevId: freezed == prevId
-          ? _value.prevId
-          : prevId // ignore: cast_nullable_to_non_nullable
-              as String?,
       subLevelCount: null == subLevelCount
           ? _value.subLevelCount
           : subLevelCount // ignore: cast_nullable_to_non_nullable
@@ -101,12 +84,7 @@ abstract class _$$LevelImplCopyWith<$Res> implements $LevelCopyWith<$Res> {
       __$$LevelImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {String id,
-      String title,
-      String? nextId,
-      String? prevId,
-      int subLevelCount});
+  $Res call({String id, String title, int subLevelCount});
 }
 
 /// @nodoc
@@ -124,8 +102,6 @@ class __$$LevelImplCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
     Object? title = null,
-    Object? nextId = freezed,
-    Object? prevId = freezed,
     Object? subLevelCount = null,
   }) {
     return _then(_$LevelImpl(
@@ -137,14 +113,6 @@ class __$$LevelImplCopyWithImpl<$Res>
           ? _value.title
           : title // ignore: cast_nullable_to_non_nullable
               as String,
-      nextId: freezed == nextId
-          ? _value.nextId
-          : nextId // ignore: cast_nullable_to_non_nullable
-              as String?,
-      prevId: freezed == prevId
-          ? _value.prevId
-          : prevId // ignore: cast_nullable_to_non_nullable
-              as String?,
       subLevelCount: null == subLevelCount
           ? _value.subLevelCount
           : subLevelCount // ignore: cast_nullable_to_non_nullable
@@ -157,11 +125,7 @@ class __$$LevelImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$LevelImpl with DiagnosticableTreeMixin implements _Level {
   const _$LevelImpl(
-      {required this.id,
-      required this.title,
-      this.nextId,
-      this.prevId,
-      required this.subLevelCount});
+      {required this.id, required this.title, required this.subLevelCount});
 
   factory _$LevelImpl.fromJson(Map<String, dynamic> json) =>
       _$$LevelImplFromJson(json);
@@ -171,15 +135,11 @@ class _$LevelImpl with DiagnosticableTreeMixin implements _Level {
   @override
   final String title;
   @override
-  final String? nextId;
-  @override
-  final String? prevId;
-  @override
   final int subLevelCount;
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'Level(id: $id, title: $title, nextId: $nextId, prevId: $prevId, subLevelCount: $subLevelCount)';
+    return 'Level(id: $id, title: $title, subLevelCount: $subLevelCount)';
   }
 
   @override
@@ -189,8 +149,6 @@ class _$LevelImpl with DiagnosticableTreeMixin implements _Level {
       ..add(DiagnosticsProperty('type', 'Level'))
       ..add(DiagnosticsProperty('id', id))
       ..add(DiagnosticsProperty('title', title))
-      ..add(DiagnosticsProperty('nextId', nextId))
-      ..add(DiagnosticsProperty('prevId', prevId))
       ..add(DiagnosticsProperty('subLevelCount', subLevelCount));
   }
 
@@ -201,16 +159,13 @@ class _$LevelImpl with DiagnosticableTreeMixin implements _Level {
             other is _$LevelImpl &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.title, title) || other.title == title) &&
-            (identical(other.nextId, nextId) || other.nextId == nextId) &&
-            (identical(other.prevId, prevId) || other.prevId == prevId) &&
             (identical(other.subLevelCount, subLevelCount) ||
                 other.subLevelCount == subLevelCount));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, id, title, nextId, prevId, subLevelCount);
+  int get hashCode => Object.hash(runtimeType, id, title, subLevelCount);
 
   /// Create a copy of Level
   /// with the given fields replaced by the non-null parameter values.
@@ -232,8 +187,6 @@ abstract class _Level implements Level {
   const factory _Level(
       {required final String id,
       required final String title,
-      final String? nextId,
-      final String? prevId,
       required final int subLevelCount}) = _$LevelImpl;
 
   factory _Level.fromJson(Map<String, dynamic> json) = _$LevelImpl.fromJson;
@@ -242,10 +195,6 @@ abstract class _Level implements Level {
   String get id;
   @override
   String get title;
-  @override
-  String? get nextId;
-  @override
-  String? get prevId;
   @override
   int get subLevelCount;
 
@@ -265,8 +214,6 @@ LevelDTO _$LevelDTOFromJson(Map<String, dynamic> json) {
 mixin _$LevelDTO {
   String get id => throw _privateConstructorUsedError;
   String get title => throw _privateConstructorUsedError;
-  String? get nextId => throw _privateConstructorUsedError;
-  String? get prevId => throw _privateConstructorUsedError;
   List<SubLevelDTO> get subLevels => throw _privateConstructorUsedError;
 
   /// Serializes this LevelDTO to a JSON map.
@@ -284,12 +231,7 @@ abstract class $LevelDTOCopyWith<$Res> {
   factory $LevelDTOCopyWith(LevelDTO value, $Res Function(LevelDTO) then) =
       _$LevelDTOCopyWithImpl<$Res, LevelDTO>;
   @useResult
-  $Res call(
-      {String id,
-      String title,
-      String? nextId,
-      String? prevId,
-      List<SubLevelDTO> subLevels});
+  $Res call({String id, String title, List<SubLevelDTO> subLevels});
 }
 
 /// @nodoc
@@ -309,8 +251,6 @@ class _$LevelDTOCopyWithImpl<$Res, $Val extends LevelDTO>
   $Res call({
     Object? id = null,
     Object? title = null,
-    Object? nextId = freezed,
-    Object? prevId = freezed,
     Object? subLevels = null,
   }) {
     return _then(_value.copyWith(
@@ -322,14 +262,6 @@ class _$LevelDTOCopyWithImpl<$Res, $Val extends LevelDTO>
           ? _value.title
           : title // ignore: cast_nullable_to_non_nullable
               as String,
-      nextId: freezed == nextId
-          ? _value.nextId
-          : nextId // ignore: cast_nullable_to_non_nullable
-              as String?,
-      prevId: freezed == prevId
-          ? _value.prevId
-          : prevId // ignore: cast_nullable_to_non_nullable
-              as String?,
       subLevels: null == subLevels
           ? _value.subLevels
           : subLevels // ignore: cast_nullable_to_non_nullable
@@ -346,12 +278,7 @@ abstract class _$$LevelDTOImplCopyWith<$Res>
       __$$LevelDTOImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {String id,
-      String title,
-      String? nextId,
-      String? prevId,
-      List<SubLevelDTO> subLevels});
+  $Res call({String id, String title, List<SubLevelDTO> subLevels});
 }
 
 /// @nodoc
@@ -369,8 +296,6 @@ class __$$LevelDTOImplCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
     Object? title = null,
-    Object? nextId = freezed,
-    Object? prevId = freezed,
     Object? subLevels = null,
   }) {
     return _then(_$LevelDTOImpl(
@@ -382,14 +307,6 @@ class __$$LevelDTOImplCopyWithImpl<$Res>
           ? _value.title
           : title // ignore: cast_nullable_to_non_nullable
               as String,
-      nextId: freezed == nextId
-          ? _value.nextId
-          : nextId // ignore: cast_nullable_to_non_nullable
-              as String?,
-      prevId: freezed == prevId
-          ? _value.prevId
-          : prevId // ignore: cast_nullable_to_non_nullable
-              as String?,
       subLevels: null == subLevels
           ? _value._subLevels
           : subLevels // ignore: cast_nullable_to_non_nullable
@@ -404,8 +321,6 @@ class _$LevelDTOImpl with DiagnosticableTreeMixin implements _LevelDTO {
   const _$LevelDTOImpl(
       {required this.id,
       required this.title,
-      this.nextId,
-      this.prevId,
       required final List<SubLevelDTO> subLevels})
       : _subLevels = subLevels;
 
@@ -416,10 +331,6 @@ class _$LevelDTOImpl with DiagnosticableTreeMixin implements _LevelDTO {
   final String id;
   @override
   final String title;
-  @override
-  final String? nextId;
-  @override
-  final String? prevId;
   final List<SubLevelDTO> _subLevels;
   @override
   List<SubLevelDTO> get subLevels {
@@ -430,7 +341,7 @@ class _$LevelDTOImpl with DiagnosticableTreeMixin implements _LevelDTO {
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'LevelDTO(id: $id, title: $title, nextId: $nextId, prevId: $prevId, subLevels: $subLevels)';
+    return 'LevelDTO(id: $id, title: $title, subLevels: $subLevels)';
   }
 
   @override
@@ -440,8 +351,6 @@ class _$LevelDTOImpl with DiagnosticableTreeMixin implements _LevelDTO {
       ..add(DiagnosticsProperty('type', 'LevelDTO'))
       ..add(DiagnosticsProperty('id', id))
       ..add(DiagnosticsProperty('title', title))
-      ..add(DiagnosticsProperty('nextId', nextId))
-      ..add(DiagnosticsProperty('prevId', prevId))
       ..add(DiagnosticsProperty('subLevels', subLevels));
   }
 
@@ -452,16 +361,14 @@ class _$LevelDTOImpl with DiagnosticableTreeMixin implements _LevelDTO {
             other is _$LevelDTOImpl &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.title, title) || other.title == title) &&
-            (identical(other.nextId, nextId) || other.nextId == nextId) &&
-            (identical(other.prevId, prevId) || other.prevId == prevId) &&
             const DeepCollectionEquality()
                 .equals(other._subLevels, _subLevels));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, title, nextId, prevId,
-      const DeepCollectionEquality().hash(_subLevels));
+  int get hashCode => Object.hash(
+      runtimeType, id, title, const DeepCollectionEquality().hash(_subLevels));
 
   /// Create a copy of LevelDTO
   /// with the given fields replaced by the non-null parameter values.
@@ -483,8 +390,6 @@ abstract class _LevelDTO implements LevelDTO {
   const factory _LevelDTO(
       {required final String id,
       required final String title,
-      final String? nextId,
-      final String? prevId,
       required final List<SubLevelDTO> subLevels}) = _$LevelDTOImpl;
 
   factory _LevelDTO.fromJson(Map<String, dynamic> json) =
@@ -494,10 +399,6 @@ abstract class _LevelDTO implements LevelDTO {
   String get id;
   @override
   String get title;
-  @override
-  String? get nextId;
-  @override
-  String? get prevId;
   @override
   List<SubLevelDTO> get subLevels;
 

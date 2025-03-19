@@ -10,8 +10,6 @@ class Level with _$Level {
   const factory Level({
     required String id,
     required String title,
-    String? nextId,
-    String? prevId,
     required int subLevelCount,
   }) = _Level;
 
@@ -21,8 +19,6 @@ class Level with _$Level {
     return Level(
       id: levelDTO.id,
       title: levelDTO.title,
-      nextId: levelDTO.nextId,
-      prevId: levelDTO.prevId,
       subLevelCount: levelDTO.subLevels.length,
     );
   }
@@ -33,8 +29,6 @@ class LevelDTO with _$LevelDTO {
   const factory LevelDTO({
     required String id,
     required String title,
-    String? nextId,
-    String? prevId,
     required List<SubLevelDTO> subLevels,
   }) = _LevelDTO;
 

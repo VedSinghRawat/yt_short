@@ -89,8 +89,13 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
         final isLastSublevel = index == widget.sublevels.length;
 
         if ((isLastSublevel || sublevel == null) && !widget.isLoading) {
-          return LastLevelWidget(
-              onRefresh: () => widget.onVideoChange?.call(index, _pageController));
+          final error = ref.watch(sublevelControllerProvider).error;
+
+          return ErrorPage(
+            onRefresh: () => widget.onVideoChange?.call(index, _pageController),
+            text: error ?? "Something went wrong please try again later",
+            buttonText: 'Retry',
+          );
         }
 
         if (sublevel == null && widget.isLoading) {

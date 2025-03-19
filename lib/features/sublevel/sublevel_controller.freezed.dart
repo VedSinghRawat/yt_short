@@ -17,9 +17,10 @@ final _privateConstructorUsedError = UnsupportedError(
 /// @nodoc
 mixin _$SublevelControllerState {
   Set<SubLevel> get sublevels => throw _privateConstructorUsedError;
-  bool? get loading => throw _privateConstructorUsedError;
+  bool get loading => throw _privateConstructorUsedError;
   bool get hasFinishedVideo => throw _privateConstructorUsedError;
-  Map<int, Level?>? get levelByLevelNum => throw _privateConstructorUsedError;
+  List<String> get levelIds => throw _privateConstructorUsedError;
+  String? get error => throw _privateConstructorUsedError;
 
   /// Create a copy of SublevelControllerState
   /// with the given fields replaced by the non-null parameter values.
@@ -36,9 +37,10 @@ abstract class $SublevelControllerStateCopyWith<$Res> {
   @useResult
   $Res call(
       {Set<SubLevel> sublevels,
-      bool? loading,
+      bool loading,
       bool hasFinishedVideo,
-      Map<int, Level?>? levelByLevelNum});
+      List<String> levelIds,
+      String? error});
 }
 
 /// @nodoc
@@ -58,27 +60,32 @@ class _$SublevelControllerStateCopyWithImpl<$Res,
   @override
   $Res call({
     Object? sublevels = null,
-    Object? loading = freezed,
+    Object? loading = null,
     Object? hasFinishedVideo = null,
-    Object? levelByLevelNum = freezed,
+    Object? levelIds = null,
+    Object? error = freezed,
   }) {
     return _then(_value.copyWith(
       sublevels: null == sublevels
           ? _value.sublevels
           : sublevels // ignore: cast_nullable_to_non_nullable
               as Set<SubLevel>,
-      loading: freezed == loading
+      loading: null == loading
           ? _value.loading
           : loading // ignore: cast_nullable_to_non_nullable
-              as bool?,
+              as bool,
       hasFinishedVideo: null == hasFinishedVideo
           ? _value.hasFinishedVideo
           : hasFinishedVideo // ignore: cast_nullable_to_non_nullable
               as bool,
-      levelByLevelNum: freezed == levelByLevelNum
-          ? _value.levelByLevelNum
-          : levelByLevelNum // ignore: cast_nullable_to_non_nullable
-              as Map<int, Level?>?,
+      levelIds: null == levelIds
+          ? _value.levelIds
+          : levelIds // ignore: cast_nullable_to_non_nullable
+              as List<String>,
+      error: freezed == error
+          ? _value.error
+          : error // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 }
@@ -94,9 +101,10 @@ abstract class _$$SublevelControllerStateImplCopyWith<$Res>
   @useResult
   $Res call(
       {Set<SubLevel> sublevels,
-      bool? loading,
+      bool loading,
       bool hasFinishedVideo,
-      Map<int, Level?>? levelByLevelNum});
+      List<String> levelIds,
+      String? error});
 }
 
 /// @nodoc
@@ -115,43 +123,49 @@ class __$$SublevelControllerStateImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? sublevels = null,
-    Object? loading = freezed,
+    Object? loading = null,
     Object? hasFinishedVideo = null,
-    Object? levelByLevelNum = freezed,
+    Object? levelIds = null,
+    Object? error = freezed,
   }) {
     return _then(_$SublevelControllerStateImpl(
       sublevels: null == sublevels
           ? _value._sublevels
           : sublevels // ignore: cast_nullable_to_non_nullable
               as Set<SubLevel>,
-      loading: freezed == loading
+      loading: null == loading
           ? _value.loading
           : loading // ignore: cast_nullable_to_non_nullable
-              as bool?,
+              as bool,
       hasFinishedVideo: null == hasFinishedVideo
           ? _value.hasFinishedVideo
           : hasFinishedVideo // ignore: cast_nullable_to_non_nullable
               as bool,
-      levelByLevelNum: freezed == levelByLevelNum
-          ? _value._levelByLevelNum
-          : levelByLevelNum // ignore: cast_nullable_to_non_nullable
-              as Map<int, Level?>?,
+      levelIds: null == levelIds
+          ? _value._levelIds
+          : levelIds // ignore: cast_nullable_to_non_nullable
+              as List<String>,
+      error: freezed == error
+          ? _value.error
+          : error // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
 
 /// @nodoc
 
-class _$SublevelControllerStateImpl
-    with DiagnosticableTreeMixin
-    implements _SublevelControllerState {
+class _$SublevelControllerStateImpl extends _SublevelControllerState
+    with DiagnosticableTreeMixin {
   const _$SublevelControllerStateImpl(
       {final Set<SubLevel> sublevels = const {},
-      this.loading,
+      this.loading = true,
       this.hasFinishedVideo = false,
-      final Map<int, Level?>? levelByLevelNum = null})
+      final List<String> levelIds = const [],
+      this.error})
       : _sublevels = sublevels,
-        _levelByLevelNum = levelByLevelNum;
+        _levelIds = levelIds,
+        super._();
 
   final Set<SubLevel> _sublevels;
   @override
@@ -163,24 +177,26 @@ class _$SublevelControllerStateImpl
   }
 
   @override
-  final bool? loading;
+  @JsonKey()
+  final bool loading;
   @override
   @JsonKey()
   final bool hasFinishedVideo;
-  final Map<int, Level?>? _levelByLevelNum;
+  final List<String> _levelIds;
   @override
   @JsonKey()
-  Map<int, Level?>? get levelByLevelNum {
-    final value = _levelByLevelNum;
-    if (value == null) return null;
-    if (_levelByLevelNum is EqualUnmodifiableMapView) return _levelByLevelNum;
+  List<String> get levelIds {
+    if (_levelIds is EqualUnmodifiableListView) return _levelIds;
     // ignore: implicit_dynamic_type
-    return EqualUnmodifiableMapView(value);
+    return EqualUnmodifiableListView(_levelIds);
   }
 
   @override
+  final String? error;
+
+  @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'SublevelControllerState(sublevels: $sublevels, loading: $loading, hasFinishedVideo: $hasFinishedVideo, levelByLevelNum: $levelByLevelNum)';
+    return 'SublevelControllerState(sublevels: $sublevels, loading: $loading, hasFinishedVideo: $hasFinishedVideo, levelIds: $levelIds, error: $error)';
   }
 
   @override
@@ -191,7 +207,8 @@ class _$SublevelControllerStateImpl
       ..add(DiagnosticsProperty('sublevels', sublevels))
       ..add(DiagnosticsProperty('loading', loading))
       ..add(DiagnosticsProperty('hasFinishedVideo', hasFinishedVideo))
-      ..add(DiagnosticsProperty('levelByLevelNum', levelByLevelNum));
+      ..add(DiagnosticsProperty('levelIds', levelIds))
+      ..add(DiagnosticsProperty('error', error));
   }
 
   @override
@@ -204,8 +221,8 @@ class _$SublevelControllerStateImpl
             (identical(other.loading, loading) || other.loading == loading) &&
             (identical(other.hasFinishedVideo, hasFinishedVideo) ||
                 other.hasFinishedVideo == hasFinishedVideo) &&
-            const DeepCollectionEquality()
-                .equals(other._levelByLevelNum, _levelByLevelNum));
+            const DeepCollectionEquality().equals(other._levelIds, _levelIds) &&
+            (identical(other.error, error) || other.error == error));
   }
 
   @override
@@ -214,7 +231,8 @@ class _$SublevelControllerStateImpl
       const DeepCollectionEquality().hash(_sublevels),
       loading,
       hasFinishedVideo,
-      const DeepCollectionEquality().hash(_levelByLevelNum));
+      const DeepCollectionEquality().hash(_levelIds),
+      error);
 
   /// Create a copy of SublevelControllerState
   /// with the given fields replaced by the non-null parameter values.
@@ -226,21 +244,25 @@ class _$SublevelControllerStateImpl
           _$SublevelControllerStateImpl>(this, _$identity);
 }
 
-abstract class _SublevelControllerState implements SublevelControllerState {
+abstract class _SublevelControllerState extends SublevelControllerState {
   const factory _SublevelControllerState(
       {final Set<SubLevel> sublevels,
-      final bool? loading,
+      final bool loading,
       final bool hasFinishedVideo,
-      final Map<int, Level?>? levelByLevelNum}) = _$SublevelControllerStateImpl;
+      final List<String> levelIds,
+      final String? error}) = _$SublevelControllerStateImpl;
+  const _SublevelControllerState._() : super._();
 
   @override
   Set<SubLevel> get sublevels;
   @override
-  bool? get loading;
+  bool get loading;
   @override
   bool get hasFinishedVideo;
   @override
-  Map<int, Level?>? get levelByLevelNum;
+  List<String> get levelIds;
+  @override
+  String? get error;
 
   /// Create a copy of SublevelControllerState
   /// with the given fields replaced by the non-null parameter values.

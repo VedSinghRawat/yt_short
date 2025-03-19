@@ -19,14 +19,19 @@ class FileService {
 
   static FileService get instance => _instance;
 
-  String getLevelZipPath(String levelId, int zipId) {
-    return '$baseZipPath/$levelId/$zipId.zip';
+  String getZipPath(String levelId, int zipId) {
+    return '${getLevelPath(levelId)}/$zipId.zip';
   }
 
-  String get baseZipPath => '${documentsDirectory.path}/levels/zips';
+  String getLevelPath(String levelId) {
+    return '$levelsDocDirPath/$levelId';
+  }
 
-  String getLevelVideoDirPath(String levelId) {
-    return '${cacheDirectory.path}/levels/videos/$levelId';
+  String get levelsDocDirPath => '${documentsDirectory.path}/levels';
+  String get levelsCacheDirPath => '${cacheDirectory.path}/levels';
+
+  String getVideoDirPath(String levelId) {
+    return '$levelsCacheDirPath/videos/$levelId';
   }
 
   Future<Directory?> unzip(File zipFile, Directory destinationDir) async {
@@ -42,15 +47,15 @@ class FileService {
   }
 
   Future<Directory?> extrectStoredZip(String levelId, int zipId) async {
-    final file = File(getLevelZipPath(levelId, zipId));
+    final file = File(getZipPath(levelId, zipId));
 
-    final destinationDir = Directory(getLevelVideoDirPath(levelId));
+    final destinationDir = Directory(getVideoDirPath(levelId));
 
     return unzip(file, destinationDir);
   }
 
   Future<void> deleteStoredZip(String levelId, int zipId) async {
-    await deleteFile(getLevelZipPath(levelId, zipId));
+    await deleteFile(getZipPath(levelId, zipId));
   }
 
   Future<void> deleteFile(String path) async {
@@ -60,7 +65,7 @@ class FileService {
   }
 
   Future<bool> isZipExists(String levelId, int zipId) async {
-    final file = File(getLevelZipPath(levelId, zipId));
+    final file = File(getZipPath(levelId, zipId));
 
     return file.exists();
   }
@@ -72,7 +77,7 @@ class FileService {
   }
 
   String getUnzippedVideoPath(String levelId, String videoId) {
-    return '${getLevelVideoDirPath(levelId)}/$videoId.mp4';
+    return '${getVideoDirPath(levelId)}/$videoId.mp4';
   }
 
   int getDirectorySize(Directory directory) {

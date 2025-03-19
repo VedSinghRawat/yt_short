@@ -40,6 +40,8 @@ class AuthController extends StateNotifier<AuthControllerState> {
 
       userController.updateCurrentUser(user);
 
+      await authAPI.syncCyId();
+
       await Future.delayed(Duration.zero); // Yield control to UI
 
       final progress = await SharedPref.getCurrProgress();

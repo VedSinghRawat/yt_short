@@ -31,6 +31,8 @@ dependencies:
   flutter_archive: ^6.0.3
   freezed_annotation: ^2.4.4
   fpdart: ^1.1.1
+  android_play_install_referrer: ^0.4.0
+  app_links: ^6.4.0
 
 dev_dependencies:
   flutter_test:

@@ -1,10 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:myapp/apis/level_api.dart';
-import 'package:myapp/constants/constants.dart';
-import 'package:myapp/core/console.dart';
+import 'package:myapp/core/services/cleanup_service.dart';
 import 'package:myapp/core/services/file_service.dart';
 import 'package:myapp/core/services/sub_level_service.dart';
+import 'package:myapp/core/shared_pref.dart';
+import 'package:myapp/features/sublevel/ordered_ids_notifier.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'package:myapp/models/level/level.dart';
 import 'dart:developer' as developer;
@@ -16,49 +17,70 @@ part 'sublevel_controller.freezed.dart';
 
 @freezed
 class SublevelControllerState with _$SublevelControllerState {
+  const SublevelControllerState._();
+
   const factory SublevelControllerState({
     @Default({}) Set<SubLevel> sublevels,
-    bool? loading,
+    @Default(true) bool loading,
     @Default(false) bool hasFinishedVideo,
-    @Default(null) Map<int, Level?>? levelByLevelNum,
+    @Default([]) List<String> levelIds,
+    String? error,
   }) = _SublevelControllerState;
+
+  bool get isFirstFetch => sublevels.isEmpty;
 }
 
 class SublevelController extends StateNotifier<SublevelControllerState> {
   final UserControllerState userController;
   final ISubLevelAPI subLevelAPI;
-  final LevelApi levelApi;
+  final ILevelApi levelApi;
   final SubLevelService subLevelService;
   final FileService fileService;
+  final OrderedIdsNotifier orderedIdNotifier;
+  final AsyncValue<List<String>> orderedIdState;
+  final StorageCleanupService storageCleanupService;
 
   SublevelController({
+    required this.storageCleanupService,
     required this.userController,
     required this.subLevelAPI,
     required this.levelApi,
     required this.subLevelService,
     required this.fileService,
+    required this.orderedIdNotifier,
+    required this.orderedIdState,
   }) : super(const SublevelControllerState());
 
-  Future<void> _listByLevel(String levelId, int level) async {
-    if (state.levelByLevelNum?[level] != null || state.loading == true) return;
+  Future<String?> _listByLevel(String levelId, int level) async {
+    state = state.copyWith(
+      loading: true,
+      levelIds: [...state.levelIds, levelId],
+    );
 
-    state = state.copyWith(loading: true);
     try {
-      Console.timeStart('getById $levelId');
       final levelDTO = await levelApi.getById(levelId);
 
       final sublevels = {...state.sublevels};
-      final isFirstLaunch = sublevels.isEmpty;
 
       final currSubLevel = await userController.subLevel;
 
-      if (isFirstLaunch) {
+      if (state.isFirstFetch) {
         final subLevelDTO = await _fetchCurrSubLevel(levelDTO);
         final isVideoExists =
             await fileService.isVideoExists(levelDTO.id, subLevelDTO.videoFileName);
 
         if (isVideoExists) {
-          sublevels.add(SubLevel.fromSubLevelDTO(subLevelDTO, level, currSubLevel, levelId));
+          state = state.copyWith(
+            sublevels: {
+              ...state.sublevels,
+              SubLevel.fromSubLevelDTO(
+                subLevelDTO,
+                level,
+                currSubLevel,
+                levelId,
+              ),
+            },
+          );
         }
       }
 
@@ -78,43 +100,26 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
         sublevels.add(subLevel);
       }
 
-      _updateState(level, levelId, levelDTO, sublevels);
+      state = state.copyWith(
+        sublevels: {...state.sublevels, ...sublevels},
+        loading: false,
+      );
 
-      // Fetch next and previous levels if first launch
-      if (isFirstLaunch) {
-        if (levelDTO.nextId != null) await _listByLevel(levelDTO.nextId!, level + 1);
-        if (levelDTO.prevId != null) await _listByLevel(levelDTO.prevId!, level - 1);
-      }
-
-      Console.timeEnd('getById $levelId');
+      return levelId;
     } catch (e, stackTrace) {
       developer.log('Error in SublevelController._listByLevel',
           error: e.toString(), stackTrace: stackTrace);
+
+      final ids = [...state.levelIds];
+
+      ids.remove(levelId);
+
+      state = state.copyWith(levelIds: ids);
+
+      return null;
     } finally {
       state = state.copyWith(loading: false);
     }
-  }
-
-  void _updateState(int level, String levelId, LevelDTO levelDTO, Set<SubLevel> sublevels) {
-    final Map<int, Level?> levelByLevelNum = {
-      if (state.levelByLevelNum != null) ...state.levelByLevelNum!,
-      level: Level.fromLevelDTO(levelDTO),
-    };
-
-    if (levelDTO.nextId != null && levelByLevelNum[level + 1] == null) {
-      levelByLevelNum[level + 1] = null;
-    }
-
-    if (levelDTO.prevId != null && levelByLevelNum[level - 1] == null) {
-      levelByLevelNum[level - 1] = null;
-    }
-
-    // Update state
-    state = state.copyWith(
-      sublevels: sublevels,
-      levelByLevelNum: levelByLevelNum,
-      loading: false,
-    );
   }
 
   Future<SubLevelDTO> _fetchCurrSubLevel(LevelDTO currLevelDTO) async {
@@ -127,51 +132,78 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
     return subLevelDTO;
   }
 
-  bool _isLevelInCache(int level) {
-    return state.levelByLevelNum?[level] != null;
+  void setHasFinishedVideo(bool to) {
+    state = state.copyWith(hasFinishedVideo: to);
   }
 
   Future<void> fetchSublevels() async {
     final currUserLevel = await userController.level;
-    final currUserSubLevel = await userController.subLevel;
+    final isFirstFetch = state.isFirstFetch;
 
-    final fetchCurrLevel = !_isLevelInCache(currUserLevel);
-
-    final currLevelId = state.levelByLevelNum?[currUserLevel]?.id ??
-        userController.currentUser?.levelId ??
-        'lS_7kKC2Etk'; // TODO: change from info service not its dummy
-
-    final prevLevelId = state.levelByLevelNum?[currUserLevel - 1]?.id;
-    final nextLevelId = state.levelByLevelNum?[currUserLevel + 1]?.id;
-
-    // Fetch the current level if not already in cache
-    if (fetchCurrLevel) {
-      await _listByLevel(currLevelId, currUserLevel);
+    if (isFirstFetch) {
+      await orderedIdNotifier.getOrderedIds();
     }
 
-    final prevLevel = currUserLevel - 1;
-    final fetchPrevLevel =
-        currUserSubLevel < kSubLevelAPIBuffer && prevLevel >= 1 && !_isLevelInCache(prevLevel);
-    // Fetch previous level if near start of sublevels
-    if (fetchPrevLevel && prevLevelId != null) {
-      await _listByLevel(prevLevelId, prevLevel);
+    final orderedIds = orderedIdState.value;
+
+    if (orderedIdState.hasError || orderedIds == null) {
+      state = state.copyWith(error: 'Something Went Wrong. Please Try Again later', loading: false);
+      return; // Exit early on error
     }
 
-    final currLevelSublevelCount = state.levelByLevelNum?[currUserLevel]?.subLevelCount ?? 0;
+    final currLevelIndex = currUserLevel - 1;
 
-    final nextLevel = currUserLevel + 1;
+    if (currLevelIndex < 0 || currLevelIndex >= orderedIds.length) {
+      state = state.copyWith(
+        error: 'All the levels are completed, please try again after some time',
+        loading: false,
+      );
+      return;
+    }
 
-    final fetchNextLevel = currUserSubLevel > currLevelSublevelCount - kSubLevelAPIBuffer &&
-        !_isLevelInCache(nextLevel);
+    final currLevelId = orderedIds[currLevelIndex];
 
-    // Fetch next level if near the end of sublevels
-    if (fetchNextLevel && nextLevelId != null) {
-      await _listByLevel(nextLevelId, nextLevel);
+    // Fetch current level if not already fetched
+    final shouldFetchCurrLevel = !_isLevelFetched(currLevelId);
+
+    if (shouldFetchCurrLevel) {
+      await _listByLevel(currLevelId, currLevelIndex);
+    }
+
+    // Get surrounding level IDs
+    final surroundingLevelIds = _getSurroundingLevelIds(currLevelIndex, orderedIds);
+
+    // Fetch only the surrounding levels that haven't been fetched
+    final fetchTasks = surroundingLevelIds
+        .where((levelId) => levelId != null && !_isLevelFetched(levelId))
+        .map((levelId) => _listByLevel(levelId!, orderedIds.indexOf(levelId)))
+        .toList();
+
+    await Future.wait(fetchTasks); // Fetch all missing levels in parallel
+
+    if (fetchTasks.isNotEmpty || shouldFetchCurrLevel) {
+      SharedPref.addCachedIds({...fetchTasks.whereType<String>(), currLevelId});
+    }
+
+    if (isFirstFetch) {
+      final cachedIds = await SharedPref.getCachedIds();
+
+      storageCleanupService.removeFurthestCachedIds(cachedIds.toList(), orderedIds, currLevelId);
     }
   }
 
-  void setHasFinishedVideo(bool hasFinishedVideo) {
-    state = state.copyWith(hasFinishedVideo: hasFinishedVideo);
+  /// Helper function to check if a level is already fetched
+  bool _isLevelFetched(String levelId) => state.levelIds.contains(levelId);
+
+  /// Helper function to get surrounding level IDs
+  List<String?> _getSurroundingLevelIds(int currIndex, List<String?> orderedIds) {
+    final int maxIndex = orderedIds.length - 1;
+
+    return [
+      currIndex + 1 <= maxIndex ? orderedIds[currIndex + 1] : null, // Next level
+      currIndex - 1 >= 0 ? orderedIds[currIndex - 1] : null, // Previous level
+      currIndex + 2 <= maxIndex ? orderedIds[currIndex + 2] : null, // Next to next level
+    ];
   }
 }
 
@@ -182,12 +214,18 @@ final sublevelControllerProvider =
   final levelApi = ref.read(levelApiProvider);
   final subLevelService = ref.read(subLevelServiceProvider);
   final fileService = ref.read(fileServiceProvider);
+  final orderedIdNotifier = ref.read(orderedIdsNotifierProvider.notifier);
+  final orderedIdState = ref.watch(orderedIdsNotifierProvider);
+  final storageCleanupService = ref.read(storageCleanupServiceProvider);
 
   return SublevelController(
+    storageCleanupService: storageCleanupService,
     subLevelAPI: subLevelAPI,
     userController: userController,
     levelApi: levelApi,
     subLevelService: subLevelService,
     fileService: fileService,
+    orderedIdNotifier: orderedIdNotifier,
+    orderedIdState: orderedIdState,
   );
 });

@@ -11,6 +11,7 @@ import 'package:myapp/models/user/user.dart';
 abstract class IAuthAPI {
   Future<UserModel?> signInWithGoogle();
   Future<void> signOut();
+  Future<void> syncCyId();
 }
 
 class AuthAPI implements IAuthAPI {
@@ -58,6 +59,15 @@ class AuthAPI implements IAuthAPI {
       developer.log('Error during sign out', error: e.toString(), stackTrace: stackTrace);
       throw Exception(e.toString());
     }
+  }
+
+  @override
+  Future<void> syncCyId() async {
+    final cyId = await SharedPref.getCyId();
+
+    if (cyId == null) return;
+
+    await _apiService.call(endpoint: '/user/sync-cy-id', method: ApiMethod.post);
   }
 }
 
