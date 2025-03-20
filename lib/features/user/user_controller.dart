@@ -27,6 +27,12 @@ class UserControllerState {
     return progress?.subLevel ?? currentUser?.subLevel ?? 1;
   }
 
+  Future<String?> get levelId async {
+    final progress = await SharedPref.getCurrProgress();
+
+    return progress?.levelId ?? currentUser?.levelId;
+  }
+
   UserControllerState copyWith({
     bool? loading,
     UserModel? currentUser,

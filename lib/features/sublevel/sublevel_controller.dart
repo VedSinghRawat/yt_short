@@ -1,10 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:myapp/apis/level_api.dart';
 import 'package:myapp/core/services/cleanup_service.dart';
 import 'package:myapp/core/services/file_service.dart';
 import 'package:myapp/core/services/sub_level_service.dart';
-import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/features/sublevel/ordered_ids_notifier.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'package:myapp/models/level/level.dart';
@@ -31,24 +32,22 @@ class SublevelControllerState with _$SublevelControllerState {
 }
 
 class SublevelController extends StateNotifier<SublevelControllerState> {
-  final UserControllerState userController;
   final ISubLevelAPI subLevelAPI;
   final ILevelApi levelApi;
   final SubLevelService subLevelService;
   final FileService fileService;
   final OrderedIdsNotifier orderedIdNotifier;
-  final AsyncValue<List<String>> orderedIdState;
   final StorageCleanupService storageCleanupService;
+  final Ref ref;
 
   SublevelController({
+    required this.ref,
     required this.storageCleanupService,
-    required this.userController,
     required this.subLevelAPI,
     required this.levelApi,
     required this.subLevelService,
     required this.fileService,
     required this.orderedIdNotifier,
-    required this.orderedIdState,
   }) : super(const SublevelControllerState());
 
   Future<String?> _listByLevel(String levelId, int level) async {
@@ -62,48 +61,17 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
 
       final sublevels = {...state.sublevels};
 
-      final currSubLevel = await userController.subLevel;
-
       if (state.isFirstFetch) {
-        final subLevelDTO = await _fetchCurrSubLevel(levelDTO);
-        final isVideoExists =
-            await fileService.isVideoExists(levelDTO.id, subLevelDTO.videoFileName);
+        await _fetchCurrSubLevelZip(levelDTO);
 
-        if (isVideoExists) {
-          state = state.copyWith(
-            sublevels: {
-              ...state.sublevels,
-              SubLevel.fromSubLevelDTO(
-                subLevelDTO,
-                level,
-                currSubLevel,
-                levelId,
-              ),
-            },
-          );
-        }
+        await _addSublevelEntries(levelDTO, sublevels, level, levelId);
       }
 
       final zipNumbers = levelDTO.subLevels.map((subLevelDTO) => subLevelDTO.zip).toSet();
 
       await subLevelService.getZipFiles(levelDTO.id, zipNumbers);
 
-      for (var (index, sublevelDTO) in levelDTO.subLevels.indexed) {
-        final subLevelNumber = index + 1;
-        final isVideoExists =
-            await fileService.isVideoExists(levelDTO.id, sublevelDTO.videoFileName);
-
-        if (!isVideoExists) continue;
-
-        SubLevel subLevel = SubLevel.fromSubLevelDTO(sublevelDTO, level, subLevelNumber, levelId);
-
-        sublevels.add(subLevel);
-      }
-
-      state = state.copyWith(
-        sublevels: {...state.sublevels, ...sublevels},
-        loading: false,
-      );
+      await _addSublevelEntries(levelDTO, sublevels, level, levelId);
 
       return levelId;
     } catch (e, stackTrace) {
@@ -122,8 +90,30 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
     }
   }
 
-  Future<SubLevelDTO> _fetchCurrSubLevel(LevelDTO currLevelDTO) async {
-    final currUserSubLevel = await userController.subLevel;
+  Future<void> _addSublevelEntries(
+      LevelDTO levelDTO, Set<SubLevel> sublevels, int level, String levelId) async {
+    final entries = await fileService.listEntities(
+      Directory(
+        fileService.getVideoDirPath(levelDTO.id),
+      ),
+    );
+
+    for (var e in entries) {
+      final index = levelDTO.subLevels.indexWhere((element) => e.contains(element.videoFileName));
+
+      if (index == -1) continue;
+      final dto = levelDTO.subLevels[index];
+
+      sublevels.add(SubLevel.fromSubLevelDTO(dto, level, index + 1, levelId));
+    }
+
+    state = state.copyWith(
+      sublevels: {...state.sublevels, ...sublevels},
+    );
+  }
+
+  Future<SubLevelDTO> _fetchCurrSubLevelZip(LevelDTO currLevelDTO) async {
+    final currUserSubLevel = await ref.read(userControllerProvider).subLevel;
 
     final subLevelDTO = currLevelDTO.subLevels[currUserSubLevel - 1];
 
@@ -137,19 +127,26 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
   }
 
   Future<void> fetchSublevels() async {
-    final currUserLevel = await userController.level;
+    final userLevelNum = await ref.read(userControllerProvider).level;
+    final currUserLevelId = await ref.read(userControllerProvider).levelId;
+
     final isFirstFetch = state.isFirstFetch;
 
-    if (isFirstFetch) {
-      await orderedIdNotifier.getOrderedIds();
-    }
+    if (isFirstFetch) await orderedIdNotifier.getOrderedIds();
 
-    final orderedIds = orderedIdState.value;
+    final orderedIds = ref.read(orderedIdsNotifierProvider).value;
 
-    if (orderedIdState.hasError || orderedIds == null) {
+    if (orderedIds == null) {
       state = state.copyWith(error: 'Something Went Wrong. Please Try Again later', loading: false);
-      return; // Exit early on error
+      return;
     }
+
+    // handle case were we move any level back to the curr user level ;
+
+    final levelIdIndex =
+        currUserLevelId != null ? orderedIds.indexOf(currUserLevelId) + 1 : userLevelNum;
+
+    final currUserLevel = levelIdIndex > userLevelNum ? levelIdIndex : userLevelNum;
 
     final currLevelIndex = currUserLevel - 1;
 
@@ -167,7 +164,7 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
     final shouldFetchCurrLevel = !_isLevelFetched(currLevelId);
 
     if (shouldFetchCurrLevel) {
-      await _listByLevel(currLevelId, currLevelIndex);
+      await _listByLevel(currLevelId, currUserLevel);
     }
 
     // Get surrounding level IDs
@@ -176,19 +173,18 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
     // Fetch only the surrounding levels that haven't been fetched
     final fetchTasks = surroundingLevelIds
         .where((levelId) => levelId != null && !_isLevelFetched(levelId))
-        .map((levelId) => _listByLevel(levelId!, orderedIds.indexOf(levelId)))
+        .map((levelId) => _listByLevel(levelId!, orderedIds.indexOf(levelId) + 1))
         .toList();
 
     await Future.wait(fetchTasks); // Fetch all missing levels in parallel
 
-    if (fetchTasks.isNotEmpty || shouldFetchCurrLevel) {
-      SharedPref.addCachedIds({...fetchTasks.whereType<String>(), currLevelId});
-    }
-
     if (isFirstFetch) {
-      final cachedIds = await SharedPref.getCachedIds();
+      final cachedIds = await fileService.listEntities(
+        Directory(fileService.levelsDocDirPath),
+        type: ListType.folders,
+      );
 
-      storageCleanupService.removeFurthestCachedIds(cachedIds.toList(), orderedIds, currLevelId);
+      storageCleanupService.removeFurthestCachedIds(cachedIds, orderedIds, currLevelId);
     }
   }
 
@@ -209,23 +205,20 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
 
 final sublevelControllerProvider =
     StateNotifierProvider<SublevelController, SublevelControllerState>((ref) {
-  final userController = ref.read(userControllerProvider);
   final subLevelAPI = ref.read(subLevelAPIProvider);
   final levelApi = ref.read(levelApiProvider);
   final subLevelService = ref.read(subLevelServiceProvider);
   final fileService = ref.read(fileServiceProvider);
   final orderedIdNotifier = ref.read(orderedIdsNotifierProvider.notifier);
-  final orderedIdState = ref.watch(orderedIdsNotifierProvider);
   final storageCleanupService = ref.read(storageCleanupServiceProvider);
 
   return SublevelController(
     storageCleanupService: storageCleanupService,
     subLevelAPI: subLevelAPI,
-    userController: userController,
+    ref: ref,
     levelApi: levelApi,
     subLevelService: subLevelService,
     fileService: fileService,
     orderedIdNotifier: orderedIdNotifier,
-    orderedIdState: orderedIdState,
   );
 });

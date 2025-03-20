@@ -71,7 +71,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return true;
   }
 
-  Future<bool> handleFetchSublevels(int index, List<SubLevel> sublevels) async {
+  Future<bool> handleFetchSublevels(int index) async {
     if (index < _cachedSublevels!.length) return false;
     await ref.read(sublevelControllerProvider.notifier).fetchSublevels();
 
@@ -139,7 +139,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (!mounted || _cachedSublevels == null) return;
 
     // If the index is greater than the length of the cached sublevels, fetch the sublevels and return
-    if (await handleFetchSublevels(index, _cachedSublevels!)) return;
+    if (await handleFetchSublevels(index)) return;
 
     // Get the sublevel, level, and sublevel for the current index
     final sublevel = _cachedSublevels![index];
@@ -187,7 +187,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     // Fetch the sublevels if needed
-    await handleFetchSublevels(index, _cachedSublevels!);
+    await handleFetchSublevels(index);
 
     // If the user is logged in, add an activity log entry
     await SharedPref.addActivityLog(level, sublevelIndex, userEmail);

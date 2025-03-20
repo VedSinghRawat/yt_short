@@ -85,24 +85,6 @@ class SharedPref {
     await _setValue('googleIdToken', token);
   }
 
-  static Future<Set<String>> getCachedIds() async {
-    final ids = await _getList('cachedIds');
-
-    return ids as Set<String>;
-  }
-
-  static Future<void> addCachedIds(Set<String> ids) async {
-    final levels = await getCachedIds();
-
-    levels.addAll(ids);
-
-    await _setObject('cachedIds', levels);
-  }
-
-  static Future<void> setCachedIds(Set<String> ids) async {
-    await _setObject('cachedIds', ids);
-  }
-
   static Future<bool> isFirstLaunch() async {
     final isFirstLaunch = await _getValue('isFirstLaunch');
     return isFirstLaunch == null || isFirstLaunch == 'true';

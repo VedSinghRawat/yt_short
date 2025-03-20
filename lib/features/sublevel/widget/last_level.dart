@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
 class ErrorPage extends StatelessWidget {
-  final VoidCallback onRefresh;
+  final VoidCallback? onRefresh;
   final String text;
-  final String buttonText;
+  final String? buttonText;
 
   const ErrorPage({
     super.key,
-    required this.onRefresh,
+    this.onRefresh,
     required this.text,
-    required this.buttonText,
+    this.buttonText,
   });
 
   @override
@@ -24,10 +24,11 @@ class ErrorPage extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: onRefresh,
-            child: Text(buttonText),
-          ),
+          if (buttonText != null)
+            ElevatedButton(
+              onPressed: onRefresh,
+              child: Text(buttonText!),
+            ),
         ],
       ),
     );

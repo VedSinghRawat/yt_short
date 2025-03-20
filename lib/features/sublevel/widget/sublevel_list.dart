@@ -103,7 +103,9 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
         } else if (sublevel == null) {
           ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
 
-          return const SizedBox.shrink();
+          return const ErrorPage(
+            text: "Something went wrong when playing this video you can skip it for now",
+          );
         }
 
         final positionText = '${sublevel.level}-${sublevel.index}';
