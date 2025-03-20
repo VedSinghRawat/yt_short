@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:myapp/core/util_types/progress.dart';
+import 'package:myapp/models/level/level.dart';
 import 'package:myapp/models/activity_log/activity_log.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -12,6 +13,11 @@ class SharedPref {
   static Future<void> _setValue(String key, String value) async {
     final instance = await SharedPreferences.getInstance();
     await instance.setString(key, value);
+  }
+
+  static Future<void> _delete(String key) async {
+    final instance = await SharedPreferences.getInstance();
+    await instance.remove(key);
   }
 
   static Future<Map<String, dynamic>?> _getObject(String key) async {
@@ -131,13 +137,29 @@ class SharedPref {
   }
 
   static Future<List<String>?> getOrderedIds() async {
-    final ids = await _getList('orderedIds') as List<String>?;
+    final ids = await _getList('orderedIds');
 
     if (ids == null) {
       return null;
     }
 
-    return ids;
+    return List.castFrom<dynamic, String>(ids);
+  }
+
+  static Future<LevelDTO?> getLevelDTO(String id) async {
+    final json = await _getObject('leveldto_$id');
+
+    if (json == null) return null;
+
+    return LevelDTO.fromJson(json);
+  }
+
+  static Future<void> setLevelDTO(LevelDTO levelDTO) async {
+    await _setObject('leveldto_${levelDTO.id}', levelDTO.toJson());
+  }
+
+  static Future<void> deleteLevelDTO(String id) async {
+    await _delete('leveldto_$id');
   }
 
   static setOrderedIds(List<String> orderedIds) async {

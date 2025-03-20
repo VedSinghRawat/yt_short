@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:myapp/apis/level_api.dart';
+import 'package:myapp/constants/constants.dart';
+import 'package:myapp/core/console.dart';
 import 'package:myapp/core/services/cleanup_service.dart';
 import 'package:myapp/core/services/file_service.dart';
 import 'package:myapp/core/services/sub_level_service.dart';
@@ -57,14 +59,22 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
     );
 
     try {
+      Console.timeStart('list by level $levelId');
+
       final levelDTO = await levelApi.getById(levelId);
 
       final sublevels = {...state.sublevels};
 
       if (state.isFirstFetch) {
+        Console.timeStart('get first video');
         await _fetchCurrSubLevelZip(levelDTO);
 
+        Console.timeEnd('get first video');
+
+        Console.timeStart('add Entries');
         await _addSublevelEntries(levelDTO, sublevels, level, levelId);
+
+        Console.timeEnd('add Entries');
       }
 
       final zipNumbers = levelDTO.subLevels.map((subLevelDTO) => subLevelDTO.zip).toSet();
@@ -87,7 +97,13 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
       return null;
     } finally {
       state = state.copyWith(loading: false);
+
+      Console.timeEnd('list by level $levelId');
     }
+  }
+
+  void setVideoPlayingError(String e) {
+    state = state.copyWith(error: e);
   }
 
   Future<void> _addSublevelEntries(
@@ -127,64 +143,75 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
   }
 
   Future<void> fetchSublevels() async {
-    final userLevelNum = await ref.read(userControllerProvider).level;
-    final currUserLevelId = await ref.read(userControllerProvider).levelId;
+    try {
+      final userLevelNum = await ref.read(userControllerProvider).level;
+      final currUserLevelId = await ref.read(userControllerProvider).levelId;
 
-    final isFirstFetch = state.isFirstFetch;
+      final isFirstFetch = state.isFirstFetch;
 
-    if (isFirstFetch) await orderedIdNotifier.getOrderedIds();
+      if (isFirstFetch) await orderedIdNotifier.getOrderedIds();
 
-    final orderedIds = ref.read(orderedIdsNotifierProvider).value;
+      final asyncOrderIds = ref.read(orderedIdsNotifierProvider);
 
-    if (orderedIds == null) {
-      state = state.copyWith(error: 'Something Went Wrong. Please Try Again later', loading: false);
-      return;
-    }
+      if (asyncOrderIds.hasError) {
+        state = state.copyWith(error: asyncOrderIds.error.toString(), loading: false);
+        return;
+      }
 
-    // handle case were we move any level back to the curr user level ;
+      final orderedIds = asyncOrderIds.value;
 
-    final levelIdIndex =
-        currUserLevelId != null ? orderedIds.indexOf(currUserLevelId) + 1 : userLevelNum;
+      if (orderedIds == null) {
+        state = state.copyWith(error: genericErrorMessage, loading: false);
+        return;
+      }
 
-    final currUserLevel = levelIdIndex > userLevelNum ? levelIdIndex : userLevelNum;
+      // handle case were we move any level back to the curr user level ;
 
-    final currLevelIndex = currUserLevel - 1;
+      final levelIdIndex =
+          currUserLevelId != null ? orderedIds.indexOf(currUserLevelId) + 1 : userLevelNum;
 
-    if (currLevelIndex < 0 || currLevelIndex >= orderedIds.length) {
-      state = state.copyWith(
-        error: 'All the levels are completed, please try again after some time',
-        loading: false,
-      );
-      return;
-    }
+      final currUserLevel = levelIdIndex > userLevelNum ? levelIdIndex : userLevelNum;
 
-    final currLevelId = orderedIds[currLevelIndex];
+      final currLevelIndex = currUserLevel - 1;
 
-    // Fetch current level if not already fetched
-    final shouldFetchCurrLevel = !_isLevelFetched(currLevelId);
+      if (currLevelIndex < 0 || currLevelIndex >= orderedIds.length) {
+        state = state.copyWith(
+          error: 'All the levels are completed, please try again after some time',
+          loading: false,
+        );
+        return;
+      }
 
-    if (shouldFetchCurrLevel) {
-      await _listByLevel(currLevelId, currUserLevel);
-    }
+      final currLevelId = orderedIds[currLevelIndex];
 
-    // Get surrounding level IDs
-    final surroundingLevelIds = _getSurroundingLevelIds(currLevelIndex, orderedIds);
+      // Fetch current level if not already fetched
+      final shouldFetchCurrLevel = !_isLevelFetched(currLevelId);
 
-    // Fetch only the surrounding levels that haven't been fetched
-    final fetchTasks = surroundingLevelIds
-        .where((levelId) => levelId != null && !_isLevelFetched(levelId))
-        .map((levelId) => _listByLevel(levelId!, orderedIds.indexOf(levelId) + 1))
-        .toList();
+      if (shouldFetchCurrLevel) {
+        await _listByLevel(currLevelId, currUserLevel);
+      }
 
-    await Future.wait(fetchTasks); // Fetch all missing levels in parallel
+      // Get surrounding level IDs
+      final surroundingLevelIds = _getSurroundingLevelIds(currLevelIndex, orderedIds);
 
-    if (isFirstFetch) {
-      final cachedIds = await fileService.listEntities(
-        Directory(fileService.levelsDocDirPath),
-        type: ListType.folders,
-      );
+      // Fetch only the surrounding levels that haven't been fetched
+      final fetchTasks = surroundingLevelIds
+          .where((levelId) => levelId != null && !_isLevelFetched(levelId))
+          .map((levelId) => _listByLevel(levelId!, orderedIds.indexOf(levelId) + 1))
+          .toList();
 
-      storageCleanupService.removeFurthestCachedIds(cachedIds, orderedIds, currLevelId);
+      await Future.wait(fetchTasks); // Fetch all missing levels in parallel
+
+      if (isFirstFetch) {
+        final cachedIds = await fileService.listEntities(
+          Directory(fileService.levelsDocDirPath),
+          type: ListType.folders,
+        );
+
+        storageCleanupService.removeFurthestCachedIds(cachedIds, orderedIds, currLevelId);
+      }
+    } catch (e) {
+      state = state.copyWith(error: e.toString(), loading: false);
     }
   }
 

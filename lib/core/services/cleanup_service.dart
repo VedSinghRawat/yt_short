@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/services/file_service.dart';
+import 'package:myapp/core/shared_pref.dart';
 
 class StorageCleanupService {
   final FileService fileService;
@@ -37,6 +38,8 @@ class StorageCleanupService {
 
         if (await folder.exists()) {
           await folder.delete(recursive: true);
+
+          await SharedPref.deleteLevelDTO(id);
 
           final folderSize = await checkStorageSize(folder);
 

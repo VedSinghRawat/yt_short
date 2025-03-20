@@ -10,3 +10,5 @@ const String kPlayStoreBaseUrl = "https://play.google.com/store/apps/details?id=
 const int kMaxStorageSizeMB = 50;
 
 const double kDeleteCacheThresholdMB = kMaxStorageSizeMB * 0.3; // 30%
+
+const genericErrorMessage = 'Something went wrong. Please try again later.';

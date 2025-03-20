@@ -5,6 +5,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:myapp/core/console.dart';
 import 'package:myapp/core/error/failure.dart';
 import 'package:myapp/core/services/api_service.dart';
+import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/level/level.dart';
 
@@ -27,9 +28,18 @@ class LevelApi implements ILevelApi {
         customBaseUrl: dotenv.env['S3_BASE_URL'],
       );
 
-      return LevelDTO.fromJson(response.data);
+      final levelDTO = LevelDTO.fromJson(response.data);
+
+      await SharedPref.setLevelDTO(levelDTO);
+
+      return levelDTO;
     } on DioException catch (e) {
-      Console.error(Failure(message: e.response?.data?.toString() ?? e.toString()));
+      if (dioConnectionErrors.contains(e.type)) {
+        final cachedData = await SharedPref.getLevelDTO(id);
+        if (cachedData != null) {
+          return cachedData;
+        }
+      }
 
       throw Exception(e.response?.data?.toString() ?? e.toString());
     }
@@ -55,7 +65,12 @@ class LevelApi implements ILevelApi {
         return right(null);
       }
 
-      return left(Failure(message: e.response?.data?.toString() ?? e.toString()));
+      return left(
+        Failure(
+          message: e.response?.data?.toString() ?? e.toString(),
+          type: e.type,
+        ),
+      );
     } catch (e) {
       return left(
         Failure(

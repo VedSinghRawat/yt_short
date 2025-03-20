@@ -121,7 +121,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     int localMaxLevel,
     int localMaxSubLevel,
   ) async {
-    final isLocalLevelAfter = isLevelAfter(level, sublevelIndex, localMaxLevel, localMaxSubLevel);
+    final isCurrLevelAfter = isLevelAfter(level, sublevelIndex, localMaxLevel, localMaxSubLevel);
 
     // Update the user's current progress in shared preferences
     await SharedPref.setCurrProgress(
@@ -129,8 +129,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         level: level,
         subLevel: sublevelIndex,
         levelId: levelId,
-        maxLevel: isLocalLevelAfter ? level : localMaxLevel,
-        maxSubLevel: isLocalLevelAfter ? sublevelIndex : localMaxSubLevel,
+        maxLevel: isCurrLevelAfter ? level : localMaxLevel,
+        maxSubLevel: isCurrLevelAfter ? sublevelIndex : localMaxSubLevel,
       ),
     );
   }

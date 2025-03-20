@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:myapp/core/error/failure.dart';
@@ -51,3 +52,10 @@ num getMax(List<num?> numbers) {
 typedef FutureEither<T> = Future<Either<Failure, T>>;
 
 typedef FutureVoid = FutureEither<void>;
+
+final dioConnectionErrors = {
+  DioExceptionType.connectionError,
+  DioExceptionType.sendTimeout,
+  DioExceptionType.receiveTimeout,
+  DioExceptionType.connectionTimeout,
+};

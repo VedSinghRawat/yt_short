@@ -103,8 +103,10 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
         } else if (sublevel == null) {
           ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
 
-          return const ErrorPage(
-            text: "Something went wrong when playing this video you can skip it for now",
+          final error = ref.watch(sublevelControllerProvider).error;
+
+          return ErrorPage(
+            text: error ?? "Something went wrong when playing this video you can skip it for now",
           );
         }
 

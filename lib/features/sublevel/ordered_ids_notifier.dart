@@ -1,3 +1,6 @@
+import 'package:myapp/constants/constants.dart';
+import 'package:myapp/core/error/failure.dart';
+import 'package:myapp/core/utils.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:myapp/apis/level_api.dart';
@@ -21,21 +24,41 @@ class OrderedIdsNotifier extends _$OrderedIdsNotifier {
       final res = await ref.read(levelApiProvider).getOrderedIds(eTag);
 
       state = switch (res) {
-        Left(value: final l) => AsyncValue.error(l, StackTrace.current),
-        Right(value: final r) => await _getIds(r),
+        Left(value: final l) => await _handleLeft(l),
+        Right(value: final r) => await _handleRight(r),
       };
     } catch (e) {
-      AsyncValue.error(e, StackTrace.current);
+      state = AsyncValue.error(e, StackTrace.current);
     }
   }
 
-  Future<AsyncValue<List<String>>> _getIds(List<String>? right) async {
-    if (right != null) return AsyncValue.data(right);
+  Future<AsyncValue<List<String>>> _handleLeft(Failure error) async {
+    final localIds = await SharedPref.getOrderedIds();
 
+    if (dioConnectionErrors.contains(error.type) && localIds == null) {
+      return AsyncValue.error(
+        'No internet connection. Please check your connection and try again.',
+        StackTrace.current,
+      );
+    }
+
+    return _getIds();
+  }
+
+  Future<AsyncValue<List<String>>> _handleRight(List<String>? ids) async {
+    if (ids != null) {
+      SharedPref.setOrderedIds(ids);
+      return AsyncValue.data(ids);
+    }
+
+    return _getIds();
+  }
+
+  Future<AsyncValue<List<String>>> _getIds() async {
     final ids = await SharedPref.getOrderedIds();
 
     if (ids == null) {
-      return AsyncValue.error('No ids found localy', StackTrace.current);
+      return AsyncValue.error(genericErrorMessage, StackTrace.current);
     }
 
     return AsyncValue.data(ids);

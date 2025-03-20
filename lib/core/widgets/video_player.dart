@@ -1,25 +1,34 @@
+import 'dart:developer';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:myapp/core/console.dart';
+import 'package:myapp/core/error/failure.dart';
 import 'package:myapp/core/widgets/loader.dart';
+import 'package:myapp/features/sublevel/sublevel_controller.dart';
+import 'package:myapp/features/sublevel/widget/last_level.dart';
 import 'package:video_player/video_player.dart';
 
 // Stateful widget to fetch and then display video sublevel.
-class MediaPlayer extends StatefulWidget {
+class MediaPlayer extends ConsumerStatefulWidget {
   final String mediaPath;
   final void Function(VideoPlayerController)? onControllerCreated;
+  final VoidCallback onError;
 
   const MediaPlayer({
     super.key,
+    required this.onError,
     required this.mediaPath,
     this.onControllerCreated,
   });
 
   @override
-  State<MediaPlayer> createState() => _MediaPlayerState();
+  ConsumerState<MediaPlayer> createState() => _MediaPlayerState();
 }
 
-class _MediaPlayerState extends State<MediaPlayer> {
+class _MediaPlayerState extends ConsumerState<MediaPlayer> {
   VideoPlayerController? _mediaPlayerController;
 
   _initVideoPlayer() async {
@@ -33,10 +42,15 @@ class _MediaPlayerState extends State<MediaPlayer> {
 
     _mediaPlayerController!.setLooping(true);
 
-    await _mediaPlayerController!.initialize();
+    try {
+      await _mediaPlayerController!.initialize();
+      // Notify parent when controller is created
+      widget.onControllerCreated?.call(_mediaPlayerController!);
+    } catch (e) {
+      Console.error(Failure(message: 'error during video player initialize $e'));
 
-    // Notify parent when controller is created
-    widget.onControllerCreated?.call(_mediaPlayerController!);
+      widget.onError();
+    }
   }
 
   @override

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/core/widgets/video_player.dart';
 import 'package:myapp/features/sublevel/sublevel_controller.dart';
+import 'package:myapp/features/sublevel/widget/last_level.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
@@ -30,6 +31,8 @@ class _PlayerState extends ConsumerState<Player> {
   bool _showPlayPauseIcon = false;
   IconData _iconData = Icons.play_arrow;
   Timer? _iconTimer;
+
+  String? error;
 
   bool _isVisible = false;
 
@@ -109,6 +112,10 @@ class _PlayerState extends ConsumerState<Player> {
         _isVisible = isVisible;
       });
 
+      if (isVisible && error != null) {
+        ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
+      }
+
       _handleListener();
     } catch (e) {
       developer.log('Error in Player._onVisibilityChanged', error: e.toString());
@@ -137,10 +144,25 @@ class _PlayerState extends ConsumerState<Player> {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            MediaPlayer(
-              mediaPath: widget.videoPath,
-              onControllerCreated: _onControllerInitialized,
-            ),
+            error != null
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: ErrorPage(
+                        text: error!,
+                      ),
+                    ),
+                  )
+                : MediaPlayer(
+                    mediaPath: widget.videoPath,
+                    onControllerCreated: _onControllerInitialized,
+                    onError: () {
+                      setState(() {
+                        error =
+                            'For some reason, we are unable to play this video right now. You can skip it for now.';
+                      });
+                    },
+                  ),
             PlayPauseButton(showPlayPauseIcon: _showPlayPauseIcon, iconData: _iconData),
           ],
         ),

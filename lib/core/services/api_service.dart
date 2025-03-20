@@ -96,7 +96,13 @@ class ApiService {
 
         await setToken(idToken);
         return await _makeRequest<T>(
-            endpoint: endpoint, method: method, body: body, headers: headers);
+          endpoint: endpoint,
+          method: method,
+          body: body,
+          headers: headers,
+          customBaseUrl: customBaseUrl,
+          responseType: responseType,
+        );
       }
 
       rethrow;
