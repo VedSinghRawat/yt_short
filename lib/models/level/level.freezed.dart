@@ -3,7 +3,7 @@
 // ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
-part of 'level_.dart';
+part of 'level.dart';
 
 // **************************************************************************
 // FreezedGenerator
@@ -35,13 +35,15 @@ mixin _$Level {
 
 /// @nodoc
 abstract class $LevelCopyWith<$Res> {
-  factory $LevelCopyWith(Level value, $Res Function(Level) then) = _$LevelCopyWithImpl<$Res, Level>;
+  factory $LevelCopyWith(Level value, $Res Function(Level) then) =
+      _$LevelCopyWithImpl<$Res, Level>;
   @useResult
   $Res call({String id, String title, int subLevelCount});
 }
 
 /// @nodoc
-class _$LevelCopyWithImpl<$Res, $Val extends Level> implements $LevelCopyWith<$Res> {
+class _$LevelCopyWithImpl<$Res, $Val extends Level>
+    implements $LevelCopyWith<$Res> {
   _$LevelCopyWithImpl(this._value, this._then);
 
   // ignore: unused_field
@@ -77,7 +79,8 @@ class _$LevelCopyWithImpl<$Res, $Val extends Level> implements $LevelCopyWith<$R
 
 /// @nodoc
 abstract class _$$LevelImplCopyWith<$Res> implements $LevelCopyWith<$Res> {
-  factory _$$LevelImplCopyWith(_$LevelImpl value, $Res Function(_$LevelImpl) then) =
+  factory _$$LevelImplCopyWith(
+          _$LevelImpl value, $Res Function(_$LevelImpl) then) =
       __$$LevelImplCopyWithImpl<$Res>;
   @override
   @useResult
@@ -85,9 +88,11 @@ abstract class _$$LevelImplCopyWith<$Res> implements $LevelCopyWith<$Res> {
 }
 
 /// @nodoc
-class __$$LevelImplCopyWithImpl<$Res> extends _$LevelCopyWithImpl<$Res, _$LevelImpl>
+class __$$LevelImplCopyWithImpl<$Res>
+    extends _$LevelCopyWithImpl<$Res, _$LevelImpl>
     implements _$$LevelImplCopyWith<$Res> {
-  __$$LevelImplCopyWithImpl(_$LevelImpl _value, $Res Function(_$LevelImpl) _then)
+  __$$LevelImplCopyWithImpl(
+      _$LevelImpl _value, $Res Function(_$LevelImpl) _then)
       : super(_value, _then);
 
   /// Create a copy of Level
@@ -119,9 +124,11 @@ class __$$LevelImplCopyWithImpl<$Res> extends _$LevelCopyWithImpl<$Res, _$LevelI
 /// @nodoc
 @JsonSerializable()
 class _$LevelImpl with DiagnosticableTreeMixin implements _Level {
-  const _$LevelImpl({required this.id, required this.title, required this.subLevelCount});
+  const _$LevelImpl(
+      {required this.id, required this.title, required this.subLevelCount});
 
-  factory _$LevelImpl.fromJson(Map<String, dynamic> json) => _$$LevelImplFromJson(json);
+  factory _$LevelImpl.fromJson(Map<String, dynamic> json) =>
+      _$$LevelImplFromJson(json);
 
   @override
   final String id;
@@ -195,7 +202,8 @@ abstract class _Level implements Level {
   /// with the given fields replaced by the non-null parameter values.
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$LevelImplCopyWith<_$LevelImpl> get copyWith => throw _privateConstructorUsedError;
+  _$$LevelImplCopyWith<_$LevelImpl> get copyWith =>
+      throw _privateConstructorUsedError;
 }
 
 LevelDTO _$LevelDTOFromJson(Map<String, dynamic> json) {
@@ -214,7 +222,8 @@ mixin _$LevelDTO {
   /// Create a copy of LevelDTO
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
-  $LevelDTOCopyWith<LevelDTO> get copyWith => throw _privateConstructorUsedError;
+  $LevelDTOCopyWith<LevelDTO> get copyWith =>
+      throw _privateConstructorUsedError;
 }
 
 /// @nodoc
@@ -226,7 +235,8 @@ abstract class $LevelDTOCopyWith<$Res> {
 }
 
 /// @nodoc
-class _$LevelDTOCopyWithImpl<$Res, $Val extends LevelDTO> implements $LevelDTOCopyWith<$Res> {
+class _$LevelDTOCopyWithImpl<$Res, $Val extends LevelDTO>
+    implements $LevelDTOCopyWith<$Res> {
   _$LevelDTOCopyWithImpl(this._value, this._then);
 
   // ignore: unused_field
@@ -261,8 +271,10 @@ class _$LevelDTOCopyWithImpl<$Res, $Val extends LevelDTO> implements $LevelDTOCo
 }
 
 /// @nodoc
-abstract class _$$LevelDTOImplCopyWith<$Res> implements $LevelDTOCopyWith<$Res> {
-  factory _$$LevelDTOImplCopyWith(_$LevelDTOImpl value, $Res Function(_$LevelDTOImpl) then) =
+abstract class _$$LevelDTOImplCopyWith<$Res>
+    implements $LevelDTOCopyWith<$Res> {
+  factory _$$LevelDTOImplCopyWith(
+          _$LevelDTOImpl value, $Res Function(_$LevelDTOImpl) then) =
       __$$LevelDTOImplCopyWithImpl<$Res>;
   @override
   @useResult
@@ -270,9 +282,11 @@ abstract class _$$LevelDTOImplCopyWith<$Res> implements $LevelDTOCopyWith<$Res> 
 }
 
 /// @nodoc
-class __$$LevelDTOImplCopyWithImpl<$Res> extends _$LevelDTOCopyWithImpl<$Res, _$LevelDTOImpl>
+class __$$LevelDTOImplCopyWithImpl<$Res>
+    extends _$LevelDTOCopyWithImpl<$Res, _$LevelDTOImpl>
     implements _$$LevelDTOImplCopyWith<$Res> {
-  __$$LevelDTOImplCopyWithImpl(_$LevelDTOImpl _value, $Res Function(_$LevelDTOImpl) _then)
+  __$$LevelDTOImplCopyWithImpl(
+      _$LevelDTOImpl _value, $Res Function(_$LevelDTOImpl) _then)
       : super(_value, _then);
 
   /// Create a copy of LevelDTO
@@ -305,10 +319,13 @@ class __$$LevelDTOImplCopyWithImpl<$Res> extends _$LevelDTOCopyWithImpl<$Res, _$
 @JsonSerializable()
 class _$LevelDTOImpl with DiagnosticableTreeMixin implements _LevelDTO {
   const _$LevelDTOImpl(
-      {required this.id, required this.title, required final List<SubLevelDTO> subLevels})
+      {required this.id,
+      required this.title,
+      required final List<SubLevelDTO> subLevels})
       : _subLevels = subLevels;
 
-  factory _$LevelDTOImpl.fromJson(Map<String, dynamic> json) => _$$LevelDTOImplFromJson(json);
+  factory _$LevelDTOImpl.fromJson(Map<String, dynamic> json) =>
+      _$$LevelDTOImplFromJson(json);
 
   @override
   final String id;
@@ -344,13 +361,14 @@ class _$LevelDTOImpl with DiagnosticableTreeMixin implements _LevelDTO {
             other is _$LevelDTOImpl &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.title, title) || other.title == title) &&
-            const DeepCollectionEquality().equals(other._subLevels, _subLevels));
+            const DeepCollectionEquality()
+                .equals(other._subLevels, _subLevels));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, id, title, const DeepCollectionEquality().hash(_subLevels));
+  int get hashCode => Object.hash(
+      runtimeType, id, title, const DeepCollectionEquality().hash(_subLevels));
 
   /// Create a copy of LevelDTO
   /// with the given fields replaced by the non-null parameter values.
@@ -374,7 +392,8 @@ abstract class _LevelDTO implements LevelDTO {
       required final String title,
       required final List<SubLevelDTO> subLevels}) = _$LevelDTOImpl;
 
-  factory _LevelDTO.fromJson(Map<String, dynamic> json) = _$LevelDTOImpl.fromJson;
+  factory _LevelDTO.fromJson(Map<String, dynamic> json) =
+      _$LevelDTOImpl.fromJson;
 
   @override
   String get id;
@@ -387,5 +406,6 @@ abstract class _LevelDTO implements LevelDTO {
   /// with the given fields replaced by the non-null parameter values.
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$LevelDTOImplCopyWith<_$LevelDTOImpl> get copyWith => throw _privateConstructorUsedError;
+  _$$LevelDTOImplCopyWith<_$LevelDTOImpl> get copyWith =>
+      throw _privateConstructorUsedError;
 }

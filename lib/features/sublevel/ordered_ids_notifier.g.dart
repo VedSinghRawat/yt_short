@@ -7,12 +7,12 @@ part of 'ordered_ids_notifier.dart';
 // **************************************************************************
 
 String _$orderedIdsNotifierHash() =>
-    r'8b7d226a155e3643877020bd8c92db4ad0f72575';
+    r'4e7a5a54093311045efc393215382c03c5ba80ef';
 
 /// See also [OrderedIdsNotifier].
 @ProviderFor(OrderedIdsNotifier)
-final orderedIdsNotifierProvider =
-    NotifierProvider<OrderedIdsNotifier, AsyncValue<List<String>>>.internal(
+final orderedIdsNotifierProvider = AutoDisposeNotifierProvider<
+    OrderedIdsNotifier, AsyncValue<List<String>>>.internal(
   OrderedIdsNotifier.new,
   name: r'orderedIdsNotifierProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -22,6 +22,6 @@ final orderedIdsNotifierProvider =
   allTransitiveDependencies: null,
 );
 
-typedef _$OrderedIdsNotifier = Notifier<AsyncValue<List<String>>>;
+typedef _$OrderedIdsNotifier = AutoDisposeNotifier<AsyncValue<List<String>>>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
