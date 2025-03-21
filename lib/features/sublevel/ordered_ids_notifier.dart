@@ -10,7 +10,7 @@ part 'ordered_ids_notifier.g.dart';
 
 const kOrderedIdETagId = 'ahfafdlkfsdfs'; //some random id
 
-@riverpod
+@Riverpod(keepAlive: true)
 class OrderedIdsNotifier extends _$OrderedIdsNotifier {
   @override
   AsyncValue<List<String>> build() {
