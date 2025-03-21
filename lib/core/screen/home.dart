@@ -52,7 +52,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final levelAfter = !hasLocalProgress || isLevelAfter(level, subLevel, maxLevel, maxSubLevel);
     final canChangeVideo = hasFinishedVideo || !levelAfter;
 
-    if (canChangeVideo || isAdmin) {
+    if (canChangeVideo || true) {
       return false;
     }
 
@@ -187,7 +187,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     // Fetch the sublevels if needed
-    await handleFetchSublevels(index);
+    await fetchSubLevels(index);
 
     // If the user is logged in, add an activity log entry
     await SharedPref.addActivityLog(level, sublevelIndex, userEmail);
@@ -197,6 +197,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     // Sync the last sync time with the server
     await syncActivityLogs();
+  }
+
+  Future<void> fetchSubLevels(int index) async {
+    if (index == 0) return;
+
+    final prevLevel = _cachedSublevels?[index - 1] ?? 0;
+    final currLevel = _cachedSublevels?[index] ?? 0;
+
+    if (prevLevel == currLevel) return;
+
+    await ref.read(sublevelControllerProvider.notifier).fetchSublevels();
   }
 
   List<SubLevel> _getSortedSublevels(List<SubLevel> sublevels) {
@@ -221,7 +232,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final sublevels = ref.watch(sublevelControllerProvider.select((state) => state.sublevels));
 
     // Only sort sublevels if they have changed
-    if (_cachedSublevels == null || !listEquals(_cachedSublevels, sublevels.toList())) {
+    if (_cachedSublevels == null || _cachedSublevels!.length != sublevels.toList().length) {
       _cachedSublevels = _getSortedSublevels(sublevels.toList());
     }
 

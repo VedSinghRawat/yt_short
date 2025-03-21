@@ -8,7 +8,7 @@ class Console {
 
   static void log(String message, {String? name}) {
     if (!kDebugMode) return;
-    dev.log(message, name: name ?? 'Console.log');
+    dev.log(message, name: name ?? '[log] Console');
   }
 
   static void error(Failure failure) {

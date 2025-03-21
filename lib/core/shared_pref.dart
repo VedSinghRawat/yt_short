@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/models/level/level.dart';
 import 'package:myapp/models/activity_log/activity_log.dart';
@@ -44,10 +45,17 @@ class SharedPref {
     final progressMap = progress.toJson();
     final currProgressMap = currProgress?.toJson() ?? {};
 
-    // Merge maps: Use existing values if they are null
+    // Merge maps but only update non-null values from progressMap
     final mergedProgressMap = {
-      ...currProgressMap, // Previous progress values
-      ...progressMap, // New values (overwriting non-null values)
+      ...currProgressMap, // Keep existing values
+      ...progressMap.map(
+        (key, value) => value != null
+            ? MapEntry(key, value)
+            : MapEntry(
+                key,
+                currProgressMap[key],
+              ),
+      ), // Only overwrite non-null values
       'modified': DateTime.now().millisecondsSinceEpoch, // Always update timestamp
     };
 

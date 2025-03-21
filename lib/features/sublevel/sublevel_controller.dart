@@ -114,14 +114,20 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
       ),
     );
 
-    for (var e in entries) {
-      final index = levelDTO.subLevels.indexWhere((element) => e.contains(element.videoFileName));
-
-      if (index == -1) continue;
-      final dto = levelDTO.subLevels[index];
-
-      sublevels.add(SubLevel.fromSubLevelDTO(dto, level, index + 1, levelId));
-    }
+    sublevels.addAll(
+      levelDTO.subLevels
+          .where(
+            (element) => entries.any((e) => e == "${element.videoFileName}.mp4"),
+          )
+          .map(
+            (dto) => SubLevel.fromSubLevelDTO(
+              dto,
+              level,
+              levelDTO.subLevels.indexOf(dto) + 1,
+              levelId,
+            ),
+          ),
+    );
 
     state = state.copyWith(
       sublevels: {...state.sublevels, ...sublevels},
