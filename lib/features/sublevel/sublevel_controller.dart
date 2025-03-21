@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:myapp/apis/level_api.dart';
 import 'package:myapp/constants/constants.dart';
-import 'package:myapp/core/console.dart';
 import 'package:myapp/core/services/cleanup_service.dart';
 import 'package:myapp/core/services/file_service.dart';
 import 'package:myapp/core/services/sub_level_service.dart';
@@ -59,22 +58,14 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
     );
 
     try {
-      Console.timeStart('list by level $levelId');
-
       final levelDTO = await levelApi.getById(levelId);
 
       final sublevels = {...state.sublevels};
 
       if (state.isFirstFetch) {
-        Console.timeStart('get first video');
         await _fetchCurrSubLevelZip(levelDTO);
 
-        Console.timeEnd('get first video');
-
-        Console.timeStart('add Entries');
         await _addSublevelEntries(levelDTO, sublevels, level, levelId);
-
-        Console.timeEnd('add Entries');
       }
 
       final zipNumbers = levelDTO.subLevels.map((subLevelDTO) => subLevelDTO.zip).toSet();
@@ -97,8 +88,6 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
       return null;
     } finally {
       state = state.copyWith(loading: false);
-
-      Console.timeEnd('list by level $levelId');
     }
   }
 
