@@ -9,19 +9,21 @@ import 'package:myapp/core/screen/home.dart';
 import 'package:myapp/core/screen/suggest_version_update.dart';
 import 'package:myapp/core/screen/require_version_update.dart';
 import 'package:myapp/features/auth/widgets/auth_wrapper.dart';
+import 'package:myapp/features/initialize/initilize_screen.dart';
 
 class Routes {
-  static const home = '/';
+  static const home = '/home';
   static const versionRequired = '/version/required';
   static const versionSuggest = '/version/suggest';
   static const signIn = '/signIn';
   static const deepLinked = '/deepLinking';
+  static const initializeScreen = '/';
 }
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     navigatorKey: navigatorKey,
-    initialLocation: '/',
+    initialLocation: Routes.initializeScreen,
     routes: [
       // Version check routes - not wrapped with VersionCheckWrapper to avoid loops
       GoRoute(
@@ -49,8 +51,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: Routes.deepLinked,
-        name: Routes.deepLinked,
         builder: (context, state) => const DeepLikedScreen(),
+      ),
+
+      GoRoute(
+        path: Routes.initializeScreen,
+        builder: (context, state) => const InitilizeScreen(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

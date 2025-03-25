@@ -2,12 +2,10 @@ import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:myapp/apis/initialize_api.dart';
 import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/services/info_service.dart';
 import 'package:myapp/core/services/initialize_service.dart';
 import 'package:myapp/core/utils.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 // State class to track version check state

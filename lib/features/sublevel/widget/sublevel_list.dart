@@ -7,7 +7,7 @@ import 'package:myapp/core/services/file_service.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/widgets/loader.dart';
-import 'package:myapp/core/widgets/player.dart';
+import 'package:myapp/core/widgets/player_controller.dart';
 import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'package:myapp/features/sublevel/widget/last_level.dart';
 import 'package:myapp/features/speech_exercise/screen/speech_exercise_screen.dart';
@@ -15,14 +15,14 @@ import 'package:myapp/models/sublevel/sublevel.dart';
 
 class SublevelsList extends ConsumerStatefulWidget {
   final List<SubLevel> sublevels;
-  final bool isLoading;
+  final Set<String> loadingIds;
   final Future<void> Function(int index, PageController controller)? onVideoChange;
 
   const SublevelsList({
     super.key,
     required this.sublevels,
     this.onVideoChange,
-    this.isLoading = false,
+    required this.loadingIds,
   });
 
   @override
@@ -77,72 +77,84 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
 
   @override
   Widget build(BuildContext context) {
-    return PageView.builder(
-      controller: _pageController,
-      allowImplicitScrolling: true,
-      dragStartBehavior: DragStartBehavior.down,
-      itemCount: widget.sublevels.length + 1,
-      scrollDirection: Axis.vertical,
-      onPageChanged: (index) async {
-        await widget.onVideoChange?.call(index, _pageController);
+    return RefreshIndicator(
+      onRefresh: () async {
+        if (widget.sublevels[0].level == 1) return;
+
+        await Future.delayed(const Duration(seconds: 5));
       },
-      itemBuilder: (context, index) {
-        final sublevel = widget.sublevels.length > index ? widget.sublevels[index] : null;
-        final isLastSublevel = index == widget.sublevels.length;
+      child: PageView.builder(
+        controller: _pageController,
+        allowImplicitScrolling: true,
+        dragStartBehavior: DragStartBehavior.down,
+        itemCount: widget.sublevels.length + 1,
+        scrollDirection: Axis.vertical,
+        onPageChanged: (index) async {
+          await widget.onVideoChange?.call(index, _pageController);
+        },
+        itemBuilder: (context, index) {
+          final sublevel = widget.sublevels.length > index ? widget.sublevels[index] : null;
 
-        if ((isLastSublevel || sublevel == null) && !widget.isLoading) {
-          final error = ref.watch(sublevelControllerProvider).error;
+          final isLastSublevel = index == widget.sublevels.length;
 
-          return ErrorPage(
-            onRefresh: () => widget.onVideoChange?.call(index, _pageController),
-            text: error ?? "Something went wrong please try again later",
-            buttonText: 'Retry',
-          );
-        }
+          final isLoading = sublevel == null
+              ? widget.loadingIds.isNotEmpty
+              : widget.loadingIds.contains(sublevel.levelId);
 
-        if (sublevel == null && widget.isLoading) {
-          return const Loader();
-        } else if (sublevel == null) {
-          ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
+          if ((isLastSublevel || sublevel == null) && !isLoading) {
+            final error = ref.watch(sublevelControllerProvider).error;
+            final loadedids = ref.watch(sublevelControllerProvider).loadedLevelIds;
 
-          final error = ref.watch(sublevelControllerProvider).error;
+            developer.log('sublevel list errors $error ${widget.loadingIds} $loadedids');
 
-          return ErrorPage(
-            text: error ?? "Something went wrong when playing this video you can skip it for now",
-          );
-        }
+            if (error == null) {
+              return const Loader();
+            }
 
-        final positionText = '${sublevel.level}-${sublevel.index}';
+            return ErrorPage(
+              onRefresh: () => widget.onVideoChange?.call(index, _pageController),
+              text: error,
+              buttonText: 'Retry',
+            );
+          }
 
-        final url = ref
-            .read(fileServiceProvider)
-            .getUnzippedVideoPath(sublevel.levelId, sublevel.videoFileName);
+          if (sublevel == null) {
+            developer.log('sublevel list widget.isloading ${widget.loadingIds} ');
+            return const Loader();
+          }
 
-        return Stack(
-          children: [
-            Center(
-              child: sublevel.when(
-                video: (video) => Player(
-                  key: Key(positionText),
-                  uniqueId: positionText,
-                  videoPath: url,
-                ),
-                speechExercise: (speechExercise) => SpeechExerciseScreen(
-                  key: Key(positionText),
-                  uniqueId: positionText,
-                  exercise: speechExercise,
-                  videoPath: url,
+          final positionText = '${sublevel.level}-${sublevel.index}';
+
+          final url = ref
+              .read(fileServiceProvider)
+              .getUnzippedVideoPath(sublevel.levelId, sublevel.videoFileName);
+
+          return Stack(
+            children: [
+              Center(
+                child: sublevel.when(
+                  video: (video) => Player(
+                    key: Key(positionText),
+                    uniqueId: positionText,
+                    videoPath: url,
+                  ),
+                  speechExercise: (speechExercise) => SpeechExerciseScreen(
+                    key: Key(positionText),
+                    uniqueId: positionText,
+                    exercise: speechExercise,
+                    videoPath: url,
+                  ),
                 ),
               ),
-            ),
-            Positioned(
-              top: 16,
-              right: 16,
-              child: _LevelText(positionText: positionText),
-            ),
-          ],
-        );
-      },
+              Positioned(
+                top: 16,
+                right: 16,
+                child: _LevelText(positionText: positionText),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 }

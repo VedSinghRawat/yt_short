@@ -16,11 +16,13 @@ class StorageCleanupService {
       Directory targetDir = Directory(fileService.levelsDocDirPath);
 
       // Ensure directory exists
-      if (!await targetDir.exists()) {
+      if (!await targetDir.exists() || orderedIds.isEmpty) {
         return orderedIds;
       }
 
       double totalSizeMB = await checkStorageSize(targetDir);
+
+      developer.log('clean levels total size is $totalSizeMB');
 
       if (totalSizeMB < kMaxStorageSizeMB) {
         return orderedIds;
@@ -36,16 +38,26 @@ class StorageCleanupService {
 
         Directory folder = Directory(folderPath);
 
-        if (await folder.exists()) {
-          await folder.delete(recursive: true);
+        if (!await folder.exists()) continue;
 
-          await SharedPref.deleteLevelDTO(id);
+        final folderSize = await checkStorageSize(folder);
 
-          final folderSize = await checkStorageSize(folder);
+        developer.log('folder size is  $folderSize folder is $folder');
+        await folder.delete(recursive: true);
+        await SharedPref.deleteLevelDTO(id);
 
-          totalSizeMB = totalSizeMB - folderSize;
+        final zips = await fileService.listEntities(folder, type: EntitiesType.folders);
+
+        developer.log('zips folders is  $zips');
+
+        for (var e in zips) {
+          await SharedPref.removeEtag('$id$e');
         }
+
+        totalSizeMB = totalSizeMB - folderSize;
       }
+
+      developer.log('$remainingIds');
 
       return remainingIds;
     } catch (e) {
@@ -92,6 +104,8 @@ class StorageCleanupService {
 
     // Step 4: Remove protected items
     cachedIds.removeWhere(protected.contains);
+
+    developer.log('removed protected ids now ids is $cachedIds');
 
     // Step 5: Clean remaining IDs asynchronously
     final List<String> remainingIds = await compute(cleanLevels, cachedIds);

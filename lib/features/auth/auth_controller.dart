@@ -77,7 +77,7 @@ class AuthController extends StateNotifier<AuthControllerState> {
     try {
       final user = userController.state.currentUser;
       if (user != null) {
-        await userController.progressSync(user.level, user.subLevel);
+        await userController.progressSync(user.levelId, user.subLevel);
         await authAPI.signOut();
         userController.removeCurrentUser();
         await Future.delayed(Duration.zero); // Allow UI to update

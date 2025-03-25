@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -31,6 +30,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
 
+    developer.log('home page');
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       await ref.read(sublevelControllerProvider.notifier).fetchSublevels();
@@ -52,7 +53,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final levelAfter = !hasLocalProgress || isLevelAfter(level, subLevel, maxLevel, maxSubLevel);
     final canChangeVideo = hasFinishedVideo || !levelAfter;
 
-    if (canChangeVideo || isAdmin) {
+    if (canChangeVideo || true) {
       return false;
     }
 
@@ -82,15 +83,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     int index,
     List<SubLevel> sublevels,
     String userEmail,
-    int level,
     int subLevel,
   ) async {
     if (index <= 0) return;
 
-    final previousSublevelLevel = sublevels[index - 1].level;
+    final previousLevelId = sublevels[index - 1].levelId;
 
-    if (userEmail.isNotEmpty && level != previousSublevelLevel) {
-      ref.read(userControllerProvider.notifier).progressSync(level, subLevel);
+    final levelId = sublevels[index].levelId;
+
+    if (userEmail.isNotEmpty && previousLevelId != levelId) {
+      ref.read(userControllerProvider.notifier).progressSync(levelId, subLevel);
     }
   }
 
@@ -193,7 +195,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     await SharedPref.addActivityLog(level, sublevelIndex, userEmail);
 
     // Sync the progress with db if the user moves to a new level
-    await syncProgress(index, _cachedSublevels!, userEmail, level, sublevelIndex);
+    await syncProgress(index, _cachedSublevels!, userEmail, sublevelIndex);
 
     // Sync the last sync time with the server
     await syncActivityLogs();
@@ -228,7 +230,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final loading = ref.watch(sublevelControllerProvider.select((state) => state.loading));
+    final loadingLevelIds =
+        ref.watch(sublevelControllerProvider.select((state) => state.loadingLevelIds));
+
     final sublevels = ref.watch(sublevelControllerProvider.select((state) => state.sublevels));
 
     // Only sort sublevels if they have changed
@@ -236,14 +240,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       _cachedSublevels = _getSortedSublevels(sublevels.toList());
     }
 
-    if (loading != false && _cachedSublevels!.isEmpty) {
+    if (loadingLevelIds.isNotEmpty && _cachedSublevels!.isEmpty) {
       return const Loader();
     }
 
     return Scaffold(
       appBar: const HomeScreenAppBar(),
       body: SublevelsList(
-        isLoading: loading,
+        loadingIds: loadingLevelIds,
         sublevels: _cachedSublevels!,
         onVideoChange: onVideoChange,
       ),

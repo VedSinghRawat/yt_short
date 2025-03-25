@@ -103,7 +103,8 @@ class _PlayerState extends ConsumerState<Player> {
   void _onVisibilityChanged(VisibilityInfo info) {
     if (!mounted) return;
 
-    final isVisible = info.visibleFraction > 0.6;
+    final isVisible =
+        info.visibleFraction > 0.8 || (_isVisible == true && info.visibleFraction > 0.3);
 
     if (_isVisible == isVisible) return;
 
@@ -154,6 +155,7 @@ class _PlayerState extends ConsumerState<Player> {
                     ),
                   )
                 : MediaPlayer(
+                    shouldInitialize: _isVisible,
                     mediaPath: widget.videoPath,
                     onControllerCreated: _onControllerInitialized,
                     onError: () {

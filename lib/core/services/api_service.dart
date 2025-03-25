@@ -79,7 +79,7 @@ class ApiService {
         responseType: responseType,
       );
     } on DioException catch (e) {
-      developer.log('DioException: ${e.response}');
+      developer.log('ApiError on uri ${Uri.parse('$customBaseUrl$endpoint')} :  $e ');
       if (e.response?.data == null ||
           e.response?.data is! Map<String, dynamic> ||
           e.response?.data['message'] == null ||

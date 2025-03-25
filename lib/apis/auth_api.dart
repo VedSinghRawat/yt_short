@@ -67,7 +67,13 @@ class AuthAPI implements IAuthAPI {
 
     if (cyId == null) return;
 
-    await _apiService.call(endpoint: '/user/sync-cy-id', method: ApiMethod.post);
+    await _apiService.call(
+      endpoint: '/user/sync-cy-id',
+      method: ApiMethod.post,
+      body: {
+        'cyId': cyId,
+      },
+    );
   }
 }
 

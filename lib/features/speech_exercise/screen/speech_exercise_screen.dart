@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:myapp/core/widgets/player.dart';
+import 'package:myapp/core/widgets/player_controller.dart';
 import 'package:video_player/video_player.dart';
 import 'package:myapp/models/speech_exercise/speech_exercise.dart';
 import 'package:myapp/features/speech_exercise/widgets/exercise_sentence_card.dart';
@@ -26,7 +26,7 @@ class SpeechExerciseScreen extends ConsumerStatefulWidget {
 }
 
 class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
-  late VideoPlayerController? _controller;
+  VideoPlayerController? _controller;
   bool _hasShownDialog = false;
 
   late void Function() _pauseListener;
@@ -40,15 +40,19 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
         _showTestSentenceDialog();
       }
     };
-    _controller = controller;
-    controller.addListener(_pauseListener);
+
+    setState(() {
+      _controller = controller;
+    });
+
+    _controller?.addListener(_pauseListener);
   }
 
   void _showTestSentenceDialog() {
     setState(() {
       _hasShownDialog = true;
     });
-    _controller!.removeListener(_pauseListener);
+    _controller?.removeListener(_pauseListener);
 
     final isAdmin = ref.read(userControllerProvider).currentUser?.isAdmin ?? false;
 

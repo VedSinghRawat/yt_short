@@ -29,7 +29,7 @@ class OrderedIdsNotifier extends _$OrderedIdsNotifier {
         Right(value: final r) => await _handleRight(r),
       };
     } catch (e) {
-      state = AsyncValue.error(e, StackTrace.current);
+      state = AsyncValue.error(Failure(message: e.toString()), StackTrace.current);
     }
   }
 
@@ -38,7 +38,10 @@ class OrderedIdsNotifier extends _$OrderedIdsNotifier {
 
     if (dioConnectionErrors.contains(error.type) && localIds == null) {
       return AsyncValue.error(
-        'No internet connection. Please check your connection and try again.',
+        Failure(
+          message: internetError,
+          type: error.type,
+        ),
         StackTrace.current,
       );
     }
@@ -59,7 +62,11 @@ class OrderedIdsNotifier extends _$OrderedIdsNotifier {
     final ids = await SharedPref.getOrderedIds();
 
     if (ids == null) {
-      return AsyncValue.error(genericErrorMessage, StackTrace.current);
+      return AsyncValue.error(
+          Failure(
+            message: genericErrorMessage,
+          ),
+          StackTrace.current);
     }
 
     return AsyncValue.data(ids);

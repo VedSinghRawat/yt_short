@@ -11,13 +11,18 @@ class Console {
     dev.log(message, name: name ?? '[log] Console');
   }
 
-  static void error(Failure failure) {
+  static void time(String message, {String? name}) {
+    if (!kDebugMode) return;
+    dev.log('$message time: ${DateTime.now()}', name: name ?? '[log] Console');
+  }
+
+  static void error(Failure failure, StackTrace stackTrace) {
     if (!kDebugMode) return;
     dev.log(
       failure.message,
       error: failure,
-      stackTrace: StackTrace.current,
-      name: 'Console.error',
+      stackTrace: stackTrace,
+      name: '[log] error',
       level: 1000,
     );
   }
@@ -29,7 +34,7 @@ class Console {
     _stopwatches[name] = stopwatch;
     stopwatch.start();
 
-    dev.log(name, name: 'Console.timeStart');
+    dev.log(name, name: '[log] timeStart');
   }
 
   static void timeEnd(String name) {
@@ -38,7 +43,10 @@ class Console {
     final stopwatch = _stopwatches[name];
 
     if (stopwatch == null) {
-      error(Failure(message: 'No stopwatch found for name: $name'));
+      error(
+        Failure(message: 'No stopwatch found for name: $name'),
+        StackTrace.current,
+      );
       return;
     }
 
@@ -48,6 +56,6 @@ class Console {
 
     _stopwatches.remove(name);
 
-    dev.log('$name: ${elapsed}ms', name: 'Console.timeEnd');
+    dev.log('$name: ${elapsed}ms', name: '[log] timeEnd');
   }
 }

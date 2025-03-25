@@ -17,9 +17,9 @@ final _privateConstructorUsedError = UnsupportedError(
 /// @nodoc
 mixin _$SublevelControllerState {
   Set<SubLevel> get sublevels => throw _privateConstructorUsedError;
-  bool get loading => throw _privateConstructorUsedError;
   bool get hasFinishedVideo => throw _privateConstructorUsedError;
-  List<String> get levelIds => throw _privateConstructorUsedError;
+  Set<String> get loadedLevelIds => throw _privateConstructorUsedError;
+  Set<String> get loadingLevelIds => throw _privateConstructorUsedError;
   String? get error => throw _privateConstructorUsedError;
 
   /// Create a copy of SublevelControllerState
@@ -37,9 +37,9 @@ abstract class $SublevelControllerStateCopyWith<$Res> {
   @useResult
   $Res call(
       {Set<SubLevel> sublevels,
-      bool loading,
       bool hasFinishedVideo,
-      List<String> levelIds,
+      Set<String> loadedLevelIds,
+      Set<String> loadingLevelIds,
       String? error});
 }
 
@@ -60,9 +60,9 @@ class _$SublevelControllerStateCopyWithImpl<$Res,
   @override
   $Res call({
     Object? sublevels = null,
-    Object? loading = null,
     Object? hasFinishedVideo = null,
-    Object? levelIds = null,
+    Object? loadedLevelIds = null,
+    Object? loadingLevelIds = null,
     Object? error = freezed,
   }) {
     return _then(_value.copyWith(
@@ -70,18 +70,18 @@ class _$SublevelControllerStateCopyWithImpl<$Res,
           ? _value.sublevels
           : sublevels // ignore: cast_nullable_to_non_nullable
               as Set<SubLevel>,
-      loading: null == loading
-          ? _value.loading
-          : loading // ignore: cast_nullable_to_non_nullable
-              as bool,
       hasFinishedVideo: null == hasFinishedVideo
           ? _value.hasFinishedVideo
           : hasFinishedVideo // ignore: cast_nullable_to_non_nullable
               as bool,
-      levelIds: null == levelIds
-          ? _value.levelIds
-          : levelIds // ignore: cast_nullable_to_non_nullable
-              as List<String>,
+      loadedLevelIds: null == loadedLevelIds
+          ? _value.loadedLevelIds
+          : loadedLevelIds // ignore: cast_nullable_to_non_nullable
+              as Set<String>,
+      loadingLevelIds: null == loadingLevelIds
+          ? _value.loadingLevelIds
+          : loadingLevelIds // ignore: cast_nullable_to_non_nullable
+              as Set<String>,
       error: freezed == error
           ? _value.error
           : error // ignore: cast_nullable_to_non_nullable
@@ -101,9 +101,9 @@ abstract class _$$SublevelControllerStateImplCopyWith<$Res>
   @useResult
   $Res call(
       {Set<SubLevel> sublevels,
-      bool loading,
       bool hasFinishedVideo,
-      List<String> levelIds,
+      Set<String> loadedLevelIds,
+      Set<String> loadingLevelIds,
       String? error});
 }
 
@@ -123,9 +123,9 @@ class __$$SublevelControllerStateImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? sublevels = null,
-    Object? loading = null,
     Object? hasFinishedVideo = null,
-    Object? levelIds = null,
+    Object? loadedLevelIds = null,
+    Object? loadingLevelIds = null,
     Object? error = freezed,
   }) {
     return _then(_$SublevelControllerStateImpl(
@@ -133,18 +133,18 @@ class __$$SublevelControllerStateImplCopyWithImpl<$Res>
           ? _value._sublevels
           : sublevels // ignore: cast_nullable_to_non_nullable
               as Set<SubLevel>,
-      loading: null == loading
-          ? _value.loading
-          : loading // ignore: cast_nullable_to_non_nullable
-              as bool,
       hasFinishedVideo: null == hasFinishedVideo
           ? _value.hasFinishedVideo
           : hasFinishedVideo // ignore: cast_nullable_to_non_nullable
               as bool,
-      levelIds: null == levelIds
-          ? _value._levelIds
-          : levelIds // ignore: cast_nullable_to_non_nullable
-              as List<String>,
+      loadedLevelIds: null == loadedLevelIds
+          ? _value._loadedLevelIds
+          : loadedLevelIds // ignore: cast_nullable_to_non_nullable
+              as Set<String>,
+      loadingLevelIds: null == loadingLevelIds
+          ? _value._loadingLevelIds
+          : loadingLevelIds // ignore: cast_nullable_to_non_nullable
+              as Set<String>,
       error: freezed == error
           ? _value.error
           : error // ignore: cast_nullable_to_non_nullable
@@ -159,12 +159,13 @@ class _$SublevelControllerStateImpl extends _SublevelControllerState
     with DiagnosticableTreeMixin {
   const _$SublevelControllerStateImpl(
       {final Set<SubLevel> sublevels = const {},
-      this.loading = true,
       this.hasFinishedVideo = false,
-      final List<String> levelIds = const [],
+      final Set<String> loadedLevelIds = const {},
+      final Set<String> loadingLevelIds = const {},
       this.error})
       : _sublevels = sublevels,
-        _levelIds = levelIds,
+        _loadedLevelIds = loadedLevelIds,
+        _loadingLevelIds = loadingLevelIds,
         super._();
 
   final Set<SubLevel> _sublevels;
@@ -178,17 +179,23 @@ class _$SublevelControllerStateImpl extends _SublevelControllerState
 
   @override
   @JsonKey()
-  final bool loading;
-  @override
-  @JsonKey()
   final bool hasFinishedVideo;
-  final List<String> _levelIds;
+  final Set<String> _loadedLevelIds;
   @override
   @JsonKey()
-  List<String> get levelIds {
-    if (_levelIds is EqualUnmodifiableListView) return _levelIds;
+  Set<String> get loadedLevelIds {
+    if (_loadedLevelIds is EqualUnmodifiableSetView) return _loadedLevelIds;
     // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(_levelIds);
+    return EqualUnmodifiableSetView(_loadedLevelIds);
+  }
+
+  final Set<String> _loadingLevelIds;
+  @override
+  @JsonKey()
+  Set<String> get loadingLevelIds {
+    if (_loadingLevelIds is EqualUnmodifiableSetView) return _loadingLevelIds;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableSetView(_loadingLevelIds);
   }
 
   @override
@@ -196,7 +203,7 @@ class _$SublevelControllerStateImpl extends _SublevelControllerState
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'SublevelControllerState(sublevels: $sublevels, loading: $loading, hasFinishedVideo: $hasFinishedVideo, levelIds: $levelIds, error: $error)';
+    return 'SublevelControllerState(sublevels: $sublevels, hasFinishedVideo: $hasFinishedVideo, loadedLevelIds: $loadedLevelIds, loadingLevelIds: $loadingLevelIds, error: $error)';
   }
 
   @override
@@ -205,9 +212,9 @@ class _$SublevelControllerStateImpl extends _SublevelControllerState
     properties
       ..add(DiagnosticsProperty('type', 'SublevelControllerState'))
       ..add(DiagnosticsProperty('sublevels', sublevels))
-      ..add(DiagnosticsProperty('loading', loading))
       ..add(DiagnosticsProperty('hasFinishedVideo', hasFinishedVideo))
-      ..add(DiagnosticsProperty('levelIds', levelIds))
+      ..add(DiagnosticsProperty('loadedLevelIds', loadedLevelIds))
+      ..add(DiagnosticsProperty('loadingLevelIds', loadingLevelIds))
       ..add(DiagnosticsProperty('error', error));
   }
 
@@ -218,10 +225,12 @@ class _$SublevelControllerStateImpl extends _SublevelControllerState
             other is _$SublevelControllerStateImpl &&
             const DeepCollectionEquality()
                 .equals(other._sublevels, _sublevels) &&
-            (identical(other.loading, loading) || other.loading == loading) &&
             (identical(other.hasFinishedVideo, hasFinishedVideo) ||
                 other.hasFinishedVideo == hasFinishedVideo) &&
-            const DeepCollectionEquality().equals(other._levelIds, _levelIds) &&
+            const DeepCollectionEquality()
+                .equals(other._loadedLevelIds, _loadedLevelIds) &&
+            const DeepCollectionEquality()
+                .equals(other._loadingLevelIds, _loadingLevelIds) &&
             (identical(other.error, error) || other.error == error));
   }
 
@@ -229,9 +238,9 @@ class _$SublevelControllerStateImpl extends _SublevelControllerState
   int get hashCode => Object.hash(
       runtimeType,
       const DeepCollectionEquality().hash(_sublevels),
-      loading,
       hasFinishedVideo,
-      const DeepCollectionEquality().hash(_levelIds),
+      const DeepCollectionEquality().hash(_loadedLevelIds),
+      const DeepCollectionEquality().hash(_loadingLevelIds),
       error);
 
   /// Create a copy of SublevelControllerState
@@ -247,20 +256,20 @@ class _$SublevelControllerStateImpl extends _SublevelControllerState
 abstract class _SublevelControllerState extends SublevelControllerState {
   const factory _SublevelControllerState(
       {final Set<SubLevel> sublevels,
-      final bool loading,
       final bool hasFinishedVideo,
-      final List<String> levelIds,
+      final Set<String> loadedLevelIds,
+      final Set<String> loadingLevelIds,
       final String? error}) = _$SublevelControllerStateImpl;
   const _SublevelControllerState._() : super._();
 
   @override
   Set<SubLevel> get sublevels;
   @override
-  bool get loading;
-  @override
   bool get hasFinishedVideo;
   @override
-  List<String> get levelIds;
+  Set<String> get loadedLevelIds;
+  @override
+  Set<String> get loadingLevelIds;
   @override
   String? get error;
 

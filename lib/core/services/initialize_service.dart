@@ -13,6 +13,8 @@ import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'dart:developer' as developer;
 
+import 'package:path_provider/path_provider.dart';
+
 // Global key for navigation
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -25,14 +27,25 @@ class InitializeService {
     required this.initializeAPI,
   });
 
+  Future<void> clearAppCache() async {
+    try {
+      final cacheDir = await getTemporaryDirectory();
+      if (cacheDir.existsSync()) {
+        cacheDir.deleteSync(recursive: true);
+      }
+    } catch (e) {
+      developer.log('Unable to kill cache duo to $e');
+    }
+  }
+
   Future<void> initialize() async {
     try {
+      await handleDeepLinking();
+      await storeCyId();
       await FileService.instance.init();
       await InfoService.instance.init();
+      await clearAppCache();
 
-      await storeCyId();
-
-      await handleDeepLinking();
       await initializeVersion();
 
       final currProgress = await SharedPref.getCurrProgress();
@@ -45,10 +58,13 @@ class InitializeService {
           apiUser != null ? DateTime.parse(apiUser.modified).millisecondsSinceEpoch : 0;
 
       localLastModified > apiLastModified
-          ? await userController.progressSync(currProgress!.level!, currProgress.subLevel!)
+          ? await userController.progressSync(currProgress!.levelId!, currProgress.subLevel!)
           : await SharedPref.setCurrProgress(
               Progress(
                 level: apiUser?.level,
+                levelId: apiUser?.levelId,
+                maxLevel: apiUser?.maxLevel,
+                maxSubLevel: apiUser?.maxSubLevel,
                 subLevel: apiUser?.subLevel,
                 modified: apiLastModified,
               ),
@@ -85,7 +101,7 @@ class InitializeService {
         final context = navigatorKey.currentContext;
 
         if (context != null && context.mounted) {
-          await GoRouter.of(context).pushNamed(Routes.deepLinked);
+          await GoRouter.of(context).push(Routes.deepLinked);
         }
       }
     });

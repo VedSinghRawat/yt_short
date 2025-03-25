@@ -96,7 +96,8 @@ class FileService {
     return totalSize;
   }
 
-  Future<List<String>> listEntities(Directory directory, {ListType type = ListType.both}) async {
+  Future<List<String>> listEntities(Directory directory,
+      {EntitiesType type = EntitiesType.both}) async {
     if (!await directory.exists()) {
       throw Exception("Directory does not exist");
     }
@@ -104,9 +105,9 @@ class FileService {
     final List<String> entities = [];
 
     await for (var entity in directory.list()) {
-      if ((type == ListType.folders && entity is Directory) ||
-          (type == ListType.files && entity is File) ||
-          (type == ListType.both)) {
+      if ((type == EntitiesType.folders && entity is Directory) ||
+          (type == EntitiesType.files && entity is File) ||
+          (type == EntitiesType.both)) {
         entities.add(entity.path.split(Platform.pathSeparator).last);
       }
     }
@@ -119,4 +120,4 @@ final fileServiceProvider = Provider<FileService>((ref) {
   return FileService.instance;
 });
 
-enum ListType { folders, files, both }
+enum EntitiesType { folders, files, both }

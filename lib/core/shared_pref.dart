@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:developer' as developer;
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/models/level/level.dart';
 import 'package:myapp/models/activity_log/activity_log.dart';
@@ -142,6 +141,10 @@ class SharedPref {
 
   static Future<String?> getETag(String id) async {
     return await _getValue('eTag_$id');
+  }
+
+  static Future<void> removeEtag(String id) async {
+    return await _delete('eTag_$id');
   }
 
   static Future<List<String>?> getOrderedIds() async {

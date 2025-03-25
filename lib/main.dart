@@ -20,22 +20,10 @@ class MyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
 
-    final app = MaterialApp.router(
+    return MaterialApp.router(
       title: 'English Course',
       theme: ThemeData.dark(useMaterial3: true),
       routerConfig: router,
-    );
-
-    return ref.watch(initializeServiceProvider).when(
-      data: (data) {
-        return app;
-      },
-      error: (error, stackTrace) {
-        return app;
-      },
-      loading: () {
-        return const MaterialApp(home: Scaffold(body: Loader()));
-      },
     );
   }
 }
