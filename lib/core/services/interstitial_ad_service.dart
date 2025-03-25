@@ -1,15 +1,15 @@
+import 'dart:async';
+import 'dart:developer' as developer;
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'interstitial_ad_service.g.dart';
 
 class InterstitialAdState {
-  final InterstitialAd? interstitialAd;
   final bool isLoading;
   final String? error;
   final bool showAd;
 
   const InterstitialAdState({
-    this.interstitialAd,
     this.isLoading = false,
     this.error,
     this.showAd = false,
@@ -17,13 +17,11 @@ class InterstitialAdState {
 
   // Helper method to copy the state with new values
   InterstitialAdState copyWith({
-    InterstitialAd? interstitialAd,
     bool? isLoading,
     String? error,
     bool? showAd,
   }) {
     return InterstitialAdState(
-      interstitialAd: interstitialAd ?? this.interstitialAd,
       isLoading: isLoading ?? this.isLoading,
       error: error ?? this.error,
       showAd: showAd ?? this.showAd,
@@ -36,24 +34,30 @@ class InterstitialAdNotifier extends _$InterstitialAdNotifier {
   @override
   InterstitialAdState build() => const InterstitialAdState();
 
-  Future<void> loadAd() async {
-    try {
-      await MobileAds.instance.updateRequestConfiguration(
-        RequestConfiguration(
-          testDeviceIds: ['DD4DCA6D1F5BA6CD1311D99E96A28ABF'],
-        ),
-      );
+  Future<void> watchAd() async {
+    if (state.isLoading) {
+      return;
+    }
 
+    try {
       state = state.copyWith(isLoading: true, error: null);
+      await Future.delayed(const Duration(seconds: 3));
 
       await InterstitialAd.load(
         adUnitId: 'ca-app-pub-3940256099942544/1033173712',
         request: const AdRequest(),
         adLoadCallback: InterstitialAdLoadCallback(
-          onAdLoaded: (ad) {
+          onAdLoaded: (ad) async {
             state = state.copyWith(
-              interstitialAd: ad,
               isLoading: false,
+              error: null,
+            );
+
+            await ad.show();
+            await ad.dispose();
+
+            state = state.copyWith(
+              showAd: false,
             );
           },
           onAdFailedToLoad: (error) {
@@ -65,21 +69,12 @@ class InterstitialAdNotifier extends _$InterstitialAdNotifier {
         ),
       );
     } catch (e) {
+      developer.log('loadAd: error $e');
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
       );
     }
-  }
-
-  Future<void> watchAd() async {
-    if (state.interstitialAd == null) {
-      await loadAd();
-    }
-    await state.interstitialAd?.show();
-    await state.interstitialAd?.dispose();
-    state = state.copyWith(interstitialAd: null, showAd: false);
-    await loadAd();
   }
 
   void setShowAd(bool showAd) {
