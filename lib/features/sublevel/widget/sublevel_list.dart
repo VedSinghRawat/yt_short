@@ -7,7 +7,7 @@ import 'package:myapp/core/services/file_service.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/widgets/loader.dart';
-import 'package:myapp/core/widgets/player_controller.dart';
+import 'package:myapp/core/widgets/video_player.dart';
 import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'package:myapp/features/sublevel/widget/last_level.dart';
 import 'package:myapp/features/speech_exercise/screen/speech_exercise_screen.dart';

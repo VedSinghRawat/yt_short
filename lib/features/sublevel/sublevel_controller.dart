@@ -125,11 +125,9 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
 
   Future<void> _addSublevelEntries(
       LevelDTO levelDTO, Set<SubLevel> sublevels, int level, String levelId) async {
-    final entries = await fileService.listEntities(
-      Directory(
-        fileService.getVideoDirPath(levelDTO.id),
-      ),
-    );
+    final path = fileService.getVideoDirPath(levelDTO.id);
+
+    final entries = await compute(_listEntities, path);
 
     sublevels.addAll(
       levelDTO.subLevels
@@ -167,6 +165,7 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
 
   Future<void> fetchSublevels() async {
     try {
+      developer.log('fetchSublevels');
       final userLevelIndex = await ref.read(userControllerProvider).level;
       final storedCurrId = await ref.read(userControllerProvider).levelId;
 
@@ -230,10 +229,7 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
       }
 
       if (isFirstFetch) {
-        final cachedIds = await fileService.listEntities(
-          Directory(fileService.levelsDocDirPath),
-          type: EntitiesType.folders,
-        );
+        final cachedIds = await compute(_listEntities, fileService.levelsDocDirPath);
 
         developer.log('cached ids is $cachedIds');
 
@@ -245,6 +241,13 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
         error: e.toString(),
       );
     }
+  }
+
+  Future<List<String>> _listEntities(String path) {
+    return FileService.listEntities(
+      Directory(path),
+      type: EntitiesType.folders,
+    );
   }
 
   /// Helper function to check if a level is already fetched

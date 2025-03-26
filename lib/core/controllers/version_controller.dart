@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/services/info_service.dart';
-import 'package:myapp/core/services/initialize_service.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -32,8 +31,6 @@ class VersionState {
 
 // Remove the separate packageInfoProvider as we now use globalPackageInfo
 final versionControllerProvider = StateNotifierProvider<VersionController, VersionState>((ref) {
-  // Wait for initialization to complete
-  ref.watch(initializeServiceProvider);
   // Use the global package info that's guaranteed to be loaded
   return VersionController(ref.read(infoServiceProvider));
 });

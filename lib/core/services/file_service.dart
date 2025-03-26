@@ -80,7 +80,7 @@ class FileService {
     return '${getVideoDirPath(levelId)}/$videoId.mp4';
   }
 
-  int getDirectorySize(Directory directory) {
+  static int getDirectorySize(Directory directory) {
     int totalSize = 0;
     try {
       List<FileSystemEntity> files = directory.listSync(recursive: true);
@@ -96,7 +96,7 @@ class FileService {
     return totalSize;
   }
 
-  Future<List<String>> listEntities(Directory directory,
+  static Future<List<String>> listEntities(Directory directory,
       {EntitiesType type = EntitiesType.both}) async {
     if (!await directory.exists()) {
       throw Exception("Directory does not exist");

@@ -1,101 +1,220 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'dart:io';
+import 'dart:async';
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
-import 'package:myapp/core/console.dart';
-import 'package:myapp/core/error/failure.dart';
-import 'package:myapp/core/widgets/loader.dart';
-import 'package:video_player/video_player.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:myapp/features/sublevel/sublevel_controller.dart';
+import 'package:myapp/features/sublevel/widget/last_level.dart';
+import 'package:better_player_plus/better_player_plus.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 
-class MediaPlayer extends ConsumerStatefulWidget {
-  final String mediaPath;
-  final void Function(VideoPlayerController)? onControllerCreated;
-  final VoidCallback onError;
-  final bool shouldInitialize;
+class Player extends ConsumerStatefulWidget {
+  final String videoPath;
+  final String? uniqueId;
+  final Function(BetterPlayerController controller)? onControllerInitialized;
 
-  const MediaPlayer({
+  const Player({
     super.key,
-    required this.onError,
-    required this.shouldInitialize,
-    required this.mediaPath,
-    this.onControllerCreated,
+    required this.videoPath,
+    this.onControllerInitialized,
+    this.uniqueId,
   });
 
   @override
-  ConsumerState<MediaPlayer> createState() => _MediaPlayerState();
+  ConsumerState<Player> createState() => _PlayerState();
 }
 
-class _MediaPlayerState extends ConsumerState<MediaPlayer> {
-  VideoPlayerController? _mediaPlayerController;
-  bool _hasInitialized = false;
+class _PlayerState extends ConsumerState<Player> {
+  BetterPlayerController? _betterPlayerController;
 
-  Future<void> _initVideoPlayer() async {
-    if (_mediaPlayerController != null || _hasInitialized) return;
+  bool _showPlayPauseIcon = false;
+  IconData _iconData = Icons.play_arrow;
+  Timer? _iconTimer;
 
-    Console.log('reinitialize');
-
-    _mediaPlayerController = VideoPlayerController.file(
-      File(widget.mediaPath),
-      videoPlayerOptions: VideoPlayerOptions(
-        allowBackgroundPlayback: false,
-        mixWithOthers: true,
-      ),
-    )..setLooping(true);
-
-    try {
-      await _mediaPlayerController!.initialize();
-      _hasInitialized = true;
-      widget.onControllerCreated?.call(_mediaPlayerController!);
-    } catch (e) {
-      Console.error(
-        Failure(message: 'error during video player initialize $e'),
-        StackTrace.current,
-      );
-
-      widget.onError();
-    }
-    setState(() {});
-  }
+  String? error;
+  bool _isVisible = false;
 
   @override
   void initState() {
     super.initState();
-    if (widget.shouldInitialize) {
-      _initVideoPlayer();
-    }
+
+    _betterPlayerController = _initializeBetterPlayerController();
   }
 
-  @override
-  void didUpdateWidget(covariant MediaPlayer oldWidget) {
-    super.didUpdateWidget(oldWidget);
+  void _listenerVideoFinished() async {
+    if (_betterPlayerController == null) return;
 
-    if (!oldWidget.shouldInitialize && widget.shouldInitialize) {
-      if (_mediaPlayerController == null || !_hasInitialized) {
-        _initVideoPlayer();
+    final position = await _betterPlayerController!.videoPlayerController?.position;
+    final duration = _betterPlayerController!.videoPlayerController?.value.duration;
+
+    if (position != null && duration != null) {
+      final compareDuration = duration.inSeconds - position.inSeconds;
+
+      if (duration != Duration.zero &&
+          compareDuration <= 1 &&
+          !ref.read(sublevelControllerProvider).hasFinishedVideo) {
+        ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
+        _betterPlayerController?.removeEventsListener(_eventListener);
       }
-    } else if (oldWidget.shouldInitialize && !widget.shouldInitialize) {
-      _mediaPlayerController?.dispose();
-      setState(() {
-        _mediaPlayerController = null;
-        _hasInitialized = false;
-      });
     }
   }
 
-  @override
-  void dispose() {
-    _mediaPlayerController?.dispose();
-    super.dispose();
+  void _eventListener(BetterPlayerEvent event) {
+    if (event.betterPlayerEventType == BetterPlayerEventType.progress) {
+      _listenerVideoFinished();
+    }
+  }
+
+  void _changePlayingState({bool changeToPlay = true}) async {
+    if (_betterPlayerController == null) return;
+
+    final isPlaying = _betterPlayerController!.isPlaying();
+
+    if (isPlaying == false || !changeToPlay) {
+      _betterPlayerController!.pause();
+    } else {
+      _betterPlayerController!.play();
+    }
+
+    setState(() {
+      _iconData = isPlaying == false ? Icons.play_arrow : Icons.pause;
+      _showPlayPauseIcon = true;
+    });
+
+    _iconTimer?.cancel();
+
+    _iconTimer = Timer(Duration(milliseconds: _iconData == Icons.play_arrow ? 700 : 2000), () {
+      if (mounted) {
+        setState(() {
+          _showPlayPauseIcon = false;
+        });
+      }
+    });
+  }
+
+  void _handleVisibility(bool isVisible) {
+    _isVisible = isVisible;
+
+    if (_betterPlayerController == null) return;
+
+    if (isVisible) {
+      _betterPlayerController?.addEventsListener(_eventListener);
+      _betterPlayerController?.play();
+    } else {
+      _betterPlayerController?.removeEventsListener(_eventListener);
+      _betterPlayerController?.pause();
+    }
+  }
+
+  void _onVisibilityChanged(VisibilityInfo info) {
+    if (!mounted) return;
+
+    final isVisible =
+        info.visibleFraction > 0.8 || (_isVisible == true && info.visibleFraction > 0.3);
+
+    if (_isVisible == isVisible) return;
+
+    try {
+      setState(() {
+        _isVisible = isVisible;
+      });
+
+      if (isVisible && error != null) {
+        ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
+      }
+
+      _handleVisibility(isVisible);
+    } catch (e) {
+      developer.log('Error in Player._onVisibilityChanged', error: e.toString());
+    }
+  }
+
+  BetterPlayerController _initializeBetterPlayerController() {
+    final controller = BetterPlayerController(
+      const BetterPlayerConfiguration(
+        autoPlay: false,
+        looping: true,
+        fit: BoxFit.fitHeight,
+        aspectRatio: 9 / 16,
+        controlsConfiguration: BetterPlayerControlsConfiguration(
+          showControls: false,
+        ),
+      ),
+    );
+    controller
+        .setupDataSource(BetterPlayerDataSource(BetterPlayerDataSourceType.file, widget.videoPath));
+
+    widget.onControllerInitialized?.call(controller);
+    return controller;
   }
 
   @override
   Widget build(BuildContext context) {
-    return _mediaPlayerController?.value.isInitialized == true
-        ? Stack(
-            children: [
-              if (_mediaPlayerController!.value.isBuffering) const Loader(),
-              VideoPlayer(_mediaPlayerController!),
-            ],
-          )
-        : const Loader();
+    return VisibilityDetector(
+      key: Key(widget.uniqueId ?? widget.videoPath),
+      onVisibilityChanged: _onVisibilityChanged,
+      child: GestureDetector(
+        onTap: _changePlayingState,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            if (error != null)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ErrorPage(
+                    text: error!,
+                  ),
+                ),
+              )
+            else
+              Builder(
+                builder: (_) {
+                  if (_betterPlayerController == null && _isVisible) {}
+                  return _betterPlayerController != null
+                      ? SizedBox(
+                          height: MediaQuery.of(context).size.height,
+                          child: BetterPlayer(
+                            controller: _betterPlayerController!,
+                          ))
+                      : const Center(child: CircularProgressIndicator());
+                },
+              ),
+            PlayPauseButton(showPlayPauseIcon: _showPlayPauseIcon, iconData: _iconData),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class PlayPauseButton extends StatelessWidget {
+  const PlayPauseButton({
+    super.key,
+    required bool showPlayPauseIcon,
+    required IconData iconData,
+  })  : _showPlayPauseIcon = showPlayPauseIcon,
+        _iconData = iconData;
+
+  final bool _showPlayPauseIcon;
+  final IconData _iconData;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedOpacity(
+      opacity: _showPlayPauseIcon ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 400),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.black54,
+          shape: BoxShape.circle,
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Icon(
+          _iconData,
+          size: MediaQuery.of(context).size.width * 0.12,
+          color: Colors.white,
+        ),
+      ),
+    );
   }
 }
