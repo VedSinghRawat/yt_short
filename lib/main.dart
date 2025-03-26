@@ -5,9 +5,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:myapp/core/services/interstitial_ad_service.dart';
 import 'package:myapp/core/widgets/loader.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   await MobileAds.instance.initialize();
 
@@ -24,6 +31,7 @@ class MyApp extends ConsumerWidget {
     final showAd = ref.watch(interstitialAdNotifierProvider.select((state) => state.showAd));
 
     return MaterialApp(
+      navigatorObservers: [FirebaseAnalyticsObserver(analytics: FirebaseAnalytics.instance)],
       home: Scaffold(
         body: showAd
             ? const InterstitialAdWidget()
@@ -37,8 +45,15 @@ class MyApp extends ConsumerWidget {
                     bottom: 20,
                     right: 20,
                     child: FloatingActionButton(
-                      onPressed: () {
+                      onPressed: () async {
                         ref.read(interstitialAdNotifierProvider.notifier).setShowAd(true);
+                        await FirebaseAnalytics.instance.logEvent(
+                          name: 'button_click',
+                          parameters: {
+                            'button_name': 'login_button',
+                            'click_time': DateTime.now().toString(),
+                          },
+                        );
                       },
                       child: const Icon(Icons.ad_units),
                     ),
