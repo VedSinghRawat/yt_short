@@ -20,6 +20,7 @@ class UserModel with _$UserModel {
     required int lastSeen,
     required int lastProgress,
     required UserRole role,
+    required int doneToday,
   }) = _UserModel;
 
   factory UserModel.fromJson(Map<String, dynamic> json) => _$UserModelFromJson(json);

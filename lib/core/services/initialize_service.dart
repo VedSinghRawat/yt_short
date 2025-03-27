@@ -58,7 +58,7 @@ class InitializeService {
           apiUser != null ? DateTime.parse(apiUser.modified).millisecondsSinceEpoch : 0;
 
       localLastModified > apiLastModified
-          ? await userController.progressSync(currProgress!.levelId!, currProgress.subLevel!)
+          ? await userController.sync(currProgress!.levelId!, currProgress.subLevel!)
           : await SharedPref.setCurrProgress(
               Progress(
                 level: apiUser?.level,
