@@ -48,3 +48,6 @@ flutter:
   assets:
     - assets/sounds/
     - .env
+
+executables:
+  setup: tools/setup.dart
