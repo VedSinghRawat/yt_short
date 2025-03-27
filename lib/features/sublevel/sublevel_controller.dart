@@ -226,7 +226,7 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
 
       if (currLevelIndex < 0 || currUserLevel >= orderedIds.length) {
         state = state.copyWith(
-          error: 'All the levels are completed, please try again after some time',
+          error: 'These are all the lessons for now, Check in after sometime for new content',
         );
       }
 
