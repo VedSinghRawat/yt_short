@@ -9,6 +9,7 @@ import 'package:myapp/core/console.dart';
 import 'package:myapp/core/services/cleanup_service.dart';
 import 'package:myapp/core/services/file_service.dart';
 import 'package:myapp/core/services/sub_level_service.dart';
+import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/features/sublevel/ordered_ids_notifier.dart';
 import 'package:myapp/features/user/user_controller.dart';
@@ -63,7 +64,9 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
     developer.log('loadingLevelIds ${state.loadingLevelIds}');
 
     try {
-      final levelDTOEither = await levelApi.getById(levelId);
+      final levelDTOEither = await levelApi.getById(
+        levelId,
+      );
 
       final levelDTO = switch (levelDTOEither) {
         Right(value: final r) => r,
@@ -125,9 +128,9 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
 
   Future<void> _addSublevelEntries(
       LevelDTO levelDTO, Set<SubLevel> sublevels, int level, String levelId) async {
-    final path = fileService.getVideoDirPath(levelDTO.id);
-
-    final entries = await compute(_listEntities, path);
+    final entries = await FileService.listEntities(
+      Directory(fileService.getVideoDirPath(levelDTO.id)),
+    );
 
     sublevels.addAll(
       levelDTO.subLevels
@@ -165,7 +168,6 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
 
   Future<void> fetchSublevels() async {
     try {
-      developer.log('fetchSublevels');
       final userLevelIndex = await ref.read(userControllerProvider).level;
       final storedCurrId = await ref.read(userControllerProvider).levelId;
 
@@ -229,11 +231,18 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
       }
 
       if (isFirstFetch) {
-        final cachedIds = await compute(_listEntities, fileService.levelsDocDirPath);
+        try {
+          final cachedIds = await FileService.listEntities(
+            Directory(fileService.levelsDocDirPath),
+            type: EntitiesType.folders,
+          );
 
-        developer.log('cached ids is $cachedIds');
+          storageCleanupService.removeFurthestCachedIds(cachedIds, orderedIds, currLevelId);
+        } catch (e) {
+          await SharedPref.clearAllETags();
 
-        storageCleanupService.removeFurthestCachedIds(cachedIds, orderedIds, currLevelId);
+          throw genericErrorMessage;
+        }
       }
     } catch (e) {
       developer.log('error in sublevel controller: $e');
@@ -241,13 +250,6 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
         error: e.toString(),
       );
     }
-  }
-
-  Future<List<String>> _listEntities(String path) {
-    return FileService.listEntities(
-      Directory(path),
-      type: EntitiesType.folders,
-    );
   }
 
   /// Helper function to check if a level is already fetched

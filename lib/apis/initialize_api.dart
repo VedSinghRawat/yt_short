@@ -18,11 +18,13 @@ class InitializeAPI implements IInitializeAPI {
   FutureEither<Map<String, dynamic>> initialize(String currentVersion) async {
     try {
       final response = await _apiService.call(
-        endpoint: '/initialize',
-        method: ApiMethod.post,
-        body: {
-          'version': currentVersion,
-        },
+        params: ApiParams(
+          endpoint: '/initialize',
+          method: ApiMethod.post,
+          body: {
+            'version': currentVersion,
+          },
+        ),
       );
 
       return Right(response.data!);

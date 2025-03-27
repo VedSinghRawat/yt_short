@@ -8,8 +8,6 @@ import 'package:myapp/core/shared_pref.dart';
 
 part 'ordered_ids_notifier.g.dart';
 
-const kOrderedIdETagId = 'ahfafdlkfsdfs'; //some random id
-
 @Riverpod(keepAlive: true)
 class OrderedIdsNotifier extends _$OrderedIdsNotifier {
   @override
@@ -21,8 +19,7 @@ class OrderedIdsNotifier extends _$OrderedIdsNotifier {
     const AsyncValue.loading();
 
     try {
-      final eTag = await SharedPref.getETag(kOrderedIdETagId);
-      final res = await ref.read(levelApiProvider).getOrderedIds(eTag);
+      final res = await ref.read(levelApiProvider).getOrderedIds();
 
       state = switch (res) {
         Left(value: final l) => await _handleLeft(l),

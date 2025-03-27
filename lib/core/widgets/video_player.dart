@@ -69,7 +69,7 @@ class _PlayerState extends ConsumerState<Player> {
 
     final isPlaying = _betterPlayerController!.isPlaying();
 
-    if (isPlaying == false || !changeToPlay) {
+    if (isPlaying == true || !changeToPlay) {
       _betterPlayerController!.pause();
     } else {
       _betterPlayerController!.play();

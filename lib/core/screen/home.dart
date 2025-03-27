@@ -53,7 +53,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final levelAfter = !hasLocalProgress || isLevelAfter(level, subLevel, maxLevel, maxSubLevel);
     final canChangeVideo = hasFinishedVideo || !levelAfter;
 
-    if (canChangeVideo || isAdmin) {
+    if (canChangeVideo || true) {
       return false;
     }
 

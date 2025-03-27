@@ -16,8 +16,10 @@ class UserAPI implements IUserAPI {
   Future<UserModel?> getUser() async {
     try {
       final response = await _apiService.call(
-        method: ApiMethod.get,
-        endpoint: '/user/me',
+        params: const ApiParams(
+          method: ApiMethod.get,
+          endpoint: '/user/me',
+        ),
       );
 
       UserModel apiUser = UserModel.fromJson(response.data?['user']);
@@ -33,13 +35,14 @@ class UserAPI implements IUserAPI {
   Future<UserModel?> progressSync(String levelId, int subLevel) async {
     try {
       final response = await _apiService.call(
+          params: ApiParams(
         method: ApiMethod.post,
         endpoint: '/user/sync',
         body: {
           'levelId': levelId,
           'subLevel': subLevel,
         },
-      );
+      ));
 
       if (response.statusCode != 200) {
         throw Exception('Failed to sync user progress: ${response.statusCode}');

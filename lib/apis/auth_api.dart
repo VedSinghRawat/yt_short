@@ -35,7 +35,12 @@ class AuthAPI implements IAuthAPI {
 
       await _apiService.setToken(auth.idToken ?? '');
 
-      final response = await _apiService.call(endpoint: '/auth/google', method: ApiMethod.get);
+      final response = await _apiService.call(
+        params: const ApiParams(
+          endpoint: '/auth/google',
+          method: ApiMethod.get,
+        ),
+      );
 
       final user = UserModel.fromJson(response.data['user']);
 
@@ -68,12 +73,13 @@ class AuthAPI implements IAuthAPI {
     if (cyId == null) return;
 
     await _apiService.call(
+        params: ApiParams(
       endpoint: '/user/sync-cy-id',
       method: ApiMethod.post,
       body: {
         'cyId': cyId,
       },
-    );
+    ));
   }
 }
 

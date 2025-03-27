@@ -50,8 +50,10 @@ class StorageCleanupService {
         await folder.delete(recursive: true);
         await SharedPref.deleteLevelDTO(id);
 
+        await SharedPref.removeEtag(id);
+
         for (var e in zips) {
-          await SharedPref.removeEtag('$id$e');
+          await SharedPref.removeEtag('$id${e.replaceFirst('.zip', '')}');
         }
 
         // Update size
@@ -66,8 +68,7 @@ class StorageCleanupService {
     }
   }
 
-  Future<List<String>> listZips(Directory folder) =>
-      FileService.listEntities(folder, type: EntitiesType.folders);
+  static Future<List<String>> listZips(Directory folder) => FileService.listEntities(folder);
 
   Future<double> checkStorageSize(Directory targetDir) async {
     try {

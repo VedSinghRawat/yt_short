@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:myapp/core/console.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/models/level/level.dart';
 import 'package:myapp/models/activity_log/activity_log.dart';
@@ -144,6 +145,7 @@ class SharedPref {
   }
 
   static Future<void> removeEtag(String id) async {
+    Console.log('removing e Tag $id');
     return await _delete('eTag_$id');
   }
 
@@ -178,5 +180,16 @@ class SharedPref {
       'orderedIds',
       orderedIds,
     );
+  }
+
+  static Future<void> clearAllETags() async {
+    final instance = await SharedPreferences.getInstance();
+    final keys = instance.getKeys();
+
+    for (final key in keys) {
+      if (key.startsWith('eTag_')) {
+        await instance.remove(key);
+      }
+    }
   }
 }

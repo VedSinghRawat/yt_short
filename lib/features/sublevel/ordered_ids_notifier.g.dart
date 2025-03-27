@@ -7,7 +7,7 @@ part of 'ordered_ids_notifier.dart';
 // **************************************************************************
 
 String _$orderedIdsNotifierHash() =>
-    r'f93eaddc14883c5c95578f96d5ea8f3cd1a8823c';
+    r'eff9da4dc0f842e7f0d7d8aaecf48578a5aa0a1c';
 
 /// See also [OrderedIdsNotifier].
 @ProviderFor(OrderedIdsNotifier)

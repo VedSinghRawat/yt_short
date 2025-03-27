@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,9 +11,13 @@ import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/level/level.dart';
 
+const kOrderedIdETagId = 'ahfafdlkfsdfs'; //some random id
+
 abstract class ILevelApi {
-  FutureEither<LevelDTO> getById(String id);
-  FutureEither<List<String>?> getOrderedIds(String? eTag);
+  FutureEither<LevelDTO> getById(
+    String id,
+  );
+  FutureEither<List<String>?> getOrderedIds();
 }
 
 class LevelApi implements ILevelApi {
@@ -22,10 +28,13 @@ class LevelApi implements ILevelApi {
   @override
   FutureEither<LevelDTO> getById(String id) async {
     try {
-      final response = await apiService.call(
-        endpoint: '/levels/output/$id/$id.json', // TODO: change from info service not its dummy
-        method: ApiMethod.get,
-        customBaseUrl: dotenv.env['S3_BASE_URL'],
+      final response = await apiService.callWithETag(
+        params: ApiParams(
+          endpoint: '/levels/output/$id/$id.json', // TODO: change from info service not its dummy
+          method: ApiMethod.get,
+          customBaseUrl: dotenv.env['S3_BASE_URL'],
+        ),
+        eTagId: id,
       );
 
       final levelDTO = LevelDTO.fromJson(response.data);
@@ -34,7 +43,7 @@ class LevelApi implements ILevelApi {
 
       return right(levelDTO);
     } on DioException catch (e) {
-      if (dioConnectionErrors.contains(e.type)) {
+      if (dioConnectionErrors.contains(e.type) || e.response?.statusCode == 304) {
         final cachedData = await SharedPref.getLevelDTO(id);
         if (cachedData != null) {
           return right(cachedData);
@@ -51,29 +60,23 @@ class LevelApi implements ILevelApi {
   }
 
   @override
-  FutureEither<List<String>?> getOrderedIds(String? eTag) async {
+  FutureEither<List<String>?> getOrderedIds() async {
     try {
-      final response = await apiService.call(
-        endpoint: '/levels/orderedIds.json',
-        method: ApiMethod.get,
-        headers: eTag != null
-            ? {
-                'If-None-Match': eTag,
-              }
-            : null,
-        customBaseUrl: dotenv.env['S3_BASE_URL'],
-      );
-
-      return right(
-        List<String>.from(
-          response.data['ids'],
+      final response = await apiService.callWithETag<Map<String, dynamic>?>(
+        params: ApiParams(
+          endpoint: '/levels/orderedIds.json',
+          method: ApiMethod.get,
+          customBaseUrl: dotenv.env['S3_BASE_URL'],
         ),
+        eTagId: kOrderedIdETagId,
+        onCacheHit: (p0) async => null,
       );
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 304) {
-        return right(null);
-      }
 
+      final ids = response.data?['ids'];
+      if (ids == null) return right(null);
+
+      return right(List<String>.from(ids));
+    } on DioException catch (e) {
       return left(
         Failure(
           message: e.response?.data.toString() ?? genericErrorMessage,

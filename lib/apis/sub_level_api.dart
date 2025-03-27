@@ -1,5 +1,4 @@
 import 'dart:developer' as developer show log;
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
@@ -10,15 +9,8 @@ import 'package:myapp/core/error/failure.dart';
 import 'package:myapp/core/services/api_service.dart';
 import 'package:myapp/core/utils.dart';
 
-class GetZipResponse {
-  final Uint8List zipFile;
-  final String eTag;
-
-  GetZipResponse({required this.zipFile, required this.eTag});
-}
-
 abstract class ISubLevelAPI {
-  FutureEither<GetZipResponse?> getZipData(String levelId, int zipId, {String? eTag});
+  FutureEither<Uint8List?> getZipData(String levelId, int zipId, String eTagKey);
 }
 
 class SubLevelAPI implements ISubLevelAPI {
@@ -27,34 +19,29 @@ class SubLevelAPI implements ISubLevelAPI {
   final ApiService apiService;
 
   @override
-  FutureEither<GetZipResponse?> getZipData(
+  FutureEither<Uint8List?> getZipData(
     String levelId,
-    int zipId, {
-    String? eTag,
-  }) async {
+    int zipId,
+    String eTagKey,
+  ) async {
     try {
-      final headers = eTag != null ? {'If-None-Match': eTag} : null;
-
-      final response = await apiService.call(
-        endpoint: '/levels/output/$levelId/$zipId.zip', // TODO: change is same as
-        customBaseUrl: dotenv.env['S3_BASE_URL'],
-        method: ApiMethod.get,
-        headers: headers,
-        responseType: ResponseType.bytes,
+      final response = await apiService.callWithETag<Uint8List?>(
+        params: ApiParams(
+          endpoint: '/levels/output/$levelId/$zipId.zip', // TODO: change is same as
+          customBaseUrl: dotenv.env['S3_BASE_URL'],
+          method: ApiMethod.get,
+          responseType: ResponseType.bytes,
+        ),
+        eTagId: eTagKey,
+        onCacheHit: (e) async => null,
       );
 
       if (response.statusCode != 200) {
         throw Exception("Failed to fetch");
       }
 
-      final newETag = response.headers.value(HttpHeaders.etagHeader);
-
-      return Right(GetZipResponse(zipFile: response.data, eTag: newETag as String));
+      return Right(response.data);
     } on DioException catch (e) {
-      if (e.response?.statusCode == 304) {
-        return const Right(null);
-      }
-
       developer.log('Error in SubLevelAPI.getZipData: $e');
       return Left(Failure(message: e.toString()));
     }
