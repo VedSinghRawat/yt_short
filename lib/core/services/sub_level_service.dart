@@ -51,19 +51,21 @@ class SubLevelService {
     final zipDataEither = await subLevelAPI.getZipData(levelId, zipNumber, eTagKey);
 
     return switch (zipDataEither) {
-      Left() => fileService.getZipPath(levelId, zipNumber),
-      Right(value: final zipData) when zipData == null =>
-        fileService.getZipPath(levelId, zipNumber),
-      Right(value: final zipData) => () async {
-          final file = File(fileService.getZipPath(levelId, zipNumber));
-
-          await Directory(file.parent.path).create(recursive: true);
-
-          await file.writeAsBytes(zipData!);
-
-          return file.path;
-        }(),
+      Left() => _getExistingZipPath(levelId, zipNumber),
+      Right(value: final zipData) when zipData == null => _getExistingZipPath(levelId, zipNumber),
+      Right(value: final zipData) => _storeZipFile(levelId, zipNumber, zipData!),
     };
+  }
+
+  String _getExistingZipPath(String levelId, int zipNumber) {
+    return fileService.getZipPath(levelId, zipNumber);
+  }
+
+  Future<String> _storeZipFile(String levelId, int zipNumber, List<int> zipData) async {
+    final file = File(fileService.getZipPath(levelId, zipNumber));
+    await Directory(file.parent.path).create(recursive: true);
+    await file.writeAsBytes(zipData);
+    return file.path;
   }
 }
 

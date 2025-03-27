@@ -27,7 +27,7 @@ class SubLevelAPI implements ISubLevelAPI {
     try {
       final response = await apiService.callWithETag<Uint8List?>(
         params: ApiParams(
-          endpoint: '/levels/output/$levelId/$zipId.zip', // TODO: change is same as
+          endpoint: '/levels/$levelId/zips/$zipId.zip',
           customBaseUrl: dotenv.env['S3_BASE_URL'],
           method: ApiMethod.get,
           responseType: ResponseType.bytes,

@@ -30,7 +30,7 @@ class LevelApi implements ILevelApi {
     try {
       final response = await apiService.callWithETag(
         params: ApiParams(
-          endpoint: '/levels/output/$id/$id.json', // TODO: change from info service not its dummy
+          endpoint: '/levels/$id/data.json',
           method: ApiMethod.get,
           customBaseUrl: dotenv.env['S3_BASE_URL'],
         ),
@@ -64,7 +64,7 @@ class LevelApi implements ILevelApi {
     try {
       final response = await apiService.callWithETag<Map<String, dynamic>?>(
         params: ApiParams(
-          endpoint: '/levels/orderedIds.json',
+          endpoint: 'levels/ordered_ids.json',
           method: ApiMethod.get,
           customBaseUrl: dotenv.env['S3_BASE_URL'],
         ),
