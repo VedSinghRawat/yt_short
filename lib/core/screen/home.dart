@@ -55,9 +55,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final canChangeVideo = hasFinishedVideo || !levelAfter;
 
     // Check daily level limit only when changing to a new level
-    final bool exceedsDailyLimit = levelAfter && doneToday >= 1;
+    final bool exceedsDailyLimit = levelAfter && doneToday >= kMaxLevelsPerDay - 1;
 
-    if ((canChangeVideo && !exceedsDailyLimit) || isAdmin) {
+    if (((canChangeVideo || isAdmin) && !exceedsDailyLimit)) {
       return false;
     }
 
@@ -69,7 +69,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     try {
       if (exceedsDailyLimit) {
-        showSnackBar(context, 'You can only complete 2 levels per day');
+        showSnackBar(context, 'You can only complete $kMaxLevelsPerDay levels per day');
       } else {
         showSnackBar(context, 'Please complete the current sublevel before proceeding');
       }
