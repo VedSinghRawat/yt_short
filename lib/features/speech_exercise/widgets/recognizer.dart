@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
@@ -44,6 +46,8 @@ class SpeechRecognizer {
     await _speech.stop();
     try {
       if (onStopListenting != null) onStopListenting!();
-    } catch (e) {}
+    } catch (e) {
+      developer.log('error in speech exercise widget $e');
+    }
   }
 }
