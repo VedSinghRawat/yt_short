@@ -49,35 +49,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     bool isAdmin,
     int doneToday,
   ) {
-    // Inline the logic from _canChangeVideo
-    final hasFinishedVideo = ref.read(sublevelControllerProvider).hasFinishedVideo;
+    if (isAdmin) return false;
+
     final levelAfter = !hasLocalProgress || isLevelAfter(level, subLevel, maxLevel, maxSubLevel);
-    final canChangeVideo = hasFinishedVideo || !levelAfter;
+    if (!levelAfter) return false;
+
+    final hasFinishedVideo = ref.read(sublevelControllerProvider).hasFinishedVideo;
+    if (!hasFinishedVideo) return false;
 
     // Check daily level limit only when changing to a new level
-    final bool exceedsDailyLimit = levelAfter && doneToday >= kMaxLevelsPerDay - 1;
-
-    if (((canChangeVideo || isAdmin) && !exceedsDailyLimit)) {
-      return false;
+    final bool exceedsDailyLimit = doneToday >= kMaxLevelCompletionsPerDay;
+    if (exceedsDailyLimit) {
+      showSnackBar(context, 'You can only complete $kMaxLevelCompletionsPerDay levels per day');
+      return true;
     }
 
-    controller.animateToPage(
-      index - 1,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
-
-    try {
-      if (exceedsDailyLimit) {
-        showSnackBar(context, 'You can only complete $kMaxLevelsPerDay levels per day');
-      } else {
-        showSnackBar(context, 'Please complete the current sublevel before proceeding');
-      }
-    } catch (e) {
-      developer.log('error in cancelVideoChange: $e');
-    }
-
-    return true;
+    return false;
   }
 
   Future<bool> handleFetchSublevels(int index) async {
