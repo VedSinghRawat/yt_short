@@ -55,16 +55,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (!levelAfter) return false;
 
     final hasFinishedVideo = ref.read(sublevelControllerProvider).hasFinishedVideo;
-    if (!hasFinishedVideo) return false;
-
-    // Check daily level limit only when changing to a new level
-    final bool exceedsDailyLimit = doneToday >= kMaxLevelCompletionsPerDay;
-    if (exceedsDailyLimit) {
-      showSnackBar(context, 'You can only complete $kMaxLevelCompletionsPerDay levels per day');
+    if (!hasFinishedVideo) {
+      showSnackBar(context, 'Please complete the current sublevel before proceeding');
       return true;
     }
 
-    return false;
+    // Check daily level limit only when changing to a new level
+    final bool exceedsDailyLimit = doneToday >= kMaxLevelCompletionsPerDay;
+    if (!exceedsDailyLimit) return false;
+
+    showSnackBar(context, 'You can only complete $kMaxLevelCompletionsPerDay levels per day');
+    return true;
   }
 
   Future<bool> handleFetchSublevels(int index) async {
