@@ -12,3 +12,5 @@ const double kDeleteCacheThresholdMB = kMaxStorageSizeMB * 0.3; // 30%
 
 const genericErrorMessage = 'Something went wrong. Please try again later.';
 const internetError = 'No internet connection. Please check your connection and try again.';
+
+const kMaxLevelCompletionsPerDay = 1;

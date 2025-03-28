@@ -5,7 +5,7 @@ import '../models/models.dart';
 
 abstract class IUserAPI {
   Future<UserModel?> getUser();
-  Future<UserModel?> progressSync(String levelId, int subLevel);
+  Future<UserModel?> sync(String levelId, int subLevel);
 }
 
 class UserAPI implements IUserAPI {
@@ -32,7 +32,7 @@ class UserAPI implements IUserAPI {
   }
 
   @override
-  Future<UserModel?> progressSync(String levelId, int subLevel) async {
+  Future<UserModel?> sync(String levelId, int subLevel) async {
     try {
       final response = await _apiService.call(
           params: ApiParams(
