@@ -58,7 +58,7 @@
                 <data
                     android:scheme="https"
                     android:host="ankitsendhav.com"
-                    android:pathPrefix="/"/>
+                    />
             </intent-filter>
         </activity>
 

@@ -9,7 +9,7 @@ import 'package:myapp/core/screen/home.dart';
 import 'package:myapp/core/screen/suggest_version_update.dart';
 import 'package:myapp/core/screen/require_version_update.dart';
 import 'package:myapp/features/auth/widgets/auth_wrapper.dart';
-import 'package:myapp/features/initialize/initilize_screen.dart';
+import 'package:myapp/features/initialize/initialize_screen.dart';
 
 class Routes {
   static const home = '/home';
@@ -56,7 +56,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       GoRoute(
         path: Routes.initializeScreen,
-        builder: (context, state) => const InitilizeScreen(),
+        builder: (context, state) => const InitializeScreen(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

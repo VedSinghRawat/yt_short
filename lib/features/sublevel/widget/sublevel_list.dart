@@ -1,9 +1,7 @@
-import 'dart:developer' as developer;
-
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:myapp/core/services/file_service.dart';
+import 'package:myapp/core/services/level_service.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/widgets/loader.dart';
@@ -103,9 +101,6 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
 
           if ((isLastSublevel || sublevel == null) && !isLoading) {
             final error = ref.watch(sublevelControllerProvider).error;
-            final loadedids = ref.watch(sublevelControllerProvider).loadedLevelIds;
-
-            developer.log('sublevel list errors $error ${widget.loadingIds} $loadedids');
 
             if (error == null) {
               return const Loader();
@@ -119,14 +114,13 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
           }
 
           if (sublevel == null) {
-            developer.log('sublevel list widget.isloading ${widget.loadingIds} ');
             return const Loader();
           }
 
           final positionText = '${sublevel.level}-${sublevel.index}';
 
           final url = ref
-              .read(fileServiceProvider)
+              .read(levelServiceProvider)
               .getUnzippedVideoPath(sublevel.levelId, sublevel.videoFileName);
 
           return Stack(

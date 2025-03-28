@@ -23,13 +23,25 @@ class ApiParams with _$ApiParams {
     required ApiMethod method,
     Map<String, dynamic>? body,
     Map<String, String>? headers,
-    String? customBaseUrl,
+    BaseUrl? baseUrl,
     ResponseType? responseType,
   }) = _ApiParams;
 }
 
+class BaseUrl {
+  final String name;
+  final String url;
+
+  BaseUrl._({required this.name, required this.url});
+
+  static final BaseUrl backend = BaseUrl._(name: 'backend', url: dotenv.env['API_BASE_URL'] ?? '');
+  static final BaseUrl s3 = BaseUrl._(name: 's3', url: dotenv.env['S3_BASE_URL'] ?? '');
+
+  @override
+  String toString() => '$name: $url';
+}
+
 class ApiService {
-  final String baseUrl = dotenv.env['API_BASE_URL'] ?? '';
   final Dio _dio = Dio();
   final GoogleSignIn _googleSignIn;
 
@@ -43,7 +55,7 @@ class ApiService {
     return await SharedPref.getGoogleIdToken();
   }
 
-  Future<Response<T>> _makeRequest<T>({
+  Future<Response<T>> call<T>({
     required ApiParams params,
   }) async {
     final String? token = await getToken();
@@ -61,30 +73,15 @@ class ApiService {
         responseType: params.responseType,
       );
       return await _dio.request(
-        params.customBaseUrl != null
-            ? '${params.customBaseUrl}${params.endpoint}'
-            : '$baseUrl${params.endpoint}',
+        params.baseUrl != null
+            ? '${params.baseUrl?.url}${params.endpoint}'
+            : '${BaseUrl.backend}${params.endpoint}',
         data: params.body,
         options: options,
       );
-    } catch (e) {
-      if (e is DioException) {
-        developer.log('DioException: ${e.response?.statusCode}', name: 'api');
-        developer.log('DioException: ${e.response?.data}', name: 'api');
-        rethrow;
-      }
-      rethrow;
-    }
-  }
-
-  Future<Response<T>> call<T>({
-    required ApiParams params,
-  }) async {
-    try {
-      return await _makeRequest<T>(params: params);
     } on DioException catch (e) {
-      developer
-          .log('ApiError on uri ${Uri.parse('${params.customBaseUrl}${params.endpoint}')} :  $e ');
+      developer.log('ApiError on uri ${Uri.parse('${params.baseUrl}${params.endpoint}')} :  $e ');
+
       if (e.response?.data == null ||
           e.response?.data is! Map<String, dynamic> ||
           e.response?.data['message'] == null ||
@@ -96,23 +93,27 @@ class ApiService {
 
       if (account != null) {
         final auth = await account.authentication;
+
         final idToken = auth.idToken;
+
         if (idToken == null) rethrow;
 
         await setToken(idToken);
-        return await _makeRequest<T>(params: params);
+
+        return await call<T>(params: params);
       }
 
       rethrow;
     }
   }
 
-  Future<Response<T>> callWithETag<T>({
+  /// Store the ETag of the data. It will fetch and return null if the data has not changed.
+  Future<Response<T>?> getCloudStorageData<T>({
     required ApiParams params,
-    required String eTagId,
-    Future<T?> Function(DioException)? onCacheHit,
   }) async {
-    final String? storedETag = await SharedPref.getETag(eTagId);
+    final eTagKey = params.endpoint;
+
+    final String? storedETag = await SharedPref.getETag(eTagKey);
 
     final mergedParams = params.copyWith(
       headers: {
@@ -125,21 +126,17 @@ class ApiService {
       final response = await call<T>(params: mergedParams);
 
       final newETag = response.headers.value(HttpHeaders.etagHeader);
-      if (newETag != null) await SharedPref.storeETag(eTagId, newETag);
+
+      if (newETag != null) await SharedPref.storeETag(eTagKey, newETag);
 
       return response;
+
+      // INFO: Dio throws 304 as an exception, not a success.
     } on DioException catch (e) {
       if (e.response?.statusCode == 304) {
-        if (onCacheHit == null) rethrow;
-
-        final data = await onCacheHit(e);
-
-        return Response<T>(
-          requestOptions: e.requestOptions,
-          data: data,
-          statusCode: 200,
-        );
+        return null;
       }
+
       rethrow;
     }
   }

@@ -5,6 +5,10 @@ import 'package:myapp/models/level/level.dart';
 import 'package:myapp/models/activity_log/activity_log.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+// enum PrefKey<T>{
+
+// }
+
 class SharedPref {
   static Future<String?> _getValue(String key) async {
     final instance = await SharedPreferences.getInstance();

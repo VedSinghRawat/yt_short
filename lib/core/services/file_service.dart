@@ -19,21 +19,6 @@ class FileService {
 
   static FileService get instance => _instance;
 
-  String getZipPath(String levelId, int zipId) {
-    return '${getLevelPath(levelId)}/$zipId.zip';
-  }
-
-  String getLevelPath(String levelId) {
-    return '$levelsDocDirPath/$levelId';
-  }
-
-  String get levelsDocDirPath => '${documentsDirectory.path}/levels';
-  String get levelsCacheDirPath => '${cacheDirectory.path}/levels';
-
-  String getVideoDirPath(String levelId) {
-    return '$levelsCacheDirPath/videos/$levelId';
-  }
-
   Future<Directory?> unzip(File zipFile, Directory destinationDir) async {
     if (!zipFile.existsSync()) return null;
 
@@ -46,38 +31,10 @@ class FileService {
     return destinationDir;
   }
 
-  Future<Directory?> extrectStoredZip(String levelId, int zipId) async {
-    final file = File(getZipPath(levelId, zipId));
-
-    final destinationDir = Directory(getVideoDirPath(levelId));
-
-    return unzip(file, destinationDir);
-  }
-
-  Future<void> deleteStoredZip(String levelId, int zipId) async {
-    await deleteFile(getZipPath(levelId, zipId));
-  }
-
   Future<void> deleteFile(String path) async {
     final file = File(path);
 
     await file.delete();
-  }
-
-  Future<bool> isZipExists(String levelId, int zipId) async {
-    final file = File(getZipPath(levelId, zipId));
-
-    return file.exists();
-  }
-
-  Future<bool> isVideoExists(String levelId, String videoId) async {
-    final file = File(getUnzippedVideoPath(levelId, videoId));
-
-    return file.exists();
-  }
-
-  String getUnzippedVideoPath(String levelId, String videoId) {
-    return '${getVideoDirPath(levelId)}/$videoId.mp4';
   }
 
   static int getDirectorySize(Directory directory) {
@@ -96,8 +53,7 @@ class FileService {
     return totalSize;
   }
 
-  static Future<List<String>> listEntities(Directory directory,
-      {EntitiesType type = EntitiesType.both}) async {
+  static Future<List<String>> listEntities(Directory directory, {EntitiesType? type}) async {
     if (!await directory.exists()) {
       throw Exception("Directory does not exist");
     }
@@ -107,7 +63,7 @@ class FileService {
     await for (var entity in directory.list()) {
       if ((type == EntitiesType.folders && entity is Directory) ||
           (type == EntitiesType.files && entity is File) ||
-          (type == EntitiesType.both)) {
+          (type == null)) {
         entities.add(entity.path.split(Platform.pathSeparator).last);
       }
     }
@@ -120,4 +76,4 @@ final fileServiceProvider = Provider<FileService>((ref) {
   return FileService.instance;
 });
 
-enum EntitiesType { folders, files, both }
+enum EntitiesType { folders, files }

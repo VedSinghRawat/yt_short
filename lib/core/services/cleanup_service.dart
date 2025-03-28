@@ -4,60 +4,80 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/services/file_service.dart';
+import 'package:myapp/core/services/level_service.dart';
 import 'package:myapp/core/shared_pref.dart';
+import 'package:myapp/core/utils.dart';
 
 class StorageCleanupService {
   final FileService fileService;
+  final LevelService levelService;
 
-  StorageCleanupService(this.fileService);
+  StorageCleanupService(this.fileService, this.levelService);
 
   /// Main cleanup logic — removes folders from cache if total size exceeds threshold
   Future<List<String>> cleanLevels(List<String> orderedIds) async {
     try {
-      Directory targetDir = Directory(fileService.levelsDocDirPath);
+      Directory targetDir = Directory(levelService.levelsDocDirPath);
+
+      const protectedIdsLength = kMaxNextLevelsToKeep + kMaxPreviousLevelsToKeep;
 
       // Ensure directory exists and input is valid
-      if (!await targetDir.exists() || orderedIds.isEmpty) {
+      if (!await targetDir.exists() ||
+          orderedIds.isEmpty ||
+          orderedIds.length - protectedIdsLength == 0) {
         return orderedIds;
       }
 
       // Check total size of the cache folder
-      double totalSizeMB = await checkStorageSize(targetDir);
-      developer.log('clean levels total size is $totalSizeMB');
+      int totalSize = await compute(FileService.getDirectorySize, targetDir);
+
+      developer.log('clean levels total size is $totalSize bytes');
 
       // No need to clean if under limit
-      if (totalSizeMB < kMaxStorageSizeMB) {
+      if (totalSize < kMaxStorageSizeBytes) {
         return orderedIds;
       }
 
       List<String> remainingIds = List.from(orderedIds);
 
       // Start deleting until space is freed
-      while (totalSizeMB > kDeleteCacheThresholdMB && remainingIds.isNotEmpty) {
+      while (totalSize > kDeleteCacheThreshold && remainingIds.length > protectedIdsLength) {
         final id = remainingIds.removeAt(0);
-        final folderPath = fileService.getLevelPath(id);
+        final folderPath = levelService.getLevelPath(id);
         final folder = Directory(folderPath);
 
         if (!await folder.exists()) continue;
 
-        final folderSize = await checkStorageSize(folder);
-        developer.log('folder size is $folderSize for folder $folder');
+        int folderSize = await compute(FileService.getDirectorySize, targetDir);
+
+        developer.log('folder size is $folderSize bytes for folder $folder');
 
         // Get inner folders before deletion
         final zips = await compute(listZips, folder);
 
         // Delete actual files/folders
         await folder.delete(recursive: true);
-        await SharedPref.deleteLevelDTO(id);
+
+        await SharedPref.deleteLevelDTO(getLevelJsonPath(id));
 
         await SharedPref.removeEtag(id);
 
         for (var e in zips) {
-          await SharedPref.removeEtag('$id${e.replaceFirst('.zip', '')}');
+          await SharedPref.removeEtag(
+            getLevelZipPath(
+              id,
+              int.parse(
+                e.replaceFirst(
+                  '.zip',
+                  '',
+                ),
+              ),
+            ),
+          );
         }
 
         // Update size
-        totalSizeMB -= folderSize;
+        totalSize -= folderSize;
       }
 
       developer.log('Remaining IDs after cleanup: $remainingIds');
@@ -70,57 +90,52 @@ class StorageCleanupService {
 
   static Future<List<String>> listZips(Directory folder) => FileService.listEntities(folder);
 
-  Future<double> checkStorageSize(Directory targetDir) async {
-    try {
-      final totalSize = await compute(FileService.getDirectorySize, targetDir);
-      return totalSize / (1024 * 1024); // Convert to MB
-    } catch (e) {
-      developer.log('Error in checkStorageSize: $e');
-      return 0.0;
-    }
-  }
-
   /// Removes least-important cached levels while protecting nearby levels
   Future<List<String>> removeFurthestCachedIds(
     List<String> cachedIds,
     List<String> orderedIds,
     String currentId,
   ) async {
-    final Map<String, int> indexLookup = {
+    final Map<String, int> idToIndexMap = {
       for (int i = 0; i < orderedIds.length; i++) orderedIds[i]: i
     };
 
-    final int currentIndex = indexLookup[currentId] ?? -1;
-    if (currentIndex == -1) return cachedIds;
+    final int currentIndex = idToIndexMap[currentId] ?? -1;
 
-    final List<String> protected = [];
+    cachedIds.sort((idA, idB) {
+      final int indexA = idToIndexMap[idA] ?? -1;
+      final int indexB = idToIndexMap[idB] ?? -1;
 
-    cachedIds.sort((a, b) {
-      final int aI = indexLookup[a] ?? -1;
-      final int bI = indexLookup[b] ?? -1;
+      final int distanceA = indexA - currentIndex;
+      final int distanceB = indexB - currentIndex;
 
-      if (_isProtectedLevel(currentIndex, aI)) protected.add(a);
-      if (_isProtectedLevel(currentIndex, bI)) protected.add(b);
+      // Keep protected levels at the end
+      if (_isProtectedLevel(distanceA)) return 1;
+      if (_isProtectedLevel(distanceB)) return -1;
 
-      final int distA = (aI - currentIndex).abs();
-      final int distB = (bI - currentIndex).abs();
-
-      return distA.compareTo(distB);
+      return distanceA.abs().compareTo(distanceB.abs());
     });
-
-    cachedIds.removeWhere(protected.contains);
 
     developer.log('Removed protected IDs, cleaning: $cachedIds');
 
     final List<String> remainingIds = await cleanLevels(cachedIds);
-    return [...protected, ...remainingIds];
+
+    return remainingIds;
   }
 
   /// Prevents deletion of current, previous and next two levels
-  bool _isProtectedLevel(int currIndex, int idIndex) =>
-      const {-1, 0, 1, 2}.contains(idIndex - currIndex);
+  bool _isProtectedLevel(int dist) {
+    if ((dist < 0 && dist.abs() <= kMaxPreviousLevelsToKeep) || dist <= kMaxNextLevelsToKeep) {
+      return true;
+    }
+
+    return false;
+  }
 }
 
-final storageCleanupServiceProvider = Provider<StorageCleanupService>((ref) {
-  return StorageCleanupService(ref.read(fileServiceProvider));
-});
+final storageCleanupServiceProvider = Provider<StorageCleanupService>(
+  (ref) => StorageCleanupService(
+    ref.read(fileServiceProvider),
+    ref.read(levelServiceProvider),
+  ),
+);

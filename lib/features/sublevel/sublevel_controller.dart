@@ -8,8 +8,8 @@ import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/console.dart';
 import 'package:myapp/core/services/cleanup_service.dart';
 import 'package:myapp/core/services/file_service.dart';
+import 'package:myapp/core/services/level_service.dart';
 import 'package:myapp/core/services/sub_level_service.dart';
-import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/features/sublevel/ordered_ids_notifier.dart';
 import 'package:myapp/features/user/user_controller.dart';
@@ -44,8 +44,10 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
   final OrderedIdsNotifier orderedIdNotifier;
   final StorageCleanupService storageCleanupService;
   final Ref ref;
+  final LevelService levelService;
 
   SublevelController({
+    required this.levelService,
     required this.ref,
     required this.storageCleanupService,
     required this.subLevelAPI,
@@ -59,9 +61,6 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
     state = state.copyWith(
       loadingLevelIds: {...state.loadingLevelIds, levelId},
     );
-
-    Console.timeStart('listlevel$level');
-    developer.log('loadingLevelIds ${state.loadingLevelIds}');
 
     try {
       final levelDTOEither = await levelApi.getById(
@@ -97,9 +96,7 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
         Console.timeEnd('first-fetch');
       }
 
-      final zipNumbers = levelDTO.subLevels.map((subLevelDTO) => subLevelDTO.zip).toSet();
-
-      await subLevelService.getZipFiles(levelDTO.id, zipNumbers);
+      await subLevelService.getZipFiles(levelDTO);
 
       await _addSublevelEntries(levelDTO, sublevels, level, levelId);
 
@@ -118,7 +115,6 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
       state = state.copyWith(
         loadingLevelIds: {...state.loadingLevelIds}..remove(levelId),
       );
-      Console.timeEnd('listlevel$level');
     }
   }
 
@@ -129,7 +125,7 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
   Future<void> _addSublevelEntries(
       LevelDTO levelDTO, Set<SubLevel> sublevels, int level, String levelId) async {
     final entries = await FileService.listEntities(
-      Directory(fileService.getVideoDirPath(levelDTO.id)),
+      Directory(levelService.getVideoDirPath(levelDTO.id)),
     );
 
     sublevels.addAll(
@@ -233,15 +229,17 @@ class SublevelController extends StateNotifier<SublevelControllerState> {
       if (isFirstFetch) {
         try {
           final cachedIds = await FileService.listEntities(
-            Directory(fileService.levelsDocDirPath),
+            Directory(levelService.levelsDocDirPath),
             type: EntitiesType.folders,
           );
 
-          storageCleanupService.removeFurthestCachedIds(cachedIds, orderedIds, currLevelId);
+          await storageCleanupService.removeFurthestCachedIds(
+            cachedIds,
+            orderedIds,
+            currLevelId,
+          );
         } catch (e) {
-          await SharedPref.clearAllETags();
-
-          throw genericErrorMessage;
+          developer.log('error in sublevel controller: $e');
         }
       }
     } catch (e) {
@@ -276,8 +274,10 @@ final sublevelControllerProvider =
   final fileService = ref.read(fileServiceProvider);
   final orderedIdNotifier = ref.read(orderedIdsNotifierProvider.notifier);
   final storageCleanupService = ref.read(storageCleanupServiceProvider);
+  final levelService = ref.read(levelServiceProvider);
 
   return SublevelController(
+    levelService: levelService,
     storageCleanupService: storageCleanupService,
     subLevelAPI: subLevelAPI,
     ref: ref,

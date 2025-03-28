@@ -89,6 +89,8 @@ class InitializeService {
   }
 
   Future<void> handleDeepLinking() async {
+    if (await SharedPref.getCyId() != null) return;
+
     final appLinks = AppLinks();
 
     appLinks.uriLinkStream.listen((uri) async {

@@ -59,3 +59,7 @@ final dioConnectionErrors = {
   DioExceptionType.receiveTimeout,
   DioExceptionType.connectionTimeout,
 };
+
+String getLevelJsonPath(String jsonId) => '/levels/output/$jsonId/data.json';
+
+String getLevelZipPath(String levelId, int zipNum) => '/levels/$levelId/zips/$zipNum.zip';

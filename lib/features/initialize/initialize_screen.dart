@@ -7,8 +7,8 @@ import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/services/initialize_service.dart';
 import 'package:myapp/core/widgets/loader.dart';
 
-class InitilizeScreen extends ConsumerWidget {
-  const InitilizeScreen({super.key});
+class InitializeScreen extends ConsumerWidget {
+  const InitializeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
