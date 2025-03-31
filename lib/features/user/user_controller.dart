@@ -82,9 +82,9 @@ class UserController extends StateNotifier<UserControllerState> {
     state = state.copyWith(currentUser: null);
   }
 
-  Future<void> progressSync(String levelId, int subLevel) async {
+  Future<void> sync(String levelId, int subLevel) async {
     try {
-      final user = await userAPI.progressSync(levelId, subLevel);
+      final user = await userAPI.sync(levelId, subLevel);
       if (user == null) return;
 
       updateCurrentUser(user);

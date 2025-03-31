@@ -39,7 +39,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
-  Future<bool> cancelVideoChange(
+  bool cancelVideoChange(
     int index,
     PageController controller,
     int maxLevel,
@@ -48,28 +48,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     int subLevel,
     bool hasLocalProgress,
     bool isAdmin,
-  ) async {
-    // Inline the logic from _canChangeVideo
-    final hasFinishedVideo = ref.read(sublevelControllerProvider).hasFinishedVideo;
+    int doneToday,
+  ) {
+    if (isAdmin) return false;
+
     final levelAfter = !hasLocalProgress || isLevelAfter(level, subLevel, maxLevel, maxSubLevel);
-    final canChangeVideo = hasFinishedVideo || !levelAfter;
+    if (!levelAfter) return false;
 
-    if (canChangeVideo || isAdmin) {
-      return false;
-    }
-
-    controller.animateToPage(
-      index - 1,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
-
-    try {
+    final hasFinishedVideo = ref.read(sublevelControllerProvider).hasFinishedVideo;
+    if (!hasFinishedVideo) {
       showSnackBar(context, 'Please complete the current sublevel before proceeding');
-    } catch (e) {
-      developer.log('error in cancelVideoChange: $e');
+      return true;
     }
 
+    // Check daily level limit only when changing to a new level
+    final bool exceedsDailyLimit = doneToday >= kMaxLevelCompletionsPerDay;
+    if (!exceedsDailyLimit) return false;
+
+    showSnackBar(context, 'You can only complete $kMaxLevelCompletionsPerDay levels per day');
     return true;
   }
 
@@ -89,11 +85,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (index <= 0) return;
 
     final previousLevelId = sublevels[index - 1].levelId;
-
     final levelId = sublevels[index].levelId;
+    if (previousLevelId == levelId) return;
 
-    if (userEmail.isNotEmpty && previousLevelId != levelId) {
-      ref.read(userControllerProvider.notifier).progressSync(levelId, subLevel);
+    if (userEmail.isNotEmpty) {
+      ref.read(userControllerProvider.notifier).sync(levelId, subLevel);
     }
   }
 
@@ -163,7 +159,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final localMaxSubLevel = localProgress?.maxSubLevel ?? 0;
 
     // Check if video change should be cancelled
-    if (await cancelVideoChange(
+    if (cancelVideoChange(
       index,
       controller,
       max(user?.maxLevel ?? 0, localMaxLevel),
@@ -172,6 +168,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       sublevelIndex,
       localProgress != null,
       user?.isAdmin == true,
+      user?.doneToday ?? 0,
     )) {
       return;
     }
