@@ -44,7 +44,7 @@ class AuthController extends StateNotifier<AuthControllerState> {
 
       await Future.delayed(Duration.zero); // Yield control to UI
 
-      final progress = await SharedPref.getCurrProgress();
+      final progress = await SharedPref.getValue(PrefKey.currProgress);
 
       final level = progress?.maxLevel ?? kAuthRequiredLevel;
       final subLevel = progress?.maxSubLevel ?? 0;
@@ -54,7 +54,7 @@ class AuthController extends StateNotifier<AuthControllerState> {
         await showLevelChangeConfirmationDialog(context, user, sublevelController);
       }
 
-      await sublevelController.fetchSublevels();
+      await sublevelController.handleFetchSublevels();
     } catch (e, stackTrace) {
       developer.log('Error in AuthController.signInWithGoogle',
           error: e.toString(), stackTrace: stackTrace);

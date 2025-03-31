@@ -37,6 +37,8 @@ class BaseUrl {
   static final BaseUrl backend = BaseUrl._(name: 'backend', url: dotenv.env['API_BASE_URL'] ?? '');
   static final BaseUrl s3 = BaseUrl._(name: 's3', url: dotenv.env['S3_BASE_URL'] ?? '');
 
+  bool get isS3 => name == 's3';
+
   @override
   String toString() => '$name: $url';
 }
@@ -48,11 +50,16 @@ class ApiService {
   ApiService({required GoogleSignIn googleSignIn}) : _googleSignIn = googleSignIn;
 
   Future<void> setToken(String token) async {
-    await SharedPref.setGoogleIdToken(token);
+    await SharedPref.storeValue(
+      PrefKey.googleIdToken,
+      token,
+    );
   }
 
   Future<String?> getToken() async {
-    return await SharedPref.getGoogleIdToken();
+    return await SharedPref.getValue(
+      PrefKey.googleIdToken,
+    );
   }
 
   Future<Response<T>> call<T>({
@@ -62,7 +69,7 @@ class ApiService {
 
     final effectiveHeaders = {
       'Content-Type': 'application/json',
-      if (token != null) 'Authorization': 'Bearer $token',
+      if (token != null && params.baseUrl?.isS3 != true) 'Authorization': 'Bearer $token',
       ...?params.headers
     };
 
@@ -71,16 +78,19 @@ class ApiService {
         method: params.method.name.toUpperCase(),
         headers: effectiveHeaders,
         responseType: params.responseType,
+        contentType: 'application/json',
       );
       return await _dio.request(
         params.baseUrl != null
             ? '${params.baseUrl?.url}${params.endpoint}'
-            : '${BaseUrl.backend}${params.endpoint}',
+            : '${BaseUrl.backend.url}${params.endpoint}',
         data: params.body,
         options: options,
       );
     } on DioException catch (e) {
-      developer.log('ApiError on uri ${Uri.parse('${params.baseUrl}${params.endpoint}')} :  $e ');
+      if ((e.response?.statusCode ?? 0) >= 400) {
+        developer.log('ApiError on uri ${Uri.parse('${params.baseUrl}${params.endpoint}')} :  $e ');
+      }
 
       if (e.response?.data == null ||
           e.response?.data is! Map<String, dynamic> ||
@@ -111,9 +121,13 @@ class ApiService {
   Future<Response<T>?> getCloudStorageData<T>({
     required ApiParams params,
   }) async {
-    final eTagKey = params.endpoint;
+    final eTagId = params.endpoint;
 
-    final String? storedETag = await SharedPref.getETag(eTagKey);
+    final storedETag = await SharedPref.getRawValue(
+      PrefKey.eTagKey(
+        eTagId,
+      ),
+    );
 
     final mergedParams = params.copyWith(
       headers: {
@@ -127,7 +141,13 @@ class ApiService {
 
       final newETag = response.headers.value(HttpHeaders.etagHeader);
 
-      if (newETag != null) await SharedPref.storeETag(eTagKey, newETag);
+      if (newETag != null) {
+        await SharedPref.storeRawValue(
+            PrefKey.eTagKey(
+              eTagId,
+            ),
+            newETag);
+      }
 
       return response;
 

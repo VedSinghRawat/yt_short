@@ -10,6 +10,7 @@ import 'package:myapp/core/services/file_service.dart';
 import 'package:myapp/core/services/info_service.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
+import 'package:myapp/features/sublevel/ordered_ids_notifier.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'dart:developer' as developer;
 
@@ -21,10 +22,12 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 class InitializeService {
   UserController userController;
   InitializeAPI initializeAPI;
+  OrderedIdsNotifier orderedIdNotifier;
 
   InitializeService({
     required this.userController,
     required this.initializeAPI,
+    required this.orderedIdNotifier,
   });
 
   Future<void> clearAppCache() async {
@@ -44,11 +47,13 @@ class InitializeService {
       await storeCyId();
       await FileService.instance.init();
       await InfoService.instance.init();
+      await SharedPref.init();
       await clearAppCache();
+      await orderedIdNotifier.getOrderedIds();
 
       await initializeVersion();
 
-      final currProgress = await SharedPref.getCurrProgress();
+      final currProgress = await SharedPref.getValue(PrefKey.currProgress);
       final apiUser = await userController.getCurrentUser();
 
       if (currProgress == null && apiUser == null) return;
@@ -59,7 +64,8 @@ class InitializeService {
 
       localLastModified > apiLastModified
           ? await userController.progressSync(currProgress!.levelId!, currProgress.subLevel!)
-          : await SharedPref.setCurrProgress(
+          : await SharedPref.copyWith(
+              PrefKey.currProgress,
               Progress(
                 level: apiUser?.level,
                 levelId: apiUser?.levelId,
@@ -70,14 +76,14 @@ class InitializeService {
               ),
             );
 
-      await SharedPref.setIsFirstLaunch(false);
+      await SharedPref.storeValue(PrefKey.isFirstLaunch, false);
     } catch (e, stackTrace) {
       developer.log('Error during initialize', error: e.toString(), stackTrace: stackTrace);
     }
   }
 
   Future<void> storeCyId() async {
-    if (!await SharedPref.isFirstLaunch()) return;
+    if (await SharedPref.getValue(PrefKey.isFirstLaunch) == false) return;
 
     final referrer = await AndroidPlayInstallReferrer.installReferrer;
 
@@ -85,11 +91,11 @@ class InitializeService {
 
     if (cyId == null) return;
 
-    await SharedPref.setCyId(cyId);
+    await SharedPref.storeValue(PrefKey.cyId, cyId);
   }
 
   Future<void> handleDeepLinking() async {
-    if (await SharedPref.getCyId() != null) return;
+    if (await SharedPref.getValue(PrefKey.cyId) != null) return;
 
     final appLinks = AppLinks();
 
@@ -97,7 +103,7 @@ class InitializeService {
       final pathSegments = uri.pathSegments;
       if (pathSegments.length >= 2 && pathSegments[0] == 'cyid') {
         final cyId = pathSegments[1];
-        await SharedPref.setCyId(cyId);
+        await SharedPref.storeValue(PrefKey.cyId, cyId);
         developer.log('Deep linking: $cyId');
 
         final context = navigatorKey.currentContext;
@@ -127,6 +133,7 @@ final initializeServiceProvider = FutureProvider<InitializeService>((ref) async 
   final service = InitializeService(
     userController: ref.read(userControllerProvider.notifier),
     initializeAPI: ref.read(initializeAPIService),
+    orderedIdNotifier: ref.read(orderedIdsNotifierProvider.notifier),
   );
 
   await service.initialize();

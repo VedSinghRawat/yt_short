@@ -81,6 +81,9 @@ class SignInScreen extends ConsumerWidget {
                     icon: Image.network(
                       'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png',
                       height: 24,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(Icons.login);
+                      },
                     ),
                     label: const Text('Sign in with Google'),
                     style: ElevatedButton.styleFrom(
@@ -107,7 +110,8 @@ showLevelChangeConfirmationDialog(
         'We notice that you are already at Level ${user.maxLevel}, Sublevel ${user.maxSubLevel}. Do you want to continue from there?',
     onResult: (result) async {
       if (result) {
-        await SharedPref.setCurrProgress(
+        await SharedPref.copyWith(
+          PrefKey.currProgress,
           Progress(
             level: user.maxLevel,
             subLevel: user.maxSubLevel,
@@ -115,14 +119,15 @@ showLevelChangeConfirmationDialog(
         );
       }
 
-      await SharedPref.setCurrProgress(
+      await SharedPref.copyWith(
+        PrefKey.currProgress,
         Progress(
           maxLevel: user.maxLevel,
           maxSubLevel: user.maxSubLevel,
         ),
       );
 
-      await sublevelController.fetchSublevels();
+      await sublevelController.handleFetchSublevels();
     },
     yesButtonStyle: ElevatedButton.styleFrom(
       backgroundColor: Colors.blue,

@@ -32,10 +32,6 @@ class SubLevelAPI implements ISubLevelAPI {
         ),
       );
 
-      if (response?.statusCode != 200) {
-        throw Exception("Failed to fetch");
-      }
-
       return Right(response?.data);
     } on DioException catch (e) {
       developer.log('Error in SubLevelAPI.getZipData: $e');

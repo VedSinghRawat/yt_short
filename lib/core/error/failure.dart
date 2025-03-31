@@ -8,6 +8,6 @@ class Failure {
 
   @override
   String toString() {
-    return 'Failure(message: $message)';
+    return message;
   }
 }

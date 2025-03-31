@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:myapp/constants/constants.dart';
 import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'package:myapp/features/sublevel/widget/last_level.dart';
 import 'package:better_player_plus/better_player_plus.dart';
@@ -36,7 +37,7 @@ class _PlayerState extends ConsumerState<Player> {
   @override
   void initState() {
     super.initState();
-
+    developer.log('init state in controller');
     _betterPlayerController = _initializeBetterPlayerController();
   }
 
@@ -128,23 +129,47 @@ class _PlayerState extends ConsumerState<Player> {
     }
   }
 
-  BetterPlayerController _initializeBetterPlayerController() {
-    final controller = BetterPlayerController(
-      const BetterPlayerConfiguration(
-        autoPlay: false,
-        looping: true,
-        fit: BoxFit.fitHeight,
-        aspectRatio: 9 / 16,
-        controlsConfiguration: BetterPlayerControlsConfiguration(
-          showControls: false,
-        ),
-      ),
-    );
-    controller
-        .setupDataSource(BetterPlayerDataSource(BetterPlayerDataSourceType.file, widget.videoPath));
+  BetterPlayerController? _initializeBetterPlayerController() {
+    try {
+      final controller = BetterPlayerController(
+        BetterPlayerConfiguration(
+          autoPlay: false,
+          errorBuilder: (context, errorMessage) {
+            ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
 
-    widget.onControllerInitialized?.call(controller);
-    return controller;
+            return ErrorPage(text: errorMessage ?? videoPlayerError);
+          },
+          looping: true,
+          fit: BoxFit.fitHeight,
+          autoDispose: false,
+          aspectRatio: 9 / 16,
+          controlsConfiguration: const BetterPlayerControlsConfiguration(
+            showControls: false,
+          ),
+        ),
+      );
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        controller.setupDataSource(
+            BetterPlayerDataSource(BetterPlayerDataSourceType.file, widget.videoPath));
+
+        widget.onControllerInitialized?.call(controller);
+      });
+
+      return controller;
+    } on Exception catch (e) {
+      setState(() {
+        error = e.toString();
+      });
+
+      return null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _betterPlayerController?.dispose(forceDispose: true);
+    super.dispose();
   }
 
   @override
@@ -157,28 +182,18 @@ class _PlayerState extends ConsumerState<Player> {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            if (error != null)
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ErrorPage(
-                    text: error!,
-                  ),
-                ),
-              )
-            else
-              Builder(
-                builder: (_) {
-                  if (_betterPlayerController == null && _isVisible) {}
-                  return _betterPlayerController != null
-                      ? SizedBox(
-                          height: MediaQuery.of(context).size.height,
-                          child: BetterPlayer(
-                            controller: _betterPlayerController!,
-                          ))
-                      : const Center(child: CircularProgressIndicator());
-                },
-              ),
+            Builder(
+              builder: (_) {
+                if (_betterPlayerController == null && _isVisible) {}
+                return _betterPlayerController != null
+                    ? SizedBox(
+                        height: MediaQuery.of(context).size.height,
+                        child: BetterPlayer(
+                          controller: _betterPlayerController!,
+                        ))
+                    : const Center(child: CircularProgressIndicator());
+              },
+            ),
             PlayPauseButton(showPlayPauseIcon: _showPlayPauseIcon, iconData: _iconData),
           ],
         ),

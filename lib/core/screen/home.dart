@@ -10,6 +10,7 @@ import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/core/widgets/loader.dart';
 import 'package:myapp/features/activity_log/activity_log.controller.dart';
+import 'package:myapp/models/activity_log/activity_log.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 import '../../features/sublevel/sublevel_controller.dart';
 import '../../features/sublevel/widget/sublevel_list.dart';
@@ -34,7 +35,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      await ref.read(sublevelControllerProvider.notifier).fetchSublevels();
+      await ref.read(sublevelControllerProvider.notifier).handleFetchSublevels();
     });
   }
 
@@ -74,7 +75,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Future<bool> handleFetchSublevels(int index) async {
     if (index < _cachedSublevels!.length) return false;
-    await ref.read(sublevelControllerProvider.notifier).fetchSublevels();
+    await ref.read(sublevelControllerProvider.notifier).handleFetchSublevels();
 
     return true;
   }
@@ -98,22 +99,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Future<void> syncActivityLogs() async {
     // Check if enough time has passed since the last sync
-    final lastSync = await SharedPref.getLastSync();
+    final lastSync = await SharedPref.getValue(PrefKey.lastSync) ?? 0;
+
     final now = DateTime.now().millisecondsSinceEpoch;
     final diff = now - lastSync;
     if (diff < kMinProgressSyncingDiffInMillis) return;
 
     // If the user is logged in, sync their progress with the server
     // Sync any pending activity logs with the server
-    final activityLogs = await SharedPref.getActivityLogs();
+    final activityLogs = await SharedPref.getValue(PrefKey.activityLogs);
 
     if (activityLogs == null || activityLogs.isEmpty) return;
 
     await ref.read(activityLogControllerProvider.notifier).syncActivityLogs(activityLogs);
 
     // Clear the activity logs and update the last sync time
-    await SharedPref.clearActivityLogs();
-    await SharedPref.setLastSync(DateTime.now().millisecondsSinceEpoch);
+    await SharedPref.removeValue(PrefKey.activityLogs);
+
+    await SharedPref.storeValue(
+      PrefKey.lastSync,
+      DateTime.now().millisecondsSinceEpoch,
+    );
   }
 
   Future<void> syncLocalProgress(
@@ -126,7 +132,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final isCurrLevelAfter = isLevelAfter(level, sublevelIndex, localMaxLevel, localMaxSubLevel);
 
     // Update the user's current progress in shared preferences
-    await SharedPref.setCurrProgress(
+    await SharedPref.copyWith(
+      PrefKey.currProgress,
       Progress(
         level: level,
         subLevel: sublevelIndex,
@@ -151,7 +158,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // Get the user's email
     final user = ref.read(userControllerProvider).currentUser;
 
-    final localProgress = await SharedPref.getCurrProgress();
+    final localProgress = await SharedPref.getValue(PrefKey.currProgress);
     final localMaxLevel = localProgress?.maxLevel ?? 0;
     final localMaxSubLevel = localProgress?.maxSubLevel ?? 0;
 
@@ -192,7 +199,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     await fetchSubLevels(index);
 
     // If the user is logged in, add an activity log entry
-    await SharedPref.addActivityLog(level, sublevelIndex, userEmail);
+    await SharedPref.addValue(
+      PrefKey.activityLogs,
+      ActivityLog(
+        subLevel: sublevelIndex,
+        level: level,
+        userEmail: userEmail,
+      ),
+    );
 
     // Sync the progress with db if the user moves to a new level
     await syncProgress(index, _cachedSublevels!, userEmail, sublevelIndex);
@@ -209,7 +223,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     if (prevLevel == currLevel) return;
 
-    await ref.read(sublevelControllerProvider.notifier).fetchSublevels();
+    await ref.read(sublevelControllerProvider.notifier).handleFetchSublevels();
   }
 
   List<SubLevel> _getSortedSublevels(List<SubLevel> sublevels) {

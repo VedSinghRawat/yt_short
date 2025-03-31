@@ -16,7 +16,10 @@ class ActivityLogAPI implements IActivityLogAPI {
   @override
   Future<void> syncActivityLogs(List<ActivityLog> activityLogs) async {
     try {
-      final googleIdToken = await SharedPref.getGoogleIdToken();
+      final googleIdToken = await SharedPref.getValue(
+        PrefKey.googleIdToken,
+      );
+
       if (googleIdToken == null) return;
 
       await _apiService.call(

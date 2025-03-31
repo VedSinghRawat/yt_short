@@ -18,7 +18,11 @@ class LevelService {
   }
 
   String getZipPath(String levelId, int zipId) {
-    return '${getLevelPath(levelId)}/zips/$zipId.zip';
+    return '${getZipBasePath(levelId)}/$zipId.zip';
+  }
+
+  String getZipBasePath(String levelId) {
+    return '${getLevelPath(levelId)}/zips';
   }
 
   String getVideoDirPath(String levelId) {

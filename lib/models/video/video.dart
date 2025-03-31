@@ -20,7 +20,7 @@ class Video with _$Video {
 class VideoDTO with _$VideoDTO {
   const factory VideoDTO({
     required String videoFileName,
-    required int zip,
+    required int zipNum,
   }) = _VideoDTO;
 
   factory VideoDTO.fromJson(Map<String, dynamic> json) => _$VideoDTOFromJson(json);

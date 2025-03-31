@@ -16,19 +16,19 @@ class UserControllerState {
   });
 
   Future<int> get level async {
-    final progress = await SharedPref.getCurrProgress();
+    final progress = await SharedPref.getValue(PrefKey.currProgress);
 
     return progress?.level ?? currentUser?.level ?? 1;
   }
 
   Future<int> get subLevel async {
-    final progress = await SharedPref.getCurrProgress();
+    final progress = await SharedPref.getValue(PrefKey.currProgress);
 
     return progress?.subLevel ?? currentUser?.subLevel ?? 1;
   }
 
   Future<String?> get levelId async {
-    final progress = await SharedPref.getCurrProgress();
+    final progress = await SharedPref.getValue(PrefKey.currProgress);
 
     return progress?.levelId ?? currentUser?.levelId;
   }
@@ -53,7 +53,7 @@ class UserController extends StateNotifier<UserControllerState> {
     state = state.copyWith(loading: true);
 
     try {
-      final authToken = await SharedPref.getGoogleIdToken();
+      final authToken = await SharedPref.getValue(PrefKey.googleIdToken);
 
       if (authToken == null) return null;
 

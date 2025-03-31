@@ -12,11 +12,10 @@ class SubLevel with _$SubLevel {
   const SubLevel._();
 
   factory SubLevel.fromJson(Map<String, dynamic> json) {
-    if (json["text"] != null) {
-      return SubLevel.speechExercise(SpeechExercise.fromJson(json));
-    } else {
-      return SubLevel.video(Video.fromJson(json));
-    }
+    return switch (json) {
+      {"text": _} => SubLevel.speechExercise(SpeechExercise.fromJson(json)),
+      _ => SubLevel.video(Video.fromJson(json)),
+    };
   }
 
   factory SubLevel.fromSubLevelDTO(
@@ -67,11 +66,10 @@ class SubLevelDTO with _$SubLevelDTO {
   const SubLevelDTO._();
 
   factory SubLevelDTO.fromJson(Map<String, dynamic> json) {
-    if (json["text"] != null) {
-      return SubLevelDTO.speechExercise(SpeechExerciseDTO.fromJson(json));
-    } else {
-      return SubLevelDTO.video(VideoDTO.fromJson(json));
-    }
+    return switch (json) {
+      {"text": _} => SubLevelDTO.speechExercise(SpeechExerciseDTO.fromJson(json)),
+      _ => SubLevelDTO.video(VideoDTO.fromJson(json)),
+    };
   }
 
   Map<String, dynamic> toJson() {
@@ -81,9 +79,9 @@ class SubLevelDTO with _$SubLevelDTO {
     );
   }
 
-  int get zip => when(
-        speechExercise: (speechExercise) => speechExercise.zip,
-        video: (video) => video.zip,
+  int get zipNum => when(
+        speechExercise: (speechExercise) => speechExercise.zipNum,
+        video: (video) => video.zipNum,
       );
 
   String get videoFileName => when(

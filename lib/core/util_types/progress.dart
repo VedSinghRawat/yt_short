@@ -1,11 +1,12 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:flutter/foundation.dart';
+import 'package:myapp/core/shared_pref.dart';
 
 part 'progress.freezed.dart';
 part 'progress.g.dart';
 
 @freezed
-class Progress with _$Progress {
+class Progress with _$Progress implements SharedPrefClass {
   const Progress._();
 
   const factory Progress({

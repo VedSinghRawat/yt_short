@@ -20,6 +20,7 @@ class ErrorPage extends StatelessWidget {
         children: [
           Text(
             text,
+            overflow: TextOverflow.clip,
             style: const TextStyle(fontSize: 18, color: Colors.white),
             textAlign: TextAlign.center,
           ),

@@ -17,28 +17,30 @@ class SubLevelService {
   Future<void> getZipFiles(
     LevelDTO levelDTO,
   ) async {
-    final zipNumbers = levelDTO.subLevels.map((subLevelDTO) => subLevelDTO.zip).toSet();
+    final zipNums = levelDTO.subLevels.map((subLevelDTO) => subLevelDTO.zipNum).toSet();
 
     // First fetch all zip files in parallel
     await Future.wait(
-      zipNumbers.map(
-        (zipNumber) => getZip(levelDTO.id, zipNumber),
+      zipNums.map(
+        (zipNum) => getZip(levelDTO.id, zipNum),
       ),
     );
 
     // Then extract all zips in parallel and handle failures
     await Future.wait(
-      zipNumbers.map((zipNumber) async {
+      zipNums.map((zipNum) async {
         final unzipDir = await levelService.extractStoredZip(
           levelDTO.id,
-          zipNumber,
+          zipNum,
         );
 
         if (unzipDir == null) {
-          await SharedPref.removeEtag(
-            getLevelZipPath(
-              levelDTO.id,
-              zipNumber,
+          await SharedPref.removeRawValue(
+            PrefKey.eTagKey(
+              getLevelZipPath(
+                levelDTO.id,
+                zipNum,
+              ),
             ),
           );
         }
@@ -48,16 +50,18 @@ class SubLevelService {
     );
   }
 
-  Future<String?> getSubLevelFile(String levelId, int zipNumber) async {
-    await getZip(levelId, zipNumber);
+  Future<String?> getSubLevelFile(String levelId, int zipNum) async {
+    await getZip(levelId, zipNum);
 
-    final unzipDir = await levelService.extractStoredZip(levelId, zipNumber);
+    final unzipDir = await levelService.extractStoredZip(levelId, zipNum);
 
     if (unzipDir == null) {
-      SharedPref.removeEtag(
-        getLevelZipPath(
-          levelId,
-          zipNumber,
+      SharedPref.removeRawValue(
+        PrefKey.eTagKey(
+          getLevelZipPath(
+            levelId,
+            zipNum,
+          ),
         ),
       );
     }
@@ -65,16 +69,16 @@ class SubLevelService {
     return unzipDir?.path;
   }
 
-  Future<String?> getZip(String levelId, int zipNumber) async {
+  Future<String?> getZip(String levelId, int zipNum) async {
     final zipDataEither = await subLevelAPI.getZipData(
       levelId,
-      zipNumber,
+      zipNum,
     );
 
     return switch (zipDataEither) {
       Left() => _getExistingZipPath(
           levelId,
-          zipNumber,
+          zipNum,
         ),
       Right(
         value: final zipData,
@@ -82,25 +86,25 @@ class SubLevelService {
           when zipData == null =>
         _getExistingZipPath(
           levelId,
-          zipNumber,
+          zipNum,
         ),
       Right(
         value: final zipData,
       ) =>
         _storeZipFile(
           levelId,
-          zipNumber,
+          zipNum,
           zipData!,
         ),
     };
   }
 
-  String _getExistingZipPath(String levelId, int zipNumber) {
-    return levelService.getZipPath(levelId, zipNumber);
+  String _getExistingZipPath(String levelId, int zipNum) {
+    return levelService.getZipPath(levelId, zipNum);
   }
 
-  Future<String> _storeZipFile(String levelId, int zipNumber, List<int> zipData) async {
-    final file = File(levelService.getZipPath(levelId, zipNumber));
+  Future<String> _storeZipFile(String levelId, int zipNum, List<int> zipData) async {
+    final file = File(levelService.getZipPath(levelId, zipNum));
     await Directory(file.parent.path).create(recursive: true);
     await file.writeAsBytes(zipData);
     return file.path;

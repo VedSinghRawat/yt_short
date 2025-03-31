@@ -22,7 +22,11 @@ class LevelApi implements ILevelApi {
 
   @override
   FutureEither<LevelDTO> getById(String id) async {
-    LevelDTO? cachedLevelDTO = await SharedPref.getLevelDTO(id);
+    LevelDTO? cachedLevelDTO = await SharedPref.getRawValue(
+      PrefKey.levelDTOKey(
+        id,
+      ),
+    );
 
     try {
       final response = await apiService.getCloudStorageData(
@@ -38,7 +42,12 @@ class LevelApi implements ILevelApi {
 
       final levelDTO = LevelDTO.fromJson(response.data);
 
-      await SharedPref.setLevelDTO(levelDTO);
+      await SharedPref.storeRawValue(
+        PrefKey.levelDTOKey(
+          levelDTO.id,
+        ),
+        levelDTO,
+      );
 
       return right(levelDTO);
     } on DioException catch (e) {
@@ -60,7 +69,7 @@ class LevelApi implements ILevelApi {
     try {
       final response = await apiService.getCloudStorageData<Map<String, dynamic>?>(
         params: ApiParams(
-          endpoint: '/levels/ordered_ids.json',
+          endpoint: '/levels/orderedIds.json',
           method: ApiMethod.get,
           baseUrl: BaseUrl.s3,
         ),
@@ -73,7 +82,7 @@ class LevelApi implements ILevelApi {
     } on DioException catch (e) {
       return left(
         Failure(
-          message: e.response?.data.toString() ?? genericErrorMessage,
+          message: e.response?.data.toString() ?? unknownErrorMsg,
           type: e.type,
         ),
       );

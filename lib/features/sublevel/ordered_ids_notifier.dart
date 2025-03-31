@@ -31,24 +31,22 @@ class OrderedIdsNotifier extends _$OrderedIdsNotifier {
   }
 
   Future<AsyncValue<List<String>>> _handleLeft(Failure error) async {
-    final localIds = await SharedPref.getOrderedIds();
+    final localIds = await SharedPref.getValue(PrefKey.orderedIds);
 
-    if (dioConnectionErrors.contains(error.type) && localIds == null) {
-      return AsyncValue.error(
-        Failure(
-          message: internetError,
-          type: error.type,
-        ),
-        StackTrace.current,
-      );
-    }
+    if (dioConnectionErrors.contains(error.type) && localIds != null) return _getIds();
 
-    return _getIds();
+    return AsyncValue.error(
+      Failure(
+        message: parseError(error.type!),
+        type: error.type,
+      ),
+      StackTrace.current,
+    );
   }
 
   Future<AsyncValue<List<String>>> _handleRight(List<String>? ids) async {
     if (ids != null) {
-      SharedPref.setOrderedIds(ids);
+      SharedPref.storeValue(PrefKey.orderedIds, ids);
       return AsyncValue.data(ids);
     }
 
@@ -56,16 +54,14 @@ class OrderedIdsNotifier extends _$OrderedIdsNotifier {
   }
 
   Future<AsyncValue<List<String>>> _getIds() async {
-    final ids = await SharedPref.getOrderedIds();
+    final ids = await SharedPref.getValue(PrefKey.orderedIds);
 
-    if (ids == null) {
-      return AsyncValue.error(
-          Failure(
-            message: genericErrorMessage,
-          ),
-          StackTrace.current);
-    }
+    if (ids != null) return AsyncValue.data(ids);
 
-    return AsyncValue.data(ids);
+    return AsyncValue.error(
+        Failure(
+          message: unknownErrorMsg,
+        ),
+        StackTrace.current);
   }
 }

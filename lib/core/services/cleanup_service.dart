@@ -53,23 +53,38 @@ class StorageCleanupService {
         developer.log('folder size is $folderSize bytes for folder $folder');
 
         // Get inner folders before deletion
-        final zips = await compute(listZips, folder);
+
+        final baseZipPath = levelService.getZipBasePath(id);
+
+        final zips = await compute(listZips, Directory(baseZipPath));
 
         // Delete actual files/folders
-        await folder.delete(recursive: true);
+        await compute(_deleteFolderRecursively, folderPath);
 
-        await SharedPref.deleteLevelDTO(getLevelJsonPath(id));
+        await SharedPref.removeRawValue(
+          PrefKey.levelDTOKey(
+            getLevelJsonPath(
+              id,
+            ),
+          ),
+        );
 
-        await SharedPref.removeEtag(id);
+        await SharedPref.removeRawValue(
+          PrefKey.eTagKey(
+            id,
+          ),
+        );
 
         for (var e in zips) {
-          await SharedPref.removeEtag(
-            getLevelZipPath(
-              id,
-              int.parse(
-                e.replaceFirst(
-                  '.zip',
-                  '',
+          await SharedPref.removeRawValue(
+            PrefKey.eTagKey(
+              getLevelZipPath(
+                id,
+                int.parse(
+                  e.replaceFirst(
+                    '.zip',
+                    '',
+                  ),
                 ),
               ),
             ),
@@ -85,6 +100,13 @@ class StorageCleanupService {
     } catch (e) {
       developer.log("Error in cleanup process: $e");
       return orderedIds;
+    }
+  }
+
+  static Future<void> _deleteFolderRecursively(String path) async {
+    final folder = Directory(path);
+    if (await folder.exists()) {
+      await folder.delete(recursive: true);
     }
   }
 

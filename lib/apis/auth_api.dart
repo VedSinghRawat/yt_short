@@ -68,7 +68,9 @@ class AuthAPI implements IAuthAPI {
 
   @override
   Future<void> syncCyId() async {
-    final cyId = await SharedPref.getCyId();
+    final cyId = await SharedPref.getValue(
+      PrefKey.cyId,
+    );
 
     if (cyId == null) return;
 

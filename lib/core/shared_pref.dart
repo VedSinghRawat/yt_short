@@ -1,199 +1,220 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
+import 'package:fpdart/fpdart.dart';
 import 'package:myapp/core/console.dart';
-import 'package:myapp/core/util_types/progress.dart';
+import 'package:myapp/core/error/failure.dart';
 import 'package:myapp/models/level/level.dart';
-import 'package:myapp/models/activity_log/activity_log.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// enum PrefKey<T>{
+import 'package:myapp/core/util_types/progress.dart';
 
-// }
+import 'package:myapp/models/activity_log/activity_log.dart';
+
+class Raw<StoredType> {
+  final String key;
+  StoredType Function(Map<String, dynamic>)? fromJson;
+
+  Raw({required this.key, this.fromJson});
+}
+
+enum PrefKey<StoredType, ListItemType> {
+  cyId<String, Unit>(),
+  currProgress<Progress, Unit>(Progress.fromJson),
+  lastSync<int, Unit>(),
+  googleIdToken<String, Unit>(),
+  isFirstLaunch<bool, Unit>(),
+  activityLogs<List<ActivityLog>, ActivityLog>(ActivityLog.fromJson),
+  orderedIds<List<String>, String>();
+
+  final dynamic Function(Map<String, dynamic> json)? fromJson;
+
+  const PrefKey([this.fromJson]);
+
+  static Raw<String> eTagKey(String id) => Raw(key: 'eTagKey_$id');
+
+  static Raw<LevelDTO> levelDTOKey(String id) => Raw(
+        key: "levelDto_$id",
+        fromJson: LevelDTO.fromJson,
+      );
+}
 
 class SharedPref {
-  static Future<String?> _getValue(String key) async {
-    final instance = await SharedPreferences.getInstance();
-    return instance.getString(key);
+  static SharedPreferences? _pref;
+
+  static Future<void> init() async {
+    _pref = await SharedPreferences.getInstance();
   }
 
-  static Future<void> _setValue(String key, String value) async {
-    final instance = await SharedPreferences.getInstance();
-    await instance.setString(key, value);
+  static Future<StoredType?> getValue<StoredType, ListItemType>(
+      PrefKey<StoredType, ListItemType> key) async {
+    return _get<StoredType, ListItemType>(key.name, key.fromJson, key.name);
   }
 
-  static Future<void> _delete(String key) async {
-    final instance = await SharedPreferences.getInstance();
-    await instance.remove(key);
+  static Future<StoredType?> getRawValue<StoredType, ListItemType>(Raw<StoredType> raw) async {
+    return _get<StoredType, ListItemType>(raw.key, raw.fromJson, raw.key);
   }
 
-  static Future<Map<String, dynamic>?> _getObject(String key) async {
-    final value = await _getValue(key);
-    if (value == null) return null;
-    return jsonDecode(value);
+  static StoredType? _get<StoredType, ListItemType>(
+    String key,
+    dynamic Function(Map<String, dynamic>)? fromJson,
+    String debugKey,
+  ) {
+    try {
+      if (_pref == null) return null;
+
+      final raw = _pref!.getString(key);
+
+      if (raw == null) return null;
+
+      if (StoredType == String) return raw as StoredType;
+      if (StoredType == int) return int.tryParse(raw) as StoredType?;
+      if (StoredType == double) return double.tryParse(raw) as StoredType?;
+      if (StoredType == bool) return (raw == 'true') as StoredType;
+
+      final decoded = jsonDecode(raw);
+
+      if (fromJson != null && decoded is! List) {
+        return fromJson(decoded);
+      }
+
+      if (decoded is List) {
+        if (fromJson != null) {
+          return decoded.map((e) => fromJson(e)).toList() as StoredType;
+        }
+
+        return List.from(decoded).cast<ListItemType>() as StoredType;
+      }
+
+      if (decoded is Map) return Map.from(decoded) as StoredType;
+
+      throw UnsupportedError("Cannot decode value for $debugKey");
+    } catch (e) {
+      Console.error(
+        Failure(message: e.toString()),
+        StackTrace.current,
+      );
+
+      rethrow;
+    }
   }
 
-  static Future<List<dynamic>?> _getList(String key) async {
-    final value = await _getValue(key);
-    if (value == null) return null;
-    return jsonDecode(value);
+  static Future<void> storeRawValue<StoredType, KeyType extends Raw<StoredType>>(
+      KeyType raw, StoredType value) async {
+    await _store(raw.key, value);
   }
 
-  static Future<void> _setObject(String key, Object value) async {
-    final encoded = jsonEncode(value);
-    await _setValue(key, encoded);
+  static Future<void>
+      storeValue<StoredType, KeyType extends PrefKey<StoredType, ListItemType>, ListItemType>(
+          KeyType key, StoredType value) async {
+    if (_pref == null) return;
+
+    await _store<StoredType>(key.name, value);
   }
 
-  static Future<void> setCurrProgress(Progress progress) async {
-    final currProgress = await getCurrProgress();
+  static Future<void> addValue<StoredType, ListItemType>(
+      PrefKey<StoredType, ListItemType> key, dynamic newValue) async {
+    final existing = await getValue<StoredType, ListItemType>(key);
 
-    // Convert both to maps
-    final progressMap = progress.toJson();
-    final currProgressMap = currProgress?.toJson() ?? {};
+    if (existing is List) {
+      final updated = [...existing, newValue] as StoredType;
 
-    // Merge maps but only update non-null values from progressMap
-    final mergedProgressMap = {
-      ...currProgressMap, // Keep existing values
-      ...progressMap.map(
-        (key, value) => value != null
-            ? MapEntry(key, value)
-            : MapEntry(
-                key,
-                currProgressMap[key],
-              ),
-      ), // Only overwrite non-null values
-      'modified': DateTime.now().millisecondsSinceEpoch, // Always update timestamp
-    };
+      await storeValue<StoredType, PrefKey<StoredType, ListItemType>, ListItemType>(key, updated);
+    } else if (existing is Map) {
+      if (newValue is! Map) throw 'Value must be a Map to merge with existing Map';
 
-    // Convert back to Progress object
-    final updatedProgress = Progress.fromJson(mergedProgressMap);
+      final updated = {...existing, ...newValue} as StoredType;
 
-    await _setObject('currProgress', updatedProgress.toJson());
+      await storeValue<StoredType, PrefKey<StoredType, ListItemType>, ListItemType>(key, updated);
+    } else {
+      throw 'SharedPref: Key is not addable: expected List or Map, got \${existing.runtimeType}';
+    }
   }
 
-  static Future<void> setCyId(String cyId) async {
-    await _setValue('cyId', cyId);
+  static Future<void> _store<StoredType>(String key, StoredType value) async {
+    try {
+      if (value is String || value is int || value is double || value is bool) {
+        await _pref!.setString(key, value.toString());
+      } else if (_isListOfPrimitives(value)) {
+        await _pref!.setString(key, jsonEncode(value));
+      } else if (value is SharedPrefClass) {
+        await _pref!.setString(key, jsonEncode(value.toJson()));
+      } else if (value is List && value.first is SharedPrefClass) {
+        final list = value.map((e) => (e as SharedPrefClass).toJson()).toList();
+        await _pref!.setString(key, jsonEncode(list));
+      } else {
+        throw UnsupportedError(
+          " SharedPred error(Unsupported type): \${value.runtimeType}: \${StoredType.toString()} if it is custom class consider implementing SharedPrefClass class",
+        );
+      }
+    } catch (e) {
+      Console.error(
+        Failure(message: e.toString()),
+        StackTrace.current,
+      );
+
+      rethrow;
+    }
   }
 
-  static Future<String?> getCyId() async {
-    return await _getValue('cyId');
+  static Future<void> removeValue<StoredType, ListItemType>(
+      PrefKey<StoredType, ListItemType> key) async {
+    if (_pref == null) return;
+    await _pref!.remove(key.name);
   }
 
-  static Future<Progress?> getCurrProgress() async {
-    final data = await _getObject('currProgress');
-
-    if (data == null) return null;
-
-    return Progress.fromJson(data);
-  }
-
-  static Future<int> getLastSync() async {
-    final lastSync = await _getValue('lastSync');
-    if (lastSync == null) return 0;
-    return int.parse(lastSync);
-  }
-
-  static Future<void> setLastSync(int lastSync) async {
-    await _setValue('lastSync', lastSync.toString());
-  }
-
-  static Future<String?> getGoogleIdToken() async {
-    return await _getValue('googleIdToken');
-  }
-
-  static Future<void> setGoogleIdToken(String token) async {
-    await _setValue('googleIdToken', token);
-  }
-
-  static Future<bool> isFirstLaunch() async {
-    final isFirstLaunch = await _getValue('isFirstLaunch');
-    return isFirstLaunch == null || isFirstLaunch == 'true';
-  }
-
-  static Future<void> setIsFirstLaunch(bool isFirstLaunch) async {
-    await _setValue('isFirstLaunch', isFirstLaunch.toString());
-  }
-
-  static Future<void> addActivityLog(int level, int subLevel, String email) async {
-    if (email.isEmpty) return;
-    var activityLogs = await _getList('activityLogs') ?? [];
-    final newActivityLog = ActivityLog(
-      level: level,
-      subLevel: subLevel,
-      userEmail: email,
-      timestamp: DateTime.now().millisecondsSinceEpoch,
-    );
-    activityLogs.add(newActivityLog.toJson());
-    await _setObject('activityLogs', activityLogs);
-  }
-
-  static Future<void> clearActivityLogs() async {
-    await _setObject('activityLogs', []);
-  }
-
-  static Future<List<ActivityLog>?> getActivityLogs() async {
-    final activityLogs = await _getList('activityLogs');
-    if (activityLogs == null) return null;
-    return activityLogs.map((e) => ActivityLog.fromJson(e)).toList();
+  static Future<void> removeRawValue<StoredType>(Raw<StoredType> raw) async {
+    if (_pref == null) return;
+    await _pref!.remove(raw.key);
   }
 
   static Future<void> clearAll() async {
-    final instance = await SharedPreferences.getInstance();
-    await instance.clear();
+    if (_pref == null) return;
+    await _pref!.clear();
   }
 
-  static Future<void> storeETag(String id, String eTag) async {
-    await _setValue('eTag_$id', eTag);
-  }
-
-  static Future<String?> getETag(String id) async {
-    return await _getValue('eTag_$id');
-  }
-
-  static Future<void> removeEtag(String id) async {
-    Console.log('removing e Tag $id');
-    return await _delete('eTag_$id');
-  }
-
-  static Future<List<String>?> getOrderedIds() async {
-    final ids = await _getList('orderedIds');
-
-    if (ids == null) {
-      return null;
+  static bool _isListOfPrimitives(Object? value) {
+    if (value is List) {
+      return value.every((e) => e is String || e is int || e is double || e is bool);
     }
-
-    return List.castFrom<dynamic, String>(ids);
+    return false;
   }
 
-  static Future<LevelDTO?> getLevelDTO(String id) async {
-    final json = await _getObject('leveldto_$id');
+  static Future<void>
+      copyWith<StoredType, KeyType extends PrefKey<StoredType, ListItemType>, ListItemType>(
+    KeyType key,
+    StoredType value,
+  ) async {
+    try {
+      final oldValue = await getValue(key);
+      final Map oldValueMap;
+      final Map valueMap;
 
-    if (json == null) return null;
-
-    return LevelDTO.fromJson(json);
-  }
-
-  static Future<void> setLevelDTO(LevelDTO levelDTO) async {
-    await _setObject('leveldto_${levelDTO.id}', levelDTO.toJson());
-  }
-
-  static Future<void> deleteLevelDTO(String id) async {
-    await _delete('leveldto_$id');
-  }
-
-  static setOrderedIds(List<String> orderedIds) async {
-    return await _setObject(
-      'orderedIds',
-      orderedIds,
-    );
-  }
-
-  static Future<void> clearAllETags() async {
-    final instance = await SharedPreferences.getInstance();
-    final keys = instance.getKeys();
-
-    for (final key in keys) {
-      if (key.startsWith('eTag_')) {
-        await instance.remove(key);
+      if (value is Map) {
+        oldValueMap = oldValue is Map ? oldValue : {};
+        valueMap = value;
+      } else if (value is SharedPrefClass) {
+        oldValueMap = oldValue is SharedPrefClass ? oldValue.toJson() : {};
+        valueMap = value.toJson();
+      } else {
+        throw 'Unsupported type for copyWith in SharedPref';
       }
+
+      final merged = oldValueMap.map((k, v) => valueMap.containsKey(k) && valueMap[k] != null
+          ? MapEntry(k, valueMap[k])
+          : MapEntry(k, v));
+
+      if (key.fromJson != null) {
+        final updatedObj = key.fromJson!(Map<String, dynamic>.from(merged));
+        await _store<StoredType>(key.name, updatedObj);
+      } else {
+        await _store<Map<String, dynamic>>(key.name, merged as Map<String, dynamic>);
+      }
+    } catch (e) {
+      developer.log(e.toString());
     }
   }
+}
+
+abstract class SharedPrefClass {
+  Map<String, dynamic> toJson();
 }
