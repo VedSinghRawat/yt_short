@@ -24,3 +24,4 @@ const cancelMsg = 'Request cancelled. Please try again.';
 const badResponseMsg = 'Server problem. Please try again after some time.';
 const unknownErrorMsg = 'Something went wrong. Please try again later.';
 const videoPlayerError = 'There was some problem while playing this video, you can skip it now.';
+const kMaxLevelCompletionsPerDay = 1;
