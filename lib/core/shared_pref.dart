@@ -119,6 +119,9 @@ class SharedPref {
       final updated = {...existing, ...newValue} as StoredType;
 
       await storeValue<StoredType, PrefKey<StoredType, ListItemType>, ListItemType>(key, updated);
+    }
+    if (existing == null) {
+      await storeValue<StoredType, PrefKey<StoredType, ListItemType>, ListItemType>(key, newValue);
     } else {
       throw 'SharedPref: Key is not addable: expected List or Map, got \${existing.runtimeType}';
     }

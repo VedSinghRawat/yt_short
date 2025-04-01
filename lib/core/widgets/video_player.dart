@@ -3,7 +3,6 @@ import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
-import 'package:myapp/core/console.dart';
 import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'package:myapp/features/sublevel/widget/last_level.dart';
 import 'package:better_player_plus/better_player_plus.dart';
@@ -38,7 +37,6 @@ class _PlayerState extends ConsumerState<Player> {
   @override
   void initState() {
     super.initState();
-    Console.timeStart(widget.videoPath);
     _betterPlayerController = _initializeBetterPlayerController();
   }
 
@@ -152,7 +150,6 @@ class _PlayerState extends ConsumerState<Player> {
           },
           looping: true,
           fit: BoxFit.fitHeight,
-          autoDispose: false,
           aspectRatio: 9 / 16,
           controlsConfiguration: const BetterPlayerControlsConfiguration(
             showControls: false,
@@ -175,14 +172,6 @@ class _PlayerState extends ConsumerState<Player> {
 
       return null;
     }
-  }
-
-  @override
-  void dispose() {
-    Console.timeEnd(widget.videoPath);
-    _betterPlayerController?.dispose(forceDispose: true);
-    _betterPlayerController = null;
-    super.dispose();
   }
 
   @override
