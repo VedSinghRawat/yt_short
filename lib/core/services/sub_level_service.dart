@@ -17,7 +17,7 @@ class SubLevelService {
   Future<void> getZipFiles(
     LevelDTO levelDTO,
   ) async {
-    final zipNums = levelDTO.subLevels.map((subLevelDTO) => subLevelDTO.zipNum).toSet();
+    final zipNums = levelDTO.sub_levels.map((subLevelDTO) => subLevelDTO.zipNum).toSet();
 
     // First fetch all zip files in parallel
     await Future.wait(
@@ -106,7 +106,9 @@ class SubLevelService {
   Future<String> _storeZipFile(String levelId, int zipNum, List<int> zipData) async {
     final file = File(levelService.getZipPath(levelId, zipNum));
     await Directory(file.parent.path).create(recursive: true);
+
     await file.writeAsBytes(zipData);
+
     return file.path;
   }
 }

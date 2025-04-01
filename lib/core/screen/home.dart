@@ -41,7 +41,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   bool cancelVideoChange(
     int index,
-    PageController controller,
     int maxLevel,
     int maxSubLevel,
     int level,
@@ -161,7 +160,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // Check if video change should be cancelled
     if (cancelVideoChange(
       index,
-      controller,
       max(user?.maxLevel ?? 0, localMaxLevel),
       max(user?.maxSubLevel ?? 0, localMaxSubLevel),
       level,
@@ -170,6 +168,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       user?.isAdmin == true,
       user?.doneToday ?? 0,
     )) {
+      controller.animateToPage(
+        index - 1,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
       return;
     }
 

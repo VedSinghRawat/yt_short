@@ -37,6 +37,11 @@ class BaseUrl {
   static final BaseUrl backend = BaseUrl._(name: 'backend', url: dotenv.env['API_BASE_URL'] ?? '');
   static final BaseUrl s3 = BaseUrl._(name: 's3', url: dotenv.env['S3_BASE_URL'] ?? '');
 
+  static final BaseUrl cloudflare = BaseUrl._(
+    name: 'cloudflare',
+    url: dotenv.env['CLOUDFLARE_BASE_URL'] ?? '',
+  );
+
   bool get isS3 => name == 's3';
 
   @override
@@ -88,7 +93,7 @@ class ApiService {
         options: options,
       );
     } on DioException catch (e) {
-      if ((e.response?.statusCode ?? 0) >= 400) {
+      if ((e.response?.statusCode ?? 0) != 304) {
         developer.log('ApiError on uri ${Uri.parse('${params.baseUrl}${params.endpoint}')} :  $e ');
       }
 
@@ -117,10 +122,29 @@ class ApiService {
     }
   }
 
+  /// first get from cloudflare then s3
   /// Store the ETag of the data. It will fetch and return null if the data has not changed.
   Future<Response<T>?> getCloudStorageData<T>({
     required ApiParams params,
   }) async {
+    try {
+      final cloudFlareParams = params.copyWith(baseUrl: BaseUrl.cloudflare);
+
+      return await _getCloudData(params: cloudFlareParams);
+    } on DioException catch (e) {
+      if (e.type != DioExceptionType.unknown && e.type != DioExceptionType.badResponse) rethrow;
+
+      final s3Params = params.copyWith(baseUrl: BaseUrl.s3);
+
+      return await _getCloudData(params: s3Params);
+    }
+  }
+
+  Future<Response<T>?> _getCloudData<T>({
+    required ApiParams params,
+  }) async {
+    /// NOTE: don't change it if have to change also change this two functions from utils.dart [getLevelJsonPath] and [getLevelZipPath]
+
     final eTagId = params.endpoint;
 
     final storedETag = await SharedPref.getRawValue(

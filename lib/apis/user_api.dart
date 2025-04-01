@@ -4,8 +4,8 @@ import 'package:myapp/core/services/api_service.dart';
 import '../models/models.dart';
 
 abstract class IUserAPI {
-  Future<UserModel?> getUser();
-  Future<UserModel?> sync(String levelId, int subLevel);
+  Future<UserDTO?> getUser();
+  Future<UserDTO?> sync(String levelId, int subLevel);
 }
 
 class UserAPI implements IUserAPI {
@@ -13,7 +13,7 @@ class UserAPI implements IUserAPI {
   UserAPI(this._apiService);
 
   @override
-  Future<UserModel?> getUser() async {
+  Future<UserDTO?> getUser() async {
     try {
       final response = await _apiService.call(
         params: const ApiParams(
@@ -22,7 +22,7 @@ class UserAPI implements IUserAPI {
         ),
       );
 
-      UserModel apiUser = UserModel.fromJson(response.data?['user']);
+      UserDTO apiUser = UserDTO.fromJson(response.data?['user']);
 
       return apiUser;
     } catch (e, stackTrace) {
@@ -32,7 +32,7 @@ class UserAPI implements IUserAPI {
   }
 
   @override
-  Future<UserModel?> sync(String levelId, int subLevel) async {
+  Future<UserDTO?> sync(String levelId, int subLevel) async {
     try {
       final response = await _apiService.call(
           params: ApiParams(
@@ -48,7 +48,7 @@ class UserAPI implements IUserAPI {
         throw Exception('Failed to sync user progress: ${response.statusCode}');
       }
 
-      return UserModel.fromJson(response.data?['user']);
+      return UserDTO.fromJson(response.data?['user']);
     } catch (e, stackTrace) {
       developer.log('Error syncing user progress', error: e.toString(), stackTrace: stackTrace);
       return null;

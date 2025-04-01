@@ -62,6 +62,8 @@ String getLevelJsonPath(String jsonId) => '/levels/$jsonId/data.json';
 
 String getLevelZipPath(String levelId, int zipNum) => '/levels/$levelId/zips/$zipNum.zip';
 
+String getOrderedIdsPath() => '/levels/ordered_ids.json';
+
 String parseError(DioExceptionType? type) {
   if (type == null) return unknownErrorMsg;
 

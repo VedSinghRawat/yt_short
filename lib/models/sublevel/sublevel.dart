@@ -48,9 +48,9 @@ class SubLevel with _$SubLevel {
         video: (video) => video.index,
       );
 
-  String get videoFileName => when(
-        speechExercise: (speechExercise) => speechExercise.videoFileName,
-        video: (video) => video.videoFileName,
+  String get videoFilename => when(
+        speechExercise: (speechExercise) => speechExercise.videoFilename,
+        video: (video) => video.videoFilename,
       );
 
   bool get isVideo => this is _Video;
@@ -84,8 +84,8 @@ class SubLevelDTO with _$SubLevelDTO {
         video: (video) => video.zipNum,
       );
 
-  String get videoFileName => when(
-        speechExercise: (speechExercise) => speechExercise.videoFileName,
-        video: (video) => video.videoFileName,
+  String get videoFilename => when(
+        speechExercise: (speechExercise) => speechExercise.videoFilename,
+        video: (video) => video.videoFilename,
       );
 }

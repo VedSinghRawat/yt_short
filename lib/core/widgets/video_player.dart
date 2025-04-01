@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
+import 'package:myapp/core/console.dart';
 import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'package:myapp/features/sublevel/widget/last_level.dart';
 import 'package:better_player_plus/better_player_plus.dart';
@@ -37,7 +38,7 @@ class _PlayerState extends ConsumerState<Player> {
   @override
   void initState() {
     super.initState();
-    developer.log('init state in controller');
+    Console.timeStart(widget.videoPath);
     _betterPlayerController = _initializeBetterPlayerController();
   }
 
@@ -62,6 +63,16 @@ class _PlayerState extends ConsumerState<Player> {
   void _eventListener(BetterPlayerEvent event) {
     if (event.betterPlayerEventType == BetterPlayerEventType.progress) {
       _listenerVideoFinished();
+    }
+    if (event.betterPlayerEventType == BetterPlayerEventType.exception) {
+      developer.log('error in video player ${event.parameters}');
+      if (error != null) return;
+
+      ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
+
+      setState(() {
+        error = 'Playback failed: ${event.parameters?["exception"] ?? "Unknown error"}';
+      });
     }
   }
 
@@ -168,7 +179,9 @@ class _PlayerState extends ConsumerState<Player> {
 
   @override
   void dispose() {
+    Console.timeEnd(widget.videoPath);
     _betterPlayerController?.dispose(forceDispose: true);
+    _betterPlayerController = null;
     super.dispose();
   }
 
@@ -182,18 +195,27 @@ class _PlayerState extends ConsumerState<Player> {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            Builder(
-              builder: (_) {
-                if (_betterPlayerController == null && _isVisible) {}
-                return _betterPlayerController != null
-                    ? SizedBox(
-                        height: MediaQuery.of(context).size.height,
-                        child: BetterPlayer(
-                          controller: _betterPlayerController!,
-                        ))
-                    : const Center(child: CircularProgressIndicator());
-              },
-            ),
+            if (error != null)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ErrorPage(
+                    text: error!,
+                  ),
+                ),
+              )
+            else
+              Builder(
+                builder: (_) {
+                  return _betterPlayerController != null
+                      ? SizedBox(
+                          height: MediaQuery.of(context).size.height,
+                          child: BetterPlayer(
+                            controller: _betterPlayerController!,
+                          ))
+                      : const Center(child: CircularProgressIndicator());
+                },
+              ),
             PlayPauseButton(showPlayPauseIcon: _showPlayPauseIcon, iconData: _iconData),
           ],
         ),

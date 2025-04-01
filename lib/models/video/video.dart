@@ -10,7 +10,7 @@ class Video with _$Video {
     required int level,
     required int index,
     required String levelId,
-    required String videoFileName,
+    required String videoFilename,
   }) = _Video;
 
   factory Video.fromJson(Map<String, dynamic> json) => _$VideoFromJson(json);
@@ -19,7 +19,7 @@ class Video with _$Video {
 @freezed
 class VideoDTO with _$VideoDTO {
   const factory VideoDTO({
-    required String videoFileName,
+    required String videoFilename,
     required int zipNum,
   }) = _VideoDTO;
 

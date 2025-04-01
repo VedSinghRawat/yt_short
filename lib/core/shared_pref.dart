@@ -3,7 +3,6 @@ import 'dart:developer' as developer;
 import 'package:fpdart/fpdart.dart';
 import 'package:myapp/core/console.dart';
 import 'package:myapp/core/error/failure.dart';
-import 'package:myapp/models/level/level.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:myapp/core/util_types/progress.dart';
@@ -31,11 +30,6 @@ enum PrefKey<StoredType, ListItemType> {
   const PrefKey([this.fromJson]);
 
   static Raw<String> eTagKey(String id) => Raw(key: 'eTagKey_$id');
-
-  static Raw<LevelDTO> levelDTOKey(String id) => Raw(
-        key: "levelDto_$id",
-        fromJson: LevelDTO.fromJson,
-      );
 }
 
 class SharedPref {
@@ -90,7 +84,7 @@ class SharedPref {
       throw UnsupportedError("Cannot decode value for $debugKey");
     } catch (e) {
       Console.error(
-        Failure(message: e.toString()),
+        Failure(message: '$e----in key--- $key --- type is $StoredType and from json is $fromJson'),
         StackTrace.current,
       );
 

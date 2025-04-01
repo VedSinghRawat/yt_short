@@ -19,17 +19,14 @@ class InitializeAPI implements IInitializeAPI {
     try {
       final response = await _apiService.call(
         params: ApiParams(
-          endpoint: '/initialize',
-          method: ApiMethod.post,
-          body: {
-            'version': currentVersion,
-          },
+          endpoint: '/initialize?version=$currentVersion',
+          method: ApiMethod.get,
         ),
       );
 
       return Right(response.data!);
     } on DioException catch (e) {
-      return Left(Failure(message: e.response?.data?['message'] ?? 'Failed to initialize'));
+      return Left(Failure(message: e.response?.data ?? 'Failed to initialize'));
     }
   }
 }

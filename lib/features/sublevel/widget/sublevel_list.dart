@@ -122,7 +122,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
 
           final url = ref
               .read(levelServiceProvider)
-              .getUnzippedVideoPath(sublevel.levelId, sublevel.videoFileName);
+              .getUnzippedVideoPath(sublevel.levelId, sublevel.videoFilename);
 
           return Stack(
             children: [

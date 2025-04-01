@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/services/initialize_service.dart';
 import 'package:myapp/core/widgets/loader.dart';
+import 'package:myapp/features/sublevel/ordered_ids_notifier.dart';
+import 'package:myapp/features/sublevel/widget/last_level.dart';
 
 class InitializeScreen extends ConsumerWidget {
   const InitializeScreen({super.key});
@@ -13,6 +15,24 @@ class InitializeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final initState = ref.watch(initializeServiceProvider);
+
+    final oIds = ref.read(orderedIdsNotifierProvider);
+
+    if (oIds.isLoading) {
+      return const Loader();
+    }
+
+    if (oIds.hasError) {
+      return Scaffold(
+        body: ErrorPage(
+          text: oIds.error.toString(),
+          buttonText: "Retry",
+          onRefresh: () async {
+            await ref.read(orderedIdsNotifierProvider.notifier).getOrderedIds();
+          },
+        ),
+      );
+    }
 
     // Trigger navigation when initialized
     initState.whenData((_) {

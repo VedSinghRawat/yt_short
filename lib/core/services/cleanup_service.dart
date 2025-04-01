@@ -62,14 +62,6 @@ class StorageCleanupService {
         await compute(_deleteFolderRecursively, folderPath);
 
         await SharedPref.removeRawValue(
-          PrefKey.levelDTOKey(
-            getLevelJsonPath(
-              id,
-            ),
-          ),
-        );
-
-        await SharedPref.removeRawValue(
           PrefKey.eTagKey(
             id,
           ),
@@ -137,8 +129,6 @@ class StorageCleanupService {
 
       return distanceA.abs().compareTo(distanceB.abs());
     });
-
-    developer.log('Removed protected IDs, cleaning: $cachedIds');
 
     final List<String> remainingIds = await cleanLevels(cachedIds);
 

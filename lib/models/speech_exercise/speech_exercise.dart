@@ -12,7 +12,7 @@ class SpeechExercise with _$SpeechExercise {
     required int level,
     required int index,
     required String levelId,
-    required String videoFileName,
+    required String videoFilename,
   }) = _SpeechExercise;
 
   factory SpeechExercise.fromJson(Map<String, dynamic> json) => _$SpeechExerciseFromJson(json);
@@ -21,7 +21,7 @@ class SpeechExercise with _$SpeechExercise {
 @freezed
 class SpeechExerciseDTO with _$SpeechExerciseDTO {
   const factory SpeechExerciseDTO({
-    required String videoFileName,
+    required String videoFilename,
     required String text,
     required int pauseAt,
     required int zipNum,

@@ -10,7 +10,6 @@ import 'package:myapp/core/widgets/loader.dart';
 import 'package:myapp/core/widgets/show_confirmation_dialog.dart';
 import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'package:myapp/features/user/user_controller.dart';
-import 'package:myapp/models/models.dart';
 import '../auth_controller.dart';
 import '../../../core/widgets/custom_app_bar.dart';
 
@@ -103,18 +102,18 @@ class SignInScreen extends ConsumerWidget {
 }
 
 showLevelChangeConfirmationDialog(
-    BuildContext context, UserModel user, SublevelController sublevelController) {
+    BuildContext context, int maxLevel, int maxSubLevel, SublevelController sublevelController) {
   return showConfirmationDialog(
     context,
     question:
-        'We notice that you are already at Level ${user.maxLevel}, Sublevel ${user.maxSubLevel}. Do you want to continue from there?',
+        'We notice that you are already at Level $maxLevel, Sublevel $maxSubLevel. Do you want to continue from there?',
     onResult: (result) async {
       if (result) {
         await SharedPref.copyWith(
           PrefKey.currProgress,
           Progress(
-            level: user.maxLevel,
-            subLevel: user.maxSubLevel,
+            level: maxLevel,
+            subLevel: maxSubLevel,
           ),
         );
       }
@@ -122,8 +121,8 @@ showLevelChangeConfirmationDialog(
       await SharedPref.copyWith(
         PrefKey.currProgress,
         Progress(
-          maxLevel: user.maxLevel,
-          maxSubLevel: user.maxSubLevel,
+          maxLevel: maxLevel,
+          maxSubLevel: maxSubLevel,
         ),
       );
 

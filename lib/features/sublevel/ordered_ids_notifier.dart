@@ -46,7 +46,7 @@ class OrderedIdsNotifier extends _$OrderedIdsNotifier {
 
   Future<AsyncValue<List<String>>> _handleRight(List<String>? ids) async {
     if (ids != null) {
-      SharedPref.storeValue(PrefKey.orderedIds, ids);
+      await SharedPref.storeValue(PrefKey.orderedIds, ids);
       return AsyncValue.data(ids);
     }
 
@@ -58,10 +58,13 @@ class OrderedIdsNotifier extends _$OrderedIdsNotifier {
 
     if (ids != null) return AsyncValue.data(ids);
 
+    await SharedPref.removeRawValue(PrefKey.eTagKey(getOrderedIdsPath()));
+
     return AsyncValue.error(
-        Failure(
-          message: unknownErrorMsg,
-        ),
-        StackTrace.current);
+      Failure(
+        message: unknownErrorMsg,
+      ),
+      StackTrace.current,
+    );
   }
 }

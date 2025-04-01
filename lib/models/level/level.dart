@@ -28,7 +28,7 @@ class LevelDTO with _$LevelDTO implements SharedPrefClass {
   const factory LevelDTO({
     required String id,
     required String title,
-    required List<SubLevelDTO> subLevels,
+    required List<SubLevelDTO> sub_levels,
   }) = _LevelDTO;
 
   factory LevelDTO.fromJson(Map<String, dynamic> json) => _$LevelDTOFromJson(json);

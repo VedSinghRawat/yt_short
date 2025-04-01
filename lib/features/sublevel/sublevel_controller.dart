@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:developer' as developer;
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -53,7 +54,7 @@ class SublevelController extends _$SublevelController {
     state = state.copyWith(loadingLevelIds: {...state.loadingLevelIds, levelId});
 
     try {
-      final levelDTOEither = await levelApi.getById(levelId);
+      final levelDTOEither = await ref.read(levelServiceProvider).getLevel(levelId);
 
       final levelDTO = switch (levelDTOEither) {
         Right(value: final r) => r,
@@ -102,15 +103,15 @@ class SublevelController extends _$SublevelController {
 
     final videoFiles = entries.toSet();
 
-    final sublevels = levelDTO.subLevels
+    final sublevels = levelDTO.sub_levels
         .where(
       (dto) => videoFiles.contains(
-        "${dto.videoFileName}.mp4",
+        "${dto.videoFilename}.mp4",
       ),
     )
         .map(
       (dto) {
-        final index = levelDTO.subLevels.indexOf(dto) + 1;
+        final index = levelDTO.sub_levels.indexOf(dto) + 1;
         return SubLevel.fromSubLevelDTO(
           dto,
           level,
@@ -120,12 +121,14 @@ class SublevelController extends _$SublevelController {
       },
     ).toSet();
 
+    developer.log('length of sublevels is ${state.sublevels.length}');
+
     state = state.copyWith(sublevels: {...state.sublevels, ...sublevels});
   }
 
   Future<SubLevelDTO> _fetchCurrSubLevelZip(LevelDTO currLevelDTO) async {
     final currUserSubLevel = await ref.read(userControllerProvider).subLevel;
-    final subLevelDTO = currLevelDTO.subLevels[currUserSubLevel - 1];
+    final subLevelDTO = currLevelDTO.sub_levels[currUserSubLevel - 1];
     await subLevelService.getSubLevelFile(currLevelDTO.id, subLevelDTO.zipNum);
     return subLevelDTO;
   }
@@ -136,10 +139,6 @@ class SublevelController extends _$SublevelController {
     try {
       final asyncOrderIds = ref.read(orderedIdsNotifierProvider);
       final isFirstFetch = state.isFirstFetch;
-
-      if (asyncOrderIds.hasError) {
-        await orderedIdNotifier.getOrderedIds();
-      }
 
       if (asyncOrderIds.hasError) {
         state = state.copyWith(error: asyncOrderIds.error.toString());
@@ -159,7 +158,7 @@ class SublevelController extends _$SublevelController {
 
       if (isFirstFetch) await _cleanOldLevels(orderedIds, currLevelId);
     } catch (e) {
-      developer.log('error in sublevel controller: $e');
+      developer.log('error in sublevel controller: $e', stackTrace: StackTrace.current);
       state = state.copyWith(error: e.toString());
     }
   }
@@ -172,7 +171,8 @@ class SublevelController extends _$SublevelController {
         storedCurrId != null ? orderedIds.indexOf(storedCurrId) + 1 : userLevelIndex;
     final currUserLevel = levelIdIndex > userLevelIndex ? levelIdIndex : userLevelIndex;
     final currLevelIndex = currUserLevel - 1;
-    final currLevelId = orderedIds[currLevelIndex];
+
+    final currLevelId = orderedIds[min(currLevelIndex, orderedIds.length - 1)];
 
     if (!_isLevelFetched(currLevelId)) {
       await _listByLevel(currLevelId, currUserLevel);
@@ -209,7 +209,8 @@ class SublevelController extends _$SublevelController {
         currLevelId,
       );
     } catch (e) {
-      developer.log('error in sublevel controller: $e');
+      developer.log('error in sublevel controller clean levels: $e',
+          stackTrace: StackTrace.current);
     }
   }
 

@@ -9,7 +9,7 @@ import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/models/user/user.dart';
 
 abstract class IAuthAPI {
-  Future<UserModel?> signInWithGoogle();
+  Future<UserDTO?> signInWithGoogle();
   Future<void> signOut();
   Future<void> syncCyId();
 }
@@ -23,7 +23,7 @@ class AuthAPI implements IAuthAPI {
         _googleSignIn = googleSignIn;
 
   @override
-  Future<UserModel?> signInWithGoogle() async {
+  Future<UserDTO?> signInWithGoogle() async {
     try {
       final account = await _googleSignIn.signIn();
 
@@ -42,7 +42,7 @@ class AuthAPI implements IAuthAPI {
         ),
       );
 
-      final user = UserModel.fromJson(response.data['user']);
+      final user = UserDTO.fromJson(response.data['user']);
 
       return user;
     } on DioException catch (e) {
