@@ -69,7 +69,7 @@ class LevelApi implements ILevelApi {
     try {
       final response = await apiService.getCloudStorageData<Map<String, dynamic>?>(
         params: ApiParams(
-          endpoint: '/levels/orderedIds.json',
+          endpoint: '/levels/ordered_ids.json',
           method: ApiMethod.get,
           baseUrl: BaseUrl.s3,
         ),
