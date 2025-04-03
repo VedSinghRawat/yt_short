@@ -6,7 +6,6 @@ import 'package:fpdart/fpdart.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:myapp/apis/level_api.dart';
 import 'package:myapp/constants/constants.dart';
-import 'package:myapp/core/console.dart';
 import 'package:myapp/core/services/cleanup_service.dart';
 import 'package:myapp/core/services/file_service.dart';
 import 'package:myapp/core/services/level_service.dart';
@@ -67,14 +66,23 @@ class SublevelController extends _$SublevelController {
       if (levelDTO == null) return null;
 
       if (state.isFirstFetch) {
-        Console.timeStart('first-fetch');
-        await _fetchCurrSubLevelZip(levelDTO);
-        await _addSublevelEntries(levelDTO, level, levelId);
-        Console.timeEnd('first-fetch');
+        // add curr sub level entry so first video can be played immediately
+
+        final userSublevelNum = ref.read(userControllerProvider).subLevel;
+
+        final currSublevel = SubLevel.fromSubLevelDTO(
+          levelDTO.sub_levels[userSublevelNum - 1],
+          level,
+          userSublevelNum,
+          levelId,
+        );
+
+        state = state.copyWith(sublevels: {...state.sublevels, currSublevel});
       }
 
-      await subLevelService.getZipFiles(levelDTO);
-      await _addSublevelEntries(levelDTO, level, levelId);
+      await subLevelService.getVideoFiles(levelDTO);
+
+      await _addExistVideoSublevelEntries(levelDTO, level, levelId);
 
       state = state.copyWith(loadedLevelIds: {...state.loadedLevelIds, levelId});
       return levelId;
@@ -90,14 +98,14 @@ class SublevelController extends _$SublevelController {
 
   void setVideoPlayingError(String e) => state = state.copyWith(error: e);
 
-  Future<void> _addSublevelEntries(
+  Future<void> _addExistVideoSublevelEntries(
     LevelDTO levelDTO,
     int level,
     String levelId,
   ) async {
     final entries = await FileService.listEntities(
       Directory(
-        levelService.getVideoDirPath(levelDTO.id),
+        levelService.getVideoDirPath(levelId),
       ),
     );
 
@@ -121,16 +129,7 @@ class SublevelController extends _$SublevelController {
       },
     ).toSet();
 
-    developer.log('length of sublevels is ${state.sublevels.length}');
-
     state = state.copyWith(sublevels: {...state.sublevels, ...sublevels});
-  }
-
-  Future<SubLevelDTO> _fetchCurrSubLevelZip(LevelDTO currLevelDTO) async {
-    final currUserSubLevel = ref.read(userControllerProvider).subLevel;
-    final subLevelDTO = currLevelDTO.sub_levels[currUserSubLevel - 1];
-    await subLevelService.getSubLevelFile(currLevelDTO.id, subLevelDTO.zipNum);
-    return subLevelDTO;
   }
 
   void setHasFinishedVideo(bool to) => state = state.copyWith(hasFinishedVideo: to);
@@ -164,12 +163,8 @@ class SublevelController extends _$SublevelController {
   }
 
   Future<String> fetchSublevels(List<String> orderedIds) async {
-    final userLevelIndex = await ref.read(userControllerProvider).level;
-    final storedCurrId = await ref.read(userControllerProvider).levelId;
+    final currUserLevel = ref.read(userControllerProvider).level;
 
-    final levelIdIndex =
-        storedCurrId != null ? orderedIds.indexOf(storedCurrId) + 1 : userLevelIndex;
-    final currUserLevel = levelIdIndex > userLevelIndex ? levelIdIndex : userLevelIndex;
     final currLevelIndex = currUserLevel - 1;
 
     final currLevelId = orderedIds[min(currLevelIndex, orderedIds.length - 1)];

@@ -6,7 +6,6 @@ import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/services/file_service.dart';
 import 'package:myapp/core/services/level_service.dart';
 import 'package:myapp/core/shared_pref.dart';
-import 'package:myapp/core/utils.dart';
 
 class StorageCleanupService {
   final FileService fileService;
@@ -52,25 +51,22 @@ class StorageCleanupService {
 
         developer.log('folder size is $folderSize bytes for folder $folder');
 
-        // Get inner folders before deletion
+        final level = await levelService.getLocalLevel(id);
 
-        final baseZipPath = levelService.getZipBasePath(id);
+        if (level == null) continue;
 
-        final zips = await compute(listZips, Directory(baseZipPath));
-
-        // Delete actual files/folders
         await compute(_deleteFolderRecursively, folderPath);
 
         await SharedPref.removeValue(PrefKey.eTag(id));
 
-        for (var e in zips) {
+        // delete video ETags
+
+        for (var e in level.sub_levels) {
           await SharedPref.removeValue(
             PrefKey.eTag(
-              getLevelZipPath(
+              levelService.getVideoPathEndPoint(
                 id,
-                int.parse(
-                  e.replaceFirst('.zip', ''),
-                ),
+                e.videoFilename,
               ),
             ),
           );
@@ -94,8 +90,6 @@ class StorageCleanupService {
       await folder.delete(recursive: true);
     }
   }
-
-  static Future<List<String>> listZips(Directory folder) => FileService.listEntities(folder);
 
   /// Removes least-important cached levels while protecting nearby levels
   Future<List<String>> removeFurthestCachedIds(

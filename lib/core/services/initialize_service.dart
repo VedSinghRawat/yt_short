@@ -14,8 +14,6 @@ import 'package:myapp/features/sublevel/ordered_ids_notifier.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'dart:developer' as developer;
 
-import 'package:path_provider/path_provider.dart';
-
 // Global key for navigation
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -30,17 +28,6 @@ class InitializeService {
     required this.orderedIdNotifier,
   });
 
-  Future<void> clearAppCache() async {
-    try {
-      final cacheDir = await getTemporaryDirectory();
-      if (cacheDir.existsSync()) {
-        cacheDir.deleteSync(recursive: true);
-      }
-    } catch (e) {
-      developer.log('Unable to kill cache duo to $e');
-    }
-  }
-
   Future<void> initialize() async {
     try {
       await SharedPref.init();
@@ -48,7 +35,6 @@ class InitializeService {
       await storeCyId();
       await FileService.instance.init();
       await InfoService.instance.init();
-      await clearAppCache();
       await orderedIdNotifier.getOrderedIds();
 
       await initializeVersion();

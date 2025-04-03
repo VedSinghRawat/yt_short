@@ -10,12 +10,14 @@ import 'package:video_player/video_player.dart';
 class SpeechExerciseScreen extends ConsumerStatefulWidget {
   final SpeechExercise exercise;
   final String? uniqueId;
-  final String videoPath;
+  final String? videoLocalPath;
+  final String? videoUrl;
 
   const SpeechExerciseScreen({
     super.key,
     required this.exercise,
-    required this.videoPath,
+    this.videoLocalPath,
+    this.videoUrl,
     this.uniqueId,
   });
 
@@ -39,8 +41,9 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
   }
 
   void _exerciseListener() {
-    if (!mounted || _exerciseController == null || !_exerciseController!.value.isInitialized)
+    if (!mounted || _exerciseController == null || !_exerciseController!.value.isInitialized) {
       return;
+    }
 
     final position = _exerciseController!.value.position;
     final isPlaying = _exerciseController!.value.isPlaying;
@@ -112,8 +115,9 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
   @override
   Widget build(BuildContext context) {
     return Player(
-      key: Key(widget.uniqueId ?? widget.videoPath),
-      videoPath: widget.videoPath,
+      key: Key(widget.uniqueId ?? widget.videoLocalPath ?? widget.videoUrl ?? ''),
+      videoLocalPath: widget.videoLocalPath,
+      videoUrl: widget.videoUrl,
       uniqueId: widget.uniqueId,
       onControllerInitialized: _onControllerInitialized,
     );

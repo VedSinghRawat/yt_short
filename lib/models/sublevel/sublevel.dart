@@ -79,11 +79,6 @@ class SubLevelDTO with _$SubLevelDTO {
     );
   }
 
-  int get zipNum => when(
-        speechExercise: (speechExercise) => speechExercise.zipNum,
-        video: (video) => video.zipNum,
-      );
-
   String get videoFilename => when(
         speechExercise: (speechExercise) => speechExercise.videoFilename,
         video: (video) => video.videoFilename,

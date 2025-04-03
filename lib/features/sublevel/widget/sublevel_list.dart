@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/core/services/level_service.dart';
+import 'package:myapp/core/services/sub_level_service.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/widgets/loader.dart';
@@ -120,9 +123,16 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
 
           final positionText = '${sublevel.level}-${sublevel.index}';
 
+          String? localPath =
+              ref.read(levelServiceProvider).getVideoPath(sublevel.levelId, sublevel.videoFilename);
+
           final url = ref
-              .read(levelServiceProvider)
-              .getUnzippedVideoPath(sublevel.levelId, sublevel.videoFilename);
+              .read(subLevelServiceProvider)
+              .getVideoUrl(sublevel.levelId, sublevel.videoFilename);
+
+          if (index == 0 && !File(localPath).existsSync()) {
+            localPath = null;
+          }
 
           return Stack(
             children: [
@@ -131,13 +141,15 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
                   video: (video) => Player(
                     key: Key(positionText),
                     uniqueId: positionText,
-                    videoPath: url,
+                    videoLocalPath: localPath,
+                    videoUrl: url,
                   ),
                   speechExercise: (speechExercise) => SpeechExerciseScreen(
                     key: Key(positionText),
                     uniqueId: positionText,
                     exercise: speechExercise,
-                    videoPath: url,
+                    videoLocalPath: localPath,
+                    videoUrl: url,
                   ),
                 ),
               ),

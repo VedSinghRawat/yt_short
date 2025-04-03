@@ -6,26 +6,34 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:myapp/core/error/failure.dart';
 import 'package:myapp/core/services/api_service.dart';
+import 'package:myapp/core/services/level_service.dart';
 import 'package:myapp/core/utils.dart';
 
 abstract class ISubLevelAPI {
-  FutureEither<Uint8List?> getZipData(String levelId, int zipId);
+  FutureEither<Uint8List?> getVideo(
+    String levelId,
+    String videoFilename,
+  );
 }
 
 class SubLevelAPI implements ISubLevelAPI {
-  SubLevelAPI(this.apiService);
+  SubLevelAPI(this.apiService, this.levelService);
 
   final ApiService apiService;
+  final LevelService levelService;
 
   @override
-  FutureEither<Uint8List?> getZipData(
+  FutureEither<Uint8List?> getVideo(
     String levelId,
-    int zipNum,
+    String videoFilename,
   ) async {
     try {
       final response = await apiService.getCloudStorageData<Uint8List?>(
         params: ApiParams(
-          endpoint: getLevelZipPath(levelId, zipNum),
+          endpoint: levelService.getVideoPathEndPoint(
+            levelId,
+            videoFilename,
+          ),
           baseUrl: BaseUrl.s3,
           method: ApiMethod.get,
           responseType: ResponseType.bytes,
@@ -34,12 +42,15 @@ class SubLevelAPI implements ISubLevelAPI {
 
       return Right(response?.data);
     } on DioException catch (e) {
-      developer.log('Error in SubLevelAPI.getZipData: $e');
+      developer.log('Error in SubLevelAPI.getVideo: $e');
       return Left(Failure(message: e.toString()));
     }
   }
 }
 
 final subLevelAPIProvider = Provider<ISubLevelAPI>((ref) {
-  return SubLevelAPI(ref.read(apiServiceProvider));
+  final apiService = ref.read(apiServiceProvider);
+  final levelService = ref.read(levelServiceProvider);
+
+  return SubLevelAPI(apiService, levelService);
 });

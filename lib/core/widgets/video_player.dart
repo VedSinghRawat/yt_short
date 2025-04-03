@@ -9,11 +9,18 @@ import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 class Player extends ConsumerStatefulWidget {
-  final String videoPath;
+  final String? videoLocalPath;
   final String? uniqueId;
+  final String? videoUrl;
   final Function(VideoPlayerController controller)? onControllerInitialized;
 
-  const Player({super.key, required this.videoPath, this.uniqueId, this.onControllerInitialized});
+  const Player({
+    super.key,
+    required this.videoLocalPath,
+    this.uniqueId,
+    this.onControllerInitialized,
+    this.videoUrl,
+  });
 
   @override
   ConsumerState<Player> createState() => _PlayerState();
@@ -159,12 +166,20 @@ class _PlayerState extends ConsumerState<Player> {
     if (!mounted) return;
 
     try {
-      final file = File(widget.videoPath);
-      if (!await file.exists()) {
-        throw Exception("Video file not found at ${widget.videoPath}");
+      final file = widget.videoLocalPath != null ? File(widget.videoLocalPath!) : null;
+
+      if (file != null && !await file.exists()) {
+        throw Exception("Video file not found at ${widget.videoLocalPath}");
       }
 
-      _controller = VideoPlayerController.file(file);
+      _controller = file != null
+          ? VideoPlayerController.file(file)
+          : VideoPlayerController.networkUrl(
+              Uri.parse(
+                widget.videoUrl!,
+              ),
+            );
+
       _controller!.addListener(_listener);
 
       await _controller!.setLooping(true);
@@ -203,7 +218,7 @@ class _PlayerState extends ConsumerState<Player> {
     final bool isPlayerReady = _isInitialized && _controller != null;
 
     return VisibilityDetector(
-      key: Key(widget.uniqueId ?? widget.videoPath),
+      key: Key(widget.uniqueId ?? widget.videoLocalPath ?? widget.videoUrl ?? ''),
       onVisibilityChanged: _onVisibilityChanged,
       child: GestureDetector(
         onTap: _changePlayingState,
