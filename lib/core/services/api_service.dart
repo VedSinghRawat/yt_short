@@ -55,22 +55,17 @@ class ApiService {
   ApiService({required GoogleSignIn googleSignIn}) : _googleSignIn = googleSignIn;
 
   Future<void> setToken(String token) async {
-    await SharedPref.storeValue(
-      PrefKey.googleIdToken,
-      token,
-    );
+    await SharedPref.store(PrefKey.googleIdToken, token);
   }
 
-  Future<String?> getToken() async {
-    return await SharedPref.getValue(
-      PrefKey.googleIdToken,
-    );
+  String? getToken() {
+    return SharedPref.get(PrefKey.googleIdToken);
   }
 
   Future<Response<T>> call<T>({
     required ApiParams params,
   }) async {
-    final String? token = await getToken();
+    final String? token = getToken();
 
     final effectiveHeaders = {
       'Content-Type': 'application/json',
@@ -140,18 +135,12 @@ class ApiService {
     }
   }
 
-  Future<Response<T>?> _getCloudData<T>({
-    required ApiParams params,
-  }) async {
+  Future<Response<T>?> _getCloudData<T>({required ApiParams params}) async {
     /// NOTE: don't change it if have to change then change from all place where this function is used [getCloudStorageData]
 
     final eTagId = params.endpoint;
 
-    final storedETag = await SharedPref.getRawValue(
-      PrefKey.eTagKey(
-        eTagId,
-      ),
-    );
+    final storedETag = SharedPref.get(PrefKey.eTag(eTagId));
 
     final mergedParams = params.copyWith(
       headers: {
@@ -166,11 +155,10 @@ class ApiService {
       final newETag = response.headers.value(HttpHeaders.etagHeader);
 
       if (newETag != null) {
-        await SharedPref.storeRawValue(
-            PrefKey.eTagKey(
-              eTagId,
-            ),
-            newETag);
+        await SharedPref.store(
+          PrefKey.eTag(eTagId),
+          newETag,
+        );
       }
 
       return response;

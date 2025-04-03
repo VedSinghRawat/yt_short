@@ -79,3 +79,11 @@ String parseError(DioExceptionType? type) {
     DioExceptionType.unknown => unknownErrorMsg,
   };
 }
+
+bool isPrimitive(dynamic value) {
+  return value is String || value is int || value is double || value is bool;
+}
+
+bool isListOfPrimitives(dynamic value) {
+  return value is List && value.every(isPrimitive);
+}

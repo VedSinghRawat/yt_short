@@ -14,8 +14,6 @@ import 'package:myapp/features/sublevel/ordered_ids_notifier.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'dart:developer' as developer;
 
-import 'package:path_provider/path_provider.dart';
-
 // Global key for navigation
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -32,16 +30,16 @@ class InitializeService {
 
   Future<void> initialize() async {
     try {
+      await SharedPref.init();
       await handleDeepLinking();
       await storeCyId();
       await FileService.instance.init();
       await InfoService.instance.init();
-      await SharedPref.init();
       await orderedIdNotifier.getOrderedIds();
 
       await initializeVersion();
 
-      final currProgress = await SharedPref.getValue(PrefKey.currProgress);
+      final currProgress = SharedPref.get(PrefKey.currProgress);
       final apiUser = await userController.getCurrentUser();
 
       if (currProgress == null && apiUser == null) return;
@@ -64,14 +62,14 @@ class InitializeService {
               ),
             );
 
-      await SharedPref.storeValue(PrefKey.isFirstLaunch, false);
+      await SharedPref.store(PrefKey.isFirstLaunch, false);
     } catch (e, stackTrace) {
       developer.log('Error during initialize', error: e.toString(), stackTrace: stackTrace);
     }
   }
 
   Future<void> storeCyId() async {
-    if (await SharedPref.getValue(PrefKey.isFirstLaunch) == false) return;
+    if (SharedPref.get(PrefKey.isFirstLaunch) == false) return;
 
     final referrer = await AndroidPlayInstallReferrer.installReferrer;
 
@@ -79,11 +77,11 @@ class InitializeService {
 
     if (cyId == null) return;
 
-    await SharedPref.storeValue(PrefKey.cyId, cyId);
+    await SharedPref.store(PrefKey.cyId, cyId);
   }
 
   Future<void> handleDeepLinking() async {
-    if (await SharedPref.getValue(PrefKey.cyId) != null) return;
+    if (SharedPref.get(PrefKey.cyId) != null) return;
 
     final appLinks = AppLinks();
 
@@ -92,7 +90,7 @@ class InitializeService {
 
       var cyId = pathSegments.length > 1 ? pathSegments[1] : pathSegments[0];
 
-      await SharedPref.storeValue(PrefKey.cyId, cyId);
+      await SharedPref.store(PrefKey.cyId, cyId);
       developer.log('Deep linking: $cyId');
 
       final context = navigatorKey.currentContext;

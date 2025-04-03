@@ -8,9 +8,7 @@ import 'package:myapp/features/auth/screens/sign_in_screen.dart';
 import 'package:myapp/features/user/user_controller.dart';
 
 final progressProvider = FutureProvider<Progress?>((ref) async {
-  return await SharedPref.getValue(
-    PrefKey.currProgress,
-  );
+  return SharedPref.get(PrefKey.currProgress);
 });
 
 class AuthWrapper extends ConsumerWidget {

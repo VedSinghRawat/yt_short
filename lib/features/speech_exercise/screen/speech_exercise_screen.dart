@@ -1,4 +1,3 @@
-import 'package:better_player_plus/better_player_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,17 +5,16 @@ import 'package:myapp/core/widgets/video_player.dart';
 import 'package:myapp/features/speech_exercise/widgets/exercise_sentence_card.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'package:myapp/models/speech_exercise/speech_exercise.dart';
+import 'package:video_player/video_player.dart';
 
 class SpeechExerciseScreen extends ConsumerStatefulWidget {
   final SpeechExercise exercise;
-  final Function(BetterPlayerController controller)? onControllerInitialized;
   final String? uniqueId;
   final String? videoLocalPath;
   final String? videoUrl;
 
   const SpeechExerciseScreen({
     super.key,
-    this.onControllerInitialized,
     required this.exercise,
     this.videoLocalPath,
     this.videoUrl,
@@ -28,28 +26,48 @@ class SpeechExerciseScreen extends ConsumerStatefulWidget {
 }
 
 class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
-  BetterPlayerController? _controller;
+  VideoPlayerController? _exerciseController;
   bool _hasShownDialog = false;
 
-  void _onControllerInitialized(BetterPlayerController controller) {
-    _controller = controller;
+  void _onControllerInitialized(VideoPlayerController controller) {
+    if (!mounted) return;
 
-    _controller?.addEventsListener((event) {
-      if (_hasShownDialog || event.betterPlayerEventType != BetterPlayerEventType.progress) return;
+    _exerciseController?.removeListener(_exerciseListener);
 
-      final position = _controller?.videoPlayerController?.value.position;
-      final isPlaying = _controller?.videoPlayerController?.value.isPlaying ?? false;
-
-      if (position != null && isPlaying && position.inSeconds >= widget.exercise.pauseAt) {
-        _controller?.pause();
-        _showTestSentenceDialog();
-      }
+    setState(() {
+      _exerciseController = controller;
     });
+    _exerciseController!.addListener(_exerciseListener);
+  }
 
-    widget.onControllerInitialized?.call(controller);
+  void _exerciseListener() {
+    if (!mounted || _exerciseController == null || !_exerciseController!.value.isInitialized) {
+      return;
+    }
+
+    final position = _exerciseController!.value.position;
+    final isPlaying = _exerciseController!.value.isPlaying;
+
+    if (!_hasShownDialog && isPlaying && position.inSeconds >= widget.exercise.pauseAt) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_hasShownDialog) {
+          _showTestSentenceDialog();
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _exerciseController?.removeListener(_exerciseListener);
+    super.dispose();
   }
 
   void _showTestSentenceDialog() {
+    _exerciseController?.pause();
+
+    if (!mounted) return;
+
     setState(() {
       _hasShownDialog = true;
     });
@@ -80,14 +98,18 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
             child: SpeechExerciseCard(
               text: widget.exercise.text,
               onContinue: () {
-                _controller?.play();
-                Navigator.of(context).pop();
+                if (mounted) {
+                  _exerciseController?.play();
+                  Navigator.of(context).pop();
+                }
               },
             ),
           ),
         ),
       ),
-    );
+    ).then((_) {
+      if (mounted) {}
+    });
   }
 
   @override

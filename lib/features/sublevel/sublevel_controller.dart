@@ -68,7 +68,7 @@ class SublevelController extends _$SublevelController {
       if (state.isFirstFetch) {
         // add curr sub level entry so first video can be played immediately
 
-        final userSublevelNum = await ref.read(userControllerProvider).subLevel;
+        final userSublevelNum = ref.read(userControllerProvider).subLevel;
 
         final currSublevel = SubLevel.fromSubLevelDTO(
           levelDTO.sub_levels[userSublevelNum - 1],
@@ -163,7 +163,7 @@ class SublevelController extends _$SublevelController {
   }
 
   Future<String> fetchSublevels(List<String> orderedIds) async {
-    final currUserLevel = await ref.read(userControllerProvider).level;
+    final currUserLevel = ref.read(userControllerProvider).level;
 
     final currLevelIndex = currUserLevel - 1;
 

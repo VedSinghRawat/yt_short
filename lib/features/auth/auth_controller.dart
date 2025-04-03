@@ -52,7 +52,7 @@ class AuthController extends _$AuthController {
 
       await Future.delayed(Duration.zero); // Yield control to UI
 
-      final progress = await SharedPref.getValue(PrefKey.currProgress);
+      final progress = SharedPref.get(PrefKey.currProgress);
       final level = progress?.maxLevel ?? kAuthRequiredLevel;
       final subLevel = progress?.maxSubLevel ?? 0;
 

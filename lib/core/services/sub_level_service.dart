@@ -30,8 +30,8 @@ class SubLevelService {
     await downloadVideo(levelId, videoFilename);
 
     if (!await levelService.isVideoExists(levelId, videoFilename)) {
-      SharedPref.removeRawValue(
-        PrefKey.eTagKey(
+      SharedPref.removeValue(
+        PrefKey.eTag(
           levelService.getVideoPathEndPoint(
             levelId,
             videoFilename,

@@ -19,18 +19,18 @@ class UserControllerState with _$UserControllerState {
 
   const UserControllerState._();
 
-  Future<int> get level async {
-    final progress = await SharedPref.getValue(PrefKey.currProgress);
+  int get level {
+    final progress = SharedPref.get(PrefKey.currProgress);
     return progress?.level ?? currentUser?.level ?? 1;
   }
 
-  Future<int> get subLevel async {
-    final progress = await SharedPref.getValue(PrefKey.currProgress);
+  int get subLevel {
+    final progress = SharedPref.get(PrefKey.currProgress);
     return progress?.subLevel ?? currentUser?.subLevel ?? 1;
   }
 
-  Future<String?> get levelId async {
-    final progress = await SharedPref.getValue(PrefKey.currProgress);
+  String? get levelId {
+    final progress = SharedPref.get(PrefKey.currProgress);
     return progress?.levelId ?? currentUser?.levelId;
   }
 }
@@ -49,7 +49,7 @@ class UserController extends _$UserController {
     state = state.copyWith(loading: true);
 
     try {
-      final authToken = await SharedPref.getValue(PrefKey.googleIdToken);
+      final authToken = SharedPref.get(PrefKey.googleIdToken);
       if (authToken == null) return null;
 
       final userDTO = await _userAPI.getUser();

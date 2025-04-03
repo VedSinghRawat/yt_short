@@ -57,17 +57,13 @@ class StorageCleanupService {
 
         await compute(_deleteFolderRecursively, folderPath);
 
-        await SharedPref.removeRawValue(
-          PrefKey.eTagKey(
-            id,
-          ),
-        );
+        await SharedPref.removeValue(PrefKey.eTag(id));
 
         // delete video ETags
 
         for (var e in level.sub_levels) {
-          await SharedPref.removeRawValue(
-            PrefKey.eTagKey(
+          await SharedPref.removeValue(
+            PrefKey.eTag(
               levelService.getVideoPathEndPoint(
                 id,
                 e.videoFilename,

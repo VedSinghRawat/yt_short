@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/constants/constants.dart';
+import 'package:myapp/core/console.dart';
 import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/screen/app_bar.dart';
 import 'package:myapp/core/shared_pref.dart';
@@ -94,15 +95,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Future<void> syncActivityLogs() async {
     // Check if enough time has passed since the last sync
-    final lastSync = await SharedPref.getValue(PrefKey.lastSync) ?? 0;
+    final lastSync = SharedPref.get(PrefKey.lastSync) ?? 0;
 
     final now = DateTime.now().millisecondsSinceEpoch;
     final diff = now - lastSync;
+    Console.log(diff.toString());
     if (diff < kMinProgressSyncingDiffInMillis) return;
 
     // If the user is logged in, sync their progress with the server
     // Sync any pending activity logs with the server
-    final activityLogs = await SharedPref.getValue(PrefKey.activityLogs);
+    final activityLogs = SharedPref.get(PrefKey.activityLogs);
 
     if (activityLogs == null || activityLogs.isEmpty) return;
 
@@ -111,7 +113,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // Clear the activity logs and update the last sync time
     await SharedPref.removeValue(PrefKey.activityLogs);
 
-    await SharedPref.storeValue(
+    await SharedPref.store(
       PrefKey.lastSync,
       DateTime.now().millisecondsSinceEpoch,
     );
@@ -153,7 +155,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // Get the user's email
     final user = ref.read(userControllerProvider).currentUser;
 
-    final localProgress = await SharedPref.getValue(PrefKey.currProgress);
+    final localProgress = SharedPref.get(PrefKey.currProgress);
     final localMaxLevel = localProgress?.maxLevel ?? 0;
     final localMaxSubLevel = localProgress?.maxSubLevel ?? 0;
 
@@ -199,13 +201,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     await fetchSubLevels(index);
 
     // If the user is logged in, add an activity log entry
-    await SharedPref.addValue(
+    await SharedPref.pushValue(
       PrefKey.activityLogs,
-      ActivityLog(
-        subLevel: sublevelIndex,
-        level: level,
-        userEmail: userEmail,
-      ),
+      ActivityLog(subLevel: sublevelIndex, level: level, userEmail: userEmail),
     );
 
     // Sync the progress with db if the user moves to a new level

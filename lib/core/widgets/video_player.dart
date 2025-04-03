@@ -1,24 +1,24 @@
 import 'dart:async';
 import 'dart:developer' as developer;
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:myapp/constants/constants.dart';
 import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'package:myapp/features/sublevel/widget/last_level.dart';
-import 'package:better_player_plus/better_player_plus.dart';
+import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 class Player extends ConsumerStatefulWidget {
   final String? videoLocalPath;
   final String? uniqueId;
   final String? videoUrl;
-  final Function(BetterPlayerController controller)? onControllerInitialized;
+  final Function(VideoPlayerController controller)? onControllerInitialized;
 
   const Player({
     super.key,
-    this.videoLocalPath,
-    this.onControllerInitialized,
+    required this.videoLocalPath,
     this.uniqueId,
+    this.onControllerInitialized,
     this.videoUrl,
   });
 
@@ -27,74 +27,93 @@ class Player extends ConsumerStatefulWidget {
 }
 
 class _PlayerState extends ConsumerState<Player> {
-  BetterPlayerController? _betterPlayerController;
+  VideoPlayerController? _controller;
+  bool _isInitialized = false;
+  String? error;
+  bool _isVisible = false;
 
   bool _showPlayPauseIcon = false;
   IconData _iconData = Icons.play_arrow;
   Timer? _iconTimer;
 
-  String? error;
-  bool _isVisible = false;
-
   @override
   void initState() {
     super.initState();
-    _betterPlayerController = _initializeBetterPlayerController();
+    _initializeVideoPlayerController();
   }
 
-  void _listenerVideoFinished() async {
-    if (_betterPlayerController == null) return;
+  @override
+  void dispose() {
+    _iconTimer?.cancel();
+    _controller?.removeListener(_listener);
+    _controller?.dispose();
+    super.dispose();
+  }
 
-    final position = await _betterPlayerController!.videoPlayerController?.position;
-    final duration = _betterPlayerController!.videoPlayerController?.value.duration;
+  void _listener() {
+    if (!mounted || _controller == null) return;
 
-    if (position != null && duration != null) {
-      final compareDuration = duration.inSeconds - position.inSeconds;
+    final value = _controller!.value;
+    if (!value.isInitialized) return;
 
-      if (duration != Duration.zero &&
-          compareDuration <= 1 &&
-          !ref.read(sublevelControllerProvider).hasFinishedVideo) {
+    if (value.hasError && error == null) {
+      developer.log('error in video player ${value.errorDescription}');
+      if (mounted) {
         ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
-        _betterPlayerController?.removeEventsListener(_eventListener);
+        setState(() {
+          error = 'Playback failed: ${value.errorDescription ?? "Unknown error"}';
+          _isInitialized = false;
+        });
       }
     }
-  }
 
-  void _eventListener(BetterPlayerEvent event) {
-    if (event.betterPlayerEventType == BetterPlayerEventType.progress) {
-      _listenerVideoFinished();
-    }
-    if (event.betterPlayerEventType == BetterPlayerEventType.exception) {
-      developer.log('error in video player ${event.parameters}');
-      if (error != null) return;
+    _listenerVideoFinished();
 
-      ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
-
+    if (mounted && _controller!.value.isPlaying != (_iconData == Icons.pause)) {
+      // This might fight with the timed icon, consider if needed
       setState(() {
-        error = 'Playback failed: ${event.parameters?["exception"] ?? "Unknown error"}';
+        _iconData = _controller!.value.isPlaying ? Icons.pause : Icons.play_arrow;
       });
     }
   }
 
+  void _listenerVideoFinished() {
+    if (_controller == null || !_controller!.value.isInitialized) return;
+
+    final position = _controller!.value.position;
+    final duration = _controller!.value.duration;
+
+    if (duration > Duration.zero) {
+      final bool isNearEnd = (duration - position).inSeconds <= 1;
+      if (isNearEnd && !ref.read(sublevelControllerProvider).hasFinishedVideo) {
+        ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
+      }
+    }
+  }
+
   void _changePlayingState({bool changeToPlay = true}) async {
-    if (_betterPlayerController == null) return;
+    if (_controller == null || !_isInitialized) return;
 
-    final isPlaying = _betterPlayerController!.isPlaying();
+    final isPlaying = _controller!.value.isPlaying;
 
-    if (isPlaying == true || !changeToPlay) {
-      _betterPlayerController!.pause();
+    if (isPlaying || !changeToPlay) {
+      await _controller!.pause();
     } else {
-      _betterPlayerController!.play();
+      if (_controller!.value.position >= _controller!.value.duration) {
+        await _controller!.seekTo(Duration.zero);
+      }
+      await _controller!.play();
     }
 
+    final targetIcon = !isPlaying && changeToPlay ? Icons.pause : Icons.play_arrow;
+
     setState(() {
-      _iconData = isPlaying == false ? Icons.play_arrow : Icons.pause;
+      _iconData = targetIcon;
       _showPlayPauseIcon = true;
     });
 
     _iconTimer?.cancel();
-
-    _iconTimer = Timer(Duration(milliseconds: _iconData == Icons.play_arrow ? 700 : 2000), () {
+    _iconTimer = Timer(Duration(milliseconds: targetIcon == Icons.play_arrow ? 700 : 2000), () {
       if (mounted) {
         setState(() {
           _showPlayPauseIcon = false;
@@ -104,83 +123,100 @@ class _PlayerState extends ConsumerState<Player> {
   }
 
   void _handleVisibility(bool isVisible) {
-    _isVisible = isVisible;
-
-    if (_betterPlayerController == null) return;
+    if (_controller == null || !_isInitialized) return;
 
     if (isVisible) {
-      _betterPlayerController?.addEventsListener(_eventListener);
-      _betterPlayerController?.play();
+      _controller!.addListener(_listener);
+      if (!_controller!.value.isPlaying && error == null) {
+        _controller!.play();
+      }
     } else {
-      _betterPlayerController?.removeEventsListener(_eventListener);
-      _betterPlayerController?.pause();
+      _controller!.pause();
+      _controller!.removeListener(_listener);
     }
   }
 
   void _onVisibilityChanged(VisibilityInfo info) {
     if (!mounted) return;
 
-    final isVisible =
-        info.visibleFraction > 0.8 || (_isVisible == true && info.visibleFraction > 0.3);
+    final isNowVisible = info.visibleFraction > 0.8;
 
-    if (_isVisible == isVisible) return;
+    if (_isVisible == isNowVisible) return;
+
+    setState(() {
+      _isVisible = isNowVisible;
+    });
 
     try {
-      setState(() {
-        _isVisible = isVisible;
-      });
-
-      if (isVisible && error != null) {
+      if (_isVisible && error != null) {
         ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
       }
-
-      _handleVisibility(isVisible);
+      _handleVisibility(_isVisible);
     } catch (e) {
       developer.log('Error in Player._onVisibilityChanged', error: e.toString());
+      if (mounted && error == null) {
+        setState(() {
+          error = 'Error handling visibility: $e';
+        });
+      }
     }
   }
 
-  BetterPlayerController? _initializeBetterPlayerController() {
+  Future<void> _initializeVideoPlayerController() async {
+    if (!mounted) return;
+
     try {
-      final controller = BetterPlayerController(
-        BetterPlayerConfiguration(
-          autoPlay: false,
-          errorBuilder: (context, errorMessage) {
-            ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
+      final file = widget.videoLocalPath != null ? File(widget.videoLocalPath!) : null;
 
-            return ErrorPage(text: errorMessage ?? videoPlayerError);
-          },
-          looping: true,
-          fit: BoxFit.fitHeight,
-          aspectRatio: 9 / 16,
-          controlsConfiguration: const BetterPlayerControlsConfiguration(
-            showControls: false,
-          ),
-        ),
-      );
+      if (file != null && !await file.exists()) {
+        throw Exception("Video file not found at ${widget.videoLocalPath}");
+      }
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        controller.setupDataSource(
-          widget.videoLocalPath != null
-              ? BetterPlayerDataSource(BetterPlayerDataSourceType.file, widget.videoLocalPath!)
-              : BetterPlayerDataSource(BetterPlayerDataSourceType.network, widget.videoUrl!),
-        );
+      _controller = file != null
+          ? VideoPlayerController.file(file)
+          : VideoPlayerController.networkUrl(
+              Uri.parse(
+                widget.videoUrl!,
+              ),
+            );
 
-        widget.onControllerInitialized?.call(controller);
-      });
+      _controller!.addListener(_listener);
 
-      return controller;
-    } on Exception catch (e) {
+      await _controller!.setLooping(true);
+
+      await _controller!.initialize();
+
+      if (!mounted) {
+        _controller?.removeListener(_listener);
+        _controller?.dispose();
+        return;
+      }
+
+      await _controller!.setLooping(true);
+
       setState(() {
-        error = e.toString();
+        _isInitialized = true;
+        error = null;
       });
 
-      return null;
+      widget.onControllerInitialized?.call(_controller!);
+    } catch (e) {
+      developer.log('Error initializing video player', error: e.toString());
+      _controller?.removeListener(_listener);
+      if (mounted) {
+        setState(() {
+          error = "Error initializing video: ${e.toString()}";
+          _isInitialized = false;
+        });
+        ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final bool isPlayerReady = _isInitialized && _controller != null;
+
     return VisibilityDetector(
       key: Key(widget.uniqueId ?? widget.videoLocalPath ?? widget.videoUrl ?? ''),
       onVisibilityChanged: _onVisibilityChanged,
@@ -198,18 +234,15 @@ class _PlayerState extends ConsumerState<Player> {
                   ),
                 ),
               )
+            else if (isPlayerReady)
+              Center(
+                child: AspectRatio(
+                  aspectRatio: _controller!.value.aspectRatio,
+                  child: VideoPlayer(_controller!),
+                ),
+              )
             else
-              Builder(
-                builder: (_) {
-                  return _betterPlayerController != null
-                      ? SizedBox(
-                          height: MediaQuery.of(context).size.height,
-                          child: BetterPlayer(
-                            controller: _betterPlayerController!,
-                          ))
-                      : const Center(child: CircularProgressIndicator());
-                },
-              ),
+              const Center(child: CircularProgressIndicator()),
             PlayPauseButton(showPlayPauseIcon: _showPlayPauseIcon, iconData: _iconData),
           ],
         ),
