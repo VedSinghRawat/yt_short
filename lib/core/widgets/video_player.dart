@@ -28,8 +28,9 @@ class Player extends ConsumerStatefulWidget {
   ConsumerState<Player> createState() => _PlayerState();
 }
 
-class _PlayerState extends ConsumerState<Player> {
+class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
   VideoPlayerController? _controller;
+  Duration? _lastPosition;
   bool _isInitialized = false;
   String? error;
   bool _isVisible = false;
@@ -42,14 +43,42 @@ class _PlayerState extends ConsumerState<Player> {
   void initState() {
     super.initState();
     _initializeVideoPlayerController();
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _iconTimer?.cancel();
     _controller?.removeListener(_listener);
     _controller?.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.paused) {
+      // Store position before pausing/disposing
+      _controller?.removeListener(_listener);
+      _controller?.pause();
+      _lastPosition = _controller?.value.position;
+      _controller?.dispose();
+      _controller = null;
+      if (mounted) {
+        setState(() {
+          _isInitialized = false;
+          _showPlayPauseIcon = false;
+        });
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      developer.log("App resumed, initializing video controller.");
+      // Only initialize if controller is null (disposed)
+      if (_controller == null) {
+        _initializeVideoPlayerController();
+      }
+    }
   }
 
   void _listener() {
@@ -141,6 +170,18 @@ class _PlayerState extends ConsumerState<Player> {
   }
 
   void _onVisibilityChanged(VisibilityInfo info) {
+    if (_controller == null) {
+      // Handle case where controller is disposed (e.g., app paused) while visibility changes
+      developer.log("Visibility changed but controller is null.");
+      if (mounted && _isVisible) {
+        // If it was visible, update state
+        setState(() {
+          _isVisible = false;
+        });
+      }
+      return;
+    }
+
     if (!mounted) return;
 
     final isNowVisible = info.visibleFraction > 0.8;
@@ -184,16 +225,20 @@ class _PlayerState extends ConsumerState<Player> {
       await _controller!.setLooping(true);
       await _controller!.initialize();
 
-      if (!mounted) {
-        _controller?.removeListener(_listener);
-        _controller?.dispose();
-        return;
-      }
-
       setState(() {
         _isInitialized = true;
         error = null;
       });
+
+      if (_lastPosition != null) {
+        await _controller!.seekTo(_lastPosition!);
+        _lastPosition = null;
+      }
+
+      // Auto-play if visible after initialization/resuming
+      if (_isVisible) {
+        _controller!.play();
+      }
 
       widget.onControllerInitialized?.call(_controller!);
     } catch (e) {
@@ -311,6 +356,8 @@ class _VideoProgressBarState extends State<_VideoProgressBar> with SingleTickerP
   bool _isPlaying = false;
   double _playbackSpeed = 1.0;
   DateTime _lastUpdateTime = DateTime.now();
+  VideoPlayerValue? _lastValue;
+  bool _controllerDisposed = false; // Track if the controller was disposed
 
   @override
   void initState() {
@@ -342,64 +389,91 @@ class _VideoProgressBarState extends State<_VideoProgressBar> with SingleTickerP
   }
 
   void _updateVideoState() {
-    if (!mounted) return;
+    if (!mounted || _controllerDisposed) return;
 
-    final value = widget.controller.value;
+    try {
+      final value = widget.controller.value;
+      _lastValue = value; // Store the last valid value
 
-    // Check if play state actually changed
-    final bool isCurrentlyPlaying = value.isPlaying;
-    final bool wasPlaying = _isPlaying; // Store previous playing state
+      final bool isCurrentlyPlaying = value.isPlaying;
+      if (_isPlaying != isCurrentlyPlaying) {
+        setState(() {
+          _isPlaying = isCurrentlyPlaying;
+          _lastUpdateTime = DateTime.now(); // Reset time on play/pause change
 
-    Duration currentControllerPosition = value.position;
-    Duration finalPositionToSet = _lastKnownPosition; // Default to keeping the last known
+          if (_isPlaying && !_animationController.isAnimating) {
+            _animationController.repeat();
+          } else if (!_isPlaying && _animationController.isAnimating) {
+            _animationController.stop();
+          }
+        });
+      } else {
+        // If playing state hasn't changed, but the controller is playing,
+        // ensure the ticker is running (might have stopped erroneously)
+        if (_isPlaying && !_animationController.isAnimating) {
+          _animationController.repeat();
+        }
+      }
 
-    // Estimate position *if* we were playing and are now pausing
-    if (wasPlaying && !isCurrentlyPlaying && _playbackSpeed > 0) {
-      final now = DateTime.now();
-      final elapsed = now.difference(_lastUpdateTime);
-      final estimatedDelta =
-          Duration(milliseconds: (elapsed.inMilliseconds * _playbackSpeed).round());
-      Duration estimatedPosition = _lastKnownPosition + estimatedDelta;
-
-      // Clamp estimated position
-      final duration = value.duration; // Cache duration
-      if (estimatedPosition > duration) estimatedPosition = duration;
-      if (estimatedPosition < Duration.zero) estimatedPosition = Duration.zero;
-
-      finalPositionToSet = estimatedPosition; // Use estimated position when pausing
-    } else if (!wasPlaying && isCurrentlyPlaying) {
-    } else {
-      finalPositionToSet = currentControllerPosition;
-    }
-
-    // --- Update state ---
-    _lastKnownPosition = finalPositionToSet; // Set the final calculated/chosen position
-    _lastKnownDuration = value.duration;
-    _isPlaying = isCurrentlyPlaying; // Update the state variable for the next cycle
-    _playbackSpeed = value.playbackSpeed;
-    _lastUpdateTime = DateTime.now(); // Always update time when state is checked
-
-    // --- Update AnimationController ---
-    if (isCurrentlyPlaying && !_animationController.isAnimating) {
-      _animationController.repeat();
-    } else if (!isCurrentlyPlaying && _animationController.isAnimating) {
-      _animationController.stop(); // Stop the ticker when paused
+      // Update position/duration state only if necessary (less frequent updates)
+      if (_lastKnownPosition != value.position ||
+          _lastKnownDuration != value.duration ||
+          _playbackSpeed != value.playbackSpeed) {
+        setState(() {
+          _lastKnownPosition = value.position;
+          _lastKnownDuration = value.duration;
+          _playbackSpeed = value.playbackSpeed;
+          _lastUpdateTime = DateTime.now(); // Also update time when position/duration changes
+        });
+      }
+    } catch (e) {
+      developer.log("Error accessing controller value in _updateVideoState (likely disposed): $e");
+      _controllerDisposed = true; // Mark as disposed
+      if (_animationController.isAnimating) {
+        _animationController.stop();
+      }
+      if (mounted) {
+        setState(() {
+          // Reset state or show an indicator if needed
+          _isPlaying = false;
+        });
+      }
     }
   }
 
   @override
   void dispose() {
     _animationController.dispose();
+    // Safely remove listener
     try {
+      // Check if the controller is still valid before removing listener
+      widget.controller.value; // Throws if disposed
       widget.controller.removeListener(_updateVideoState);
     } catch (e) {
-      developer.log("Error removing listener from disposed controller: $e");
+      developer.log("Error removing listener from controller (likely disposed): $e");
+      // No need to set _controllerDisposed here as the widget is disposing anyway
     }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Use the last known value if the controller is disposed or has an error
+    final value = _controllerDisposed ? _lastValue : widget.controller.value;
+
+    // Handle cases where value might still be null or uninitialized
+    if (value == null || !value.isInitialized || value.duration <= Duration.zero) {
+      return const SizedBox(
+        height: 10, // Maintain height even when bar isn't showing
+        child: LinearProgressIndicator(
+          // Show a generic loading indicator
+          value: 0,
+          backgroundColor: Colors.grey,
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+        ),
+      );
+    }
+
     // Removed Positioned wrapper, Column handles placement now
     return SizedBox(
       height: 10, // Height for the bar and circle area
@@ -433,11 +507,14 @@ class _VideoProgressBarState extends State<_VideoProgressBar> with SingleTickerP
           final double progress = (durationMs > 0 && positionMs <= durationMs && positionMs >= 0)
               ? positionMs / durationMs
               : 0.0;
+          // Ensure progress is clamped between 0.0 and 1.0
+          final double clampedProgress = progress.clamp(0.0, 1.0);
 
           final double progressBarWidth = constraints.maxWidth;
-          final double indicatorPosition = progressBarWidth * progress;
+          final double indicatorPosition =
+              progressBarWidth * clampedProgress; // Use clampedProgress
 
-          // Ensure indicator position is within bounds
+          // Ensure indicator position is within bounds (redundant due to clampedProgress, but safe)
           final double clampedIndicatorPosition = indicatorPosition.clamp(0.0, progressBarWidth);
 
           return Stack(
@@ -459,7 +536,7 @@ class _VideoProgressBarState extends State<_VideoProgressBar> with SingleTickerP
               // Indicator Circle (smoothness from AnimationController)
               Positioned(
                 left: clampedIndicatorPosition - 5, // Center the circle on the progress point
-                top: 0, // Adjust to center the circle vertically on the line
+                top: 0, // Adjust to center the circle vertically on the line ( (10-3)/2 = 3.5 )
                 child: Container(
                   width: 10,
                   height: 10,
