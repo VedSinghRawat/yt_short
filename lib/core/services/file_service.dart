@@ -1,6 +1,5 @@
 import 'dart:developer' as developer;
 import 'dart:io';
-import 'package:flutter_archive/flutter_archive.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -18,18 +17,6 @@ class FileService {
   }
 
   static FileService get instance => _instance;
-
-  Future<Directory?> unzip(File zipFile, Directory destinationDir) async {
-    if (!zipFile.existsSync()) return null;
-
-    await destinationDir.create(recursive: true);
-
-    await ZipFile.extractToDirectory(
-      zipFile: zipFile,
-      destinationDir: destinationDir,
-    );
-    return destinationDir;
-  }
 
   Future<void> deleteFile(String path) async {
     final file = File(path);

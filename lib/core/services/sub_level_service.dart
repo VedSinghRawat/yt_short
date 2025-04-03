@@ -1,10 +1,11 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:myapp/apis/sub_level_api.dart';
+import 'package:myapp/core/services/api_service.dart';
 import 'package:myapp/core/services/level_service.dart';
 import 'package:myapp/core/shared_pref.dart';
-import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/level/level.dart';
 
 class SubLevelService {
@@ -14,102 +15,69 @@ class SubLevelService {
 
   final ISubLevelAPI subLevelAPI;
 
-  Future<void> getZipFiles(
+  Future<void> getVideoFiles(
     LevelDTO levelDTO,
   ) async {
-    final zipNums = levelDTO.sub_levels.map((subLevelDTO) => subLevelDTO.zipNum).toSet();
-
-    // First fetch all zip files in parallel
+    // First fetch all video files in parallel
     await Future.wait(
-      zipNums.map(
-        (zipNum) => getZip(levelDTO.id, zipNum),
+      levelDTO.sub_levels.map(
+        (subLevelDTO) => downloadVideo(levelDTO.id, subLevelDTO.videoFilename),
       ),
-    );
-
-    // Then extract all zips in parallel and handle failures
-    await Future.wait(
-      zipNums.map((zipNum) async {
-        final unzipDir = await levelService.extractStoredZip(
-          levelDTO.id,
-          zipNum,
-        );
-
-        if (unzipDir == null) {
-          await SharedPref.removeRawValue(
-            PrefKey.eTagKey(
-              getLevelZipPath(
-                levelDTO.id,
-                zipNum,
-              ),
-            ),
-          );
-        }
-
-        return unzipDir;
-      }),
     );
   }
 
-  Future<String?> getSubLevelFile(String levelId, int zipNum) async {
-    await getZip(levelId, zipNum);
+  Future<void> getSubLevelFile(String levelId, String videoFilename) async {
+    await downloadVideo(levelId, videoFilename);
 
-    final unzipDir = await levelService.extractStoredZip(levelId, zipNum);
-
-    if (unzipDir == null) {
+    if (!await levelService.isVideoExists(levelId, videoFilename)) {
       SharedPref.removeRawValue(
         PrefKey.eTagKey(
-          getLevelZipPath(
+          levelService.getVideoPathEndPoint(
             levelId,
-            zipNum,
+            videoFilename,
           ),
         ),
       );
     }
-
-    return unzipDir?.path;
   }
 
-  Future<String?> getZip(String levelId, int zipNum) async {
-    final zipDataEither = await subLevelAPI.getZipData(
+  Future<void> downloadVideo(String levelId, String videoFilename) async {
+    final videoDataEither = await subLevelAPI.getVideo(
       levelId,
-      zipNum,
+      videoFilename,
     );
 
-    return switch (zipDataEither) {
-      Left() => _getExistingZipPath(
-          levelId,
-          zipNum,
-        ),
+    return switch (videoDataEither) {
+      Left() => null,
       Right(
-        value: final zipData,
+        value: final videoData,
       )
-          when zipData == null =>
-        _getExistingZipPath(
-          levelId,
-          zipNum,
-        ),
+          when videoData == null =>
+        null,
       Right(
-        value: final zipData,
+        value: final videoData,
       ) =>
-        _storeZipFile(
+        _storeVideo(
           levelId,
-          zipNum,
-          zipData!,
+          videoFilename,
+          videoData!,
         ),
     };
   }
 
-  String _getExistingZipPath(String levelId, int zipNum) {
-    return levelService.getZipPath(levelId, zipNum);
-  }
-
-  Future<String> _storeZipFile(String levelId, int zipNum, List<int> zipData) async {
-    final file = File(levelService.getZipPath(levelId, zipNum));
+  Future<void> _storeVideo(
+    String levelId,
+    String videoFilename,
+    Uint8List videoData,
+  ) async {
+    final file = File(levelService.getVideoPath(levelId, videoFilename));
     await Directory(file.parent.path).create(recursive: true);
 
-    await file.writeAsBytes(zipData);
+    await file.writeAsBytes(videoData);
+  }
 
-    return file.path;
+  String getVideoUrl(String levelId, String videoFilename) {
+    return '${BaseUrl.cloudflare.url}${levelService.getVideoPathEndPoint(levelId, videoFilename)}';
   }
 }
 

@@ -58,12 +58,13 @@ final dioConnectionErrors = {
   DioExceptionType.connectionError,
 };
 
-String getLevelJsonPath(String jsonId) => '/levels/$jsonId/data.json';
-
-String getLevelZipPath(String levelId, int zipNum) => '/levels/$levelId/zips/$zipNum.zip';
-
 String getOrderedIdsPath() => '/levels/ordered_ids.json';
 
+String getLevelJsonPathEndpoint(String levelId) {
+  return '/levels/$levelId/data.json';
+}
+
+/// Return user friendly error message based on dio exception type
 String parseError(DioExceptionType? type) {
   if (type == null) return unknownErrorMsg;
 

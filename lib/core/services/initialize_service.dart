@@ -30,17 +30,6 @@ class InitializeService {
     required this.orderedIdNotifier,
   });
 
-  Future<void> clearAppCache() async {
-    try {
-      final cacheDir = await getTemporaryDirectory();
-      if (cacheDir.existsSync()) {
-        cacheDir.deleteSync(recursive: true);
-      }
-    } catch (e) {
-      developer.log('Unable to kill cache duo to $e');
-    }
-  }
-
   Future<void> initialize() async {
     try {
       await handleDeepLinking();
@@ -48,7 +37,6 @@ class InitializeService {
       await FileService.instance.init();
       await InfoService.instance.init();
       await SharedPref.init();
-      await clearAppCache();
       await orderedIdNotifier.getOrderedIds();
 
       await initializeVersion();

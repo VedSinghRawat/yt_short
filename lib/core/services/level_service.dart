@@ -26,37 +26,27 @@ class LevelService {
   }
 
   String getLevelJsonPath(String levelId) {
-    return '$levelsDocDirPath/$levelId/data.json';
+    return '${fileService.documentsDirectory.path}${getLevelJsonPathEndpoint(levelId)}';
   }
 
-  String getZipPath(String levelId, int zipId) {
-    return '${getZipBasePath(levelId)}/$zipId.zip';
+  String getVideoBasePathEndPoint(String levelId) {
+    return '/levels/$levelId/videos';
   }
 
-  String getZipBasePath(String levelId) {
-    return '${getLevelPath(levelId)}/zips';
+  String getVideoPathEndPoint(String levelId, String videoFilename) {
+    return '${getVideoBasePathEndPoint(levelId)}/$videoFilename.mp4';
   }
 
   String getVideoDirPath(String levelId) {
-    return '$levelsCacheDirPath/videos/$levelId';
+    return '${fileService.documentsDirectory.path}${getVideoBasePathEndPoint(levelId)}';
   }
 
-  String getUnzippedVideoPath(String levelId, String videoId) {
-    return '${getVideoDirPath(levelId)}/$videoId.mp4';
+  String getVideoPath(String levelId, String videoFilename) {
+    return '${fileService.documentsDirectory.path}${getVideoPathEndPoint(levelId, videoFilename)}';
   }
 
-  Future<Directory?> extractStoredZip(String levelId, int zipId) async {
-    final file = File(getZipPath(levelId, zipId));
-    final destinationDir = Directory(getVideoDirPath(levelId));
-    return fileService.unzip(file, destinationDir);
-  }
-
-  Future<void> deleteStoredZip(String levelId, int zipId) async {
-    await fileService.deleteFile(getZipPath(levelId, zipId));
-  }
-
-  Future<bool> isZipExists(String levelId, int zipId) async {
-    final file = File(getZipPath(levelId, zipId));
+  Future<bool> isVideoExists(String levelId, String videoFilename) async {
+    final file = File(getVideoPath(levelId, videoFilename));
     return file.exists();
   }
 
@@ -68,7 +58,7 @@ class LevelService {
     await file.writeAsString(jsonEncode(level.toJson()));
   }
 
-  Future<LevelDTO?> _getLevel(String levelId) async {
+  Future<LevelDTO?> getLocalLevel(String levelId) async {
     final file = File(getLevelJsonPath(levelId));
 
     if (!await file.exists()) return null;
@@ -82,11 +72,11 @@ class LevelService {
 
   FutureEither<LevelDTO> getLevel(String id) async {
     try {
-      final levelEither = await levelApi.getById(id);
+      final levelEither = await levelApi.get(id);
 
       return switch (levelEither) {
         Right(value: final r) => r == null
-            ? await _getLevel(id).then((level) {
+            ? await getLocalLevel(id).then((level) {
                 if (level == null) {
                   return left(Failure(message: unknownErrorMsg, trace: StackTrace.current));
                 }

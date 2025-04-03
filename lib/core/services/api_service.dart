@@ -143,7 +143,7 @@ class ApiService {
   Future<Response<T>?> _getCloudData<T>({
     required ApiParams params,
   }) async {
-    /// NOTE: don't change it if have to change also change this two functions from utils.dart [getLevelJsonPath] and [getLevelZipPath]
+    /// NOTE: don't change it if have to change then change from all place where this function is used [getCloudStorageData]
 
     final eTagId = params.endpoint;
 

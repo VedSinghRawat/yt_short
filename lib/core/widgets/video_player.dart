@@ -9,15 +9,17 @@ import 'package:better_player_plus/better_player_plus.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 class Player extends ConsumerStatefulWidget {
-  final String videoPath;
+  final String? videoLocalPath;
   final String? uniqueId;
+  final String? videoUrl;
   final Function(BetterPlayerController controller)? onControllerInitialized;
 
   const Player({
     super.key,
-    required this.videoPath,
+    this.videoLocalPath,
     this.onControllerInitialized,
     this.uniqueId,
+    this.videoUrl,
   });
 
   @override
@@ -159,7 +161,10 @@ class _PlayerState extends ConsumerState<Player> {
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
         controller.setupDataSource(
-            BetterPlayerDataSource(BetterPlayerDataSourceType.file, widget.videoPath));
+          widget.videoLocalPath != null
+              ? BetterPlayerDataSource(BetterPlayerDataSourceType.file, widget.videoLocalPath!)
+              : BetterPlayerDataSource(BetterPlayerDataSourceType.network, widget.videoUrl!),
+        );
 
         widget.onControllerInitialized?.call(controller);
       });
@@ -177,7 +182,7 @@ class _PlayerState extends ConsumerState<Player> {
   @override
   Widget build(BuildContext context) {
     return VisibilityDetector(
-      key: Key(widget.uniqueId ?? widget.videoPath),
+      key: Key(widget.uniqueId ?? widget.videoLocalPath ?? widget.videoUrl ?? ''),
       onVisibilityChanged: _onVisibilityChanged,
       child: GestureDetector(
         onTap: _changePlayingState,

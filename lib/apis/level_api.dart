@@ -8,7 +8,7 @@ import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/level/level.dart';
 
 abstract class ILevelApi {
-  FutureEither<LevelDTO?> getById(
+  FutureEither<LevelDTO?> get(
     String id,
   );
   FutureEither<List<String>?> getOrderedIds();
@@ -20,11 +20,11 @@ class LevelApi implements ILevelApi {
   LevelApi({required this.apiService});
 
   @override
-  FutureEither<LevelDTO?> getById(String id) async {
+  FutureEither<LevelDTO?> get(String id) async {
     try {
       final response = await apiService.getCloudStorageData(
         params: ApiParams(
-          endpoint: getLevelJsonPath(id),
+          endpoint: getLevelJsonPathEndpoint(id),
           method: ApiMethod.get,
           baseUrl: BaseUrl.s3,
         ),
@@ -82,5 +82,7 @@ class LevelApi implements ILevelApi {
 }
 
 final levelApiProvider = Provider<ILevelApi>((ref) {
-  return LevelApi(apiService: ref.read(apiServiceProvider));
+  final apiService = ref.read(apiServiceProvider);
+
+  return LevelApi(apiService: apiService);
 });
