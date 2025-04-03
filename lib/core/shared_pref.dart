@@ -3,33 +3,43 @@ import 'dart:developer' as developer;
 import 'package:fpdart/fpdart.dart';
 import 'package:myapp/core/console.dart';
 import 'package:myapp/core/error/failure.dart';
+import 'package:myapp/core/util_types/progress.dart';
+import 'package:myapp/core/utils.dart';
+import 'package:myapp/models/activity_log/activity_log.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:myapp/core/util_types/progress.dart';
-
-import 'package:myapp/models/activity_log/activity_log.dart';
-
-class Raw<StoredType> {
-  final String key;
-  StoredType Function(Map<String, dynamic>)? fromJson;
-
-  Raw({required this.key, this.fromJson});
+abstract class SharedPrefClass {
+  Map<String, dynamic> toJson();
 }
 
-enum PrefKey<StoredType, ListItemType> {
-  cyId<String, Unit>(),
-  currProgress<Progress, Unit>(Progress.fromJson),
-  lastSync<int, Unit>(),
-  googleIdToken<String, Unit>(),
-  isFirstLaunch<bool, Unit>(),
-  activityLogs<List<ActivityLog>, ActivityLog>(ActivityLog.fromJson),
-  orderedIds<List<String>, String>();
+class PrefKey<ST, LT> {
+  final dynamic Function(Map<String, dynamic> json)? fromJson;
+  final String name;
+  const PrefKey({this.fromJson, required this.name});
 
+  static const cyId = PrefKey<String, Unit>(name: 'cyId');
+  static const lastSync = PrefKey<int, Unit>(name: 'lastSync');
+  static const googleIdToken = PrefKey<String, Unit>(name: 'googleIdToken');
+  static const isFirstLaunch = PrefKey<bool, Unit>(name: 'isFirstLaunch');
+  static const orderedIds = PrefKey<List<String>, String>(name: 'orderedIds');
+
+  static const activityLogs = PrefKey<List<ActivityLog>, ActivityLog>(
+    fromJson: ActivityLog.fromJson,
+    name: 'activityLogs',
+  );
+  static const currProgress = PrefKey<Progress, Unit>(
+    fromJson: Progress.fromJson,
+    name: 'currProgress',
+  );
+
+  static PrefKey<String, Unit> eTag(String id) => PrefKey<String, Unit>(name: 'eTag_$id');
+}
+
+class DestructedKey {
+  final String key;
   final dynamic Function(Map<String, dynamic> json)? fromJson;
 
-  const PrefKey([this.fromJson]);
-
-  static Raw<String> eTagKey(String id) => Raw(key: 'eTagKey_$id');
+  DestructedKey({required this.key, this.fromJson});
 }
 
 class SharedPref {
@@ -39,103 +49,64 @@ class SharedPref {
     _pref = await SharedPreferences.getInstance();
   }
 
-  static Future<StoredType?> getValue<StoredType, ListItemType>(
-    PrefKey<StoredType, ListItemType> key,
-  ) async {
-    return _get(key.name, key.fromJson, key.name);
+  static DestructedKey _destructKey<ST, LT, K extends PrefKey<ST, LT>>(K prefKey) {
+    final fromJson = prefKey.fromJson;
+    final key = prefKey.name;
+
+    return DestructedKey(key: key, fromJson: fromJson);
   }
 
-  static Future<StoredType?> getRawValue<StoredType, ListItemType>(Raw<StoredType> raw) async {
-    return _get(raw.key, raw.fromJson, raw.key);
-  }
+  static ST? get<ST, LT>(PrefKey<ST, LT> prefKey) {
+    final destructedKey = _destructKey(prefKey);
 
-  static StoredType? _get<StoredType, ListItemType>(
-    String key,
-    dynamic Function(Map<String, dynamic>)? fromJson,
-    String debugKey,
-  ) {
     dynamic result;
     try {
-      final raw = _pref.getString(key);
+      final raw = _pref.getString(destructedKey.key);
 
       if (raw == null) return null;
 
-      if (StoredType == String) {
+      if (ST == String) {
         result = raw;
-      } else if (StoredType == int) {
+      } else if (ST == int) {
         result = int.tryParse(raw);
-      } else if (StoredType == double) {
+      } else if (ST == double) {
         result = double.tryParse(raw);
-      } else if (StoredType == bool) {
+      } else if (ST == bool) {
         result = raw == 'true';
       } else {
         final decoded = jsonDecode(raw);
 
         if (decoded is List) {
-          if (fromJson != null) {
-            result = decoded.map((e) => fromJson(e)).toList();
+          if (destructedKey.fromJson != null) {
+            result = decoded.map((e) => destructedKey.fromJson!(e)).toList().cast<LT>();
+          } else {
+            result = List.from(decoded).cast<LT>();
           }
-
-          result = List.from(decoded).cast<ListItemType>();
+        } else if (decoded is Map) {
+          result = destructedKey.fromJson != null
+              ? destructedKey.fromJson!(decoded as Map<String, dynamic>)
+              : Map.from(decoded);
         } else {
-          if (decoded is Map) result = Map.from(decoded);
+          throw UnsupportedError("Cannot decode value for ${destructedKey.key}");
         }
-
-        throw UnsupportedError("Cannot decode value for $debugKey");
       }
 
-      return result as StoredType;
+      return result as ST;
     } catch (e) {
-      Console.error(
-        Failure(message: '$e----in key--- $key --- type is $StoredType and from json is $fromJson'),
-        StackTrace.current,
-      );
+      Console.error(Failure(message: e.toString()), StackTrace.current);
 
       rethrow;
     }
   }
 
-  static Future<void> storeRawValue<StoredType, KeyType extends Raw<StoredType>>(
-    KeyType raw,
-    StoredType value,
-  ) async {
-    await _store(raw.key, value);
-  }
+  static Future<void> store<ST, LT, K extends PrefKey<ST, LT>>(K prefKey, ST value) async {
+    final destructedKey = _destructKey(prefKey);
 
-  static Future<void>
-      storeValue<StoredType, KeyType extends PrefKey<StoredType, ListItemType>, ListItemType>(
-    KeyType key,
-    StoredType value,
-  ) async {
-    await _store(key.name, value);
-  }
-
-  static Future<void> addValue<StoredType, ListItemType>(
-    PrefKey<StoredType, ListItemType> key,
-    dynamic newValue,
-  ) async {
-    final existing = await getValue<StoredType, ListItemType>(key);
-    dynamic updated;
-
-    if (existing is List) {
-      updated = [...existing, newValue];
-    } else if (existing is Map) {
-      updated = {...existing, ...newValue};
-    } else if (existing == null) {
-      updated = newValue;
-    } else {
-      throw 'SharedPref: Key is not addable: expected List or Map, got \${existing.runtimeType}';
-    }
-
-    await storeValue(key, updated);
-  }
-
-  static Future<void> _store<StoredType>(String key, StoredType value) async {
     dynamic validVal;
     try {
-      if (value is String || value is int || value is double || value is bool) {
+      if (isPrimitive(value)) {
         validVal = value.toString();
-      } else if (_isListOfPrimitives(value)) {
+      } else if (isListOfPrimitives(value)) {
         validVal = jsonEncode(value);
       } else if (value is SharedPrefClass) {
         validVal = jsonEncode(value.toJson());
@@ -144,11 +115,11 @@ class SharedPref {
         validVal = jsonEncode(list);
       } else {
         throw UnsupportedError(
-          " SharedPred error(Unsupported type): \${value.runtimeType}: \${StoredType.toString()} if it is custom class consider implementing SharedPrefClass class",
+          " SharedPred error(Unsupported type): \${value.runtimeType}: \${ST.toString()} if it is custom class consider implementing SharedPrefClass class",
         );
       }
 
-      await _pref.setString(key, validVal);
+      await _pref.setString(destructedKey.key, validVal);
     } catch (e) {
       Console.error(
         Failure(message: e.toString()),
@@ -159,34 +130,30 @@ class SharedPref {
     }
   }
 
-  static Future<void> removeValue<StoredType, ListItemType>(
-    PrefKey<StoredType, ListItemType> key,
+  static Future<void> pushValue<LT, ST extends List<LT>, K extends PrefKey<ST, LT>>(
+    K prefKey,
+    dynamic newValue,
   ) async {
-    await _pref.remove(key.name);
-  }
+    final existing = get(prefKey);
+    dynamic updated;
 
-  static Future<void> removeRawValue<StoredType>(Raw<StoredType> raw) async {
-    await _pref.remove(raw.key);
-  }
-
-  static Future<void> clearAll() async {
-    await _pref.clear();
-  }
-
-  static bool _isListOfPrimitives(Object? value) {
-    if (value is List) {
-      return value.every((e) => e is String || e is int || e is double || e is bool);
+    if (existing == null) {
+      updated = [newValue];
+    } else {
+      existing.add(newValue);
+      updated = existing;
     }
-    return false;
+
+    await store(prefKey, updated);
   }
 
-  static Future<void>
-      copyWith<StoredType, KeyType extends PrefKey<StoredType, ListItemType>, ListItemType>(
-    KeyType key,
-    StoredType value,
-  ) async {
+  static Future<void> removeValue<ST, LT, K extends PrefKey<ST, LT>>(K prefKey) async {
+    await _pref.remove(prefKey.name);
+  }
+
+  static Future<void> copyWith<ST, LT, K extends PrefKey<ST, LT>>(K key, ST value) async {
     try {
-      final oldValue = await getValue(key);
+      final oldValue = get(key);
       final Map oldValueMap;
       final Map valueMap;
 
@@ -206,16 +173,12 @@ class SharedPref {
 
       if (key.fromJson != null) {
         final updatedObj = key.fromJson!(Map<String, dynamic>.from(merged));
-        await _store<StoredType>(key.name, updatedObj);
+        await store(key, updatedObj);
       } else {
-        await _store<Map<String, dynamic>>(key.name, merged as Map<String, dynamic>);
+        await store<ST, LT, K>(key, merged as ST);
       }
     } catch (e) {
       developer.log(e.toString());
     }
   }
-}
-
-abstract class SharedPrefClass {
-  Map<String, dynamic> toJson();
 }

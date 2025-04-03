@@ -43,17 +43,17 @@ class InitializeService {
 
   Future<void> initialize() async {
     try {
+      await SharedPref.init();
       await handleDeepLinking();
       await storeCyId();
       await FileService.instance.init();
       await InfoService.instance.init();
-      await SharedPref.init();
       await clearAppCache();
       await orderedIdNotifier.getOrderedIds();
 
       await initializeVersion();
 
-      final currProgress = await SharedPref.getValue(PrefKey.currProgress);
+      final currProgress = SharedPref.get(PrefKey.currProgress);
       final apiUser = await userController.getCurrentUser();
 
       if (currProgress == null && apiUser == null) return;
@@ -76,14 +76,14 @@ class InitializeService {
               ),
             );
 
-      await SharedPref.storeValue(PrefKey.isFirstLaunch, false);
+      await SharedPref.store(PrefKey.isFirstLaunch, false);
     } catch (e, stackTrace) {
       developer.log('Error during initialize', error: e.toString(), stackTrace: stackTrace);
     }
   }
 
   Future<void> storeCyId() async {
-    if (await SharedPref.getValue(PrefKey.isFirstLaunch) == false) return;
+    if (SharedPref.get(PrefKey.isFirstLaunch) == false) return;
 
     final referrer = await AndroidPlayInstallReferrer.installReferrer;
 
@@ -91,11 +91,11 @@ class InitializeService {
 
     if (cyId == null) return;
 
-    await SharedPref.storeValue(PrefKey.cyId, cyId);
+    await SharedPref.store(PrefKey.cyId, cyId);
   }
 
   Future<void> handleDeepLinking() async {
-    if (await SharedPref.getValue(PrefKey.cyId) != null) return;
+    if (SharedPref.get(PrefKey.cyId) != null) return;
 
     final appLinks = AppLinks();
 
@@ -103,7 +103,7 @@ class InitializeService {
       final pathSegments = uri.pathSegments;
       if (pathSegments.length >= 2 && pathSegments[0] == 'cyid') {
         final cyId = pathSegments[1];
-        await SharedPref.storeValue(PrefKey.cyId, cyId);
+        await SharedPref.store(PrefKey.cyId, cyId);
         developer.log('Deep linking: $cyId');
 
         final context = navigatorKey.currentContext;

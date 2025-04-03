@@ -31,7 +31,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
   late PageController _pageController;
 
   void _jumpToPage(Duration timeStamp) async {
-    final progress = await SharedPref.getValue(PrefKey.currProgress);
+    final progress = SharedPref.get(PrefKey.currProgress);
 
     final jumpTo = widget.sublevels.indexWhere(
       (sublevel) => (sublevel.index == progress?.subLevel && sublevel.level == progress?.level),

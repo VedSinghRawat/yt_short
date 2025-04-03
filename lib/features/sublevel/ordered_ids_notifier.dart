@@ -31,7 +31,7 @@ class OrderedIdsNotifier extends _$OrderedIdsNotifier {
   }
 
   Future<AsyncValue<List<String>>> _handleLeft(Failure error) async {
-    final localIds = await SharedPref.getValue(PrefKey.orderedIds);
+    final localIds = SharedPref.get(PrefKey.orderedIds);
 
     if (dioConnectionErrors.contains(error.type) && localIds != null) return _getIds();
 
@@ -46,7 +46,7 @@ class OrderedIdsNotifier extends _$OrderedIdsNotifier {
 
   Future<AsyncValue<List<String>>> _handleRight(List<String>? ids) async {
     if (ids != null) {
-      await SharedPref.storeValue(PrefKey.orderedIds, ids);
+      await SharedPref.store(PrefKey.orderedIds, ids);
       return AsyncValue.data(ids);
     }
 
@@ -54,11 +54,11 @@ class OrderedIdsNotifier extends _$OrderedIdsNotifier {
   }
 
   Future<AsyncValue<List<String>>> _getIds() async {
-    final ids = await SharedPref.getValue(PrefKey.orderedIds);
+    final ids = SharedPref.get(PrefKey.orderedIds);
 
     if (ids != null) return AsyncValue.data(ids);
 
-    await SharedPref.removeRawValue(PrefKey.eTagKey(getOrderedIdsPath()));
+    await SharedPref.removeValue(PrefKey.orderedIds);
 
     return AsyncValue.error(
       Failure(

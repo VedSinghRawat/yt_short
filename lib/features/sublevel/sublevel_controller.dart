@@ -127,7 +127,7 @@ class SublevelController extends _$SublevelController {
   }
 
   Future<SubLevelDTO> _fetchCurrSubLevelZip(LevelDTO currLevelDTO) async {
-    final currUserSubLevel = await ref.read(userControllerProvider).subLevel;
+    final currUserSubLevel = ref.read(userControllerProvider).subLevel;
     final subLevelDTO = currLevelDTO.sub_levels[currUserSubLevel - 1];
     await subLevelService.getSubLevelFile(currLevelDTO.id, subLevelDTO.zipNum);
     return subLevelDTO;

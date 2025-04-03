@@ -3,7 +3,6 @@ import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:myapp/constants/constants.dart';
 import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'package:myapp/features/sublevel/widget/last_level.dart';
 import 'package:video_player/video_player.dart';
@@ -14,12 +13,7 @@ class Player extends ConsumerStatefulWidget {
   final String? uniqueId;
   final Function(VideoPlayerController controller)? onControllerInitialized;
 
-  const Player({
-    super.key,
-    required this.videoPath,
-    this.uniqueId,
-    this.onControllerInitialized,
-  });
+  const Player({super.key, required this.videoPath, this.uniqueId, this.onControllerInitialized});
 
   @override
   ConsumerState<Player> createState() => _PlayerState();
@@ -70,9 +64,9 @@ class _PlayerState extends ConsumerState<Player> {
 
     if (mounted && _controller!.value.isPlaying != (_iconData == Icons.pause)) {
       // This might fight with the timed icon, consider if needed
-      // setState(() {
-      //   _iconData = _controller!.value.isPlaying ? Icons.pause : Icons.play_arrow;
-      // });
+      setState(() {
+        _iconData = _controller!.value.isPlaying ? Icons.pause : Icons.play_arrow;
+      });
     }
   }
 

@@ -29,18 +29,12 @@ class SubLevelService {
     // Then extract all zips in parallel and handle failures
     await Future.wait(
       zipNums.map((zipNum) async {
-        final unzipDir = await levelService.extractStoredZip(
-          levelDTO.id,
-          zipNum,
-        );
+        final unzipDir = await levelService.extractStoredZip(levelDTO.id, zipNum);
 
         if (unzipDir == null) {
-          await SharedPref.removeRawValue(
-            PrefKey.eTagKey(
-              getLevelZipPath(
-                levelDTO.id,
-                zipNum,
-              ),
+          await SharedPref.removeValue(
+            PrefKey.eTag(
+              getLevelZipPath(levelDTO.id, zipNum),
             ),
           );
         }
@@ -56,12 +50,9 @@ class SubLevelService {
     final unzipDir = await levelService.extractStoredZip(levelId, zipNum);
 
     if (unzipDir == null) {
-      SharedPref.removeRawValue(
-        PrefKey.eTagKey(
-          getLevelZipPath(
-            levelId,
-            zipNum,
-          ),
+      SharedPref.removeValue(
+        PrefKey.eTag(
+          getLevelZipPath(levelId, zipNum),
         ),
       );
     }

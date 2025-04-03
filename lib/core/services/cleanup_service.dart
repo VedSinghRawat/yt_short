@@ -61,22 +61,15 @@ class StorageCleanupService {
         // Delete actual files/folders
         await compute(_deleteFolderRecursively, folderPath);
 
-        await SharedPref.removeRawValue(
-          PrefKey.eTagKey(
-            id,
-          ),
-        );
+        await SharedPref.removeValue(PrefKey.eTag(id));
 
         for (var e in zips) {
-          await SharedPref.removeRawValue(
-            PrefKey.eTagKey(
+          await SharedPref.removeValue(
+            PrefKey.eTag(
               getLevelZipPath(
                 id,
                 int.parse(
-                  e.replaceFirst(
-                    '.zip',
-                    '',
-                  ),
+                  e.replaceFirst('.zip', ''),
                 ),
               ),
             ),
