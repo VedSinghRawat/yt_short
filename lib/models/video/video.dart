@@ -1,39 +1,27 @@
-import 'package:json_annotation/json_annotation.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:flutter/foundation.dart';
 
 part 'video.g.dart';
+part 'video.freezed.dart';
 
-@JsonSerializable()
-class Video {
-  final String ytId;
-  final int level;
-  final int subLevel;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-
-  const Video({
-    required this.ytId,
-    required this.level,
-    required this.subLevel,
-    required this.createdAt,
-    required this.updatedAt,
-  });
+@freezed
+class Video with _$Video {
+  const factory Video({
+    required int level,
+    required int index,
+    required String levelId,
+    required String videoFilename,
+  }) = _Video;
 
   factory Video.fromJson(Map<String, dynamic> json) => _$VideoFromJson(json);
-  Map<String, dynamic> toJson() => _$VideoToJson(this);
+}
 
-  Video copyWith({
-    String? ytId,
-    int? level,
-    int? subLevel,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-  }) {
-    return Video(
-      ytId: ytId ?? this.ytId,
-      level: level ?? this.level,
-      subLevel: subLevel ?? this.subLevel,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-    );
-  }
+@freezed
+class VideoDTO with _$VideoDTO {
+  const factory VideoDTO({
+    required String videoFilename,
+    required int zipNum,
+  }) = _VideoDTO;
+
+  factory VideoDTO.fromJson(Map<String, dynamic> json) => _$VideoDTOFromJson(json);
 }

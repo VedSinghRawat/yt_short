@@ -1,51 +1,32 @@
-import 'package:json_annotation/json_annotation.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:flutter/foundation.dart';
 
 part 'speech_exercise.g.dart';
+part 'speech_exercise.freezed.dart';
 
-@JsonSerializable()
-class SpeechExercise {
-  final String ytId;
-  final String text;
-  final int pauseAt;
-  final String audioUrl;
-  final int level;
-  final int subLevel;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-
-  const SpeechExercise({
-    required this.ytId,
-    required this.text,
-    required this.pauseAt,
-    required this.audioUrl,
-    required this.level,
-    required this.subLevel,
-    required this.createdAt,
-    required this.updatedAt,
-  });
+@freezed
+class SpeechExercise with _$SpeechExercise {
+  const factory SpeechExercise({
+    required String text,
+    required int pauseAt,
+    required int level,
+    required int index,
+    required String levelId,
+    required String videoFilename,
+  }) = _SpeechExercise;
 
   factory SpeechExercise.fromJson(Map<String, dynamic> json) => _$SpeechExerciseFromJson(json);
-  Map<String, dynamic> toJson() => _$SpeechExerciseToJson(this);
+}
 
-  SpeechExercise copyWith({
-    String? ytId,
-    String? text,
-    int? pauseAt,
-    String? audioUrl,
-    int? level,
-    int? subLevel,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-  }) {
-    return SpeechExercise(
-      ytId: ytId ?? this.ytId,
-      text: text ?? this.text,
-      pauseAt: pauseAt ?? this.pauseAt,
-      audioUrl: audioUrl ?? this.audioUrl,
-      level: level ?? this.level,
-      subLevel: subLevel ?? this.subLevel,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-    );
-  }
+@freezed
+class SpeechExerciseDTO with _$SpeechExerciseDTO {
+  const factory SpeechExerciseDTO({
+    required String videoFilename,
+    required String text,
+    required int pauseAt,
+    required int zipNum,
+  }) = _SpeechExerciseDTO;
+
+  factory SpeechExerciseDTO.fromJson(Map<String, dynamic> json) =>
+      _$SpeechExerciseDTOFromJson(json);
 }

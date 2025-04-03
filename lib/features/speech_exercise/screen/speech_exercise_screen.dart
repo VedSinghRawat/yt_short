@@ -1,25 +1,23 @@
+import 'package:better_player_plus/better_player_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:myapp/core/widgets/yt_player.dart';
-import 'package:video_player/video_player.dart';
-import 'package:myapp/models/speech_exercise/speech_exercise.dart';
-import 'package:myapp/features/speech_exercise/widgets/exercise_sentence_card.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:myapp/core/widgets/video_player.dart';
+import 'package:myapp/features/speech_exercise/widgets/exercise_sentence_card.dart';
 import 'package:myapp/features/user/user_controller.dart';
+import 'package:myapp/models/speech_exercise/speech_exercise.dart';
 
 class SpeechExerciseScreen extends ConsumerStatefulWidget {
   final SpeechExercise exercise;
-  final Function(VideoPlayerController)? onControllerInitialized;
+  final Function(BetterPlayerController controller)? onControllerInitialized;
   final String? uniqueId;
-  final String audioUrl;
-  final String videoUrl;
+  final String videoPath;
 
   const SpeechExerciseScreen({
     super.key,
     this.onControllerInitialized,
     required this.exercise,
-    required this.audioUrl,
-    required this.videoUrl,
+    required this.videoPath,
     this.uniqueId,
   });
 
@@ -28,33 +26,31 @@ class SpeechExerciseScreen extends ConsumerStatefulWidget {
 }
 
 class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
-  late VideoPlayerController? _controller;
-  late VideoPlayerController? _audioController;
+  BetterPlayerController? _controller;
   bool _hasShownDialog = false;
 
-  late void Function() _pauseListener;
+  void _onControllerInitialized(BetterPlayerController controller) {
+    _controller = controller;
 
-  void _onControllerInitialized(
-      VideoPlayerController controller, VideoPlayerController audioController) {
-    _pauseListener = () {
-      if (!_hasShownDialog &&
-          controller.value.position.inSeconds >= widget.exercise.pauseAt &&
-          controller.value.isPlaying) {
-        controller.pause();
-        audioController.pause();
+    _controller?.addEventsListener((event) {
+      if (_hasShownDialog || event.betterPlayerEventType != BetterPlayerEventType.progress) return;
+
+      final position = _controller?.videoPlayerController?.value.position;
+      final isPlaying = _controller?.videoPlayerController?.value.isPlaying ?? false;
+
+      if (position != null && isPlaying && position.inSeconds >= widget.exercise.pauseAt) {
+        _controller?.pause();
         _showTestSentenceDialog();
       }
-    };
-    _controller = controller;
-    _audioController = audioController;
-    controller.addListener(_pauseListener);
+    });
+
+    widget.onControllerInitialized?.call(controller);
   }
 
   void _showTestSentenceDialog() {
     setState(() {
       _hasShownDialog = true;
     });
-    _controller!.removeListener(_pauseListener);
 
     final isAdmin = ref.read(userControllerProvider).currentUser?.isAdmin ?? false;
 
@@ -66,10 +62,7 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
         canPop: isAdmin || kDebugMode,
         child: Dialog(
           backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(
-            vertical: 48,
-            horizontal: 24,
-          ),
+          insetPadding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
           child: Container(
             decoration: BoxDecoration(
               color: const Color.fromRGBO(255, 255, 255, 0.75),
@@ -85,10 +78,7 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
             child: SpeechExerciseCard(
               text: widget.exercise.text,
               onContinue: () {
-                setState(() {
-                  _controller?.play();
-                  _audioController?.play();
-                });
+                _controller?.play();
                 Navigator.of(context).pop();
               },
             ),
@@ -100,10 +90,9 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return YtPlayer(
-      key: Key('${widget.exercise.level}-${widget.exercise.subLevel}-${widget.exercise.ytId}'),
-      audioUrl: widget.audioUrl,
-      videoUrl: widget.videoUrl,
+    return Player(
+      key: Key(widget.uniqueId ?? widget.videoPath),
+      videoPath: widget.videoPath,
       uniqueId: widget.uniqueId,
       onControllerInitialized: _onControllerInitialized,
     );

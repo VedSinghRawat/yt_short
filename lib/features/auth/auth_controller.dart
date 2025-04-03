@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/features/auth/screens/sign_in_screen.dart';
@@ -9,6 +9,8 @@ import '../../apis/auth_api.dart';
 import '../../core/utils.dart';
 import '../user/user_controller.dart';
 import 'dart:async';
+
+part 'auth_controller.g.dart';
 
 class AuthControllerState {
   final bool loading;
@@ -20,14 +22,15 @@ class AuthControllerState {
   }
 }
 
-class AuthController extends StateNotifier<AuthControllerState> {
-  final UserController userController;
-  final AuthAPI authAPI;
-  final SublevelController sublevelController;
+@riverpod
+class AuthController extends _$AuthController {
+  // Internal flag to prevent overlapping requests.
   bool _isProcessing = false;
 
-  AuthController(this.userController, this.authAPI, this.sublevelController)
-      : super(AuthControllerState(loading: false));
+  @override
+  AuthControllerState build() {
+    return AuthControllerState(loading: false);
+  }
 
   Future<void> signInWithGoogle(BuildContext context) async {
     if (_isProcessing) return;
@@ -35,28 +38,39 @@ class AuthController extends StateNotifier<AuthControllerState> {
     state = state.copyWith(loading: true);
 
     try {
-      final user = await authAPI.signInWithGoogle();
-      if (user == null) return;
+      // Access dependencies via ref.
+      final authAPI = ref.read(authAPIProvider);
+      final userController = ref.read(userControllerProvider.notifier);
+      final sublevelController = ref.read(sublevelControllerProvider.notifier);
 
-      userController.updateCurrentUser(user);
+      final userDTO = await authAPI.signInWithGoogle();
+      if (userDTO == null) return;
+
+      final user = userController.updateCurrentUser(userDTO);
+
+      await authAPI.syncCyId();
 
       await Future.delayed(Duration.zero); // Yield control to UI
 
-      final progress = await SharedPref.getCurrProgress();
-
-      final level = progress?['maxLevel'] ?? kAuthRequiredLevel;
-      final subLevel = progress?['maxSubLevel'] ?? 0;
+      final progress = await SharedPref.getValue(PrefKey.currProgress);
+      final level = progress?.maxLevel ?? kAuthRequiredLevel;
+      final subLevel = progress?.maxSubLevel ?? 0;
 
       if (context.mounted &&
-          (user.maxLevel > level || (user.maxLevel == level && user.maxSubLevel >= subLevel))) {
-        await showLevelChangeConfirmationDialog(context, user, sublevelController);
+          (user.maxLevel > level || (user.maxLevel == level && userDTO.maxSubLevel >= subLevel))) {
+        await showLevelChangeConfirmationDialog(
+          context,
+          user.maxLevel,
+          userDTO.maxSubLevel,
+          sublevelController,
+        );
       }
 
-      await sublevelController.fetchSublevels();
+      await sublevelController.handleFetchSublevels();
     } catch (e, stackTrace) {
       developer.log('Error in AuthController.signInWithGoogle',
           error: e.toString(), stackTrace: stackTrace);
-
+      final userController = ref.read(userControllerProvider.notifier);
       userController.removeCurrentUser();
       if (context.mounted) {
         showErrorSnackBar(context, e.toString());
@@ -73,9 +87,14 @@ class AuthController extends StateNotifier<AuthControllerState> {
     state = state.copyWith(loading: true);
 
     try {
-      final user = userController.state.currentUser;
+      final userController = ref.read(userControllerProvider.notifier);
+
+      final authAPI = ref.read(authAPIProvider);
+
+      final user = ref.read(userControllerProvider).currentUser;
+
       if (user != null) {
-        await userController.progressSync(user.level, user.subLevel);
+        await userController.sync(user.levelId, user.subLevel);
         await authAPI.signOut();
         userController.removeCurrentUser();
         await Future.delayed(Duration.zero); // Allow UI to update
@@ -91,10 +110,3 @@ class AuthController extends StateNotifier<AuthControllerState> {
     }
   }
 }
-
-final authControllerProvider = StateNotifierProvider<AuthController, AuthControllerState>((ref) {
-  final userController = ref.watch(userControllerProvider.notifier);
-  final authAPI = ref.watch(authAPIProvider);
-  final sublevelController = ref.watch(sublevelControllerProvider.notifier);
-  return AuthController(userController, authAPI, sublevelController);
-});

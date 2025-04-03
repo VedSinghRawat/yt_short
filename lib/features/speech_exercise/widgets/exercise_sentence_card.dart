@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/features/speech_exercise/widgets/recognizer_button.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
-import 'dart:developer' as developer;
 
 class SpeechExerciseCard extends StatefulWidget {
   final String text;

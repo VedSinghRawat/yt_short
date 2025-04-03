@@ -1,62 +1,61 @@
-import 'package:json_annotation/json_annotation.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:flutter/foundation.dart';
+
+part 'user.freezed.dart';
 part 'user.g.dart';
 
-@JsonSerializable()
-class UserModel {
-  final String email;
-  final int level;
-  final int subLevel;
-  final String created;
-  final String modified;
-  final int maxLevel;
-  final int maxSubLevel;
-  final int lastSeen;
-  final int lastProgress;
-  final UserRole role;
+@freezed
+class UserModel with _$UserModel {
+  const UserModel._();
 
-  const UserModel({
-    required this.email,
-    required this.created,
-    required this.modified,
-    required this.level,
-    required this.subLevel,
-    required this.lastSeen,
-    required this.lastProgress,
-    required this.maxLevel,
-    required this.maxSubLevel,
-    required this.role,
-  });
-
-  bool get isAdmin => role == UserRole.admin;
+  const factory UserModel({
+    required String email,
+    required String levelId,
+    required int subLevel,
+    required String created,
+    required String modified,
+    required String maxLevelId,
+    required int maxSubLevel,
+    required int lastSeen,
+    required int lastProgress,
+    required UserRole role,
+    required int doneToday,
+    required int level,
+    required int maxLevel,
+  }) = _UserModel;
 
   factory UserModel.fromJson(Map<String, dynamic> json) => _$UserModelFromJson(json);
-  Map<String, dynamic> toJson() => _$UserModelToJson(this);
 
-  UserModel copyWith({
-    String? email,
-    String? created,
-    String? modified,
-    int? level,
-    int? subLevel,
-    int? lastSeen,
-    int? lastProgress,
-    int? maxLevel,
-    int? maxSubLevel,
-    UserRole? role,
-  }) {
-    return UserModel(
-      email: email ?? this.email,
-      created: created ?? this.created,
-      modified: modified ?? this.modified,
-      level: level ?? this.level,
-      subLevel: subLevel ?? this.subLevel,
-      lastSeen: lastSeen ?? this.lastSeen,
-      lastProgress: lastProgress ?? this.lastProgress,
-      maxLevel: maxLevel ?? this.maxLevel,
-      maxSubLevel: maxSubLevel ?? this.maxSubLevel,
-      role: role ?? this.role,
-    );
+  factory UserModel.fromUserDTO(UserDTO dto, int level, int maxLevel) {
+    final jsonDTO = dto.toJson();
+    jsonDTO['level'] = level;
+    jsonDTO['maxLevel'] = maxLevel;
+
+    return UserModel.fromJson(jsonDTO);
   }
+
+  bool get isAdmin => role == UserRole.admin;
+}
+
+@freezed
+class UserDTO with _$UserDTO {
+  const UserDTO._();
+
+  const factory UserDTO({
+    required String email,
+    required String levelId,
+    required int subLevel,
+    required String created,
+    required String modified,
+    required String maxLevelId,
+    required int maxSubLevel,
+    required int lastSeen,
+    required int lastProgress,
+    required UserRole role,
+    required int doneToday,
+  }) = _UserDTO;
+
+  factory UserDTO.fromJson(Map<String, dynamic> json) => _$UserDTOFromJson(json);
 }
 
 enum UserRole {

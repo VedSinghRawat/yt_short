@@ -1,56 +1,45 @@
+import 'dart:developer' as developer show log;
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:myapp/models/models.dart';
+import 'package:fpdart/fpdart.dart';
+import 'package:myapp/core/error/failure.dart';
+import 'package:myapp/core/services/api_service.dart';
+import 'package:myapp/core/utils.dart';
 
 abstract class ISubLevelAPI {
-  Future<List<SubLevel>> listByLevel(int level);
+  FutureEither<Uint8List?> getZipData(String levelId, int zipId);
 }
 
 class SubLevelAPI implements ISubLevelAPI {
-  SubLevelAPI();
+  SubLevelAPI(this.apiService);
+
+  final ApiService apiService;
 
   @override
-  Future<List<SubLevel>> listByLevel(int level) async {
-    final jsonList = await _getLevel(level);
+  FutureEither<Uint8List?> getZipData(
+    String levelId,
+    int zipNum,
+  ) async {
+    try {
+      final response = await apiService.getCloudStorageData<Uint8List?>(
+        params: ApiParams(
+          endpoint: getLevelZipPath(levelId, zipNum),
+          baseUrl: BaseUrl.s3,
+          method: ApiMethod.get,
+          responseType: ResponseType.bytes,
+        ),
+      );
 
-    int subLevel = 0;
-
-    final sublevels = jsonList.map((json) {
-      subLevel++;
-      return jsonToSublevel(json, level, subLevel);
-    }).toList();
-
-    return sublevels;
-  }
-
-  Future<List<dynamic>> _getLevel(int level) async {
-    final dio = Dio();
-    final response = await dio.get('${dotenv.env['S3_BASE_URL']}/levels/$level.json');
-
-    if (response.statusCode != 200) {
-      throw Exception("Failed to fetch sublevel for level $level");
-    }
-
-    final List<dynamic> jsonList = (response.data['sub_levels']);
-
-    return jsonList;
-  }
-
-  SubLevel jsonToSublevel(Map<String, dynamic> json, int level, int subLevel) {
-    json['level'] = level;
-    json['subLevel'] = subLevel;
-
-    if (json.containsKey('text')) {
-      return SubLevel(null, SpeechExercise.fromJson(json));
-    } else if (json.containsKey('ytId')) {
-      return SubLevel(Video.fromJson(json), null);
-    } else {
-      throw Exception("Invalid sublevel type");
+      return Right(response?.data);
+    } on DioException catch (e) {
+      developer.log('Error in SubLevelAPI.getZipData: $e');
+      return Left(Failure(message: e.toString()));
     }
   }
 }
 
 final subLevelAPIProvider = Provider<ISubLevelAPI>((ref) {
-  return SubLevelAPI();
+  return SubLevelAPI(ref.read(apiServiceProvider));
 });

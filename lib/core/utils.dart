@@ -1,4 +1,8 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:fpdart/fpdart.dart';
+import 'package:myapp/constants/constants.dart';
+import 'package:myapp/core/error/failure.dart';
 
 void showErrorSnackBar(BuildContext context, String message) {
   if (!context.mounted) return;
@@ -43,4 +47,34 @@ num getMax(List<num?> numbers) {
     }
   }
   return maxVal;
+}
+
+// type alias for fpdart
+typedef FutureEither<T> = Future<Either<Failure, T>>;
+
+typedef FutureVoid = FutureEither<void>;
+
+final dioConnectionErrors = {
+  DioExceptionType.connectionError,
+};
+
+String getLevelJsonPath(String jsonId) => '/levels/$jsonId/data.json';
+
+String getLevelZipPath(String levelId, int zipNum) => '/levels/$levelId/zips/$zipNum.zip';
+
+String getOrderedIdsPath() => '/levels/ordered_ids.json';
+
+String parseError(DioExceptionType? type) {
+  if (type == null) return unknownErrorMsg;
+
+  return switch (type) {
+    DioExceptionType.connectionError => connectionErrorMsg,
+    DioExceptionType.connectionTimeout => connectionTimeoutMsg,
+    DioExceptionType.receiveTimeout => receiveTimeoutMsg,
+    DioExceptionType.sendTimeout => sendTimeoutMsg,
+    DioExceptionType.badCertificate => badCertificateMsg,
+    DioExceptionType.cancel => cancelMsg,
+    DioExceptionType.badResponse => badResponseMsg,
+    DioExceptionType.unknown => unknownErrorMsg,
+  };
 }

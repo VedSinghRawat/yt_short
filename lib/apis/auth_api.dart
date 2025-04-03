@@ -9,8 +9,9 @@ import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/models/user/user.dart';
 
 abstract class IAuthAPI {
-  Future<UserModel?> signInWithGoogle();
+  Future<UserDTO?> signInWithGoogle();
   Future<void> signOut();
+  Future<void> syncCyId();
 }
 
 class AuthAPI implements IAuthAPI {
@@ -22,7 +23,7 @@ class AuthAPI implements IAuthAPI {
         _googleSignIn = googleSignIn;
 
   @override
-  Future<UserModel?> signInWithGoogle() async {
+  Future<UserDTO?> signInWithGoogle() async {
     try {
       final account = await _googleSignIn.signIn();
 
@@ -34,9 +35,14 @@ class AuthAPI implements IAuthAPI {
 
       await _apiService.setToken(auth.idToken ?? '');
 
-      final response = await _apiService.call(endpoint: '/auth/google', method: Method.get);
+      final response = await _apiService.call(
+        params: const ApiParams(
+          endpoint: '/auth/google',
+          method: ApiMethod.get,
+        ),
+      );
 
-      final user = UserModel.fromJson(response.data['user']);
+      final user = UserDTO.fromJson(response.data['user']);
 
       return user;
     } on DioException catch (e) {
@@ -58,6 +64,24 @@ class AuthAPI implements IAuthAPI {
       developer.log('Error during sign out', error: e.toString(), stackTrace: stackTrace);
       throw Exception(e.toString());
     }
+  }
+
+  @override
+  Future<void> syncCyId() async {
+    final cyId = await SharedPref.getValue(
+      PrefKey.cyId,
+    );
+
+    if (cyId == null) return;
+
+    await _apiService.call(
+        params: ApiParams(
+      endpoint: '/user/sync-cy-id',
+      method: ApiMethod.post,
+      body: {
+        'cyId': cyId,
+      },
+    ));
   }
 }
 

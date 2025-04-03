@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,9 +6,11 @@ import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/screen/app_bar.dart';
 import 'package:myapp/core/shared_pref.dart';
+import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/core/widgets/loader.dart';
 import 'package:myapp/features/activity_log/activity_log.controller.dart';
+import 'package:myapp/models/activity_log/activity_log.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 import '../../features/sublevel/sublevel_controller.dart';
 import '../../features/sublevel/widget/sublevel_list.dart';
@@ -30,49 +31,46 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
 
+    developer.log('home page');
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      await ref.read(sublevelControllerProvider.notifier).fetchSublevels();
+      await ref.read(sublevelControllerProvider.notifier).handleFetchSublevels();
     });
   }
 
-  Future<bool> cancelVideoChange(
+  bool cancelVideoChange(
     int index,
-    PageController controller,
     int maxLevel,
     int maxSubLevel,
     int level,
     int subLevel,
     bool hasLocalProgress,
     bool isAdmin,
-  ) async {
-    // Inline the logic from _canChangeVideo
-    final hasFinishedVideo = ref.read(sublevelControllerProvider).hasFinishedVideo;
+    int doneToday,
+  ) {
+    if (isAdmin) return false;
+
     final levelAfter = !hasLocalProgress || isLevelAfter(level, subLevel, maxLevel, maxSubLevel);
-    final canChangeVideo = hasFinishedVideo || !levelAfter;
+    if (!levelAfter) return false;
 
-    if (canChangeVideo || isAdmin) {
-      return false;
-    }
-
-    controller.animateToPage(
-      index - 1,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
-
-    try {
+    final hasFinishedVideo = ref.read(sublevelControllerProvider).hasFinishedVideo;
+    if (!hasFinishedVideo) {
       showSnackBar(context, 'Please complete the current sublevel before proceeding');
-    } catch (e) {
-      developer.log('error in cancelVideoChange: $e');
+      return true;
     }
 
+    // Check daily level limit only when changing to a new level
+    final bool exceedsDailyLimit = doneToday >= kMaxLevelCompletionsPerDay;
+    if (!exceedsDailyLimit) return false;
+
+    showSnackBar(context, 'You can only complete $kMaxLevelCompletionsPerDay levels per day');
     return true;
   }
 
-  Future<bool> handleFetchSublevels(int index, List<SubLevel> sublevels) async {
+  Future<bool> handleFetchSublevels(int index) async {
     if (index < _cachedSublevels!.length) return false;
-    await ref.read(sublevelControllerProvider.notifier).fetchSublevels();
+    await ref.read(sublevelControllerProvider.notifier).handleFetchSublevels();
 
     return true;
   }
@@ -81,48 +79,63 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     int index,
     List<SubLevel> sublevels,
     String userEmail,
-    int level,
     int subLevel,
   ) async {
     if (index <= 0) return;
 
-    final previousSublevelLevel = sublevels[index - 1].level;
+    final previousLevelId = sublevels[index - 1].levelId;
+    final levelId = sublevels[index].levelId;
+    if (previousLevelId == levelId) return;
 
-    if (userEmail.isNotEmpty && level != previousSublevelLevel) {
-      ref.read(userControllerProvider.notifier).progressSync(level, subLevel);
+    if (userEmail.isNotEmpty) {
+      ref.read(userControllerProvider.notifier).sync(levelId, subLevel);
     }
   }
 
   Future<void> syncActivityLogs() async {
     // Check if enough time has passed since the last sync
-    final lastSync = await SharedPref.getLastSync();
+    final lastSync = await SharedPref.getValue(PrefKey.lastSync) ?? 0;
+
     final now = DateTime.now().millisecondsSinceEpoch;
     final diff = now - lastSync;
     if (diff < kMinProgressSyncingDiffInMillis) return;
 
     // If the user is logged in, sync their progress with the server
     // Sync any pending activity logs with the server
-    final activityLogs = await SharedPref.getActivityLogs();
+    final activityLogs = await SharedPref.getValue(PrefKey.activityLogs);
 
     if (activityLogs == null || activityLogs.isEmpty) return;
 
     await ref.read(activityLogControllerProvider.notifier).syncActivityLogs(activityLogs);
 
     // Clear the activity logs and update the last sync time
-    await SharedPref.clearActivityLogs();
-    await SharedPref.setLastSync(DateTime.now().millisecondsSinceEpoch);
+    await SharedPref.removeValue(PrefKey.activityLogs);
+
+    await SharedPref.storeValue(
+      PrefKey.lastSync,
+      DateTime.now().millisecondsSinceEpoch,
+    );
   }
 
   Future<void> syncLocalProgress(
-      int level, int subLevel, int localMaxLevel, int localMaxSubLevel) async {
-    final isLocalLevelAfter = isLevelAfter(level, subLevel, localMaxLevel, localMaxSubLevel);
+    int level,
+    int sublevelIndex,
+    String levelId,
+    int localMaxLevel,
+    int localMaxSubLevel,
+  ) async {
+    final isCurrLevelAfter = isLevelAfter(level, sublevelIndex, localMaxLevel, localMaxSubLevel);
 
     // Update the user's current progress in shared preferences
-    await SharedPref.setCurrProgress(
-      level: level,
-      subLevel: subLevel,
-      maxLevel: isLocalLevelAfter ? level : localMaxLevel,
-      maxSubLevel: isLocalLevelAfter ? subLevel : localMaxSubLevel,
+    await SharedPref.copyWith(
+      PrefKey.currProgress,
+      Progress(
+        level: level,
+        subLevel: sublevelIndex,
+        levelId: levelId,
+        maxLevel: isCurrLevelAfter ? level : localMaxLevel,
+        maxSubLevel: isCurrLevelAfter ? sublevelIndex : localMaxSubLevel,
+      ),
     );
   }
 
@@ -130,31 +143,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (!mounted || _cachedSublevels == null) return;
 
     // If the index is greater than the length of the cached sublevels, fetch the sublevels and return
-    if (await handleFetchSublevels(index, _cachedSublevels!)) return;
+    if (await handleFetchSublevels(index)) return;
 
     // Get the sublevel, level, and sublevel for the current index
     final sublevel = _cachedSublevels![index];
     final level = sublevel.level;
-    final subLevel = sublevel.subLevel;
+    final sublevelIndex = sublevel.index;
 
     // Get the user's email
     final user = ref.read(userControllerProvider).currentUser;
 
-    final localProgress = await SharedPref.getCurrProgress();
-    final localMaxLevel = localProgress?['maxLevel'] ?? 0;
-    final localMaxSubLevel = localProgress?['maxSubLevel'] ?? 0;
+    final localProgress = await SharedPref.getValue(PrefKey.currProgress);
+    final localMaxLevel = localProgress?.maxLevel ?? 0;
+    final localMaxSubLevel = localProgress?.maxSubLevel ?? 0;
 
     // Check if video change should be cancelled
-    if (await cancelVideoChange(
+    if (cancelVideoChange(
       index,
-      controller,
       max(user?.maxLevel ?? 0, localMaxLevel),
       max(user?.maxSubLevel ?? 0, localMaxSubLevel),
       level,
-      subLevel,
+      sublevelIndex,
       localProgress != null,
       user?.isAdmin == true,
+      user?.doneToday ?? 0,
     )) {
+      controller.animateToPage(
+        index - 1,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
       return;
     }
 
@@ -163,7 +181,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final userEmail = user?.email ?? '';
 
     // Sync the local progress
-    await syncLocalProgress(level, subLevel, localMaxLevel, localMaxSubLevel);
+    await syncLocalProgress(
+      level,
+      sublevelIndex,
+      sublevel.levelId,
+      localMaxLevel,
+      localMaxSubLevel,
+    );
 
     // If the level requires auth and the user is not logged in, redirect to sign in
     if (level > kAuthRequiredLevel && userEmail.isEmpty && mounted) {
@@ -172,58 +196,74 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     // Fetch the sublevels if needed
-    await handleFetchSublevels(index, _cachedSublevels!);
+    await fetchSubLevels(index);
 
     // If the user is logged in, add an activity log entry
-    await SharedPref.addActivityLog(level, subLevel, userEmail);
+    await SharedPref.addValue(
+      PrefKey.activityLogs,
+      ActivityLog(
+        subLevel: sublevelIndex,
+        level: level,
+        userEmail: userEmail,
+      ),
+    );
 
     // Sync the progress with db if the user moves to a new level
-    await syncProgress(index, _cachedSublevels!, userEmail, level, subLevel);
+    await syncProgress(index, _cachedSublevels!, userEmail, sublevelIndex);
 
     // Sync the last sync time with the server
     await syncActivityLogs();
   }
 
-  List<SubLevel> _getSortedSublevels(Map<String, SubLevel> sublevelMap) {
-    final sublevels = sublevelMap.values.toList();
-    sublevels.sort((a, b) {
-      final levelA = a.level;
-      final levelB = b.level;
+  Future<void> fetchSubLevels(int index) async {
+    if (index == 0) return;
 
-      if (levelA != levelB) {
-        return levelA.compareTo(levelB);
-      }
+    final prevLevel = _cachedSublevels?[index - 1] ?? 0;
+    final currLevel = _cachedSublevels?[index] ?? 0;
 
-      final subLevelA = a.subLevel;
-      final subLevelB = b.subLevel;
+    if (prevLevel == currLevel) return;
 
-      return subLevelA.compareTo(subLevelB);
-    });
-    return sublevels;
+    await ref.read(sublevelControllerProvider.notifier).handleFetchSublevels();
+  }
+
+  List<SubLevel> _getSortedSublevels(List<SubLevel> sublevels) {
+    return [...sublevels]..sort((a, b) {
+        final levelA = a.level;
+        final levelB = b.level;
+
+        if (levelA != levelB) {
+          return levelA.compareTo(levelB);
+        }
+
+        final subLevelA = a.index;
+        final subLevelB = b.index;
+
+        return subLevelA.compareTo(subLevelB);
+      });
   }
 
   @override
   Widget build(BuildContext context) {
-    final loading = ref.watch(sublevelControllerProvider.select((state) => state.loading));
-    final sublevelMap = ref.watch(sublevelControllerProvider.select((state) => state.sublevelMap));
-    final ytUrls = ref.watch(sublevelControllerProvider.select((state) => state.ytUrls));
+    final loadingLevelIds =
+        ref.watch(sublevelControllerProvider.select((state) => state.loadingLevelIds));
+
+    final sublevels = ref.watch(sublevelControllerProvider.select((state) => state.sublevels));
 
     // Only sort sublevels if they have changed
-    if (_cachedSublevels == null || !listEquals(_cachedSublevels, sublevelMap.values.toList())) {
-      _cachedSublevels = _getSortedSublevels(sublevelMap);
+    if (_cachedSublevels == null || _cachedSublevels!.length != sublevels.toList().length) {
+      _cachedSublevels = _getSortedSublevels(sublevels.toList());
     }
 
-    if (loading != false && _cachedSublevels!.isEmpty) {
+    if (loadingLevelIds.isNotEmpty && _cachedSublevels!.isEmpty) {
       return const Loader();
     }
 
     return Scaffold(
       appBar: const HomeScreenAppBar(),
       body: SublevelsList(
-        isLoading: loading ?? false,
+        loadingIds: loadingLevelIds,
         sublevels: _cachedSublevels!,
         onVideoChange: onVideoChange,
-        ytUrls: ytUrls,
       ),
     );
   }

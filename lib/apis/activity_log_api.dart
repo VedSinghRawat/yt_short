@@ -16,13 +16,18 @@ class ActivityLogAPI implements IActivityLogAPI {
   @override
   Future<void> syncActivityLogs(List<ActivityLog> activityLogs) async {
     try {
-      final googleIdToken = await SharedPref.getGoogleIdToken();
+      final googleIdToken = await SharedPref.getValue(
+        PrefKey.googleIdToken,
+      );
+
       if (googleIdToken == null) return;
 
       await _apiService.call(
-        method: Method.post,
-        endpoint: '/activity-log/sync',
-        body: {'activityLogs': activityLogs},
+        params: ApiParams(
+          body: {'activityLogs': activityLogs},
+          method: ApiMethod.post,
+          endpoint: '/activity-log/sync',
+        ),
       );
     } catch (e, stackTrace) {
       developer.log('activity_log_api:', error: e.toString(), stackTrace: stackTrace);

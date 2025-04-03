@@ -1,96 +1,91 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:myapp/apis/user_api.dart';
 import 'package:myapp/core/shared_pref.dart';
+import 'package:myapp/features/sublevel/ordered_ids_notifier.dart';
 import 'package:myapp/models/models.dart';
 import 'dart:developer' as developer;
 
-@immutable
-class UserControllerState {
-  final bool loading;
-  final UserModel? currentUser;
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-  const UserControllerState({
-    this.loading = false,
-    this.currentUser,
-  });
+part 'user_controller.freezed.dart';
+part 'user_controller.g.dart';
+
+@freezed
+class UserControllerState with _$UserControllerState {
+  const factory UserControllerState({
+    @Default(false) bool loading,
+    UserModel? currentUser,
+  }) = _UserControllerState;
+
+  const UserControllerState._();
 
   Future<int> get level async {
-    final progress = await SharedPref.getCurrProgress();
-
-    return progress?['level'] ?? currentUser?.level ?? 1;
+    final progress = await SharedPref.getValue(PrefKey.currProgress);
+    return progress?.level ?? currentUser?.level ?? 1;
   }
 
   Future<int> get subLevel async {
-    final progress = await SharedPref.getCurrProgress();
-
-    return progress?['subLevel'] ?? currentUser?.subLevel ?? 0;
+    final progress = await SharedPref.getValue(PrefKey.currProgress);
+    return progress?.subLevel ?? currentUser?.subLevel ?? 1;
   }
 
-  UserControllerState copyWith({
-    bool? loading,
-    UserModel? currentUser,
-  }) {
-    return UserControllerState(
-      loading: loading ?? this.loading,
-      currentUser: currentUser ?? this.currentUser,
-    );
+  Future<String?> get levelId async {
+    final progress = await SharedPref.getValue(PrefKey.currProgress);
+    return progress?.levelId ?? currentUser?.levelId;
   }
 }
 
-class UserController extends StateNotifier<UserControllerState> {
-  final IUserAPI userAPI;
+@riverpod
+class UserController extends _$UserController {
+  late final IUserAPI _userAPI;
 
-  UserController(this.userAPI) : super(const UserControllerState());
+  @override
+  UserControllerState build() {
+    _userAPI = ref.watch(userAPIProvider);
+    return const UserControllerState();
+  }
 
   Future<UserModel?> getCurrentUser() async {
     state = state.copyWith(loading: true);
 
     try {
-      final authToken = await SharedPref.getGoogleIdToken();
-
+      final authToken = await SharedPref.getValue(PrefKey.googleIdToken);
       if (authToken == null) return null;
 
-      final user = await userAPI.getUser();
+      final userDTO = await _userAPI.getUser();
+      if (userDTO == null) return null;
 
-      if (user == null) return null;
-
-      updateCurrentUser(user);
-
-      return user;
-    } catch (e, stackTrace) {
-      developer.log('Error in UserController.getCurrentUser',
-          error: e.toString(), stackTrace: stackTrace);
+      return updateCurrentUser(userDTO);
+    } catch (e, stack) {
+      developer.log('Error in getCurrentUser', error: e, stackTrace: stack);
+      return null;
     } finally {
       state = state.copyWith(loading: false);
     }
-
-    return null;
   }
 
-  void updateCurrentUser(UserModel user) {
+  UserModel updateCurrentUser(UserDTO userDTO) {
+    final orderedIds = ref.read(orderedIdsNotifierProvider).value;
+    final userMaxLevel = (orderedIds?.indexOf(userDTO.maxLevelId) ?? 0) + 1;
+    final userLevel = (orderedIds?.indexOf(userDTO.levelId) ?? 0) + 1;
+
+    final user = UserModel.fromUserDTO(userDTO, userLevel, userMaxLevel);
     state = state.copyWith(currentUser: user);
+    return user;
   }
 
   void removeCurrentUser() {
     state = state.copyWith(currentUser: null);
   }
 
-  Future<void> progressSync(int level, int subLevel) async {
+  Future<void> sync(String levelId, int subLevel) async {
     try {
-      final user = await userAPI.progressSync(level, subLevel);
-      if (user == null) return;
-
-      updateCurrentUser(user);
-    } catch (e, stackTrace) {
-      developer.log('Error in UserController.updateLastViewedVideo',
-          error: e.toString(), stackTrace: stackTrace);
+      final user = await _userAPI.sync(levelId, subLevel);
+      if (user != null) {
+        updateCurrentUser(user);
+      }
+    } catch (e, stack) {
+      developer.log('Error in sync', error: e, stackTrace: stack);
     }
   }
 }
-
-final userControllerProvider = StateNotifierProvider<UserController, UserControllerState>((ref) {
-  final userAPI = ref.watch(userAPIProvider);
-
-  return UserController(userAPI);
-});

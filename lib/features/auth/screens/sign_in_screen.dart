@@ -5,11 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/shared_pref.dart';
+import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/widgets/loader.dart';
 import 'package:myapp/core/widgets/show_confirmation_dialog.dart';
 import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'package:myapp/features/user/user_controller.dart';
-import 'package:myapp/models/models.dart';
 import '../auth_controller.dart';
 import '../../../core/widgets/custom_app_bar.dart';
 
@@ -80,6 +80,9 @@ class SignInScreen extends ConsumerWidget {
                     icon: Image.network(
                       'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png',
                       height: 24,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(Icons.login);
+                      },
                     ),
                     label: const Text('Sign in with Google'),
                     style: ElevatedButton.styleFrom(
@@ -99,22 +102,31 @@ class SignInScreen extends ConsumerWidget {
 }
 
 showLevelChangeConfirmationDialog(
-    BuildContext context, UserModel user, SublevelController sublevelController) {
+    BuildContext context, int maxLevel, int maxSubLevel, SublevelController sublevelController) {
   return showConfirmationDialog(
     context,
     question:
-        'We notice that you are already at Level ${user.maxLevel}, Sublevel ${user.maxSubLevel}. Do you want to continue from there?',
+        'We notice that you are already at Level $maxLevel, Sublevel $maxSubLevel. Do you want to continue from there?',
     onResult: (result) async {
       if (result) {
-        await SharedPref.setCurrProgress(
-          level: user.maxLevel,
-          subLevel: user.maxSubLevel,
+        await SharedPref.copyWith(
+          PrefKey.currProgress,
+          Progress(
+            level: maxLevel,
+            subLevel: maxSubLevel,
+          ),
         );
       }
 
-      await SharedPref.setCurrProgress(maxLevel: user.maxLevel, maxSubLevel: user.maxSubLevel);
+      await SharedPref.copyWith(
+        PrefKey.currProgress,
+        Progress(
+          maxLevel: maxLevel,
+          maxSubLevel: maxSubLevel,
+        ),
+      );
 
-      await sublevelController.fetchSublevels();
+      await sublevelController.handleFetchSublevels();
     },
     yesButtonStyle: ElevatedButton.styleFrom(
       backgroundColor: Colors.blue,

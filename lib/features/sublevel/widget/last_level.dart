@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
 
-class LastLevelWidget extends StatelessWidget {
-  final VoidCallback onRefresh;
+class ErrorPage extends StatelessWidget {
+  final VoidCallback? onRefresh;
+  final String text;
+  final String? buttonText;
 
-  const LastLevelWidget({super.key, required this.onRefresh});
+  const ErrorPage({
+    super.key,
+    this.onRefresh,
+    required this.text,
+    this.buttonText,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -11,16 +18,18 @@ class LastLevelWidget extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text(
-            'These are all the lessons for now, Check in after sometime for new content',
-            style: TextStyle(fontSize: 18, color: Colors.white),
+          Text(
+            text,
+            overflow: TextOverflow.clip,
+            style: const TextStyle(fontSize: 18, color: Colors.white),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: onRefresh,
-            child: const Text('Reload Videos!'),
-          ),
+          if (buttonText != null)
+            ElevatedButton(
+              onPressed: onRefresh,
+              child: Text(buttonText!),
+            ),
         ],
       ),
     );
