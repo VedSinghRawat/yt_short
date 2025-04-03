@@ -101,16 +101,16 @@ class InitializeService {
 
     appLinks.uriLinkStream.listen((uri) async {
       final pathSegments = uri.pathSegments;
-      if (pathSegments.length >= 2 && pathSegments[0] == 'cyid') {
-        final cyId = pathSegments[1];
-        await SharedPref.store(PrefKey.cyId, cyId);
-        developer.log('Deep linking: $cyId');
 
-        final context = navigatorKey.currentContext;
+      var cyId = pathSegments.length > 1 ? pathSegments[1] : pathSegments[0];
 
-        if (context != null && context.mounted) {
-          await GoRouter.of(context).push(Routes.deepLinked);
-        }
+      await SharedPref.store(PrefKey.cyId, cyId);
+      developer.log('Deep linking: $cyId');
+
+      final context = navigatorKey.currentContext;
+
+      if (context != null && context.mounted) {
+        await GoRouter.of(context).push(Routes.deepLinked);
       }
     });
   }
