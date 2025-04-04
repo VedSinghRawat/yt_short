@@ -47,33 +47,44 @@ class StorageCleanupService {
 
         if (!await folder.exists()) continue;
 
-        int folderSize = await compute(FileService.getDirectorySize, targetDir);
-
-        developer.log('folder size is $folderSize bytes for folder $folder');
-
         final level = await levelService.getLocalLevel(id);
-
         if (level == null) continue;
 
-        await compute(_deleteFolderRecursively, folderPath);
+        // Delete videos one by one and update size
+        for (var (index, sub) in level.sub_levels.indexed) {
+          final videoPath = levelService.getVideoPath(id, sub.videoFilename);
 
-        await SharedPref.removeValue(PrefKey.eTag(id));
+          developer.log('deleting video ${level.id} ${sub.videoFilename}');
 
-        // delete video ETags
+          final videoFile = File(videoPath);
 
-        for (var e in level.sub_levels) {
+          if (!await videoFile.exists()) continue;
+
+          final videoSize = await videoFile.length();
+
+          developer.log(
+              'deleting video is in protectected ids ?? ${remainingIds.skip(remainingIds.length - protectedIdsLength).contains(id)}');
+
+          await videoFile.delete();
+
+          // delete full folder if there are no videos left
+          if (index == level.sub_levels.length - 1) {
+            await compute(_deleteFolderRecursively, folderPath);
+            await SharedPref.removeValue(PrefKey.eTag(id));
+          }
+
+          totalSize -= videoSize;
+
+          // Remove video ETag
           await SharedPref.removeValue(
             PrefKey.eTag(
               levelService.getVideoPathEndPoint(
                 id,
-                e.videoFilename,
+                sub.videoFilename,
               ),
             ),
           );
         }
-
-        // Update size
-        totalSize -= folderSize;
       }
 
       developer.log('Remaining IDs after cleanup: $remainingIds');

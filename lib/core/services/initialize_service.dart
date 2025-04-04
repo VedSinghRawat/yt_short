@@ -41,7 +41,6 @@ class InitializeService {
 
       final currProgress = SharedPref.get(PrefKey.currProgress);
       final apiUser = await userController.getCurrentUser();
-
       if (currProgress == null && apiUser == null) return;
 
       final localLastModified = currProgress?.modified ?? 0;
@@ -75,7 +74,8 @@ class InitializeService {
 
     final cyId = referrer.installReferrer;
 
-    if (cyId == null) return;
+    // Skip if no referrer or if it's just the default Google Play organic referrer
+    if (cyId == null || cyId == "utm_source=google-play&utm_medium=organic") return;
 
     await SharedPref.store(PrefKey.cyId, cyId);
   }

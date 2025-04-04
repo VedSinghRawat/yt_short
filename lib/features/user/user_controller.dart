@@ -35,7 +35,7 @@ class UserControllerState with _$UserControllerState {
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 class UserController extends _$UserController {
   late final IUserAPI _userAPI;
 
@@ -66,8 +66,12 @@ class UserController extends _$UserController {
 
   UserModel updateCurrentUser(UserDTO userDTO) {
     final orderedIds = ref.read(orderedIdsNotifierProvider).value;
-    final userMaxLevel = (orderedIds?.indexOf(userDTO.maxLevelId) ?? 0) + 1;
-    final userLevel = (orderedIds?.indexOf(userDTO.levelId) ?? 0) + 1;
+
+    final maxLevelIndex = orderedIds?.indexOf(userDTO.maxLevelId) ?? -1;
+    final userMaxLevel = maxLevelIndex != -1 ? maxLevelIndex + 1 : 1;
+
+    final levelIndex = orderedIds?.indexOf(userDTO.levelId) ?? -1;
+    final userLevel = levelIndex != -1 ? levelIndex + 1 : 1;
 
     final user = UserModel.fromUserDTO(userDTO, userLevel, userMaxLevel);
     state = state.copyWith(currentUser: user);

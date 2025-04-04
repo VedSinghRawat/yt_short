@@ -10,14 +10,16 @@ import 'package:myapp/core/screen/suggest_version_update.dart';
 import 'package:myapp/core/screen/require_version_update.dart';
 import 'package:myapp/features/auth/widgets/auth_wrapper.dart';
 import 'package:myapp/features/initialize/initialize_screen.dart';
+import 'package:myapp/core/screen/profile.dart';
 
 class Routes {
   static const home = '/home';
   static const versionRequired = '/version/required';
   static const versionSuggest = '/version/suggest';
-  static const signIn = '/signIn';
+  static const signIn = '/sign-in';
   static const deepLinked = '/deepLinking';
   static const initializeScreen = '/';
+  static const profile = '/profile';
 }
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -57,6 +59,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.initializeScreen,
         builder: (context, state) => const InitializeScreen(),
+      ),
+
+      GoRoute(
+        path: Routes.profile,
+        builder: (context, state) => const ProfileScreen(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

@@ -1,0 +1,173 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:myapp/core/router/router.dart';
+import 'package:myapp/core/shared_pref.dart';
+import 'package:myapp/core/util_types/progress.dart';
+import 'package:myapp/core/widgets/loader.dart';
+import 'package:myapp/features/auth/auth_controller.dart';
+import 'package:myapp/features/user/user_controller.dart';
+import 'package:myapp/models/user/user.dart';
+
+class ProfileScreen extends ConsumerWidget {
+  const ProfileScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(userControllerProvider).currentUser;
+    final progress = SharedPref.get(PrefKey.currProgress);
+    final authController = ref.read(authControllerProvider.notifier);
+    final isLoading = ref.watch(authControllerProvider).loading;
+
+    return Stack(
+      children: [
+        Scaffold(
+          appBar: AppBar(
+            title: const Text('Profile'),
+            elevation: 0,
+            actions: [
+              if (user != null)
+                IconButton(
+                  icon: const Icon(Icons.logout),
+                  color: Colors.red,
+                  onPressed: () async {
+                    await authController.signOut(context);
+                    if (context.mounted) {
+                      context.go(Routes.signIn);
+                    }
+                  },
+                ),
+            ],
+          ),
+          body: SingleChildScrollView(
+            child: Column(
+              children: [
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(30),
+                      bottomRight: Radius.circular(30),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 20),
+                      CircleAvatar(
+                        radius: 50,
+                        backgroundColor: Colors.white,
+                        child: Text(
+                          user?.email.substring(0, 1).toUpperCase() ?? 'G',
+                          style: TextStyle(
+                            fontSize: 40,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        user?.email ?? 'Guest User',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        user?.role == UserRole.admin ? 'Admin' : 'Student',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                _buildInfoCard(
+                  context,
+                  title: 'Progress Overview',
+                  children: [
+                    _buildInfoRow('Current Level', '${progress?.level ?? 0}'),
+                    _buildInfoRow('Current Sublevel', '${progress?.subLevel ?? 0}'),
+                    _buildInfoRow('Max Level Reached', '${progress?.maxLevel ?? 0}'),
+                    _buildInfoRow('Max Sublevel Reached', '${progress?.maxSubLevel ?? 0}'),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (isLoading)
+          const Center(
+            child: Loader(),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildInfoCard(
+    BuildContext context, {
+    required String title,
+    required List<Widget> children,
+  }) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const Divider(height: 20),
+            ...children,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 16,
+              color: Colors.grey,
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatTimestamp(int timestamp) {
+    if (timestamp == 0) return 'Never';
+    final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
+    return '${date.day}/${date.month}/${date.year}';
+  }
+}

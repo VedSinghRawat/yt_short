@@ -1,8 +1,11 @@
+import 'dart:developer' as developer;
 import 'dart:io';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:myapp/core/console.dart';
+import 'package:myapp/core/error/failure.dart';
 import 'package:myapp/core/services/level_service.dart';
 import 'package:myapp/core/services/sub_level_service.dart';
 import 'package:myapp/core/shared_pref.dart';
@@ -44,6 +47,8 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
 
     final jumpSublevel = widget.sublevels[jumpTo];
 
+    developer.log('jumpTo: $jumpTo ${widget.sublevels.length} ${widget.sublevels[jumpTo]}');
+
     _pageController.jumpToPage(jumpTo);
 
     await SharedPref.copyWith(
@@ -81,7 +86,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
   Widget build(BuildContext context) {
     return RefreshIndicator(
       onRefresh: () async {
-        if (widget.sublevels[0].level == 1) return;
+        if (widget.sublevels[0].level == 1 && widget.sublevels[0].index == 0) return;
 
         await Future.delayed(const Duration(seconds: 5));
       },
@@ -106,6 +111,8 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
           if ((isLastSublevel || sublevel == null) && !isLoading) {
             final error = ref.watch(sublevelControllerProvider).error;
 
+            Console.error(Failure(message: 'sublevel 111 e is $error $index'), StackTrace.current);
+
             if (error == null) {
               return const Loader();
             }
@@ -118,6 +125,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
           }
 
           if (sublevel == null) {
+            Console.error(Failure(message: 'sublevel is null$index '), StackTrace.current);
             return const Loader();
           }
 

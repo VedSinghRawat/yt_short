@@ -19,34 +19,16 @@ class HomeScreenAppBar extends ConsumerWidget implements PreferredSizeWidget {
     return AppBar(
       title: const Text('Learn English'),
       actions: [
-        !isLoggedIn
-            ? IconButton(
-                onPressed: () {
-                  context.push(Routes.signIn);
-                },
-                icon: const Icon(Icons.account_circle),
-              )
-            : PopupMenuButton<String>(
-                icon: const Icon(Icons.account_circle),
-                onSelected: (value) {
-                  if (value == 'signout') {
-                    ref.read(authControllerProvider.notifier).signOut(context);
-                    context.go(Routes.signIn);
-                  }
-                },
-                itemBuilder: (BuildContext context) => [
-                  const PopupMenuItem<String>(
-                    value: 'signout',
-                    child: Row(
-                      children: [
-                        Icon(Icons.logout, color: Colors.white),
-                        SizedBox(width: 8),
-                        Text('Sign Out'),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+        IconButton(
+          onPressed: () {
+            if (isLoggedIn) {
+              context.push(Routes.profile);
+            } else {
+              context.push(Routes.signIn);
+            }
+          },
+          icon: isLoggedIn ? const Icon(Icons.account_circle) : const Icon(Icons.person_add),
+        ),
       ],
     );
   }

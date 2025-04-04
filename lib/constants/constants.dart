@@ -1,4 +1,4 @@
-const int kAuthRequiredLevel = 3;
+const int kAuthRequiredLevel = 1;
 const int kMinProgressSyncingDiffInMillis = Duration.millisecondsPerMinute * 1;
 const String kIOSAppId = '';
 
