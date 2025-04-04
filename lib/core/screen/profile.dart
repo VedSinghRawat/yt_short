@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/shared_pref.dart';
-import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/widgets/loader.dart';
 import 'package:myapp/features/auth/auth_controller.dart';
 import 'package:myapp/features/user/user_controller.dart';
@@ -163,11 +162,5 @@ class ProfileScreen extends ConsumerWidget {
         ],
       ),
     );
-  }
-
-  String _formatTimestamp(int timestamp) {
-    if (timestamp == 0) return 'Never';
-    final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
-    return '${date.day}/${date.month}/${date.year}';
   }
 }

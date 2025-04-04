@@ -6,6 +6,7 @@ import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/services/file_service.dart';
 import 'package:myapp/core/services/level_service.dart';
 import 'package:myapp/core/shared_pref.dart';
+import 'package:myapp/core/utils.dart';
 
 class StorageCleanupService {
   final FileService fileService;
@@ -18,7 +19,8 @@ class StorageCleanupService {
     try {
       Directory targetDir = Directory(levelService.levelsDocDirPath);
 
-      const protectedIdsLength = kMaxNextLevelsToKeep + kMaxPreviousLevelsToKeep;
+      // +1 for current level
+      const protectedIdsLength = kMaxNextLevelsToKeep + kMaxPreviousLevelsToKeep + 1;
 
       // Ensure directory exists and input is valid
       if (!await targetDir.exists() ||
@@ -29,8 +31,6 @@ class StorageCleanupService {
 
       // Check total size of the cache folder
       int totalSize = await compute(FileService.getDirectorySize, targetDir);
-
-      developer.log('clean levels total size is $totalSize bytes');
 
       // No need to clean if under limit
       if (totalSize < kMaxStorageSizeBytes) {
@@ -62,15 +62,15 @@ class StorageCleanupService {
 
           final videoSize = await videoFile.length();
 
-          developer.log(
-              'deleting video is in protectected ids ?? ${remainingIds.skip(remainingIds.length - protectedIdsLength).contains(id)}');
+          developer.log('deleting video is in protectected ids ?? ${remainingIds}');
 
           await videoFile.delete();
 
           // delete full folder if there are no videos left
           if (index == level.sub_levels.length - 1) {
             await compute(_deleteFolderRecursively, folderPath);
-            await SharedPref.removeValue(PrefKey.eTag(id));
+
+            await SharedPref.removeValue(PrefKey.eTag(getLevelJsonPathEndpoint(id)));
           }
 
           totalSize -= videoSize;
@@ -87,7 +87,6 @@ class StorageCleanupService {
         }
       }
 
-      developer.log('Remaining IDs after cleanup: $remainingIds');
       return remainingIds;
     } catch (e) {
       developer.log("Error in cleanup process: $e");

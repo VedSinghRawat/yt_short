@@ -8,8 +8,6 @@ import 'package:myapp/features/sublevel/widget/last_level.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
-import '../console.dart';
-
 class Player extends ConsumerStatefulWidget {
   final String? videoLocalPath;
   final String? uniqueId;
@@ -106,7 +104,6 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
         _iconData = _controller!.value.isPlaying ? Icons.play_arrow : Icons.pause;
       });
     }
-    ;
   }
 
   void _listenerVideoFinished() {

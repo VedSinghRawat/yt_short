@@ -45,6 +45,8 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
 
     if (jumpTo >= widget.sublevels.length || jumpTo < 0) return;
 
+    if (_pageController.page?.round() == jumpTo) return;
+
     final jumpSublevel = widget.sublevels[jumpTo];
 
     developer.log('jumpTo: $jumpTo ${widget.sublevels.length} ${widget.sublevels[jumpTo]}');
