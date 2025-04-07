@@ -218,7 +218,6 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
           ? VideoPlayerController.file(file)
           : VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl!));
 
-      _controller!.addListener(_listener);
       await _controller!.setLooping(true);
       await _controller!.initialize();
 

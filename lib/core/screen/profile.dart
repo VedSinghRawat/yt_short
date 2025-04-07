@@ -14,7 +14,7 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(userControllerProvider).currentUser;
-    final progress = SharedPref.get(PrefKey.currProgress);
+    final progress = SharedPref.get(PrefKey.currProgress(userEmail: user?.email));
     final authController = ref.read(authControllerProvider.notifier);
     final isLoading = ref.watch(authControllerProvider).loading;
 

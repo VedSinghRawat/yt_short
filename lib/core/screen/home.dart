@@ -53,19 +53,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (isAdmin) return false;
 
     final levelAfter = !hasLocalProgress || isLevelAfter(level, subLevel, maxLevel, maxSubLevel);
-    if (!levelAfter) return false;
 
-    final hasFinishedVideo = ref.read(sublevelControllerProvider).hasFinishedVideo;
-    if (!hasFinishedVideo) {
-      showSnackBar(context, 'Please complete the current sublevel before proceeding');
-      return true;
-    }
+    if (!levelAfter) return false;
 
     // Check daily level limit only when changing to a new level
     final bool exceedsDailyLimit = doneToday >= kMaxLevelCompletionsPerDay;
-    if (!exceedsDailyLimit) return false;
 
-    showSnackBar(context, 'You can only complete $kMaxLevelCompletionsPerDay levels per day');
+    if (exceedsDailyLimit) {
+      showSnackBar(context, 'You can only complete $kMaxLevelCompletionsPerDay levels per day');
+      return true;
+    }
+
+    final hasFinishedVideo = ref.read(sublevelControllerProvider).hasFinishedVideo;
+
+    if (hasFinishedVideo) return false;
+
+    showSnackBar(context, 'Please complete the current sublevel before proceeding');
+
     return true;
   }
 
@@ -79,7 +83,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> syncProgress(
     int index,
     List<SubLevel> sublevels,
-    String userEmail,
+    String? userEmail,
     int subLevel,
   ) async {
     if (index <= 0) return;
@@ -88,7 +92,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final levelId = sublevels[index].levelId;
     if (previousLevelId == levelId) return;
 
-    if (userEmail.isNotEmpty) {
+    if (userEmail != null) {
       ref.read(userControllerProvider.notifier).sync(levelId, subLevel);
     }
   }
@@ -125,12 +129,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     String levelId,
     int localMaxLevel,
     int localMaxSubLevel,
+    String? userEmail,
   ) async {
     final isCurrLevelAfter = isLevelAfter(level, sublevelIndex, localMaxLevel, localMaxSubLevel);
 
     // Update the user's current progress in shared preferences
     await SharedPref.copyWith(
-      PrefKey.currProgress,
+      PrefKey.currProgress(userEmail: userEmail),
       Progress(
         level: level,
         subLevel: sublevelIndex,
@@ -155,7 +160,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // Get the user's email
     final user = ref.read(userControllerProvider).currentUser;
 
-    final localProgress = SharedPref.get(PrefKey.currProgress);
+    final userEmail = user?.email;
+
+    final localProgress = SharedPref.get(PrefKey.currProgress(userEmail: userEmail));
+
     final localMaxLevel = localProgress?.maxLevel ?? 0;
     final localMaxSubLevel = localProgress?.maxSubLevel ?? 0;
 
@@ -180,8 +188,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(false);
 
-    final userEmail = user?.email ?? '';
-
     // Sync the local progress
     await syncLocalProgress(
       level,
@@ -189,10 +195,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       sublevel.levelId,
       localMaxLevel,
       localMaxSubLevel,
+      userEmail,
     );
 
     // If the level requires auth and the user is not logged in, redirect to sign in
-    if (level > kAuthRequiredLevel && userEmail.isEmpty && mounted) {
+    if (level > kAuthRequiredLevel && userEmail == null && mounted) {
       context.go(Routes.signIn);
       return;
     }
@@ -203,7 +210,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // If the user is logged in, add an activity log entry
     await SharedPref.pushValue(
       PrefKey.activityLogs,
-      ActivityLog(subLevel: sublevelIndex, level: level, userEmail: userEmail),
+      ActivityLog(subLevel: sublevelIndex, level: level, userEmail: userEmail ?? ''),
     );
 
     // Sync the progress with db if the user moves to a new level

@@ -47,8 +47,8 @@ class VersionController extends StateNotifier<VersionState> {
       if (versionRes == null) return;
 
       state = state.copyWith(
-        content: versionRes['content'],
-        closable: versionRes['closable'],
+        content: versionRes.content,
+        closable: versionRes.closable,
       );
     } catch (e) {
       developer.log(e.toString());

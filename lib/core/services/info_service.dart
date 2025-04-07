@@ -5,7 +5,7 @@ class InfoService {
   static final InfoService _instance = InfoService._internal();
 
   late final PackageInfo packageInfo;
-  Map<String, dynamic>? versionData;
+  VersionData? versionData;
 
   InfoService._internal();
 
@@ -15,7 +15,7 @@ class InfoService {
     packageInfo = await PackageInfo.fromPlatform();
   }
 
-  Future<void> initVersionData(Map<String, dynamic> versionData) async {
+  Future<void> initVersionData(VersionData versionData) async {
     this.versionData = versionData;
   }
 }
@@ -23,3 +23,10 @@ class InfoService {
 final infoServiceProvider = Provider<InfoService>((ref) {
   return InfoService._instance;
 });
+
+class VersionData {
+  final bool closable;
+  final String? content;
+
+  VersionData({required this.closable, required this.content});
+}

@@ -102,7 +102,12 @@ class SignInScreen extends ConsumerWidget {
 }
 
 showLevelChangeConfirmationDialog(
-    BuildContext context, int maxLevel, int maxSubLevel, SublevelController sublevelController) {
+  BuildContext context,
+  int maxLevel,
+  int maxSubLevel,
+  SublevelController sublevelController,
+  String userEmail,
+) {
   return showConfirmationDialog(
     context,
     question:
@@ -110,16 +115,25 @@ showLevelChangeConfirmationDialog(
     onResult: (result) async {
       if (result) {
         await SharedPref.copyWith(
-          PrefKey.currProgress,
+          PrefKey.currProgress(userEmail: userEmail),
           Progress(
             level: maxLevel,
             subLevel: maxSubLevel,
           ),
         );
+      } else {
+        final guestProgress = SharedPref.get(PrefKey.currProgress(userEmail: null));
+
+        if (guestProgress != null) {
+          await SharedPref.copyWith(
+            PrefKey.currProgress(userEmail: userEmail),
+            guestProgress,
+          );
+        }
       }
 
       await SharedPref.copyWith(
-        PrefKey.currProgress,
+        PrefKey.currProgress(userEmail: userEmail),
         Progress(
           maxLevel: maxLevel,
           maxSubLevel: maxSubLevel,

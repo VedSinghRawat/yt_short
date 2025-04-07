@@ -1,4 +1,3 @@
-import 'dart:developer' as developer;
 import 'dart:io';
 
 import 'package:flutter/gestures.dart';
@@ -15,6 +14,7 @@ import 'package:myapp/core/widgets/video_player.dart';
 import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'package:myapp/features/sublevel/widget/last_level.dart';
 import 'package:myapp/features/speech_exercise/screen/speech_exercise_screen.dart';
+import 'package:myapp/features/user/user_controller.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 
 class SublevelsList extends ConsumerStatefulWidget {
@@ -37,7 +37,9 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
   late PageController _pageController;
 
   void _jumpToPage(Duration timeStamp) async {
-    final progress = SharedPref.get(PrefKey.currProgress);
+    final userEmail = ref.read(userControllerProvider).currentUser?.email;
+
+    final progress = SharedPref.get(PrefKey.currProgress(userEmail: userEmail));
 
     final jumpTo = widget.sublevels.indexWhere(
       (sublevel) => (sublevel.index == progress?.subLevel && sublevel.level == progress?.level),
@@ -49,12 +51,10 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
 
     final jumpSublevel = widget.sublevels[jumpTo];
 
-    developer.log('jumpTo: $jumpTo ${widget.sublevels.length} ${widget.sublevels[jumpTo]}');
-
     _pageController.jumpToPage(jumpTo);
 
     await SharedPref.copyWith(
-      PrefKey.currProgress,
+      PrefKey.currProgress(userEmail: userEmail),
       Progress(
         level: jumpSublevel.level,
         subLevel: jumpSublevel.index,
@@ -113,7 +113,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
           if ((isLastSublevel || sublevel == null) && !isLoading) {
             final error = ref.watch(sublevelControllerProvider).error;
 
-            Console.error(Failure(message: 'sublevel 111 e is $error $index'), StackTrace.current);
+            Console.error(Failure(message: 'sublevel error is $error $index'), StackTrace.current);
 
             if (error == null) {
               return const Loader();
@@ -130,7 +130,6 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
             Console.error(Failure(message: 'sublevel is null$index '), StackTrace.current);
             return const Loader();
           }
-
           final positionText = '${sublevel.level}-${sublevel.index}';
 
           String? localPath =

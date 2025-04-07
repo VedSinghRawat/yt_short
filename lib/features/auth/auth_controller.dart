@@ -52,9 +52,11 @@ class AuthController extends _$AuthController {
 
       await Future.delayed(Duration.zero); // Yield control to UI
 
-      final progress = SharedPref.get(PrefKey.currProgress);
+      final progress = SharedPref.get(PrefKey.currProgress(
+          userEmail: null)); // null because user is not logged in before sign in
+
       final level = progress?.maxLevel ?? kAuthRequiredLevel;
-      final subLevel = progress?.maxSubLevel ?? 0;
+      final subLevel = progress?.maxSubLevel ?? 1;
 
       if (context.mounted &&
           (user.maxLevel > level || (user.maxLevel == level && userDTO.maxSubLevel >= subLevel))) {
@@ -63,6 +65,7 @@ class AuthController extends _$AuthController {
           user.maxLevel,
           userDTO.maxSubLevel,
           sublevelController,
+          user.email,
         );
       }
 

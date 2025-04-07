@@ -27,10 +27,15 @@ class PrefKey<ST, LT> {
     fromJson: ActivityLog.fromJson,
     name: 'activityLogs',
   );
-  static const currProgress = PrefKey<Progress, Unit>(
-    fromJson: Progress.fromJson,
-    name: 'currProgress',
-  );
+
+  /// [userEmail] is optional because it is not always available if the user is not logged in
+  static PrefKey<Progress, Unit> currProgress({
+    String? userEmail,
+  }) =>
+      PrefKey<Progress, Unit>(
+        fromJson: Progress.fromJson,
+        name: 'currProgress_${userEmail ?? 'guest'}',
+      );
 
   static PrefKey<String, Unit> eTag(String id) => PrefKey<String, Unit>(name: 'eTag_$id');
 }

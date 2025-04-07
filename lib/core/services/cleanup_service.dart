@@ -54,15 +54,11 @@ class StorageCleanupService {
         for (var (index, sub) in level.sub_levels.indexed) {
           final videoPath = levelService.getVideoPath(id, sub.videoFilename);
 
-          developer.log('deleting video ${level.id} ${sub.videoFilename}');
-
           final videoFile = File(videoPath);
 
           if (!await videoFile.exists()) continue;
 
           final videoSize = await videoFile.length();
-
-          developer.log('deleting video is in protectected ids ?? ${remainingIds}');
 
           await videoFile.delete();
 

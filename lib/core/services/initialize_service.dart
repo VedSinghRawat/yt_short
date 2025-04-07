@@ -18,29 +18,33 @@ import 'dart:developer' as developer;
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 class InitializeService {
-  UserController userController;
+  UserControllerState userControllerState;
   InitializeAPI initializeAPI;
   OrderedIdsNotifier orderedIdNotifier;
+  UserController userController;
 
   InitializeService({
-    required this.userController,
+    required this.userControllerState,
     required this.initializeAPI,
     required this.orderedIdNotifier,
+    required this.userController,
   });
 
   Future<void> initialize() async {
     try {
-      await SharedPref.init();
+      // order matters
+      await SharedPref.init(); // first init shared pref
+      await InfoService.instance.init(); // then init info service
+      await _initialApiCall(); // then call api because it depends on info service
       await handleDeepLinking();
       await storeCyId();
       await FileService.instance.init();
-      await InfoService.instance.init();
       await orderedIdNotifier.getOrderedIds();
 
-      await initializeVersion();
+      final currProgress =
+          SharedPref.get(PrefKey.currProgress(userEmail: userControllerState.currentUser?.email));
 
-      final currProgress = SharedPref.get(PrefKey.currProgress);
-      final apiUser = await userController.getCurrentUser();
+      final apiUser = userControllerState.currentUser;
       if (currProgress == null && apiUser == null) return;
 
       final localLastModified = currProgress?.modified ?? 0;
@@ -50,7 +54,7 @@ class InitializeService {
       localLastModified > apiLastModified
           ? await userController.sync(currProgress!.levelId!, currProgress.subLevel!)
           : await SharedPref.copyWith(
-              PrefKey.currProgress,
+              PrefKey.currProgress(userEmail: apiUser?.email),
               Progress(
                 level: apiUser?.level,
                 levelId: apiUser?.levelId,
@@ -101,15 +105,16 @@ class InitializeService {
     });
   }
 
-  Future<void> initializeVersion() async {
+  Future<void> _initialApiCall() async {
     final version = InfoService.instance.packageInfo.version;
 
-    final versionDataEither = await initializeAPI.initialize(version);
+    final initialDataEither = await initializeAPI.initialize(version);
 
-    switch (versionDataEither) {
+    switch (initialDataEither) {
       case Left(value: final l):
         developer.log(l.toString());
       case Right(value: final r):
+        if (r.user != null) userController.updateCurrentUser(r.user!);
         await InfoService.instance.initVersionData(r);
     }
   }
@@ -117,9 +122,10 @@ class InitializeService {
 
 final initializeServiceProvider = FutureProvider<InitializeService>((ref) async {
   final service = InitializeService(
-    userController: ref.read(userControllerProvider.notifier),
+    userControllerState: ref.read(userControllerProvider),
     initializeAPI: ref.read(initializeAPIService),
     orderedIdNotifier: ref.read(orderedIdsNotifierProvider.notifier),
+    userController: ref.read(userControllerProvider.notifier),
   );
 
   await service.initialize();

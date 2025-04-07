@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'dart:developer' as developer;
-import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -169,7 +168,7 @@ class SublevelController extends _$SublevelController {
 
     final currLevelIndex = currUserLevel - 1;
 
-    final currLevelId = orderedIds[min(currLevelIndex, orderedIds.length - 1)];
+    final currLevelId = orderedIds[currLevelIndex];
 
     if (!_isLevelFetched(currLevelId)) {
       await _listByLevel(currLevelId, currUserLevel);
