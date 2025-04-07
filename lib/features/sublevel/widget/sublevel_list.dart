@@ -16,6 +16,9 @@ import 'package:myapp/features/sublevel/widget/last_level.dart';
 import 'package:myapp/features/speech_exercise/screen/speech_exercise_screen.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
+import 'package:myapp/core/services/interstitial_ad_service.dart';
+import 'package:myapp/core/widgets/interstitial_ad_wrapper.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class SublevelsList extends ConsumerStatefulWidget {
   final List<SubLevel> sublevels;
@@ -84,6 +87,18 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
     super.dispose();
   }
 
+  void onPageChanged(int index) async {
+    await widget.onVideoChange?.call(index, _pageController);
+
+    //logic for showing ads
+    final adSublevelCount = int.parse(dotenv.env["AD_SUBLEVEL_COUNT"] ?? '4');
+    final currentSublevel = index + 1;
+
+    if (currentSublevel % adSublevelCount == 0) {
+      ref.read(interstitialAdNotifierProvider.notifier).setShowAd(true);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
@@ -98,17 +113,20 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
         dragStartBehavior: DragStartBehavior.down,
         itemCount: widget.sublevels.length + 1,
         scrollDirection: Axis.vertical,
-        onPageChanged: (index) async {
-          await widget.onVideoChange?.call(index, _pageController);
-        },
+        onPageChanged: onPageChanged,
         itemBuilder: (context, index) {
           final sublevel = widget.sublevels.length > index ? widget.sublevels[index] : null;
-
           final isLastSublevel = index == widget.sublevels.length;
 
           final isLoading = sublevel == null
               ? widget.loadingIds.isNotEmpty
               : widget.loadingIds.contains(sublevel.levelId);
+
+          final showAd = ref.watch(interstitialAdNotifierProvider.select((state) => state.showAd));
+
+          if (showAd) {
+            return const InterstitialAdWrapper();
+          }
 
           if ((isLastSublevel || sublevel == null) && !isLoading) {
             final error = ref.watch(sublevelControllerProvider).error;

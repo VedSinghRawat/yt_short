@@ -78,6 +78,10 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2"/>
+
+        <meta-data
+             android:name="com.google.android.gms.ads.APPLICATION_ID"
+             android:value="ca-app-pub-1440893432987256~5715871855"/>
     </application>
 
     <!-- Required to query activities that can process text, see:
