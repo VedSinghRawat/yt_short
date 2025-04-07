@@ -11,6 +11,7 @@ import 'package:myapp/core/screen/require_version_update.dart';
 import 'package:myapp/features/auth/widgets/auth_wrapper.dart';
 import 'package:myapp/features/initialize/initialize_screen.dart';
 import 'package:myapp/core/screen/profile.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 
 class Routes {
   static const home = '/home';
@@ -26,6 +27,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     navigatorKey: navigatorKey,
     initialLocation: Routes.initializeScreen,
+    observers: [FirebaseAnalyticsObserver(analytics: FirebaseAnalytics.instance)],
     routes: [
       // Version check routes - not wrapped with VersionCheckWrapper to avoid loops
       GoRoute(
