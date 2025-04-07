@@ -86,16 +86,17 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 20),
-                _buildInfoCard(
-                  context,
-                  title: 'Progress Overview',
-                  children: [
-                    _buildInfoRow('Current Level', '${progress?.level ?? 0}'),
-                    _buildInfoRow('Current Sublevel', '${progress?.subLevel ?? 0}'),
-                    _buildInfoRow('Max Level Reached', '${progress?.maxLevel ?? 0}'),
-                    _buildInfoRow('Max Sublevel Reached', '${progress?.maxSubLevel ?? 0}'),
-                  ],
-                ),
+                if (progress != null)
+                  _buildInfoCard(
+                    context,
+                    title: 'Progress Overview',
+                    children: [
+                      _buildInfoRow('Current Level', '${progress.level}'),
+                      _buildInfoRow('Current Sublevel', '${progress.subLevel}'),
+                      _buildInfoRow('Max Level Reached', '${progress.maxLevel}'),
+                      _buildInfoRow('Max Sublevel Reached', '${progress.maxSubLevel}'),
+                    ],
+                  ),
               ],
             ),
           ),

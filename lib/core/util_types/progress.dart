@@ -25,4 +25,21 @@ class Progress implements SharedPrefClass {
 
   @override
   Map<String, dynamic> toJson() => _$ProgressToJson(this);
+
+  Progress copyWith({
+    int? level,
+    int? subLevel,
+    int? maxLevel,
+    int? maxSubLevel,
+    String? levelId,
+  }) {
+    return Progress(
+      level: level ?? this.level,
+      subLevel: subLevel ?? this.subLevel,
+      maxLevel: maxLevel ?? this.maxLevel,
+      maxSubLevel: maxSubLevel ?? this.maxSubLevel,
+      levelId: levelId ?? this.levelId,
+      modified: DateTime.now().millisecondsSinceEpoch,
+    );
+  }
 }

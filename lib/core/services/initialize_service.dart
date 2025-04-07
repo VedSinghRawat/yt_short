@@ -36,10 +36,10 @@ class InitializeService {
       await SharedPref.init(); // first init shared pref
       await InfoService.instance.init(); // then init info service
       await _initialApiCall(); // then call api because it depends on info service
-      await handleDeepLinking();
       await storeCyId();
       await FileService.instance.init();
       await orderedIdNotifier.getOrderedIds();
+      await handleDeepLinking(); // deep linking depends on user
 
       final currProgress =
           SharedPref.get(PrefKey.currProgress(userEmail: userControllerState.currentUser?.email));
@@ -85,7 +85,7 @@ class InitializeService {
   }
 
   Future<void> handleDeepLinking() async {
-    if (SharedPref.get(PrefKey.cyId) != null) return;
+    // if (SharedPref.get(PrefKey.cyId) != null) return;
 
     final appLinks = AppLinks();
 
@@ -95,12 +95,11 @@ class InitializeService {
       var cyId = pathSegments.length > 1 ? pathSegments[1] : pathSegments[0];
 
       await SharedPref.store(PrefKey.cyId, cyId);
-      developer.log('Deep linking: $cyId');
 
       final context = navigatorKey.currentContext;
 
       if (context != null && context.mounted) {
-        await GoRouter.of(context).push(Routes.deepLinked);
+        await GoRouter.of(context).push(Routes.deepLinking);
       }
     });
   }

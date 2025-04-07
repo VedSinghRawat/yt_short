@@ -6,7 +6,7 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class SpeechRecognizer {
   final Function(SpeechRecognitionResult) onResult;
-  final VoidCallback? onStopListenting;
+  final VoidCallback? onStopListening;
   final Function(String)? onError;
   final Function(String) onStatusChange;
 
@@ -16,7 +16,7 @@ class SpeechRecognizer {
     required this.onStatusChange,
     required this.onResult,
     this.onError,
-    this.onStopListenting,
+    this.onStopListening,
   }) {
     _speech = stt.SpeechToText();
   }
@@ -45,7 +45,7 @@ class SpeechRecognizer {
   Future<void> stopListening() async {
     await _speech.stop();
     try {
-      if (onStopListenting != null) onStopListenting!();
+      if (onStopListening != null) onStopListening!();
     } catch (e) {
       developer.log('error in speech exercise widget $e');
     }

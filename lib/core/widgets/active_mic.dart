@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 
 class ActiveMic extends StatefulWidget {
@@ -9,22 +8,24 @@ class ActiveMic extends StatefulWidget {
 }
 
 class _ActiveMicState extends State<ActiveMic> with TickerProviderStateMixin {
+  static const double _canvasSize = 150;
   late AnimationController _controller;
   late Animation<double> _animation;
-
-  // Animation speed
-  static const _animationDuration = Duration(seconds: 3);
-  // Canvas size
-  static const double _canvasSize = 150;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: _animationDuration,
-    )..repeat(); // repeat indefinitely
-    _animation = Tween(begin: 0.0, end: 2 * pi).animate(_controller);
+      duration: const Duration(milliseconds: 800),
+    )..repeat(reverse: true);
+
+    _animation = Tween<double>(begin: 1.0, end: 1.2).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeInOut,
+      ),
+    );
   }
 
   @override
@@ -40,11 +41,27 @@ class _ActiveMicState extends State<ActiveMic> with TickerProviderStateMixin {
       height: _canvasSize,
       child: AnimatedBuilder(
         animation: _animation,
-        builder: (context, _) {
-          return const Icon(
-            Icons.mic,
-            size: 32,
-            color: Colors.black,
+        builder: (context, child) {
+          return Stack(
+            alignment: Alignment.center,
+            children: [
+              Transform.scale(
+                scale: _animation.value,
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+              const Icon(
+                Icons.mic,
+                size: 32,
+                color: Colors.red,
+              ),
+            ],
           );
         },
       ),

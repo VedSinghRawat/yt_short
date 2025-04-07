@@ -1,15 +1,12 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/shared_pref.dart';
-import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/widgets/loader.dart';
 import 'package:myapp/core/widgets/show_confirmation_dialog.dart';
-import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'package:myapp/features/user/user_controller.dart';
+import 'package:myapp/models/models.dart';
 import '../auth_controller.dart';
 import '../../../core/widgets/custom_app_bar.dart';
 
@@ -20,12 +17,12 @@ class SignInScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isLoading = ref.watch(authControllerProvider.select((state) => state.loading));
 
-    log('sign in screen', name: 'sign in screen');
-
     return Scaffold(
-      appBar: const CustomAppBar(
-        title: 'Sign In',
-      ),
+      appBar: isLoading
+          ? null
+          : const CustomAppBar(
+              title: 'Sign In',
+            ),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.only(bottom: 32.0),
@@ -103,44 +100,25 @@ class SignInScreen extends ConsumerWidget {
 
 showLevelChangeConfirmationDialog(
   BuildContext context,
-  int maxLevel,
-  int maxSubLevel,
-  SublevelController sublevelController,
-  String userEmail,
+  UserModel user,
 ) {
   return showConfirmationDialog(
     context,
     question:
-        'We notice that you are already at Level $maxLevel, Sublevel $maxSubLevel. Do you want to continue from there?',
+        'We notice that you are already at Level ${user.maxLevel}, Sublevel ${user.maxSubLevel}. Do you want to continue from there?',
     onResult: (result) async {
-      if (result) {
-        await SharedPref.copyWith(
-          PrefKey.currProgress(userEmail: userEmail),
-          Progress(
-            level: maxLevel,
-            subLevel: maxSubLevel,
-          ),
-        );
-      } else {
-        final guestProgress = SharedPref.get(PrefKey.currProgress(userEmail: null));
+      final guestProgress = SharedPref.get(PrefKey.currProgress(userEmail: null));
 
-        if (guestProgress != null) {
-          await SharedPref.copyWith(
-            PrefKey.currProgress(userEmail: userEmail),
-            guestProgress,
-          );
-        }
-      }
-
-      await SharedPref.copyWith(
-        PrefKey.currProgress(userEmail: userEmail),
-        Progress(
-          maxLevel: maxLevel,
-          maxSubLevel: maxSubLevel,
+      await SharedPref.store(
+        PrefKey.currProgress(userEmail: user.email),
+        guestProgress?.copyWith(
+          level: result ? user.maxLevel : null,
+          subLevel: result ? user.maxSubLevel : null,
+          maxLevel: user.maxLevel,
+          maxSubLevel: user.maxSubLevel,
+          levelId: result ? user.levelId : null,
         ),
       );
-
-      await sublevelController.handleFetchSublevels();
     },
     yesButtonStyle: ElevatedButton.styleFrom(
       backgroundColor: Colors.blue,

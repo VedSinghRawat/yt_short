@@ -80,7 +80,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return true;
   }
 
-  Future<void> syncProgress(
+  Future<void> syncProgressAndFetchLevels(
     int index,
     List<SubLevel> sublevels,
     String? userEmail,
@@ -91,6 +91,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final previousLevelId = sublevels[index - 1].levelId;
     final levelId = sublevels[index].levelId;
     if (previousLevelId == levelId) return;
+
+    await ref.read(sublevelControllerProvider.notifier).handleFetchSublevels();
 
     if (userEmail != null) {
       ref.read(userControllerProvider.notifier).sync(levelId, subLevel);
@@ -205,7 +207,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     // Fetch the sublevels if needed
-    await fetchSubLevels(index);
 
     // If the user is logged in, add an activity log entry
     await SharedPref.pushValue(
@@ -214,21 +215,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
 
     // Sync the progress with db if the user moves to a new level
-    await syncProgress(index, _cachedSublevels!, userEmail, sublevelIndex);
+    await syncProgressAndFetchLevels(index, _cachedSublevels!, userEmail, sublevelIndex);
 
     // Sync the last sync time with the server
     await syncActivityLogs();
-  }
-
-  Future<void> fetchSubLevels(int index) async {
-    if (index == 0) return;
-
-    final prevLevel = _cachedSublevels?[index - 1] ?? 0;
-    final currLevel = _cachedSublevels?[index] ?? 0;
-
-    if (prevLevel == currLevel) return;
-
-    await ref.read(sublevelControllerProvider.notifier).handleFetchSublevels();
   }
 
   List<SubLevel> _getSortedSublevels(List<SubLevel> sublevels) {

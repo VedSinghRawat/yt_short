@@ -212,18 +212,17 @@ class _SpeechExerciseCardState extends State<SpeechExerciseCard> {
                       ],
                     ),
                     if (testCompleted)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 24.0),
-                        child: Container(
-                          padding: const EdgeInsets.all(8.0),
-                          decoration: BoxDecoration(
-                            color: passed ? Colors.green[300] : Colors.red[300],
-                            shape: BoxShape.circle,
-                          ),
+                      Container(
+                        padding: const EdgeInsets.all(8.0),
+                        decoration: BoxDecoration(
+                          color: passed ? Colors.green[300] : Colors.red[300],
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
                           child: Icon(
-                            passed ? Icons.check : Icons.close,
+                            passed ? Icons.download_done_rounded : Icons.error_rounded,
                             color: Colors.white,
-                            size: 32, // Adjust icon size as needed
+                            size: 30,
                           ),
                         ),
                       ),

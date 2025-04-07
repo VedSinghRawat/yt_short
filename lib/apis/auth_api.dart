@@ -66,7 +66,7 @@ class AuthAPI implements IAuthAPI {
   Future<void> syncCyId() async {
     final cyId = SharedPref.get(PrefKey.cyId);
 
-    if (cyId == null) return;
+    if (cyId == null || cyId.isEmpty) return;
 
     await _apiService.call(
       params: ApiParams(
@@ -77,6 +77,11 @@ class AuthAPI implements IAuthAPI {
         },
       ),
     );
+
+    SharedPref.store(
+      PrefKey.cyId,
+      '',
+    ); // set cyId to empty string to indicate that it has been synced
   }
 }
 

@@ -35,7 +35,7 @@ class _RecognizerButtonState extends State<RecognizerButton> {
     super.initState();
     _recognizer = SpeechRecognizer(
       onResult: widget.onResult,
-      onStopListenting: widget.onStopListening,
+      onStopListening: widget.onStopListening,
       onStatusChange: (status) {
         if (status == stt.SpeechToText.doneStatus && isListening) {
           setState(() {
@@ -82,59 +82,71 @@ class _RecognizerButtonState extends State<RecognizerButton> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: widget.testCompleted ? 160 : 80,
-      height: widget.testCompleted ? 60 : 80,
-      decoration: BoxDecoration(
-        shape: widget.testCompleted ? BoxShape.rectangle : BoxShape.circle,
-        borderRadius: widget.testCompleted ? BorderRadius.circular(40) : null,
-        color: widget.failed
-            ? Colors.red.shade100
-            : isListening | widget.passed
-                ? Colors.green.shade100
-                : Colors.blue.shade100,
-        boxShadow: const [
-          BoxShadow(
-            color: Color.fromRGBO(128, 128, 128, 0.3),
-            spreadRadius: 2,
-            blurRadius: 5,
-            offset: Offset(0, 2),
+    return Column(
+      children: [
+        Container(
+          width: widget.testCompleted ? 160 : 80,
+          height: widget.testCompleted ? 60 : 80,
+          decoration: BoxDecoration(
+            shape: widget.testCompleted ? BoxShape.rectangle : BoxShape.circle,
+            borderRadius: widget.testCompleted ? BorderRadius.circular(40) : null,
+            color: widget.failed
+                ? Colors.red.shade100
+                : isListening | widget.passed
+                    ? Colors.green.shade100
+                    : Colors.blue.shade100,
+            boxShadow: const [
+              BoxShadow(
+                color: Color.fromRGBO(128, 128, 128, 0.3),
+                spreadRadius: 2,
+                blurRadius: 5,
+                offset: Offset(0, 2),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: _handleButtonPress,
-          customBorder: widget.passed ? null : const CircleBorder(),
-          child: Container(
-            width: widget.passed ? 160 : 80,
-            height: 80,
-            decoration: BoxDecoration(
-              shape: widget.passed ? BoxShape.rectangle : BoxShape.circle,
-              borderRadius: widget.passed ? BorderRadius.circular(40) : null,
-            ),
-            child: Center(
-              child: widget.testCompleted
-                  ? Text(
-                      widget.passed ? 'Continue' : 'Retry',
-                      style: TextStyle(
-                        color: widget.passed ? Colors.green.shade700 : Colors.red.shade700,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    )
-                  : isListening
-                      ? const ActiveMic()
-                      : const Icon(
-                          Icons.mic_none,
-                          color: Colors.blue,
-                          size: 32,
+          child: InkWell(
+            onTap: _handleButtonPress,
+            customBorder: widget.passed ? null : const CircleBorder(),
+            child: Container(
+              width: widget.passed ? 160 : 80,
+              height: 80,
+              decoration: BoxDecoration(
+                shape: widget.passed ? BoxShape.rectangle : BoxShape.circle,
+                borderRadius: widget.passed ? BorderRadius.circular(40) : null,
+              ),
+              child: Center(
+                child: widget.testCompleted
+                    ? Text(
+                        widget.passed ? 'Continue' : 'Retry',
+                        style: TextStyle(
+                          color: widget.passed ? Colors.green.shade700 : Colors.red.shade700,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
+                      )
+                    : isListening
+                        ? const ActiveMic()
+                        : const Icon(
+                            Icons.mic_none,
+                            color: Colors.blue,
+                            size: 32,
+                          ),
+              ),
             ),
           ),
         ),
-      ),
+        if (!widget.testCompleted)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              isListening ? 'Listening...' : 'Tap to listen',
+              style: const TextStyle(
+                color: Colors.blue,
+                fontSize: 12,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

@@ -120,7 +120,7 @@ class SharedPref {
         validVal = jsonEncode(list);
       } else {
         throw UnsupportedError(
-          " SharedPred error(Unsupported type): \${value.runtimeType}: \${ST.toString()} if it is custom class consider implementing SharedPrefClass class",
+          " SharedPred error(Unsupported type): ${value.runtimeType}: ${ST.toString()} if it is custom class consider implementing SharedPrefClass class",
         );
       }
 
@@ -137,7 +137,7 @@ class SharedPref {
 
   static Future<void> pushValue<LT, ST extends List<LT>, K extends PrefKey<ST, LT>>(
     K prefKey,
-    dynamic newValue,
+    LT newValue,
   ) async {
     final existing = get(prefKey);
     dynamic updated;

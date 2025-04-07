@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:myapp/core/screen/deep_linked.dart';
+import 'package:myapp/core/screen/deep_linking.dart';
 import 'package:myapp/core/services/initialize_service.dart';
 import 'package:myapp/core/widgets/version_check_wrapper.dart';
 import 'package:myapp/features/auth/screens/sign_in_screen.dart';
@@ -17,7 +17,7 @@ class Routes {
   static const versionRequired = '/version/required';
   static const versionSuggest = '/version/suggest';
   static const signIn = '/sign-in';
-  static const deepLinked = '/deepLinking';
+  static const deepLinking = '/deepLinking';
   static const initializeScreen = '/';
   static const profile = '/profile';
 }
@@ -52,8 +52,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
-        path: Routes.deepLinked,
-        builder: (context, state) => const DeepLikedScreen(),
+        path: Routes.deepLinking,
+        builder: (context, state) => const DeepLinkingScreen(),
       ),
 
       GoRoute(
