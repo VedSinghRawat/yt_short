@@ -12,6 +12,8 @@ class Player extends ConsumerStatefulWidget {
   final String? videoLocalPath;
   final String? uniqueId;
   final String? videoUrl;
+  final bool? stayPause;
+
   final Function(VideoPlayerController controller)? onControllerInitialized;
 
   const Player({
@@ -20,6 +22,7 @@ class Player extends ConsumerStatefulWidget {
     this.uniqueId,
     this.onControllerInitialized,
     this.videoUrl,
+    this.stayPause,
   });
 
   @override
@@ -126,7 +129,7 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
 
     final isPlaying = _controller!.value.isPlaying;
 
-    if (isPlaying || !changeToPlay) {
+    if (isPlaying || !changeToPlay || widget.stayPause == true) {
       await _controller!.pause();
     } else {
       if (_controller!.value.position >= _controller!.value.duration) {
@@ -157,7 +160,7 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
 
     if (isVisible) {
       _controller!.addListener(_listener);
-      if (!_controller!.value.isPlaying && error == null) {
+      if (!_controller!.value.isPlaying && error == null && widget.stayPause != true) {
         _controller!.play();
       }
     } else {
@@ -221,6 +224,10 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
       await _controller!.setLooping(true);
       await _controller!.initialize();
 
+      if (file == null) {
+        _controller!.addListener(_listener);
+      }
+
       setState(() {
         _isInitialized = true;
         error = null;
@@ -232,7 +239,7 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
       }
 
       // Auto-play if visible after initialization/resuming
-      if (_isVisible) {
+      if (_isVisible && widget.stayPause != true) {
         _controller!.play();
       }
 

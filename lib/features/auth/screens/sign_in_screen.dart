@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/shared_pref.dart';
+import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/widgets/loader.dart';
 import 'package:myapp/core/widgets/show_confirmation_dialog.dart';
 import 'package:myapp/features/user/user_controller.dart';
@@ -18,11 +19,10 @@ class SignInScreen extends ConsumerWidget {
     final isLoading = ref.watch(authControllerProvider.select((state) => state.loading));
 
     return Scaffold(
-      appBar: isLoading
-          ? null
-          : const CustomAppBar(
-              title: 'Sign In',
-            ),
+      appBar: CustomAppBar(
+        title: 'Sign In',
+        ignoreInteractions: isLoading,
+      ),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.only(bottom: 32.0),
@@ -107,11 +107,11 @@ showLevelChangeConfirmationDialog(
     question:
         'We notice that you are already at Level ${user.maxLevel}, Sublevel ${user.maxSubLevel}. Do you want to continue from there?',
     onResult: (result) async {
-      final guestProgress = SharedPref.get(PrefKey.currProgress(userEmail: null));
+      final guestProgress = SharedPref.get(PrefKey.currProgress(userEmail: null)) ?? Progress();
 
       await SharedPref.store(
         PrefKey.currProgress(userEmail: user.email),
-        guestProgress?.copyWith(
+        guestProgress.copyWith(
           level: result ? user.maxLevel : null,
           subLevel: result ? user.maxSubLevel : null,
           maxLevel: user.maxLevel,

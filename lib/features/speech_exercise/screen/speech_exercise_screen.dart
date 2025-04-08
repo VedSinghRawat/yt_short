@@ -28,6 +28,7 @@ class SpeechExerciseScreen extends ConsumerStatefulWidget {
 class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
   VideoPlayerController? _exerciseController;
   bool _hasShownDialog = false;
+  bool _isDialogOpen = false;
 
   void _onControllerInitialized(VideoPlayerController controller) {
     if (!mounted) return;
@@ -70,6 +71,7 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
 
     setState(() {
       _hasShownDialog = true;
+      _isDialogOpen = true;
     });
 
     final isAdmin = ref.read(userControllerProvider).currentUser?.isAdmin ?? false;
@@ -80,6 +82,11 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
       barrierColor: const Color.fromRGBO(0, 0, 0, 0.9),
       builder: (context) => PopScope(
         canPop: isAdmin || kDebugMode,
+        onPopInvokedWithResult: (bool result, bool? didPop) {
+          setState(() {
+            _isDialogOpen = false;
+          });
+        },
         child: Dialog(
           backgroundColor: Colors.transparent,
           insetPadding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
@@ -120,6 +127,7 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
       videoUrl: widget.videoUrl,
       uniqueId: widget.uniqueId,
       onControllerInitialized: _onControllerInitialized,
+      stayPause: _isDialogOpen,
     );
   }
 }

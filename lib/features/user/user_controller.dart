@@ -55,22 +55,32 @@ class UserController extends _$UserController {
     final userLevel = levelIndex != -1 ? levelIndex + 1 : 1;
 
     final user = UserModel.fromUserDTO(userDTO, userLevel, userMaxLevel);
+
     state = state.copyWith(currentUser: user);
+
     return user;
   }
 
   void removeCurrentUser() {
     state = state.copyWith(currentUser: null);
+
+    SharedPref.removeValue(PrefKey.lastLoggedInEmail);
   }
 
-  Future<void> sync(String levelId, int subLevel) async {
+  Future<bool> sync(String levelId, int subLevel) async {
     try {
-      final user = await _userAPI.sync(levelId, subLevel);
-      if (user != null) {
-        updateCurrentUser(user);
-      }
+      final userEither = await _userAPI.sync(levelId, subLevel);
+
+      return userEither.match(
+        (l) => false,
+        (r) {
+          updateCurrentUser(r);
+          return true;
+        },
+      );
     } catch (e, stack) {
       developer.log('Error in sync', error: e, stackTrace: stack);
+      return false;
     }
   }
 }

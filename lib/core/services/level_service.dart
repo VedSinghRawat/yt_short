@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:myapp/apis/level_api.dart';
@@ -78,7 +79,11 @@ class LevelService {
         Right(value: final r) => r == null
             ? await getLocalLevel(id).then((level) {
                 if (level == null) {
-                  return left(Failure(message: unknownErrorMsg, trace: StackTrace.current));
+                  return left(Failure(
+                    message: connectionErrorMsg,
+                    trace: StackTrace.current,
+                    type: DioExceptionType.connectionError,
+                  ));
                 }
                 return right(level);
               })

@@ -22,6 +22,8 @@ class PrefKey<ST, LT> {
   static const googleIdToken = PrefKey<String, Unit>(name: 'googleIdToken');
   static const isFirstLaunch = PrefKey<bool, Unit>(name: 'isFirstLaunch');
   static const orderedIds = PrefKey<List<String>, String>(name: 'orderedIds');
+  static const doneToday = PrefKey<int, Unit>(name: 'doneToday');
+  static const lastLoggedInEmail = PrefKey<String, Unit>(name: 'lastLoggedInEmail');
 
   static const activityLogs = PrefKey<List<ActivityLog>, ActivityLog>(
     fromJson: ActivityLog.fromJson,
@@ -31,11 +33,14 @@ class PrefKey<ST, LT> {
   /// [userEmail] is optional because it is not always available if the user is not logged in
   static PrefKey<Progress, Unit> currProgress({
     String? userEmail,
-  }) =>
-      PrefKey<Progress, Unit>(
-        fromJson: Progress.fromJson,
-        name: 'currProgress_${userEmail ?? 'guest'}',
-      );
+  }) {
+    final lastLoggedInEmail = SharedPref.get(PrefKey.lastLoggedInEmail);
+
+    return PrefKey<Progress, Unit>(
+      fromJson: Progress.fromJson,
+      name: 'currProgress_${userEmail ?? lastLoggedInEmail ?? 'guest'}',
+    );
+  }
 
   static PrefKey<String, Unit> eTag(String id) => PrefKey<String, Unit>(name: 'eTag_$id');
 }

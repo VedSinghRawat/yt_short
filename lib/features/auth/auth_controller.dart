@@ -59,6 +59,10 @@ class AuthController extends _$AuthController {
 
       final user = userController.updateCurrentUser(userDTO);
 
+      await SharedPref.store(PrefKey.lastLoggedInEmail, user.email);
+
+      await SharedPref.store(PrefKey.doneToday, user.doneToday);
+
       await authAPI.syncCyId();
 
       await Future.delayed(Duration.zero); // Yield control to UI
@@ -70,7 +74,7 @@ class AuthController extends _$AuthController {
       final subLevel = progress?.maxSubLevel ?? 1;
 
       if (context.mounted &&
-          (user.maxLevel > level || (user.maxLevel == level && userDTO.maxSubLevel >= subLevel))) {
+          (user.maxLevel > level || (user.maxLevel == level && userDTO.maxSubLevel > subLevel))) {
         await showLevelChangeConfirmationDialog(context, user);
       } else {
         // Store the progress to the shared preferences by user email

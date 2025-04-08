@@ -27,19 +27,17 @@ class SpeechRecognizer {
       onError: (error) => {if (onError != null) onError!(error.errorMsg)},
     );
 
-    if (available) {
-      _speech.listen(
-        pauseFor: const Duration(minutes: 1),
-        listenFor: const Duration(minutes: 1),
-        onResult: onResult,
-        listenOptions: stt.SpeechListenOptions(
-          partialResults: true,
-          listenMode: stt.ListenMode.dictation,
-        ),
-      );
-    } else {
-      if (onError != null) onError!('Speech recognition is not available!');
-    }
+    if (!available) throw Exception('Speech recognition is not available!');
+
+    _speech.listen(
+      pauseFor: const Duration(minutes: 1),
+      listenFor: const Duration(minutes: 1),
+      onResult: onResult,
+      listenOptions: stt.SpeechListenOptions(
+        partialResults: true,
+        listenMode: stt.ListenMode.dictation,
+      ),
+    );
   }
 
   Future<void> stopListening() async {

@@ -5,6 +5,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final List<Widget>? actions;
   final bool centerTitle;
   final Color? backgroundColor;
+  final bool ignoreInteractions; // new prop
 
   const CustomAppBar({
     super.key,
@@ -12,11 +13,12 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.actions,
     this.centerTitle = true,
     this.backgroundColor,
+    this.ignoreInteractions = false, // default false
   });
 
   @override
   Widget build(BuildContext context) {
-    return AppBar(
+    final appBar = AppBar(
       title: Text(
         title,
         style: const TextStyle(
@@ -29,6 +31,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       actions: actions,
     );
+
+    return ignoreInteractions ? IgnorePointer(child: appBar) : appBar;
   }
 
   @override

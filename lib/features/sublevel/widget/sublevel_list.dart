@@ -199,3 +199,32 @@ class _LevelText extends StatelessWidget {
     );
   }
 }
+
+class UpwardOnlyScrollPhysics extends ScrollPhysics {
+  const UpwardOnlyScrollPhysics({ScrollPhysics? parent}) : super(parent: parent);
+
+  @override
+  UpwardOnlyScrollPhysics applyTo(ScrollPhysics? ancestor) {
+    return UpwardOnlyScrollPhysics(parent: buildParent(ancestor));
+  }
+
+  @override
+  double applyPhysicsToUserOffset(ScrollMetrics position, double offset) {
+    // Allow only upward swipe (scrolling to previous page, offset < 0)
+    return offset > 0 ? 0 : offset;
+  }
+
+  @override
+  bool shouldAcceptUserOffset(ScrollMetrics position) => true;
+
+  @override
+  double applyBoundaryConditions(ScrollMetrics position, double value) {
+    final delta = value - position.pixels;
+
+    // Prevent downward scroll (next page)
+    if (delta > 0) {
+      return delta;
+    }
+    return 0;
+  }
+}

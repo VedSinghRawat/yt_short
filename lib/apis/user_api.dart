@@ -1,10 +1,14 @@
 import 'dart:developer' as developer;
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fpdart/fpdart.dart';
+import 'package:myapp/core/error/failure.dart';
 import 'package:myapp/core/services/api_service.dart';
+import 'package:myapp/core/utils.dart';
 import '../models/models.dart';
 
 abstract class IUserAPI {
-  Future<UserDTO?> sync(String levelId, int subLevel);
+  FutureEither<UserDTO> sync(String levelId, int subLevel);
 }
 
 class UserAPI implements IUserAPI {
@@ -12,7 +16,7 @@ class UserAPI implements IUserAPI {
   UserAPI(this._apiService);
 
   @override
-  Future<UserDTO?> sync(String levelId, int subLevel) async {
+  FutureEither<UserDTO> sync(String levelId, int subLevel) async {
     try {
       final response = await _apiService.call(
           params: ApiParams(
@@ -28,10 +32,11 @@ class UserAPI implements IUserAPI {
         throw Exception('Failed to sync user progress: ${response.statusCode}');
       }
 
-      return UserDTO.fromJson(response.data?['user']);
-    } catch (e, stackTrace) {
+      return right(UserDTO.fromJson(response.data?['user']));
+    } on DioException catch (e, stackTrace) {
       developer.log('Error syncing user progress', error: e.toString(), stackTrace: stackTrace);
-      return null;
+
+      return left(Failure(message: parseError(e.type)));
     }
   }
 }

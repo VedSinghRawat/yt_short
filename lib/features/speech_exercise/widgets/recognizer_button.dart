@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/core/widgets/active_mic.dart';
+import 'package:myapp/core/widgets/handle_permission_cancle.dart';
 import 'package:myapp/features/speech_exercise/widgets/recognizer.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
@@ -54,24 +56,40 @@ class _RecognizerButtonState extends State<RecognizerButton> {
     });
   }
 
+  Future<void> _showPermissionDeniedDialog() async {
+    await handlePermissionDenied(
+      context,
+      'Microphone permission is denied. Please open app settings and grant microphone permission to use this feature.',
+      permission: Permission.microphone,
+    );
+  }
+
   Future<void> _handleButtonPress() async {
-    if (widget.passed) {
-      await stopListening();
-      widget.onContinue();
-    } else {
-      if (isListening || widget.testCompleted) {
+    try {
+      if (widget.passed) {
         await stopListening();
+        widget.onContinue();
       } else {
-        await startListening();
+        if (isListening || widget.testCompleted) {
+          await stopListening();
+        } else {
+          await startListening();
+        }
       }
+    } catch (e) {
+      await _showPermissionDeniedDialog();
     }
   }
 
   Future<void> startListening() async {
-    setState(() {
-      isListening = true;
-    });
-    await _recognizer.startListening();
+    try {
+      await _recognizer.startListening();
+      setState(() {
+        isListening = true;
+      });
+    } catch (e) {
+      await _showPermissionDeniedDialog();
+    }
   }
 
   @override

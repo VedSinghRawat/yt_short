@@ -2,7 +2,6 @@ import 'package:android_play_install_referrer/android_play_install_referrer.dart
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:fpdart/fpdart.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/apis/initialize_api.dart';
 import 'package:myapp/core/router/router.dart';
@@ -35,7 +34,7 @@ class InitializeService {
       // order matters
       await SharedPref.init(); // first init shared pref
       await InfoService.instance.init(); // then init info service
-      await _initialApiCall(); // then call api because it depends on info service
+      await initialApiCall(); // then call api because it depends on info service
       await storeCyId();
       await FileService.instance.init();
       await orderedIdNotifier.getOrderedIds();
@@ -104,18 +103,28 @@ class InitializeService {
     });
   }
 
-  Future<void> _initialApiCall() async {
+  Future<bool> initialApiCall() async {
     final version = InfoService.instance.packageInfo.version;
 
     final initialDataEither = await initializeAPI.initialize(version);
 
-    switch (initialDataEither) {
-      case Left(value: final l):
+    return initialDataEither.match(
+      (l) {
         developer.log(l.toString());
-      case Right(value: final r):
-        if (r.user != null) userController.updateCurrentUser(r.user!);
+        return false;
+      },
+      (r) async {
+        if (r.user != null) {
+          userController.updateCurrentUser(r.user!);
+          // Store doneToday from API user
+          await SharedPref.store(PrefKey.doneToday, r.user!.doneToday);
+          // Store last logged in email
+          await SharedPref.store(PrefKey.lastLoggedInEmail, r.user!.email);
+        }
         await InfoService.instance.initVersionData(r);
-    }
+        return true;
+      },
+    );
   }
 }
 

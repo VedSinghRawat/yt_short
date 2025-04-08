@@ -16,7 +16,6 @@ import 'package:myapp/models/sublevel/sublevel.dart';
 import '../../features/sublevel/sublevel_controller.dart';
 import '../../features/sublevel/widget/sublevel_list.dart';
 import '../../features/user/user_controller.dart';
-import 'dart:developer' as developer;
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -32,8 +31,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
 
-    developer.log('home page');
-
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       await ref.read(sublevelControllerProvider.notifier).handleFetchSublevels();
@@ -48,7 +45,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     int subLevel,
     bool hasLocalProgress,
     bool isAdmin,
-    int doneToday,
+    int? doneToday,
   ) {
     if (isAdmin) return false;
 
@@ -56,13 +53,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     if (!levelAfter) return false;
 
-    // Check daily level limit only when changing to a new level
-    final bool exceedsDailyLimit = doneToday >= kMaxLevelCompletionsPerDay;
-
-    if (exceedsDailyLimit) {
-      showSnackBar(context, 'You can only complete $kMaxLevelCompletionsPerDay levels per day');
-      return true;
-    }
+    if (isDailyLimitReached(doneToday)) return true;
 
     final hasFinishedVideo = ref.read(sublevelControllerProvider).hasFinishedVideo;
 
@@ -71,6 +62,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     showSnackBar(context, 'Please complete the current sublevel before proceeding');
 
     return true;
+  }
+
+  bool isDailyLimitReached(int? doneToday) {
+    if (doneToday == null) {
+      final exceedsDailyLimit = isExceedsDailyLimits(SharedPref.get(PrefKey.doneToday));
+
+      if (exceedsDailyLimit) {
+        showSnackBar(
+          context,
+          'Connection failed please click on reload icon at the top right corner',
+        );
+
+        return true;
+      }
+    } else {
+      final exceedsDailyLimit = isExceedsDailyLimits(doneToday);
+
+      if (exceedsDailyLimit) {
+        showSnackBar(context, 'You can only complete $kMaxLevelCompletionsPerDay levels per day');
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  bool isExceedsDailyLimits(int? doneToday) {
+    return doneToday != null && doneToday >= kMaxLevelCompletionsPerDay;
   }
 
   Future<bool> handleFetchSublevels(int index) async {
@@ -85,17 +104,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     List<SubLevel> sublevels,
     String? userEmail,
     int subLevel,
+    int maxLevel,
   ) async {
     if (index <= 0) return;
 
-    final previousLevelId = sublevels[index - 1].levelId;
-    final levelId = sublevels[index].levelId;
-    if (previousLevelId == levelId) return;
+    final previousLevel = sublevels[index - 1];
+    final level = sublevels[index];
+    if (previousLevel.levelId == level.levelId) return;
 
     await ref.read(sublevelControllerProvider.notifier).handleFetchSublevels();
 
+    bool isSyncSucceed = false;
+
     if (userEmail != null) {
-      ref.read(userControllerProvider.notifier).sync(levelId, subLevel);
+      isSyncSucceed = await ref.read(userControllerProvider.notifier).sync(level.levelId, subLevel);
+    }
+
+    if ((previousLevel.level < level.level && previousLevel.level <= maxLevel) || !isSyncSucceed) {
+      await SharedPref.store(PrefKey.doneToday, 1);
     }
   }
 
@@ -178,7 +204,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       sublevelIndex,
       localProgress != null,
       user?.isAdmin == true,
-      user?.doneToday ?? 0,
+      user?.doneToday,
     )) {
       controller.animateToPage(
         index - 1,
@@ -200,13 +226,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       userEmail,
     );
 
+    final lastLoggedInEmail = SharedPref.get(PrefKey.lastLoggedInEmail);
+
     // If the level requires auth and the user is not logged in, redirect to sign in
-    if (level > kAuthRequiredLevel && userEmail == null && mounted) {
+    if (level > kAuthRequiredLevel && lastLoggedInEmail == null && mounted) {
       context.go(Routes.signIn);
       return;
     }
-
-    // Fetch the sublevels if needed
 
     // If the user is logged in, add an activity log entry
     await SharedPref.pushValue(
@@ -215,7 +241,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
 
     // Sync the progress with db if the user moves to a new level
-    await syncProgressAndFetchLevels(index, _cachedSublevels!, userEmail, sublevelIndex);
+    await syncProgressAndFetchLevels(
+      index,
+      _cachedSublevels!,
+      userEmail,
+      sublevelIndex,
+      user?.maxLevel ?? 0,
+    );
 
     // Sync the last sync time with the server
     await syncActivityLogs();

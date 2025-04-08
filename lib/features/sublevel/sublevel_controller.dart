@@ -54,8 +54,6 @@ class SublevelController extends _$SublevelController {
     try {
       final levelDTOEither = await ref.read(levelServiceProvider).getLevel(levelId);
 
-      developer.log('listing level $levelId $level');
-
       final levelDTO = switch (levelDTOEither) {
         Right(value: final r) => r,
         Left(value: final l) => (() {
