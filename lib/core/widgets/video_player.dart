@@ -3,6 +3,8 @@ import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:myapp/core/services/analytics_service.dart';
+import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'package:myapp/features/sublevel/widget/last_level.dart';
 import 'package:video_player/video_player.dart';
@@ -285,7 +287,9 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
                     valueListenable: _controller!,
                     builder: (context, value, child) {
                       if (value.duration > Duration.zero) {
-                        return _VideoProgressBar(controller: _controller!);
+                        return _VideoProgressBar(
+                          controller: _controller!,
+                        );
                       } else {
                         return const SizedBox.shrink();
                       }
@@ -354,6 +358,7 @@ class _VideoProgressBarState extends State<_VideoProgressBar> with SingleTickerP
   DateTime _lastUpdateTime = DateTime.now();
   VideoPlayerValue? _lastValue;
   bool _controllerDisposed = false; // Track if the controller was disposed
+  bool _halfwayThrough = false;
 
   @override
   void initState() {
@@ -420,6 +425,23 @@ class _VideoProgressBarState extends State<_VideoProgressBar> with SingleTickerP
           _lastKnownDuration = value.duration;
           _playbackSpeed = value.playbackSpeed;
           _lastUpdateTime = DateTime.now(); // Also update time when position/duration changes
+        });
+      }
+
+      // Gether analytics if the video has looped halfway through
+      if (value.position >= (value.duration ~/ 2) && !_halfwayThrough) {
+        setState(() {
+          _halfwayThrough = true;
+        });
+        final progress = SharedPref.get(PrefKey.currProgress());
+
+        if (progress?.level != null && progress?.levelId != null && progress?.subLevel != null) {
+          unawaited(AnalyticsService().sublevelLoop(
+              level: progress!.level!, sublevel: progress.subLevel!, levelId: progress.levelId!));
+        }
+      } else if (_halfwayThrough && value.position < (value.duration ~/ 2)) {
+        setState(() {
+          _halfwayThrough = false;
         });
       }
     } catch (e) {

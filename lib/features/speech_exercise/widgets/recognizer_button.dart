@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:myapp/core/services/analytics_service.dart';
 import 'package:myapp/core/widgets/active_mic.dart';
 import 'package:myapp/features/speech_exercise/widgets/recognizer.dart';
+import 'package:myapp/models/models.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
@@ -11,6 +15,7 @@ class RecognizerButton extends StatefulWidget {
   final VoidCallback onContinue;
   final Function(SpeechRecognitionResult) onResult;
   final VoidCallback onStopListening;
+  final SpeechExercise speechExercise;
 
   const RecognizerButton({
     super.key,
@@ -20,6 +25,7 @@ class RecognizerButton extends StatefulWidget {
     required this.onContinue,
     required this.onResult,
     required this.onStopListening,
+    required this.speechExercise,
   });
 
   @override
@@ -63,6 +69,7 @@ class _RecognizerButtonState extends State<RecognizerButton> {
         await stopListening();
       } else {
         await startListening();
+        unawaited(AnalyticsService().exerciseRetry(speechExercise: widget.speechExercise));
       }
     }
   }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +7,7 @@ import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/console.dart';
 import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/screen/app_bar.dart';
+import 'package:myapp/core/services/analytics_service.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/utils.dart';
@@ -49,6 +51,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     bool hasLocalProgress,
     bool isAdmin,
     int doneToday,
+    String levelId,
   ) {
     if (isAdmin) return false;
 
@@ -69,6 +72,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (hasFinishedVideo) return false;
 
     showSnackBar(context, 'Please complete the current sublevel before proceeding');
+    unawaited(AnalyticsService()
+        .attemptScrollForward(level: level, sublevel: subLevel, levelId: levelId));
 
     return true;
   }
@@ -167,6 +172,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final localMaxLevel = localProgress?.maxLevel ?? 0;
     final localMaxSubLevel = localProgress?.maxSubLevel ?? 0;
 
+    // Capture Backward Scroll analytics
+    final previousSublevel = localProgress?.subLevel ?? 0;
+    final previousLevel = localProgress?.level ?? 0;
+    final previousLevelId = localProgress?.levelId ?? '';
+
+    final isScrolledBackwards = isLevelAfter(previousLevel, previousSublevel, level, sublevelIndex);
+
+    if (isScrolledBackwards) {
+      unawaited(AnalyticsService().scrollBackward(
+        fromLevel: previousLevel,
+        fromSublevel: previousSublevel,
+        toLevel: level,
+        toSublevel: sublevelIndex,
+        fromLevelId: previousLevelId,
+        toLevelId: sublevel.levelId,
+      ));
+    }
+    //--------------------------------
+
     // Check if video change should be cancelled
     if (cancelVideoChange(
       index,
@@ -177,6 +201,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       localProgress != null,
       user?.isAdmin == true,
       user?.doneToday ?? 0,
+      sublevel.levelId,
     )) {
       controller.animateToPage(
         index - 1,

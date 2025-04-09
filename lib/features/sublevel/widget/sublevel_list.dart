@@ -122,11 +122,13 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
               ? widget.loadingIds.isNotEmpty
               : widget.loadingIds.contains(sublevel.levelId);
 
+          //TODO: move it from here
           final showAd = ref.watch(interstitialAdNotifierProvider.select((state) => state.showAd));
 
           if (showAd) {
             return const InterstitialAdWrapper();
           }
+          //--------------
 
           if ((isLastSublevel || sublevel == null) && !isLoading) {
             final error = ref.watch(sublevelControllerProvider).error;

@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/features/speech_exercise/widgets/recognizer_button.dart';
+import 'package:myapp/models/models.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 
 class SpeechExerciseCard extends StatefulWidget {
   final String text;
   final VoidCallback onContinue;
+  final SpeechExercise speechExercise;
 
   const SpeechExerciseCard({
     super.key,
     required this.text,
     required this.onContinue,
+    required this.speechExercise,
   });
 
   @override
@@ -22,7 +25,7 @@ class _SpeechExerciseCardState extends State<SpeechExerciseCard> {
   int _offset = 0;
   late List<String> _recognizedWords;
   late int _totalWordCount;
-
+  
   bool get passed => _wordMarking.every((mark) => mark == true);
   bool get failed =>
       _recognizedWords.where((word) => word.isNotEmpty).toList().length == _totalWordCount &&
@@ -242,6 +245,7 @@ class _SpeechExerciseCardState extends State<SpeechExerciseCard> {
               onContinue: widget.onContinue,
               onResult: _onSpeechResult,
               onStopListening: _onStopListening,
+              speechExercise: widget.speechExercise,
             ),
           ),
         ],

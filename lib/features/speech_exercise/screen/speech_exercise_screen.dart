@@ -103,6 +103,7 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
                   Navigator.of(context).pop();
                 }
               },
+              speechExercise: widget.exercise,
             ),
           ),
         ),
