@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:developer' as developer;
 import 'package:dio/dio.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:myapp/core/services/api_service.dart';
@@ -33,10 +34,15 @@ class AuthAPI implements IAuthAPI {
 
       await _apiService.setToken(auth.idToken ?? '');
 
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+
       final response = await _apiService.call(
-        params: const ApiParams(
+        params: ApiParams(
           endpoint: '/auth/google',
           method: ApiMethod.get,
+          body: {
+            'fcmToken': fcmToken,
+          },
         ),
       );
 
@@ -54,6 +60,22 @@ class AuthAPI implements IAuthAPI {
   @override
   Future<void> signOut() async {
     try {
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+      final email = _googleSignIn.currentUser?.email;
+
+      await FirebaseMessaging.instance.deleteToken();
+
+      await _apiService.call(
+        params: ApiParams(
+          endpoint: '/auth/sign-out',
+          method: ApiMethod.post,
+          body: {
+            'fcmToken': fcmToken,
+            'email': email,
+          },
+        ),
+      );
+
       await _googleSignIn.signOut();
       _apiService.setToken('');
     } catch (e, stackTrace) {
