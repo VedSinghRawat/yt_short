@@ -9,10 +9,9 @@ import 'package:myapp/features/sublevel/widget/last_level.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
-import 'package:just_audio/just_audio.dart';
-import 'package:myapp/core/services/level_service.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:flutter/foundation.dart'; // Import for listEquals
+import './dialogue_list.dart'; // Import the new dialogue list widget
 
 class Player extends ConsumerStatefulWidget {
   final String? videoLocalPath;
@@ -45,33 +44,16 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
   IconData _iconData = Icons.play_arrow;
   Timer? _iconTimer;
 
-  final _audioPlayer = AudioPlayer();
   List<Dialogue> _displayableDialogues = [];
   List<Dialogue> _sourceDialogues = []; // List to hold the source data (dummy or real)
 
   // --- Set to TRUE to test filtering with dummy data ---
-  final bool _useDummyDialoguesForTesting = false;
+  final bool _useDummyDialoguesForTesting = true;
   // --- Set to false to use actual data logic ---
-
-  // Controller and state for ListWheelScrollView focus effect
-  late FixedExtentScrollController _dialogueScrollController;
-  int _selectedDialogueIndex = 0;
 
   @override
   void initState() {
     super.initState();
-
-    // Initialize scroll controller and listener
-    _dialogueScrollController = FixedExtentScrollController();
-    _dialogueScrollController.addListener(() {
-      if (!mounted) return;
-      final newIndex = _dialogueScrollController.selectedItem;
-      if (_selectedDialogueIndex != newIndex) {
-        setState(() {
-          _selectedDialogueIndex = newIndex;
-        });
-      }
-    });
 
     // --- Data setup (dummy or real) ---
     if (_useDummyDialoguesForTesting) {
@@ -107,8 +89,6 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
     _iconTimer?.cancel();
     _controller?.removeListener(_listener);
     _controller?.dispose();
-    _audioPlayer.dispose();
-    _dialogueScrollController.dispose(); // Dispose scroll controller
     super.dispose();
   }
 
@@ -314,28 +294,6 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _playDialogueAudio(String audioFilename) async {
-    try {
-      await _audioPlayer.stop();
-
-      final levelService = ref.read(levelServiceProvider);
-      final filePath = levelService.getDialogueAudioFilePath(audioFilename);
-      developer.log("Attempting to play audio: $filePath");
-
-      final file = File(filePath);
-      if (!await file.exists()) {
-        developer.log("Audio file not found: $filePath");
-        return;
-      }
-
-      await _audioPlayer.setFilePath(filePath);
-      await _audioPlayer.play();
-      developer.log("Playing audio: $filePath");
-    } catch (e) {
-      developer.log("Error playing dialogue audio: $e");
-    }
-  }
-
   void _updateDisplayableDialogues(Duration currentPosition) {
     // Remove the check for the testing flag here
     // if (_useDummyDialoguesForTesting) return;
@@ -367,6 +325,7 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
 
     final double screenHeight = MediaQuery.of(context).size.height;
     final double standardDialogueHeight = screenHeight * 0.2;
+    final double itemHeight = standardDialogueHeight / 3.0;
     const double emptyDialogueHeight = 65.0;
 
     return VisibilityDetector(
@@ -445,9 +404,10 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
                         ? Stack(
                             // Wrap the ListWheelScrollView with a Stack for overlays
                             children: [
-                              _buildDialogueList(
+                              // Replace _buildDialogueList with DialogueList widget
+                              DialogueList(
                                 dialogues: _displayableDialogues,
-                                standardHeight: standardDialogueHeight,
+                                itemHeight: itemHeight,
                               ),
                               // Top Gradient Overlay
                               Positioned(
@@ -527,72 +487,6 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
           else
             const SizedBox(height: 10),
         ],
-      ),
-    );
-  }
-
-  Widget _buildDialogueList({required List<Dialogue> dialogues, required double standardHeight}) {
-    final double itemHeight = standardHeight / 3.0;
-
-    return ListWheelScrollView.useDelegate(
-      controller: _dialogueScrollController,
-      itemExtent: itemHeight,
-      diameterRatio: 2.5,
-      perspective: 0.004,
-      magnification: 1.3,
-      useMagnifier: true,
-      physics: const FixedExtentScrollPhysics(),
-      childDelegate: ListWheelChildListDelegate(
-        children: List<Widget>.generate(
-          dialogues.length,
-          (index) {
-            final dialogue = dialogues[index];
-            final formattedTime = formatDurationMMSS(dialogue.time);
-            return Center(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    formattedTime,
-                    style: const TextStyle(fontSize: 12, color: Colors.white70),
-                  ),
-                  const SizedBox(width: 16),
-                  Text(
-                    dialogue.text,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(width: 12),
-                  GestureDetector(
-                    onTap: () async {
-                      Console.log("Tapped");
-                      await _playDialogueAudio(dialogue.audioFilename);
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(4.0),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white70, width: 1),
-                      ),
-                      child: const Icon(
-                        Icons.volume_up,
-                        color: Colors.white70,
-                        size: 18,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
       ),
     );
   }
