@@ -6,19 +6,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'package:myapp/features/sublevel/widget/last_level.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
-import 'package:video_player/video_player.dart' as video_player;
+import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:flutter/foundation.dart'; // Import for listEquals
-import './dialogue_list.dart'; // Import the new dialogue list widget
+import 'dialogue_list.dart'; // Import the new dialogue list widget
+import 'video_progress_bar.dart'; // Import the extracted progress bar
 
-class VideoPlayer extends ConsumerStatefulWidget {
+class SublevelVideoPlayer extends ConsumerStatefulWidget {
   final String? videoLocalPath;
   final String? uniqueId;
   final String? videoUrl;
-  final Function(video_player.VideoPlayerController controller)? onControllerInitialized;
+  final Function(VideoPlayerController controller)? onControllerInitialized;
   final List<Dialogue> dialogues;
 
-  const VideoPlayer({
+  const SublevelVideoPlayer({
     super.key,
     required this.videoLocalPath,
     this.uniqueId,
@@ -28,11 +29,12 @@ class VideoPlayer extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<VideoPlayer> createState() => _VideoPlayerState();
+  ConsumerState<SublevelVideoPlayer> createState() => _SublevelVideoPlayerState();
 }
 
-class _VideoPlayerState extends ConsumerState<VideoPlayer> with WidgetsBindingObserver {
-  video_player.VideoPlayerController? _controller;
+class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
+    with WidgetsBindingObserver {
+  VideoPlayerController? _controller;
   Duration? _lastPosition;
   bool _isInitialized = false;
   String? error;
@@ -256,8 +258,8 @@ class _VideoPlayerState extends ConsumerState<VideoPlayer> with WidgetsBindingOb
       }
 
       _controller = file != null
-          ? video_player.VideoPlayerController.file(file)
-          : video_player.VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl!));
+          ? VideoPlayerController.file(file)
+          : VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl!));
 
       _controller!.addListener(_listener);
       await _controller!.setLooping(true);
@@ -357,7 +359,7 @@ class _VideoPlayerState extends ConsumerState<VideoPlayer> with WidgetsBindingOb
                       Center(
                         child: AspectRatio(
                           aspectRatio: _controller!.value.aspectRatio,
-                          child: video_player.VideoPlayer(_controller!),
+                          child: VideoPlayer(_controller!),
                         ),
                       )
                     else
@@ -472,11 +474,11 @@ class _VideoPlayerState extends ConsumerState<VideoPlayer> with WidgetsBindingOb
           ),
           // Progress bar remains outside the main Stack
           if (isPlayerReady)
-            ValueListenableBuilder<video_player.VideoPlayerValue>(
+            ValueListenableBuilder<VideoPlayerValue>(
               valueListenable: _controller!,
               builder: (context, value, child) {
                 if (value.duration > Duration.zero) {
-                  return _VideoProgressBar(controller: _controller!);
+                  return VideoProgressBar(controller: _controller!);
                 } else {
                   return const SizedBox(height: 10);
                 }
@@ -517,195 +519,6 @@ class PlayPauseButton extends StatelessWidget {
           size: MediaQuery.of(context).size.width * 0.12,
           color: Colors.white,
         ),
-      ),
-    );
-  }
-}
-
-class _VideoProgressBar extends StatefulWidget {
-  final video_player.VideoPlayerController controller;
-
-  const _VideoProgressBar({required this.controller});
-
-  @override
-  State<_VideoProgressBar> createState() => _VideoProgressBarState();
-}
-
-class _VideoProgressBarState extends State<_VideoProgressBar> with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  Duration _lastKnownPosition = Duration.zero;
-  Duration _lastKnownDuration = Duration.zero;
-  bool _isPlaying = false;
-  double _playbackSpeed = 1.0;
-  DateTime _lastUpdateTime = DateTime.now();
-  video_player.VideoPlayerValue? _lastValue;
-  bool _controllerDisposed = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 1),
-    )..addListener(() {
-        if (mounted) {
-          setState(() {});
-        }
-      });
-
-    widget.controller.addListener(_updateVideoState);
-    _updateVideoState();
-  }
-
-  @override
-  void didUpdateWidget(covariant _VideoProgressBar oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.controller != oldWidget.controller) {
-      oldWidget.controller.removeListener(_updateVideoState);
-      widget.controller.addListener(_updateVideoState);
-    }
-  }
-
-  void _updateVideoState() {
-    if (!mounted || _controllerDisposed) return;
-
-    try {
-      final value = widget.controller.value;
-      _lastValue = value;
-
-      final bool isCurrentlyPlaying = value.isPlaying;
-      if (_isPlaying != isCurrentlyPlaying) {
-        setState(() {
-          _isPlaying = isCurrentlyPlaying;
-          _lastUpdateTime = DateTime.now();
-
-          if (_isPlaying && !_animationController.isAnimating) {
-            _animationController.repeat();
-          } else if (!_isPlaying && _animationController.isAnimating) {
-            _animationController.stop();
-          }
-        });
-      } else {
-        if (_isPlaying && !_animationController.isAnimating) {
-          _animationController.repeat();
-        }
-      }
-
-      if (_lastKnownPosition != value.position ||
-          _lastKnownDuration != value.duration ||
-          _playbackSpeed != value.playbackSpeed) {
-        setState(() {
-          _lastKnownPosition = value.position;
-          _lastKnownDuration = value.duration;
-          _playbackSpeed = value.playbackSpeed;
-          _lastUpdateTime = DateTime.now();
-        });
-      }
-    } catch (e) {
-      developer.log("Error accessing controller value in _updateVideoState (likely disposed): $e");
-      _controllerDisposed = true;
-      if (_animationController.isAnimating) {
-        _animationController.stop();
-      }
-      if (mounted) {
-        setState(() {
-          _isPlaying = false;
-        });
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    try {
-      widget.controller.value;
-      widget.controller.removeListener(_updateVideoState);
-    } catch (e) {
-      developer.log("Error removing listener from controller (likely disposed): $e");
-    }
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final value = _controllerDisposed ? _lastValue : widget.controller.value;
-
-    if (value == null || !value.isInitialized || value.duration <= Duration.zero) {
-      return const SizedBox(
-        height: 10,
-        child: LinearProgressIndicator(
-          value: 0,
-          backgroundColor: Colors.grey,
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
-        ),
-      );
-    }
-
-    return SizedBox(
-      height: 10,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          Duration currentPosition = _lastKnownPosition;
-          final duration = _lastKnownDuration;
-
-          if (_isPlaying && _playbackSpeed > 0 && _animationController.isAnimating) {
-            final now = DateTime.now();
-            final elapsed = now.difference(_lastUpdateTime);
-            final estimatedDelta =
-                Duration(milliseconds: (elapsed.inMilliseconds * _playbackSpeed).round());
-            currentPosition += estimatedDelta;
-          }
-
-          if (currentPosition > duration) {
-            currentPosition = duration;
-          }
-          if (currentPosition < Duration.zero) {
-            currentPosition = Duration.zero;
-          }
-
-          final durationMs = duration.inMilliseconds;
-          final positionMs = currentPosition.inMilliseconds;
-
-          final double progress = (durationMs > 0 && positionMs <= durationMs && positionMs >= 0)
-              ? positionMs / durationMs
-              : 0.0;
-          final double clampedProgress = progress.clamp(0.0, 1.0);
-
-          final double progressBarWidth = constraints.maxWidth;
-          final double indicatorPosition = progressBarWidth * clampedProgress;
-
-          final double clampedIndicatorPosition = indicatorPosition.clamp(0.0, progressBarWidth);
-
-          return Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.centerLeft,
-            children: [
-              Container(
-                height: 3,
-                width: progressBarWidth,
-                color: Colors.grey.withAlpha(128),
-              ),
-              Container(
-                height: 3,
-                width: clampedIndicatorPosition,
-                color: Colors.red,
-              ),
-              Positioned(
-                left: clampedIndicatorPosition - 5,
-                top: 0,
-                child: Container(
-                  width: 10,
-                  height: 10,
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
       ),
     );
   }
