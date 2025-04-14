@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/core/utils.dart';
 import 'package:myapp/core/widgets/active_mic.dart';
-import 'package:myapp/core/widgets/handle_permission_cancle.dart';
 import 'package:myapp/features/speech_exercise/widgets/recognizer.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
@@ -56,14 +55,6 @@ class _RecognizerButtonState extends State<RecognizerButton> {
     });
   }
 
-  Future<void> _showPermissionDeniedDialog() async {
-    await handlePermissionDenied(
-      context,
-      'Microphone permission is denied. Please open app settings and grant microphone permission to use this feature.',
-      permission: Permission.microphone,
-    );
-  }
-
   Future<void> _handleButtonPress() async {
     try {
       if (widget.passed) {
@@ -77,18 +68,28 @@ class _RecognizerButtonState extends State<RecognizerButton> {
         }
       }
     } catch (e) {
-      await _showPermissionDeniedDialog();
+      if (mounted) {
+        showSnackBar(
+          context,
+          'An error occurred while starting the recognizer',
+        );
+      }
     }
   }
 
   Future<void> startListening() async {
     try {
-      await _recognizer.startListening();
+      await _recognizer.startListening(context);
       setState(() {
         isListening = true;
       });
     } catch (e) {
-      await _showPermissionDeniedDialog();
+      if (mounted) {
+        showSnackBar(
+          context,
+          'An error occurred while starting the recognizer',
+        );
+      }
     }
   }
 
@@ -107,10 +108,12 @@ class _RecognizerButtonState extends State<RecognizerButton> {
           height: widget.testCompleted ? 60 : 80,
           decoration: BoxDecoration(
             shape: widget.testCompleted ? BoxShape.rectangle : BoxShape.circle,
-            borderRadius: widget.testCompleted ? BorderRadius.circular(40) : null,
-            color: widget.failed
-                ? Colors.red.shade100
-                : isListening | widget.passed
+            borderRadius:
+                widget.testCompleted ? BorderRadius.circular(40) : null,
+            color:
+                widget.failed
+                    ? Colors.red.shade100
+                    : isListening | widget.passed
                     ? Colors.green.shade100
                     : Colors.blue.shade100,
             boxShadow: const [
@@ -133,22 +136,26 @@ class _RecognizerButtonState extends State<RecognizerButton> {
                 borderRadius: widget.passed ? BorderRadius.circular(40) : null,
               ),
               child: Center(
-                child: widget.testCompleted
-                    ? Text(
-                        widget.passed ? 'Continue' : 'Retry',
-                        style: TextStyle(
-                          color: widget.passed ? Colors.green.shade700 : Colors.red.shade700,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      )
-                    : isListening
+                child:
+                    widget.testCompleted
+                        ? Text(
+                          widget.passed ? 'Continue' : 'Retry',
+                          style: TextStyle(
+                            color:
+                                widget.passed
+                                    ? Colors.green.shade700
+                                    : Colors.red.shade700,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
+                        : isListening
                         ? const ActiveMic()
                         : const Icon(
-                            Icons.mic_none,
-                            color: Colors.blue,
-                            size: 32,
-                          ),
+                          Icons.mic_none,
+                          color: Colors.blue,
+                          size: 32,
+                        ),
               ),
             ),
           ),
@@ -158,10 +165,7 @@ class _RecognizerButtonState extends State<RecognizerButton> {
             padding: const EdgeInsets.only(top: 4),
             child: Text(
               isListening ? 'Listening...' : 'Tap to listen',
-              style: const TextStyle(
-                color: Colors.blue,
-                fontSize: 12,
-              ),
+              style: const TextStyle(color: Colors.blue, fontSize: 12),
             ),
           ),
       ],

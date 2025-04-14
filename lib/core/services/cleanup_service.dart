@@ -15,18 +15,15 @@ class StorageCleanupService {
   StorageCleanupService(this.fileService, this.levelService);
 
   /// Main cleanup logic — removes folders from cache if total size exceeds threshold
-  Future<List<String>> cleanLevels(List<String> orderedIds) async {
+  Future<void> cleanLevels(List<String> orderedIds) async {
     try {
       Directory targetDir = Directory(levelService.levelsDocDirPath);
-
-      // +1 for current level
-      const protectedIdsLength = kMaxNextLevelsToKeep + kMaxPreviousLevelsToKeep + 1;
 
       // Ensure directory exists and input is valid
       if (!await targetDir.exists() ||
           orderedIds.isEmpty ||
-          orderedIds.length - protectedIdsLength == 0) {
-        return orderedIds;
+          orderedIds.length - kProtectedIdsLength == 0) {
+        return;
       }
 
       // Check total size of the cache folder
@@ -34,14 +31,13 @@ class StorageCleanupService {
 
       // No need to clean if under limit
       if (totalSize < kMaxStorageSizeBytes) {
-        return orderedIds;
+        return;
       }
 
-      List<String> remainingIds = List.from(orderedIds);
-
+      int i = 0;
       // Start deleting until space is freed
-      while (totalSize > kDeleteCacheThreshold && remainingIds.length > protectedIdsLength) {
-        final id = remainingIds.removeAt(0);
+      while (i < orderedIds.length - kProtectedIdsLength) {
+        final id = orderedIds[i];
         final folderPath = levelService.getLevelPath(id);
         final folder = Directory(folderPath);
 
@@ -66,27 +62,27 @@ class StorageCleanupService {
           if (index == level.sub_levels.length - 1) {
             await compute(_deleteFolderRecursively, folderPath);
 
-            await SharedPref.removeValue(PrefKey.eTag(getLevelJsonPathEndpoint(id)));
+            await SharedPref.removeValue(PrefKey.eTag(getLevelJsonPath(id)));
           }
 
           totalSize -= videoSize;
 
+          if (totalSize < kDeleteCacheThreshold) {
+            break;
+          }
+
           // Remove video ETag
           await SharedPref.removeValue(
             PrefKey.eTag(
-              levelService.getVideoPathEndPoint(
-                id,
-                sub.videoFilename,
-              ),
+              levelService.getVideoPathEndPoint(id, sub.videoFilename),
             ),
           );
+
+          i++;
         }
       }
-
-      return remainingIds;
     } catch (e) {
       developer.log("Error in cleanup process: $e");
-      return orderedIds;
     }
   }
 
@@ -98,13 +94,13 @@ class StorageCleanupService {
   }
 
   /// Removes least-important cached levels while protecting nearby levels
-  Future<List<String>> removeFurthestCachedIds(
+  Future<void> removeFurthestCachedIds(
     List<String> cachedIds,
     List<String> orderedIds,
     String currentId,
   ) async {
     final Map<String, int> idToIndexMap = {
-      for (int i = 0; i < orderedIds.length; i++) orderedIds[i]: i
+      for (int i = 0; i < orderedIds.length; i++) orderedIds[i]: i,
     };
 
     final int currentIndex = idToIndexMap[currentId] ?? -1;
@@ -123,14 +119,13 @@ class StorageCleanupService {
       return distanceA.abs().compareTo(distanceB.abs());
     });
 
-    final List<String> remainingIds = await cleanLevels(cachedIds);
-
-    return remainingIds;
+    await cleanLevels(cachedIds);
   }
 
   /// Prevents deletion of current, previous and next two levels
   bool _isProtectedLevel(int dist) {
-    if ((dist < 0 && dist.abs() <= kMaxPreviousLevelsToKeep) || dist <= kMaxNextLevelsToKeep) {
+    if ((dist < 0 && dist.abs() <= kMaxPreviousLevelsToKeep) ||
+        dist <= kMaxNextLevelsToKeep) {
       return true;
     }
 

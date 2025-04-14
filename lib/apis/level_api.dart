@@ -8,9 +8,7 @@ import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/level/level.dart';
 
 abstract class ILevelApi {
-  FutureEither<LevelDTO?> get(
-    String id,
-  );
+  FutureEither<LevelDTO?> get(String id);
   FutureEither<List<String>?> getOrderedIds();
 }
 
@@ -23,11 +21,7 @@ class LevelApi implements ILevelApi {
   FutureEither<LevelDTO?> get(String id) async {
     try {
       final response = await apiService.getCloudStorageData(
-        params: ApiParams(
-          endpoint: getLevelJsonPathEndpoint(id),
-          method: ApiMethod.get,
-          baseUrl: BaseUrl.s3,
-        ),
+        endpoint: getLevelJsonPath(id),
       );
 
       if (response == null) return right(null);
@@ -52,13 +46,10 @@ class LevelApi implements ILevelApi {
   @override
   FutureEither<List<String>?> getOrderedIds() async {
     try {
-      final response = await apiService.getCloudStorageData<Map<String, dynamic>?>(
-        params: ApiParams(
-          endpoint: getOrderedIdsPath(),
-          method: ApiMethod.get,
-          baseUrl: BaseUrl.s3,
-        ),
-      );
+      final response = await apiService
+          .getCloudStorageData<Map<String, dynamic>?>(
+            endpoint: getOrderedIdsPath(),
+          );
 
       final ids = response?.data?['orderedIds'];
       if (ids == null) return right(null);
@@ -72,11 +63,7 @@ class LevelApi implements ILevelApi {
         ),
       );
     } catch (e) {
-      return left(
-        Failure(
-          message: e.toString(),
-        ),
-      );
+      return left(Failure(message: e.toString()));
     }
   }
 }

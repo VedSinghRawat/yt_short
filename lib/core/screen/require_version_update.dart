@@ -24,24 +24,20 @@ class RequireVersionUpdate extends ConsumerWidget {
                 const SizedBox(height: 24),
                 const Text(
                   'Update Required',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
                 const Text(
                   'A new version of the app is required to continue. Please update to the latest version.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
                 ),
                 const SizedBox(height: 32),
                 ElevatedButton(
                   onPressed: () {
-                    ref.read(versionControllerProvider.notifier).openStore(context);
+                    ref
+                        .read(versionControllerProvider.notifier)
+                        .openStore(context);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,

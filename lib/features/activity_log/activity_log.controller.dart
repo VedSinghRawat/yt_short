@@ -5,23 +5,18 @@ import 'package:myapp/models/activity_log/activity_log.dart';
 class ActivityLogControllerState {
   final bool loading;
 
-  ActivityLogControllerState({
-    this.loading = false,
-  });
+  ActivityLogControllerState({this.loading = false});
 
-  ActivityLogControllerState copyWith({
-    bool? loading,
-  }) {
-    return ActivityLogControllerState(
-      loading: loading ?? this.loading,
-    );
+  ActivityLogControllerState copyWith({bool? loading}) {
+    return ActivityLogControllerState(loading: loading ?? this.loading);
   }
 }
 
 class ActivityLogController extends StateNotifier<ActivityLogControllerState> {
   final IActivityLogAPI activityLogAPI;
 
-  ActivityLogController(this.activityLogAPI) : super(ActivityLogControllerState());
+  ActivityLogController(this.activityLogAPI)
+    : super(ActivityLogControllerState());
 
   Future<void> syncActivityLogs(List<ActivityLog> activityLogs) async {
     state = state.copyWith(loading: true);
@@ -31,7 +26,9 @@ class ActivityLogController extends StateNotifier<ActivityLogControllerState> {
 }
 
 final activityLogControllerProvider =
-    StateNotifierProvider<ActivityLogController, ActivityLogControllerState>((ref) {
-  final activityLogAPI = ref.read(activityLogAPIProvider);
-  return ActivityLogController(activityLogAPI);
-});
+    StateNotifierProvider<ActivityLogController, ActivityLogControllerState>((
+      ref,
+    ) {
+      final activityLogAPI = ref.read(activityLogAPIProvider);
+      return ActivityLogController(activityLogAPI);
+    });

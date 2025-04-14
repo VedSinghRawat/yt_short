@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/apis/initialize_api.dart';
+import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/services/file_service.dart';
 import 'package:myapp/core/services/info_service.dart';
@@ -40,33 +41,42 @@ class InitializeService {
       await orderedIdNotifier.getOrderedIds();
       await handleDeepLinking(); // deep linking depends on user
 
-      final currProgress =
-          SharedPref.get(PrefKey.currProgress(userEmail: userControllerState.currentUser?.email));
+      final currProgress = SharedPref.get(
+        PrefKey.currProgress(userEmail: userControllerState.currentUser?.email),
+      );
 
       final apiUser = userControllerState.currentUser;
       if (currProgress == null && apiUser == null) return;
 
       final localLastModified = currProgress?.modified ?? 0;
       final apiLastModified =
-          apiUser != null ? DateTime.parse(apiUser.modified).millisecondsSinceEpoch : 0;
+          apiUser != null
+              ? DateTime.parse(apiUser.modified).millisecondsSinceEpoch
+              : 0;
 
       localLastModified > apiLastModified
-          ? await userController.sync(currProgress!.levelId!, currProgress.subLevel!)
+          ? await userController.sync(
+            currProgress!.levelId!,
+            currProgress.subLevel!,
+          )
           : await SharedPref.copyWith(
-              PrefKey.currProgress(userEmail: apiUser?.email),
-              Progress(
-                level: apiUser?.level,
-                levelId: apiUser?.levelId,
-                maxLevel: apiUser?.maxLevel,
-                maxSubLevel: apiUser?.maxSubLevel,
-                subLevel: apiUser?.subLevel,
-                modified: apiLastModified,
-              ),
-            );
+            PrefKey.currProgress(userEmail: apiUser?.email),
+            Progress(
+              level: apiUser?.level,
+              levelId: apiUser?.levelId,
+              maxLevel: apiUser?.maxLevel,
+              maxSubLevel: apiUser?.maxSubLevel,
+              subLevel: apiUser?.subLevel,
+            ),
+          );
 
       await SharedPref.store(PrefKey.isFirstLaunch, false);
     } catch (e, stackTrace) {
-      developer.log('Error during initialize', error: e.toString(), stackTrace: stackTrace);
+      developer.log(
+        'Error during initialize',
+        error: e.toString(),
+        stackTrace: stackTrace,
+      );
     }
   }
 
@@ -78,13 +88,13 @@ class InitializeService {
     final cyId = referrer.installReferrer;
 
     // Skip if no referrer or if it's just the default Google Play organic referrer
-    if (cyId == null || cyId == "utm_source=google-play&utm_medium=organic") return;
+    if (cyId == null || cyId == kDefaultReferrer) return;
 
     await SharedPref.store(PrefKey.cyId, cyId);
   }
 
   Future<void> handleDeepLinking() async {
-    // if (SharedPref.get(PrefKey.cyId) != null) return;
+    if (SharedPref.get(PrefKey.cyId) != null) return;
 
     final appLinks = AppLinks();
 
@@ -128,7 +138,9 @@ class InitializeService {
   }
 }
 
-final initializeServiceProvider = FutureProvider<InitializeService>((ref) async {
+final initializeServiceProvider = FutureProvider<InitializeService>((
+  ref,
+) async {
   final service = InitializeService(
     userControllerState: ref.read(userControllerProvider),
     initializeAPI: ref.read(initializeAPIService),

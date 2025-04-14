@@ -19,14 +19,12 @@ class UserAPI implements IUserAPI {
   FutureEither<UserDTO> sync(String levelId, int subLevel) async {
     try {
       final response = await _apiService.call(
-          params: ApiParams(
-        method: ApiMethod.post,
-        endpoint: '/user/sync',
-        body: {
-          'levelId': levelId,
-          'subLevel': subLevel,
-        },
-      ));
+        params: ApiParams(
+          method: ApiMethod.post,
+          endpoint: '/user/sync',
+          body: {'levelId': levelId, 'subLevel': subLevel},
+        ),
+      );
 
       if (response.statusCode != 200) {
         throw Exception('Failed to sync user progress: ${response.statusCode}');
@@ -34,7 +32,11 @@ class UserAPI implements IUserAPI {
 
       return right(UserDTO.fromJson(response.data?['user']));
     } on DioException catch (e, stackTrace) {
-      developer.log('Error syncing user progress', error: e.toString(), stackTrace: stackTrace);
+      developer.log(
+        'Error syncing user progress',
+        error: e.toString(),
+        stackTrace: stackTrace,
+      );
 
       return left(Failure(message: parseError(e.type)));
     }

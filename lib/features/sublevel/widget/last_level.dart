@@ -26,10 +26,7 @@ class ErrorPage extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           if (buttonText != null)
-            ElevatedButton(
-              onPressed: onRefresh,
-              child: Text(buttonText!),
-            ),
+            ElevatedButton(onPressed: onRefresh, child: Text(buttonText!)),
         ],
       ),
     );

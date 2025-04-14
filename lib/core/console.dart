@@ -18,7 +18,7 @@ class Console {
     '🟫',
     '🔵',
     '🔴',
-    '🟢'
+    '🟢',
   ];
 
   static String _getOrCreateColorTag(String name) {

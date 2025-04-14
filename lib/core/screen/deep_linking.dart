@@ -32,9 +32,7 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
 
     if (authState.loading) {
       return const Scaffold(
-        body: Center(
-          child: Loader(text: 'Linking your account...'),
-        ),
+        body: Center(child: Loader(text: 'Linking your account...')),
       );
     }
 
@@ -48,9 +46,10 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
           ),
-          child: authState.error != null
-              ? _buildErrorUI(context, authState.error!)
-              : _buildSuccessUI(context),
+          child:
+              authState.error != null
+                  ? _buildErrorUI(context, authState.error!)
+                  : _buildSuccessUI(context),
         ),
       ),
     );
@@ -60,27 +59,17 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Text(
-          '❌',
-          style: TextStyle(
-            fontSize: 48,
-          ),
-        ),
+        const Text('❌', style: TextStyle(fontSize: 48)),
         const SizedBox(height: 12),
         const Text(
           "Sync Failed",
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
         Text(
           error,
           textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.error,
-          ),
+          style: TextStyle(color: Theme.of(context).colorScheme.error),
         ),
         const SizedBox(height: 24),
         ElevatedButton(
@@ -120,19 +109,11 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Text(
-          '🎉',
-          style: TextStyle(
-            fontSize: 48,
-          ),
-        ),
+        const Text('🎉', style: TextStyle(fontSize: 48)),
         const SizedBox(height: 12),
         const Text(
           "You're all set!",
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 24),
         ElevatedButton(

@@ -8,10 +8,9 @@ import 'package:myapp/core/utils.dart';
 import 'package:myapp/core/widgets/loading_refresh_icon.dart';
 import 'package:myapp/features/user/user_controller.dart';
 
-class HomeScreenAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
-  const HomeScreenAppBar({
-    super.key,
-  });
+class HomeScreenAppBar extends ConsumerStatefulWidget
+    implements PreferredSizeWidget {
+  const HomeScreenAppBar({super.key});
 
   @override
   ConsumerState<HomeScreenAppBar> createState() => _HomeScreenAppBarState();
@@ -25,7 +24,9 @@ class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
 
   @override
   Widget build(BuildContext context) {
-    final currentUser = ref.watch(userControllerProvider.select((state) => state.currentUser));
+    final currentUser = ref.watch(
+      userControllerProvider.select((state) => state.currentUser),
+    );
     final isLoggedIn = SharedPref.get(PrefKey.lastLoggedInEmail) != null;
 
     final needsReload = currentUser?.email.isEmpty ?? true && isLoggedIn;
@@ -41,13 +42,19 @@ class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
                 _isLoading = true;
               });
 
-              final initializeService = await ref.read(initializeServiceProvider.future);
+              final initializeService = await ref.read(
+                initializeServiceProvider.future,
+              );
 
               final isSuccess = await initializeService.initialApiCall();
 
-              final progress = SharedPref.get(PrefKey.currProgress(userEmail: currentUser?.email));
+              final progress = SharedPref.get(
+                PrefKey.currProgress(userEmail: currentUser?.email),
+              );
 
-              if (progress != null && progress.levelId != null && progress.subLevel != null) {
+              if (progress != null &&
+                  progress.levelId != null &&
+                  progress.subLevel != null) {
                 await ref
                     .read(userControllerProvider.notifier)
                     .sync(progress.levelId!, progress.subLevel!);
@@ -74,7 +81,10 @@ class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
               context.push(Routes.signIn);
             }
           },
-          icon: isLoggedIn ? const Icon(Icons.account_circle) : const Icon(Icons.person_add),
+          icon:
+              isLoggedIn
+                  ? const Icon(Icons.account_circle)
+                  : const Icon(Icons.person_add),
         ),
       ],
     );

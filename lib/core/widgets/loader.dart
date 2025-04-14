@@ -14,10 +14,7 @@ class Loader extends StatelessWidget {
           const CircularProgressIndicator.adaptive(),
           if (text != null) ...[
             const SizedBox(height: 16),
-            Text(
-              text!,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
+            Text(text!, style: Theme.of(context).textTheme.bodyMedium),
           ],
         ],
       ),

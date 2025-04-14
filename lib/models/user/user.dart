@@ -24,7 +24,8 @@ class UserModel with _$UserModel {
     required int maxLevel,
   }) = _UserModel;
 
-  factory UserModel.fromJson(Map<String, dynamic> json) => _$UserModelFromJson(json);
+  factory UserModel.fromJson(Map<String, dynamic> json) =>
+      _$UserModelFromJson(json);
 
   factory UserModel.fromUserDTO(UserDTO dto, int level, int maxLevel) {
     final jsonDTO = dto.toJson();
@@ -55,10 +56,8 @@ class UserDTO with _$UserDTO {
     required int doneToday,
   }) = _UserDTO;
 
-  factory UserDTO.fromJson(Map<String, dynamic> json) => _$UserDTOFromJson(json);
+  factory UserDTO.fromJson(Map<String, dynamic> json) =>
+      _$UserDTOFromJson(json);
 }
 
-enum UserRole {
-  admin,
-  student,
-}
+enum UserRole { admin, student }

@@ -54,13 +54,11 @@ typedef FutureEither<T> = Future<Either<Failure, T>>;
 
 typedef FutureVoid = FutureEither<void>;
 
-final dioConnectionErrors = {
-  DioExceptionType.connectionError,
-};
+final dioConnectionErrors = {DioExceptionType.connectionError};
 
 String getOrderedIdsPath() => '/levels/ordered_ids.json';
 
-String getLevelJsonPathEndpoint(String levelId) {
+String getLevelJsonPath(String levelId) {
   return '/levels/$levelId/data.json';
 }
 

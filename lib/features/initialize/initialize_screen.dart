@@ -43,8 +43,6 @@ class InitializeScreen extends ConsumerWidget {
     });
 
     // Show a loader while anything (loading/data/error) happens
-    return const Scaffold(
-      body: Loader(),
-    );
+    return const Scaffold(body: Loader());
   }
 }

@@ -33,13 +33,12 @@ class OrderedIdsNotifier extends _$OrderedIdsNotifier {
   Future<AsyncValue<List<String>>> _handleLeft(Failure error) async {
     final localIds = SharedPref.get(PrefKey.orderedIds);
 
-    if (dioConnectionErrors.contains(error.type) && localIds != null) return _getIds();
+    if (dioConnectionErrors.contains(error.type) && localIds != null) {
+      return _getIds();
+    }
 
     return AsyncValue.error(
-      Failure(
-        message: parseError(error.type!),
-        type: error.type,
-      ),
+      Failure(message: parseError(error.type!), type: error.type),
       StackTrace.current,
     );
   }
@@ -60,11 +59,6 @@ class OrderedIdsNotifier extends _$OrderedIdsNotifier {
 
     await SharedPref.removeValue(PrefKey.orderedIds);
 
-    return AsyncValue.error(
-      Failure(
-        message: unknownErrorMsg,
-      ),
-      StackTrace.current,
-    );
+    return AsyncValue.error(Failure(message: unknownErrorMsg), StackTrace.current);
   }
 }

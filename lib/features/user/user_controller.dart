@@ -20,17 +20,23 @@ class UserControllerState with _$UserControllerState {
   const UserControllerState._();
 
   int get level {
-    final progress = SharedPref.get(PrefKey.currProgress(userEmail: currentUser?.email));
+    final progress = SharedPref.get(
+      PrefKey.currProgress(userEmail: currentUser?.email),
+    );
     return progress?.level ?? currentUser?.level ?? 1;
   }
 
   int get subLevel {
-    final progress = SharedPref.get(PrefKey.currProgress(userEmail: currentUser?.email));
+    final progress = SharedPref.get(
+      PrefKey.currProgress(userEmail: currentUser?.email),
+    );
     return progress?.subLevel ?? currentUser?.subLevel ?? 1;
   }
 
   String? get levelId {
-    final progress = SharedPref.get(PrefKey.currProgress(userEmail: currentUser?.email));
+    final progress = SharedPref.get(
+      PrefKey.currProgress(userEmail: currentUser?.email),
+    );
     return progress?.levelId ?? currentUser?.levelId;
   }
 }
@@ -71,13 +77,10 @@ class UserController extends _$UserController {
     try {
       final userEither = await _userAPI.sync(levelId, subLevel);
 
-      return userEither.match(
-        (l) => false,
-        (r) {
-          updateCurrentUser(r);
-          return true;
-        },
-      );
+      return userEither.match((l) => false, (r) {
+        updateCurrentUser(r);
+        return true;
+      });
     } catch (e, stack) {
       developer.log('Error in sync', error: e, stackTrace: stack);
       return false;

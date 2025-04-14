@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:myapp/apis/sub_level_api.dart';
@@ -15,9 +15,7 @@ class SubLevelService {
 
   final ISubLevelAPI subLevelAPI;
 
-  Future<void> getVideoFiles(
-    LevelDTO levelDTO,
-  ) async {
+  Future<void> getVideoFiles(LevelDTO levelDTO) async {
     // First fetch all video files in parallel
     await Future.wait(
       levelDTO.sub_levels.map(
@@ -29,55 +27,37 @@ class SubLevelService {
   Future<void> getSubLevelFile(String levelId, String videoFilename) async {
     await downloadVideo(levelId, videoFilename);
 
-    if (!await levelService.isVideoExists(levelId, videoFilename)) {
+    if (!await levelService.doesVideoExists(levelId, videoFilename)) {
       SharedPref.removeValue(
-        PrefKey.eTag(
-          levelService.getVideoPathEndPoint(
-            levelId,
-            videoFilename,
-          ),
-        ),
+        PrefKey.eTag(levelService.getVideoPathEndPoint(levelId, videoFilename)),
       );
     }
   }
 
   Future<void> downloadVideo(String levelId, String videoFilename) async {
-    final videoDataEither = await subLevelAPI.getVideo(
-      levelId,
-      videoFilename,
-    );
+    final videoDataEither = await subLevelAPI.getVideo(levelId, videoFilename);
 
     return switch (videoDataEither) {
       Left() => null,
-      Right(
-        value: final videoData,
-      )
-          when videoData == null =>
-        null,
-      Right(
-        value: final videoData,
-      ) =>
-        _storeVideo(
-          levelId,
-          videoFilename,
-          videoData!,
-        ),
+      Right(value: final videoData) when videoData == null => null,
+      Right(value: final videoData) => _storeVideo(levelId, videoFilename, videoData!),
     };
   }
 
-  Future<void> _storeVideo(
-    String levelId,
-    String videoFilename,
-    Uint8List videoData,
-  ) async {
+  Future<void> _storeVideo(String levelId, String videoFilename, Uint8List videoData) async {
     final file = File(levelService.getVideoPath(levelId, videoFilename));
     await Directory(file.parent.path).create(recursive: true);
 
-    await file.writeAsBytes(videoData);
+    await compute(_writeVideoToFile, {'filePath': file.path, 'videoData': videoData});
   }
 
-  String getVideoUrl(String levelId, String videoFilename) {
-    return '${BaseUrl.cloudflare.url}${levelService.getVideoPathEndPoint(levelId, videoFilename)}';
+  Future<void> _writeVideoToFile(Map<String, dynamic> params) async {
+    final file = File(params['filePath']);
+    await file.writeAsBytes(params['videoData']);
+  }
+
+  String getVideoUrl(String levelId, String videoFilename, BaseUrl baseUrl) {
+    return '${baseUrl.url}${levelService.getVideoPathEndPoint(levelId, videoFilename)}';
   }
 }
 

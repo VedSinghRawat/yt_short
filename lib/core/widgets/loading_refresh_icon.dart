@@ -25,10 +25,7 @@ class _LoadingRefreshIconState extends State<LoadingRefreshIcon>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: widget.duration,
-      vsync: this,
-    );
+    _controller = AnimationController(duration: widget.duration, vsync: this);
 
     if (widget.isLoading) {
       _controller.repeat();
@@ -59,10 +56,7 @@ class _LoadingRefreshIconState extends State<LoadingRefreshIcon>
         child: Icon(widget.icon),
       );
     } else {
-      return GestureDetector(
-        onTap: widget.onTap,
-        child: Icon(widget.icon),
-      );
+      return GestureDetector(onTap: widget.onTap, child: Icon(widget.icon));
     }
   }
 }

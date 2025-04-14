@@ -7,13 +7,11 @@ import 'package:myapp/core/widgets/loader.dart';
 class VersionCheckWrapper extends ConsumerStatefulWidget {
   final Widget child;
 
-  const VersionCheckWrapper({
-    super.key,
-    required this.child,
-  });
+  const VersionCheckWrapper({super.key, required this.child});
 
   @override
-  ConsumerState<VersionCheckWrapper> createState() => _VersionCheckWrapperState();
+  ConsumerState<VersionCheckWrapper> createState() =>
+      _VersionCheckWrapperState();
 }
 
 class _VersionCheckWrapperState extends ConsumerState<VersionCheckWrapper> {
@@ -47,27 +45,32 @@ class _VersionCheckWrapperState extends ConsumerState<VersionCheckWrapper> {
     }
 
     return Scaffold(
-      appBar: closable
-          ? AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () {
-                    ref.read(versionControllerProvider.notifier).dismissMessage();
-                  },
-                ),
-              ],
-            )
-          : null,
+      appBar:
+          closable
+              ? AppBar(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () {
+                      ref
+                          .read(versionControllerProvider.notifier)
+                          .dismissMessage();
+                    },
+                  ),
+                ],
+              )
+              : null,
       body: SafeArea(
         child: Center(
           child: HtmlWidget(
             content,
             onTapUrl: (url) {
               final prov = ref.read(versionControllerProvider.notifier);
-              url == 'closeAction' ? prov.dismissMessage() : prov.openStore(context);
+              url == 'closeAction'
+                  ? prov.dismissMessage()
+                  : prov.openStore(context);
               return true;
             },
           ),

@@ -16,13 +16,12 @@ class SignInScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isLoading = ref.watch(authControllerProvider.select((state) => state.loading));
+    final isLoading = ref.watch(
+      authControllerProvider.select((state) => state.loading),
+    );
 
     return Scaffold(
-      appBar: CustomAppBar(
-        title: 'Sign In',
-        ignoreInteractions: isLoading,
-      ),
+      appBar: CustomAppBar(title: 'Sign In', ignoreInteractions: isLoading),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.only(bottom: 32.0),
@@ -59,21 +58,23 @@ class SignInScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 32),
                   ElevatedButton.icon(
-                    onPressed: isLoading
-                        ? null
-                        : () async {
-                            await ref
-                                .read(authControllerProvider.notifier)
-                                .signInWithGoogle(context);
+                    onPressed:
+                        isLoading
+                            ? null
+                            : () async {
+                              await ref
+                                  .read(authControllerProvider.notifier)
+                                  .signInWithGoogle(context);
 
-                            if (!context.mounted) return;
+                              if (!context.mounted) return;
 
-                            final user = ref.read(userControllerProvider).currentUser;
+                              final user =
+                                  ref.read(userControllerProvider).currentUser;
 
-                            if (user != null) {
-                              context.go(Routes.home);
-                            }
-                          },
+                              if (user != null) {
+                                context.go(Routes.home);
+                              }
+                            },
                     icon: Image.network(
                       'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png',
                       height: 24,
@@ -83,7 +84,10 @@ class SignInScreen extends ConsumerWidget {
                     ),
                     label: const Text('Sign in with Google'),
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       textStyle: const TextStyle(fontSize: 16),
                     ),
                   ),
@@ -98,16 +102,14 @@ class SignInScreen extends ConsumerWidget {
   }
 }
 
-showLevelChangeConfirmationDialog(
-  BuildContext context,
-  UserModel user,
-) {
+showLevelChangeConfirmationDialog(BuildContext context, UserModel user) {
   return showConfirmationDialog(
     context,
     question:
         'We notice that you are already at Level ${user.maxLevel}, Sublevel ${user.maxSubLevel}. Do you want to continue from there?',
     onResult: (result) async {
-      final guestProgress = SharedPref.get(PrefKey.currProgress(userEmail: null)) ?? Progress();
+      final guestProgress =
+          SharedPref.get(PrefKey.currProgress(userEmail: null)) ?? Progress();
 
       await SharedPref.store(
         PrefKey.currProgress(userEmail: user.email),

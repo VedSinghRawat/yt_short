@@ -15,7 +15,8 @@ class SpeechExercise with _$SpeechExercise {
     required String videoFilename,
   }) = _SpeechExercise;
 
-  factory SpeechExercise.fromJson(Map<String, dynamic> json) => _$SpeechExerciseFromJson(json);
+  factory SpeechExercise.fromJson(Map<String, dynamic> json) =>
+      _$SpeechExerciseFromJson(json);
 }
 
 @freezed

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/core/console.dart';
 import 'package:myapp/core/error/failure.dart';
+import 'package:myapp/core/services/api_service.dart';
 import 'package:myapp/core/services/level_service.dart';
 import 'package:myapp/core/services/sub_level_service.dart';
 import 'package:myapp/core/shared_pref.dart';
@@ -20,7 +21,8 @@ import 'package:myapp/models/sublevel/sublevel.dart';
 class SublevelsList extends ConsumerStatefulWidget {
   final List<SubLevel> sublevels;
   final Set<String> loadingIds;
-  final Future<void> Function(int index, PageController controller)? onVideoChange;
+  final Future<void> Function(int index, PageController controller)?
+  onVideoChange;
 
   const SublevelsList({
     super.key,
@@ -42,7 +44,9 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
     final progress = SharedPref.get(PrefKey.currProgress(userEmail: userEmail));
 
     final jumpTo = widget.sublevels.indexWhere(
-      (sublevel) => (sublevel.index == progress?.subLevel && sublevel.level == progress?.level),
+      (sublevel) =>
+          (sublevel.index == progress?.subLevel &&
+              sublevel.level == progress?.level),
     );
 
     if (jumpTo >= widget.sublevels.length || jumpTo < 0) return;
@@ -55,10 +59,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
 
     await SharedPref.copyWith(
       PrefKey.currProgress(userEmail: userEmail),
-      Progress(
-        level: jumpSublevel.level,
-        subLevel: jumpSublevel.index,
-      ),
+      Progress(level: jumpSublevel.level, subLevel: jumpSublevel.index),
     );
   }
 
@@ -88,7 +89,8 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
   Widget build(BuildContext context) {
     return RefreshIndicator(
       onRefresh: () async {
-        if (widget.sublevels[0].level == 1 && widget.sublevels[0].index == 0) return;
+        if (widget.sublevels[0].level == 1 && widget.sublevels[0].index == 0)
+          return;
 
         await Future.delayed(const Duration(seconds: 5));
       },
@@ -102,42 +104,65 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
           await widget.onVideoChange?.call(index, _pageController);
         },
         itemBuilder: (context, index) {
-          final sublevel = widget.sublevels.length > index ? widget.sublevels[index] : null;
+          final sublevel =
+              widget.sublevels.length > index ? widget.sublevels[index] : null;
 
           final isLastSublevel = index == widget.sublevels.length;
 
-          final isLoading = sublevel == null
-              ? widget.loadingIds.isNotEmpty
-              : widget.loadingIds.contains(sublevel.levelId);
+          final isLoading =
+              sublevel == null
+                  ? widget.loadingIds.isNotEmpty
+                  : widget.loadingIds.contains(sublevel.levelId);
 
           if ((isLastSublevel || sublevel == null) && !isLoading) {
             final error = ref.watch(sublevelControllerProvider).error;
 
-            Console.error(Failure(message: 'sublevel error is $error $index'), StackTrace.current);
+            Console.error(
+              Failure(message: 'sublevel error is $error $index'),
+              StackTrace.current,
+            );
 
             if (error == null) {
               return const Loader();
             }
 
             return ErrorPage(
-              onRefresh: () => widget.onVideoChange?.call(index, _pageController),
+              onRefresh:
+                  () => widget.onVideoChange?.call(index, _pageController),
               text: error,
               buttonText: 'Retry',
             );
           }
 
           if (sublevel == null) {
-            Console.error(Failure(message: 'sublevel is null$index '), StackTrace.current);
+            Console.error(
+              Failure(message: 'sublevel is null$index '),
+              StackTrace.current,
+            );
             return const Loader();
           }
           final positionText = '${sublevel.level}-${sublevel.index}';
 
-          String? localPath =
-              ref.read(levelServiceProvider).getVideoPath(sublevel.levelId, sublevel.videoFilename);
+          String? localPath = ref
+              .read(levelServiceProvider)
+              .getVideoPath(sublevel.levelId, sublevel.videoFilename);
 
-          final url = ref
-              .read(subLevelServiceProvider)
-              .getVideoUrl(sublevel.levelId, sublevel.videoFilename);
+          final urls = [
+            ref
+                .read(subLevelServiceProvider)
+                .getVideoUrl(
+                  sublevel.levelId,
+                  sublevel.videoFilename,
+                  BaseUrl.cloudflare,
+                ),
+            ref
+                .read(subLevelServiceProvider)
+                .getVideoUrl(
+                  sublevel.levelId,
+                  sublevel.videoFilename,
+                  BaseUrl.s3,
+                ),
+          ];
 
           if (index == 0 && !File(localPath).existsSync()) {
             localPath = null;
@@ -147,19 +172,21 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
             children: [
               Center(
                 child: sublevel.when(
-                  video: (video) => Player(
-                    key: Key(positionText),
-                    uniqueId: positionText,
-                    videoLocalPath: localPath,
-                    videoUrl: url,
-                  ),
-                  speechExercise: (speechExercise) => SpeechExerciseScreen(
-                    key: Key(positionText),
-                    uniqueId: positionText,
-                    exercise: speechExercise,
-                    videoLocalPath: localPath,
-                    videoUrl: url,
-                  ),
+                  video:
+                      (video) => Player(
+                        key: Key(positionText),
+                        uniqueId: positionText,
+                        videoLocalPath: localPath,
+                        videoUrl: url,
+                      ),
+                  speechExercise:
+                      (speechExercise) => SpeechExerciseScreen(
+                        key: Key(positionText),
+                        uniqueId: positionText,
+                        exercise: speechExercise,
+                        videoLocalPath: localPath,
+                        videoUrl: url,
+                      ),
                 ),
               ),
               Positioned(
@@ -197,34 +224,5 @@ class _LevelText extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class UpwardOnlyScrollPhysics extends ScrollPhysics {
-  const UpwardOnlyScrollPhysics({ScrollPhysics? parent}) : super(parent: parent);
-
-  @override
-  UpwardOnlyScrollPhysics applyTo(ScrollPhysics? ancestor) {
-    return UpwardOnlyScrollPhysics(parent: buildParent(ancestor));
-  }
-
-  @override
-  double applyPhysicsToUserOffset(ScrollMetrics position, double offset) {
-    // Allow only upward swipe (scrolling to previous page, offset < 0)
-    return offset > 0 ? 0 : offset;
-  }
-
-  @override
-  bool shouldAcceptUserOffset(ScrollMetrics position) => true;
-
-  @override
-  double applyBoundaryConditions(ScrollMetrics position, double value) {
-    final delta = value - position.pixels;
-
-    // Prevent downward scroll (next page)
-    if (delta > 0) {
-      return delta;
-    }
-    return 0;
   }
 }

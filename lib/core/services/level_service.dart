@@ -19,7 +19,8 @@ class LevelService {
 
   LevelService(this.fileService, this.levelApi);
 
-  String get levelsDocDirPath => '${fileService.documentsDirectory.path}/levels';
+  String get levelsDocDirPath =>
+      '${fileService.documentsDirectory.path}/levels';
   String get levelsCacheDirPath => '${fileService.cacheDirectory.path}/levels';
 
   String getLevelPath(String levelId) {
@@ -27,7 +28,7 @@ class LevelService {
   }
 
   String getLevelJsonPath(String levelId) {
-    return '${fileService.documentsDirectory.path}${getLevelJsonPathEndpoint(levelId)}';
+    return '${fileService.documentsDirectory.path}${getLevelJsonPath(levelId)}';
   }
 
   String getVideoBasePathEndPoint(String levelId) {
@@ -46,7 +47,7 @@ class LevelService {
     return '${fileService.documentsDirectory.path}${getVideoPathEndPoint(levelId, videoFilename)}';
   }
 
-  Future<bool> isVideoExists(String levelId, String videoFilename) async {
+  Future<bool> doesVideoExists(String levelId, String videoFilename) async {
     final file = File(getVideoPath(levelId, videoFilename));
     return file.exists();
   }
@@ -76,20 +77,21 @@ class LevelService {
       final levelEither = await levelApi.get(id);
 
       return switch (levelEither) {
-        Right(value: final r) => r == null
-            ? await getLocalLevel(id).then((level) {
+        Right(value: final r) =>
+          r == null
+              ? await getLocalLevel(id).then((level) {
                 if (level == null) {
-                  return left(Failure(
-                    message: connectionErrorMsg,
-                    trace: StackTrace.current,
-                    type: DioExceptionType.connectionError,
-                  ));
+                  return left(
+                    Failure(
+                      message: connectionErrorMsg,
+                      trace: StackTrace.current,
+                      type: DioExceptionType.connectionError,
+                    ),
+                  );
                 }
                 return right(level);
               })
-            : _saveLevel(r).then(
-                (b) => right(r),
-              ),
+              : _saveLevel(r).then((b) => right(r)),
         Left(value: final l) => left(l),
       };
     } catch (e, st) {

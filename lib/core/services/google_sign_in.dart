@@ -4,10 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 final googleSignInProvider = Provider<GoogleSignIn>((ref) {
   return GoogleSignIn(
-    scopes: [
-      'email',
-      'profile',
-    ],
+    scopes: ['email', 'profile'],
     serverClientId: dotenv.env['GOOGLE_SERVER_ID'],
   );
 });

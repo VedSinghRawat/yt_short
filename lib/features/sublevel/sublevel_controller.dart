@@ -42,21 +42,32 @@ class SublevelController extends _$SublevelController {
 
   late final ISubLevelAPI subLevelAPI = ref.read(subLevelAPIProvider);
   late final ILevelApi levelApi = ref.read(levelApiProvider);
-  late final SubLevelService subLevelService = ref.read(subLevelServiceProvider);
+  late final SubLevelService subLevelService = ref.read(
+    subLevelServiceProvider,
+  );
   late final FileService fileService = ref.read(fileServiceProvider);
-  late final OrderedIdsNotifier orderedIdNotifier = ref.read(orderedIdsNotifierProvider.notifier);
-  late final StorageCleanupService storageCleanupService = ref.read(storageCleanupServiceProvider);
+  late final OrderedIdsNotifier orderedIdNotifier = ref.read(
+    orderedIdsNotifierProvider.notifier,
+  );
+  late final StorageCleanupService storageCleanupService = ref.read(
+    storageCleanupServiceProvider,
+  );
   late final LevelService levelService = ref.read(levelServiceProvider);
 
   Future<String?> _listByLevel(String levelId, int level) async {
-    state = state.copyWith(loadingLevelIds: {...state.loadingLevelIds, levelId});
+    state = state.copyWith(
+      loadingLevelIds: {...state.loadingLevelIds, levelId},
+    );
 
     try {
-      final levelDTOEither = await ref.read(levelServiceProvider).getLevel(levelId);
+      final levelDTOEither = await ref
+          .read(levelServiceProvider)
+          .getLevel(levelId);
 
       final levelDTO = switch (levelDTOEither) {
         Right(value: final r) => r,
-        Left(value: final l) => (() {
+        Left(value: final l) =>
+          (() {
             state = state.copyWith(error: parseError(l.type));
             return null;
           })(),
@@ -83,15 +94,22 @@ class SublevelController extends _$SublevelController {
 
       await _addExistVideoSublevelEntries(levelDTO, level, levelId);
 
-      state = state.copyWith(loadedLevelIds: {...state.loadedLevelIds, levelId});
+      state = state.copyWith(
+        loadedLevelIds: {...state.loadedLevelIds, levelId},
+      );
       return levelId;
     } catch (e, stackTrace) {
-      developer.log('Error in SublevelController._listByLevel',
-          error: e.toString(), stackTrace: stackTrace);
+      developer.log(
+        'Error in SublevelController._listByLevel',
+        error: e.toString(),
+        stackTrace: stackTrace,
+      );
       state = state.copyWith(error: unknownErrorMsg);
       return null;
     } finally {
-      state = state.copyWith(loadingLevelIds: {...state.loadingLevelIds}..remove(levelId));
+      state = state.copyWith(
+        loadingLevelIds: {...state.loadingLevelIds}..remove(levelId),
+      );
     }
   }
 
@@ -103,35 +121,25 @@ class SublevelController extends _$SublevelController {
     String levelId,
   ) async {
     final entries = await FileService.listEntities(
-      Directory(
-        levelService.getVideoDirPath(levelId),
-      ),
+      Directory(levelService.getVideoDirPath(levelId)),
     );
 
     final videoFiles = entries.toSet();
 
-    final sublevels = levelDTO.sub_levels
-        .where(
-      (dto) => videoFiles.contains(
-        "${dto.videoFilename}.mp4",
-      ),
-    )
-        .map(
-      (dto) {
-        final index = levelDTO.sub_levels.indexOf(dto) + 1;
-        return SubLevel.fromSubLevelDTO(
-          dto,
-          level,
-          index,
-          levelId,
-        );
-      },
-    ).toSet();
+    final sublevels =
+        levelDTO.sub_levels
+            .where((dto) => videoFiles.contains("${dto.videoFilename}.mp4"))
+            .map((dto) {
+              final index = levelDTO.sub_levels.indexOf(dto) + 1;
+              return SubLevel.fromSubLevelDTO(dto, level, index, levelId);
+            })
+            .toSet();
 
     state = state.copyWith(sublevels: {...state.sublevels, ...sublevels});
   }
 
-  void setHasFinishedVideo(bool to) => state = state.copyWith(hasFinishedVideo: to);
+  void setHasFinishedVideo(bool to) =>
+      state = state.copyWith(hasFinishedVideo: to);
 
   Future<void> handleFetchSublevels() async {
     try {
@@ -156,7 +164,10 @@ class SublevelController extends _$SublevelController {
 
       if (isFirstFetch) await _cleanOldLevels(orderedIds, currLevelId);
     } catch (e) {
-      developer.log('error in sublevel controller: $e', stackTrace: StackTrace.current);
+      developer.log(
+        'error in sublevel controller: $e',
+        stackTrace: StackTrace.current,
+      );
       state = state.copyWith(error: e.toString());
     }
   }
@@ -172,25 +183,36 @@ class SublevelController extends _$SublevelController {
       await _listByLevel(currLevelId, currUserLevel);
     }
 
-    final surroundingLevelIds = _getSurroundingLevelIds(currLevelIndex, orderedIds);
+    final surroundingLevelIds = _getSurroundingLevelIds(
+      currLevelIndex,
+      orderedIds,
+    );
 
-    final fetchTasks = surroundingLevelIds
-        .where((levelId) => levelId != null && !_isLevelFetched(levelId))
-        .map((levelId) => _listByLevel(levelId!, orderedIds.indexOf(levelId) + 1))
-        .toList();
+    final fetchTasks =
+        surroundingLevelIds
+            .where((levelId) => levelId != null && !_isLevelFetched(levelId))
+            .map(
+              (levelId) =>
+                  _listByLevel(levelId!, orderedIds.indexOf(levelId) + 1),
+            )
+            .toList();
 
     await Future.wait(fetchTasks);
 
     if (currLevelIndex < 0 || currUserLevel >= orderedIds.length) {
       state = state.copyWith(
-        error: 'These are all the lessons for now, Check in after sometime for new content',
+        error:
+            'These are all the lessons for now, Check in after sometime for new content',
       );
     }
 
     return currLevelId;
   }
 
-  Future<void> _cleanOldLevels(List<String> orderedIds, String currLevelId) async {
+  Future<void> _cleanOldLevels(
+    List<String> orderedIds,
+    String currLevelId,
+  ) async {
     try {
       final cachedIds = await FileService.listEntities(
         Directory(levelService.levelsDocDirPath),
@@ -203,15 +225,21 @@ class SublevelController extends _$SublevelController {
         currLevelId,
       );
     } catch (e) {
-      developer.log('error in sublevel controller clean levels: $e',
-          stackTrace: StackTrace.current);
+      developer.log(
+        'error in sublevel controller clean levels: $e',
+        stackTrace: StackTrace.current,
+      );
     }
   }
 
   bool _isLevelFetched(String levelId) =>
-      state.loadedLevelIds.contains(levelId) || state.loadingLevelIds.contains(levelId);
+      state.loadedLevelIds.contains(levelId) ||
+      state.loadingLevelIds.contains(levelId);
 
-  List<String?> _getSurroundingLevelIds(int currIndex, List<String?> orderedIds) {
+  List<String?> _getSurroundingLevelIds(
+    int currIndex,
+    List<String?> orderedIds,
+  ) {
     final int maxIndex = orderedIds.length - 1;
     return [
       currIndex + 1 <= maxIndex ? orderedIds[currIndex + 1] : null,

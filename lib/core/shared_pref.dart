@@ -23,7 +23,9 @@ class PrefKey<ST, LT> {
   static const isFirstLaunch = PrefKey<bool, Unit>(name: 'isFirstLaunch');
   static const orderedIds = PrefKey<List<String>, String>(name: 'orderedIds');
   static const doneToday = PrefKey<int, Unit>(name: 'doneToday');
-  static const lastLoggedInEmail = PrefKey<String, Unit>(name: 'lastLoggedInEmail');
+  static const lastLoggedInEmail = PrefKey<String, Unit>(
+    name: 'lastLoggedInEmail',
+  );
 
   static const activityLogs = PrefKey<List<ActivityLog>, ActivityLog>(
     fromJson: ActivityLog.fromJson,
@@ -31,9 +33,7 @@ class PrefKey<ST, LT> {
   );
 
   /// [userEmail] is optional because it is not always available if the user is not logged in
-  static PrefKey<Progress, Unit> currProgress({
-    String? userEmail,
-  }) {
+  static PrefKey<Progress, Unit> currProgress({String? userEmail}) {
     final lastLoggedInEmail = SharedPref.get(PrefKey.lastLoggedInEmail);
 
     return PrefKey<Progress, Unit>(
@@ -42,7 +42,8 @@ class PrefKey<ST, LT> {
     );
   }
 
-  static PrefKey<String, Unit> eTag(String id) => PrefKey<String, Unit>(name: 'eTag_$id');
+  static PrefKey<String, Unit> eTag(String id) =>
+      PrefKey<String, Unit>(name: 'eTag_$id');
 }
 
 class DestructedKey {
@@ -59,7 +60,9 @@ class SharedPref {
     _pref = await SharedPreferences.getInstance();
   }
 
-  static DestructedKey _destructKey<ST, LT, K extends PrefKey<ST, LT>>(K prefKey) {
+  static DestructedKey _destructKey<ST, LT, K extends PrefKey<ST, LT>>(
+    K prefKey,
+  ) {
     final fromJson = prefKey.fromJson;
     final key = prefKey.name;
 
@@ -88,16 +91,23 @@ class SharedPref {
 
         if (decoded is List) {
           if (destructedKey.fromJson != null) {
-            result = decoded.map((e) => destructedKey.fromJson!(e)).toList().cast<LT>();
+            result =
+                decoded
+                    .map((e) => destructedKey.fromJson!(e))
+                    .toList()
+                    .cast<LT>();
           } else {
             result = List.from(decoded).cast<LT>();
           }
         } else if (decoded is Map) {
-          result = destructedKey.fromJson != null
-              ? destructedKey.fromJson!(decoded as Map<String, dynamic>)
-              : Map.from(decoded);
+          result =
+              destructedKey.fromJson != null
+                  ? destructedKey.fromJson!(decoded as Map<String, dynamic>)
+                  : Map.from(decoded);
         } else {
-          throw UnsupportedError("Cannot decode value for ${destructedKey.key}");
+          throw UnsupportedError(
+            "Cannot decode value for ${destructedKey.key}",
+          );
         }
       }
 
@@ -109,7 +119,10 @@ class SharedPref {
     }
   }
 
-  static Future<void> store<ST, LT, K extends PrefKey<ST, LT>>(K prefKey, ST value) async {
+  static Future<void> store<ST, LT, K extends PrefKey<ST, LT>>(
+    K prefKey,
+    ST value,
+  ) async {
     final destructedKey = _destructKey(prefKey);
 
     dynamic validVal;
@@ -131,19 +144,17 @@ class SharedPref {
 
       await _pref.setString(destructedKey.key, validVal);
     } catch (e) {
-      Console.error(
-        Failure(message: e.toString()),
-        StackTrace.current,
-      );
+      Console.error(Failure(message: e.toString()), StackTrace.current);
 
       rethrow;
     }
   }
 
-  static Future<void> pushValue<LT, ST extends List<LT>, K extends PrefKey<ST, LT>>(
-    K prefKey,
-    LT newValue,
-  ) async {
+  static Future<void> pushValue<
+    LT,
+    ST extends List<LT>,
+    K extends PrefKey<ST, LT>
+  >(K prefKey, LT newValue) async {
     final existing = get(prefKey);
     dynamic updated;
 
@@ -157,11 +168,16 @@ class SharedPref {
     await store(prefKey, updated);
   }
 
-  static Future<void> removeValue<ST, LT, K extends PrefKey<ST, LT>>(K prefKey) async {
+  static Future<void> removeValue<ST, LT, K extends PrefKey<ST, LT>>(
+    K prefKey,
+  ) async {
     await _pref.remove(prefKey.name);
   }
 
-  static Future<void> copyWith<ST, LT, K extends PrefKey<ST, LT>>(K key, ST value) async {
+  static Future<void> copyWith<ST, LT, K extends PrefKey<ST, LT>>(
+    K key,
+    ST value,
+  ) async {
     try {
       final oldValue = get(key);
       final Map oldValueMap;
@@ -177,9 +193,12 @@ class SharedPref {
         throw 'Unsupported type for copyWith in SharedPref';
       }
 
-      final merged = oldValueMap.map((k, v) => valueMap.containsKey(k) && valueMap[k] != null
-          ? MapEntry(k, valueMap[k])
-          : MapEntry(k, v));
+      final merged = oldValueMap.map(
+        (k, v) =>
+            valueMap.containsKey(k) && valueMap[k] != null
+                ? MapEntry(k, valueMap[k])
+                : MapEntry(k, v),
+      );
 
       if (key.fromJson != null) {
         final updatedObj = key.fromJson!(Map<String, dynamic>.from(merged));

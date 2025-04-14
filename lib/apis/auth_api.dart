@@ -46,7 +46,11 @@ class AuthAPI implements IAuthAPI {
     } on DioException catch (e) {
       throw Exception(e.response?.data?.toString() ?? e.toString());
     } catch (e, stackTrace) {
-      developer.log('Error during Google Sign In', error: e.toString(), stackTrace: stackTrace);
+      developer.log(
+        'Error during Google Sign In',
+        error: e.toString(),
+        stackTrace: stackTrace,
+      );
       throw Exception(e.toString());
     }
   }
@@ -57,7 +61,11 @@ class AuthAPI implements IAuthAPI {
       await _googleSignIn.signOut();
       _apiService.setToken('');
     } catch (e, stackTrace) {
-      developer.log('Error during sign out', error: e.toString(), stackTrace: stackTrace);
+      developer.log(
+        'Error during sign out',
+        error: e.toString(),
+        stackTrace: stackTrace,
+      );
       throw Exception(e.toString());
     }
   }
@@ -72,9 +80,7 @@ class AuthAPI implements IAuthAPI {
       params: ApiParams(
         endpoint: '/user/sync-cy-id',
         method: ApiMethod.post,
-        body: {
-          'cyId': cyId,
-        },
+        body: {'cyId': cyId},
       ),
     );
 
@@ -86,5 +92,6 @@ class AuthAPI implements IAuthAPI {
 }
 
 final authAPIProvider = Provider<AuthAPI>(
-  (ref) => AuthAPI(ref.read(apiServiceProvider), ref.read(googleSignInProvider)),
+  (ref) =>
+      AuthAPI(ref.read(apiServiceProvider), ref.read(googleSignInProvider)),
 );

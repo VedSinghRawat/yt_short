@@ -10,10 +10,7 @@ import 'package:myapp/core/services/level_service.dart';
 import 'package:myapp/core/utils.dart';
 
 abstract class ISubLevelAPI {
-  FutureEither<Uint8List?> getVideo(
-    String levelId,
-    String videoFilename,
-  );
+  FutureEither<Uint8List?> getVideo(String levelId, String videoFilename);
 }
 
 class SubLevelAPI implements ISubLevelAPI {
@@ -29,15 +26,7 @@ class SubLevelAPI implements ISubLevelAPI {
   ) async {
     try {
       final response = await apiService.getCloudStorageData<Uint8List?>(
-        params: ApiParams(
-          endpoint: levelService.getVideoPathEndPoint(
-            levelId,
-            videoFilename,
-          ),
-          baseUrl: BaseUrl.s3,
-          method: ApiMethod.get,
-          responseType: ResponseType.bytes,
-        ),
+        endpoint: levelService.getVideoPathEndPoint(levelId, videoFilename),
       );
 
       return Right(response?.data);

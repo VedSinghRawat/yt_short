@@ -1,6 +1,8 @@
 import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
+import 'package:myapp/core/widgets/handle_permission_cancel.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
@@ -21,13 +23,24 @@ class SpeechRecognizer {
     _speech = stt.SpeechToText();
   }
 
-  Future<void> startListening() async {
+  Future<void> _showMicPermissionDeniedDialog(BuildContext context) async {
+    await handlePermissionDenied(
+      context,
+      'Microphone permission is denied. Please open app settings and grant permission to use this feature.',
+      permission: Permission.microphone,
+    );
+  }
+
+  Future<void> startListening(BuildContext context) async {
     bool available = await _speech.initialize(
       onStatus: onStatusChange,
       onError: (error) => {if (onError != null) onError!(error.errorMsg)},
     );
 
-    if (!available) throw Exception('Speech recognition is not available!');
+    if (!available && context.mounted) {
+      _showMicPermissionDeniedDialog(context);
+      return;
+    }
 
     _speech.listen(
       pauseFor: const Duration(minutes: 1),

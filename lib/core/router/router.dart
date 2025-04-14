@@ -16,7 +16,7 @@ class Routes {
   static const home = '/home';
   static const versionRequired = '/version/required';
   static const versionSuggest = '/version/suggest';
-  static const signIn = '/sign-in';
+  static const signIn = '/signIn';
   static const deepLinking = '/deepLinking';
   static const initializeScreen = '/';
   static const profile = '/profile';
@@ -39,17 +39,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Main app routes - wrapped with VersionCheckWrapper
       GoRoute(
         path: Routes.home,
-        builder: (context, state) => const AuthWrapper(
-          child: VersionCheckWrapper(
-            child: HomeScreen(),
-          ),
-        ),
+        builder:
+            (context, state) => const AuthWrapper(
+              child: VersionCheckWrapper(child: HomeScreen()),
+            ),
       ),
       GoRoute(
         path: Routes.signIn,
-        builder: (context, state) => const VersionCheckWrapper(
-          child: SignInScreen(),
-        ),
+        builder:
+            (context, state) =>
+                const VersionCheckWrapper(child: SignInScreen()),
       ),
       GoRoute(
         path: Routes.deepLinking,
@@ -66,10 +65,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ProfileScreen(),
       ),
     ],
-    errorBuilder: (context, state) => Scaffold(
-      body: Center(
-        child: Text('Error: ${state.error}'),
-      ),
-    ),
+    errorBuilder:
+        (context, state) =>
+            Scaffold(body: Center(child: Text('Error: ${state.error}'))),
   );
 });

@@ -18,10 +18,10 @@ class Progress implements SharedPrefClass {
     this.maxLevel,
     this.maxSubLevel,
     this.levelId,
-    int? modified,
-  }) : modified = modified ?? DateTime.now().millisecondsSinceEpoch;
+  }) : modified = DateTime.now().millisecondsSinceEpoch;
 
-  factory Progress.fromJson(Map<String, dynamic> json) => _$ProgressFromJson(json);
+  factory Progress.fromJson(Map<String, dynamic> json) =>
+      _$ProgressFromJson(json);
 
   @override
   Map<String, dynamic> toJson() => _$ProgressToJson(this);
@@ -39,7 +39,6 @@ class Progress implements SharedPrefClass {
       maxLevel: maxLevel ?? this.maxLevel,
       maxSubLevel: maxSubLevel ?? this.maxSubLevel,
       levelId: levelId ?? this.levelId,
-      modified: DateTime.now().millisecondsSinceEpoch,
     );
   }
 }

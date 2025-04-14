@@ -2,7 +2,12 @@ import 'dart:io';
 
 void main() async {
   await _run('flutter', ['pub', 'get']);
-  await _run('dart', ['run', 'build_runner', 'watch', '--delete-conflicting-outputs']);
+  await _run('dart', [
+    'run',
+    'build_runner',
+    'watch',
+    '--delete-conflicting-outputs',
+  ]);
 }
 
 Future<void> _run(String cmd, List<String> args) async {

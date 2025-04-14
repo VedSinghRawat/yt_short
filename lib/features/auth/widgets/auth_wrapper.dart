@@ -13,8 +13,12 @@ class AuthWrapper extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentUser = ref.watch(userControllerProvider.select((state) => state.currentUser));
-    final loading = ref.watch(userControllerProvider.select((state) => state.loading));
+    final currentUser = ref.watch(
+      userControllerProvider.select((state) => state.currentUser),
+    );
+    final loading = ref.watch(
+      userControllerProvider.select((state) => state.loading),
+    );
     final userEmail = currentUser?.email;
     final progress = SharedPref.get(PrefKey.currProgress(userEmail: userEmail));
     final lastLoggedInEmail = SharedPref.get(PrefKey.lastLoggedInEmail);

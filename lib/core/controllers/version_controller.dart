@@ -22,18 +22,16 @@ class VersionState {
   }
 
   VersionState clearContent() {
-    return VersionState(
-      content: null,
-      closable: closable,
-    );
+    return VersionState(content: null, closable: closable);
   }
 }
 
 // Remove the separate packageInfoProvider as we now use globalPackageInfo
-final versionControllerProvider = StateNotifierProvider<VersionController, VersionState>((ref) {
-  // Use the global package info that's guaranteed to be loaded
-  return VersionController(ref.read(infoServiceProvider));
-});
+final versionControllerProvider =
+    StateNotifierProvider<VersionController, VersionState>((ref) {
+      // Use the global package info that's guaranteed to be loaded
+      return VersionController(ref.read(infoServiceProvider));
+    });
 
 class VersionController extends StateNotifier<VersionState> {
   final InfoService _infoService;
@@ -56,9 +54,10 @@ class VersionController extends StateNotifier<VersionState> {
   }
 
   Future<void> openStore(BuildContext context) async {
-    final platformUrl = Platform.isAndroid
-        ? kPlayStoreBaseUrl + _infoService.packageInfo.packageName
-        : kAppStoreBaseUrl + kIOSAppId;
+    final platformUrl =
+        Platform.isAndroid
+            ? kPlayStoreBaseUrl + _infoService.packageInfo.packageName
+            : kAppStoreBaseUrl + kIOSAppId;
 
     final Uri url = Uri.parse(Uri.encodeFull(platformUrl));
 

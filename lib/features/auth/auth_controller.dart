@@ -17,15 +17,9 @@ class AuthControllerState {
   final bool loading;
   final String? error;
 
-  AuthControllerState({
-    required this.loading,
-    this.error,
-  });
+  AuthControllerState({required this.loading, this.error});
 
-  AuthControllerState copyWith({
-    bool? loading,
-    String? error,
-  }) {
+  AuthControllerState copyWith({bool? loading, String? error}) {
     return AuthControllerState(
       loading: loading ?? this.loading,
       error: error ?? this.error,
@@ -67,28 +61,30 @@ class AuthController extends _$AuthController {
 
       await Future.delayed(Duration.zero); // Yield control to UI
 
-      final progress = SharedPref.get(PrefKey.currProgress(
-          userEmail: null)); // null because user is not logged in before sign in
+      final progress = SharedPref.get(
+        PrefKey.currProgress(userEmail: null),
+      ); // null because user is not logged in before sign in
 
       final level = progress?.maxLevel ?? kAuthRequiredLevel;
       final subLevel = progress?.maxSubLevel ?? 1;
 
       if (context.mounted &&
-          (user.maxLevel > level || (user.maxLevel == level && userDTO.maxSubLevel > subLevel))) {
+          (user.maxLevel > level ||
+              (user.maxLevel == level && userDTO.maxSubLevel > subLevel))) {
         await showLevelChangeConfirmationDialog(context, user);
       } else {
         // Store the progress to the shared preferences by user email
 
-        SharedPref.store(
-          PrefKey.currProgress(userEmail: user.email),
-          progress,
-        );
+        SharedPref.store(PrefKey.currProgress(userEmail: user.email), progress);
       }
 
       await sublevelController.handleFetchSublevels();
     } catch (e, stackTrace) {
-      developer.log('Error in AuthController.signInWithGoogle',
-          error: e.toString(), stackTrace: stackTrace);
+      developer.log(
+        'Error in AuthController.signInWithGoogle',
+        error: e.toString(),
+        stackTrace: stackTrace,
+      );
       final userController = ref.read(userControllerProvider.notifier);
       userController.removeCurrentUser();
       if (context.mounted) {
@@ -116,13 +112,9 @@ class AuthController extends _$AuthController {
 
       state = state.copyWith(error: null);
     } on DioException catch (e) {
-      state = state.copyWith(
-        error: parseError(e.type),
-      );
+      state = state.copyWith(error: parseError(e.type));
     } catch (e) {
-      state = state.copyWith(
-        error: e.toString(),
-      );
+      state = state.copyWith(error: e.toString());
     } finally {
       state = state.copyWith(loading: false);
     }
@@ -147,7 +139,11 @@ class AuthController extends _$AuthController {
         await Future.delayed(Duration.zero); // Allow UI to update
       }
     } catch (e, stackTrace) {
-      developer.log('Error in AuthController.signOut', error: e.toString(), stackTrace: stackTrace);
+      developer.log(
+        'Error in AuthController.signOut',
+        error: e.toString(),
+        stackTrace: stackTrace,
+      );
       if (context.mounted) {
         showErrorSnackBar(context, e.toString());
       }

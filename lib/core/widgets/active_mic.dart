@@ -20,12 +20,10 @@ class _ActiveMicState extends State<ActiveMic> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 800),
     )..repeat(reverse: true);
 
-    _animation = Tween<double>(begin: 1.0, end: 1.2).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeInOut,
-      ),
-    );
+    _animation = Tween<double>(
+      begin: 1.0,
+      end: 1.2,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -56,11 +54,7 @@ class _ActiveMicState extends State<ActiveMic> with TickerProviderStateMixin {
                   ),
                 ),
               ),
-              const Icon(
-                Icons.mic,
-                size: 32,
-                color: Colors.red,
-              ),
+              const Icon(Icons.mic, size: 32, color: Colors.red),
             ],
           );
         },
