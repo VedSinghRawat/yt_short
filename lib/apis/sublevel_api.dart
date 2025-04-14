@@ -60,7 +60,7 @@ class SubLevelAPI implements ISubLevelAPI {
 
       return Right(response?.data);
     } on DioException catch (e) {
-      developer.log('Error in SubLevelAPI.getVideo: $e');
+      developer.log('Error in SubLevelAPI.getDialogueZip for zipNum $zipNum: $e');
       return Left(Failure(message: e.toString()));
     }
   }

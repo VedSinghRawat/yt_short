@@ -37,13 +37,28 @@ class SubLevel with _$SubLevel {
     int index,
     String levelId,
   ) {
-    final json = subLevelDTO.toJson();
-
-    json["level"] = level;
-    json["index"] = index;
-    json["levelId"] = levelId;
-
-    return SubLevel.fromJson(json);
+    return subLevelDTO.when(
+      speechExercise: (dto) => SubLevel.speechExercise(
+        SpeechExercise(
+          level: level,
+          index: index,
+          levelId: levelId,
+          text: dto.text,
+          pauseAt: dto.pauseAt,
+          videoFilename: dto.videoFilename,
+          dialogues: dto.dialogues,
+        ),
+      ),
+      video: (dto) => SubLevel.video(
+        Video(
+          level: level,
+          index: index,
+          levelId: levelId,
+          videoFilename: dto.videoFilename,
+          dialogues: dto.dialogues,
+        ),
+      ),
+    );
   }
 
   String get levelId => when(
@@ -100,5 +115,10 @@ class SubLevelDTO with _$SubLevelDTO {
   String get videoFilename => when(
         speechExercise: (speechExercise) => speechExercise.videoFilename,
         video: (video) => video.videoFilename,
+      );
+
+  List<Dialogue> get dialogues => when(
+        speechExercise: (speechExercise) => speechExercise.dialogues,
+        video: (video) => video.dialogues,
       );
 }

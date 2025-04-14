@@ -143,6 +143,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
                     uniqueId: positionText,
                     videoLocalPath: localPath,
                     videoUrl: url,
+                    dialogues: sublevel.dialogues,
                   ),
                   speechExercise: (speechExercise) => SpeechExerciseScreen(
                     key: Key(positionText),

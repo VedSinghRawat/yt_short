@@ -120,6 +120,7 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
       videoUrl: widget.videoUrl,
       uniqueId: widget.uniqueId,
       onControllerInitialized: _onControllerInitialized,
+      dialogues: widget.exercise.dialogues,
     );
   }
 }

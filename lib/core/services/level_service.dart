@@ -45,6 +45,20 @@ class LevelService {
     return '${fileService.documentsDirectory.path}${getVideoPathEndPoint(levelId, videoFilename)}';
   }
 
+  String get _dialoguesBasePath => '${fileService.documentsDirectory.path}/dialogues';
+  String get _dialoguesCachePath => '${fileService.cacheDirectory.path}/dialogues';
+
+  String get dialogueAudioBaseDirPath => '$_dialoguesBasePath/audios';
+
+  String getDialogueAudioFilePath(String audioFilename) {
+    // Audio files are directly inside the base audio directory
+    return '$dialogueAudioBaseDirPath/$audioFilename';
+  }
+
+  String getDialogueAudioTempZipPath(int zipNum) {
+    return '$_dialoguesCachePath/$zipNum.zip';
+  }
+
   Future<bool> isVideoExists(String levelId, String videoFilename) async {
     final file = File(getVideoPath(levelId, videoFilename));
     return file.exists();

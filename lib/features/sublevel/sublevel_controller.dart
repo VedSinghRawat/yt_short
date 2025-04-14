@@ -6,6 +6,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:myapp/apis/level_api.dart';
 import 'package:myapp/constants/constants.dart';
+import 'package:myapp/core/console.dart';
 import 'package:myapp/core/services/cleanup_service.dart';
 import 'package:myapp/core/services/file_service.dart';
 import 'package:myapp/core/services/level_service.dart';
@@ -82,13 +83,19 @@ class SublevelController extends _$SublevelController {
 
       await subLevelService.getVideoFiles(levelDTO);
 
+      // Fetch and extract dialogue audio files after getting videos
+      await subLevelService.getDialogueAudioFiles(levelDTO);
+
       await _addExistVideoSublevelEntries(levelDTO, level, levelId);
 
       state = state.copyWith(loadedLevelIds: {...state.loadedLevelIds, levelId});
       return levelId;
     } catch (e, stackTrace) {
-      developer.log('Error in SublevelController._listByLevel',
-          error: e.toString(), stackTrace: stackTrace);
+      developer.log(
+        'Error in SublevelController._listByLevel',
+        error: e.toString(),
+        stackTrace: stackTrace,
+      );
       state = state.copyWith(error: unknownErrorMsg);
       return null;
     } finally {
@@ -112,22 +119,11 @@ class SublevelController extends _$SublevelController {
     final videoFiles = entries.toSet();
 
     final sublevels = levelDTO.sub_levels
-        .where(
-      (dto) => videoFiles.contains(
-        "${dto.videoFilename}.mp4",
-      ),
-    )
-        .map(
-      (dto) {
-        final index = levelDTO.sub_levels.indexOf(dto) + 1;
-        return SubLevel.fromSubLevelDTO(
-          dto,
-          level,
-          index,
-          levelId,
-        );
-      },
-    ).toSet();
+        .where((dto) => videoFiles.contains("${dto.videoFilename}.mp4"))
+        .map((dto) {
+      final index = levelDTO.sub_levels.indexOf(dto) + 1;
+      return SubLevel.fromSubLevelDTO(dto, level, index, levelId);
+    }).toSet();
 
     state = state.copyWith(sublevels: {...state.sublevels, ...sublevels});
   }
