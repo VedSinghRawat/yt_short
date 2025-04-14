@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:myapp/core/console.dart';
 import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'package:myapp/features/sublevel/widget/last_level.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
@@ -52,12 +53,28 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
   final bool _useDummyDialoguesForTesting = true;
   // --- Set to false to use actual data logic ---
 
+  // Controller and state for ListWheelScrollView focus effect
+  late FixedExtentScrollController _dialogueScrollController;
+  int _selectedDialogueIndex = 0;
+
   @override
   void initState() {
     super.initState();
 
+    // Initialize scroll controller and listener
+    _dialogueScrollController = FixedExtentScrollController();
+    _dialogueScrollController.addListener(() {
+      if (!mounted) return;
+      final newIndex = _dialogueScrollController.selectedItem;
+      if (_selectedDialogueIndex != newIndex) {
+        setState(() {
+          _selectedDialogueIndex = newIndex;
+        });
+      }
+    });
+
+    // --- Data setup (dummy or real) ---
     if (_useDummyDialoguesForTesting) {
-      // Create dummy data
       _sourceDialogues = [
         const Dialogue(
             text: "Dialogue at ~2.9s", time: 2.9, audioFilename: "dummy5.mp3", zipNum: 1),
@@ -91,6 +108,7 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
     _controller?.removeListener(_listener);
     _controller?.dispose();
     _audioPlayer.dispose();
+    _dialogueScrollController.dispose(); // Dispose scroll controller
     super.dispose();
   }
 
@@ -348,7 +366,6 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
     final bool isPaused = isPlayerReady && !_controller!.value.isPlaying;
     final bool showDialogueArea = isPaused;
 
-    // Define heights
     final double screenHeight = MediaQuery.of(context).size.height;
     final double standardDialogueHeight = screenHeight * 0.2;
     const double emptyDialogueHeight = 65.0;
@@ -404,15 +421,65 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
                       height: _displayableDialogues.isNotEmpty
                           ? standardDialogueHeight
                           : emptyDialogueHeight,
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.8),
                         borderRadius: const BorderRadius.vertical(top: Radius.circular(16.0)),
                       ),
                       child: _displayableDialogues.isNotEmpty
-                          ? _buildDialogueList(
-                              dialogues: _displayableDialogues,
-                              standardHeight: standardDialogueHeight)
+                          ? Stack(
+                              children: [
+                                _buildDialogueList(
+                                  dialogues: _displayableDialogues,
+                                  standardHeight: standardDialogueHeight,
+                                ),
+                                // Top Gradient Overlay
+                                Positioned(
+                                  top: 0,
+                                  left: 0,
+                                  right: 0,
+                                  child: IgnorePointer(
+                                    child: Container(
+                                      height: standardDialogueHeight / 3.0,
+                                      decoration: BoxDecoration(
+                                        borderRadius:
+                                            const BorderRadius.vertical(top: Radius.circular(16.0)),
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                          colors: [
+                                            Colors.black,
+                                            Colors.black.withOpacity(0.0),
+                                          ],
+                                          stops: const [0.0, 0.9],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                // Bottom Gradient Overlay
+                                Positioned(
+                                  bottom: 0,
+                                  left: 0,
+                                  right: 0,
+                                  child: IgnorePointer(
+                                    child: Container(
+                                      height: standardDialogueHeight / 3.0,
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          begin: Alignment.bottomCenter,
+                                          end: Alignment.topCenter,
+                                          colors: [
+                                            Colors.black,
+                                            Colors.black.withOpacity(0.0),
+                                          ],
+                                          stops: const [0.0, 0.9],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            )
                           : const Center(
                               child: Text(
                                 "No dialogue to show yet.",
@@ -444,9 +511,10 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
   }
 
   Widget _buildDialogueList({required List<Dialogue> dialogues, required double standardHeight}) {
-    final double itemHeight = standardHeight / 3.5;
+    final double itemHeight = standardHeight / 3.0;
 
     return ListWheelScrollView.useDelegate(
+      controller: _dialogueScrollController,
       itemExtent: itemHeight,
       diameterRatio: 2.5,
       perspective: 0.004,
@@ -459,7 +527,7 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
           (index) {
             final dialogue = dialogues[index];
             final formattedTime = formatDurationMMSS(dialogue.time);
-
+            final bool isSelected = index == _selectedDialogueIndex;
             return Center(
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -470,24 +538,24 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
                     formattedTime,
                     style: const TextStyle(fontSize: 12, color: Colors.white70),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 16),
                   Text(
                     dialogue.text,
                     style: const TextStyle(
                         fontSize: 18, color: Colors.white, fontWeight: FontWeight.w500),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 12),
                   InkWell(
                     onTap: () {
                       _playDialogueAudio(dialogue.audioFilename);
                     },
+                    borderRadius: BorderRadius.circular(10),
                     child: const Icon(
                       Icons.volume_up,
                       color: Colors.white70,
                       size: 18,
                     ),
-                    borderRadius: BorderRadius.circular(10),
                   ),
                 ],
               ),
