@@ -31,9 +31,7 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
     final authState = ref.watch(authControllerProvider);
 
     if (authState.loading) {
-      return const Scaffold(
-        body: Center(child: Loader(text: 'Linking your account...')),
-      );
+      return const Scaffold(body: Center(child: Loader(text: 'Linking your account...')));
     }
 
     return Scaffold(
@@ -61,10 +59,7 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
       children: [
         const Text('❌', style: TextStyle(fontSize: 48)),
         const SizedBox(height: 12),
-        const Text(
-          "Sync Failed",
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
+        const Text("Sync Failed", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
         Text(
           error,
@@ -75,9 +70,7 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
         ElevatedButton(
           style: ElevatedButton.styleFrom(
             minimumSize: const Size(double.infinity, 48),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
           onPressed: _syncCyId,
           child: const Text('Retry'),
@@ -86,9 +79,7 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
         ElevatedButton(
           style: ElevatedButton.styleFrom(
             minimumSize: const Size(double.infinity, 48),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             backgroundColor: Colors.grey[100],
             foregroundColor: Colors.grey[800],
           ),
@@ -111,17 +102,12 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
       children: [
         const Text('🎉', style: TextStyle(fontSize: 48)),
         const SizedBox(height: 12),
-        const Text(
-          "You're all set!",
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
+        const Text("You're all set!", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
         const SizedBox(height: 24),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
             minimumSize: const Size(double.infinity, 48),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
           onPressed: () {
             if (Navigator.canPop(context)) {
@@ -136,9 +122,7 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
         ElevatedButton(
           style: ElevatedButton.styleFrom(
             minimumSize: const Size(double.infinity, 48),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             backgroundColor: Colors.red[100],
             foregroundColor: Colors.red[800],
           ),

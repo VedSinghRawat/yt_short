@@ -10,8 +10,7 @@ class VersionCheckWrapper extends ConsumerStatefulWidget {
   const VersionCheckWrapper({super.key, required this.child});
 
   @override
-  ConsumerState<VersionCheckWrapper> createState() =>
-      _VersionCheckWrapperState();
+  ConsumerState<VersionCheckWrapper> createState() => _VersionCheckWrapperState();
 }
 
 class _VersionCheckWrapperState extends ConsumerState<VersionCheckWrapper> {
@@ -54,9 +53,7 @@ class _VersionCheckWrapperState extends ConsumerState<VersionCheckWrapper> {
                   IconButton(
                     icon: const Icon(Icons.close),
                     onPressed: () {
-                      ref
-                          .read(versionControllerProvider.notifier)
-                          .dismissMessage();
+                      ref.read(versionControllerProvider.notifier).dismissMessage();
                     },
                   ),
                 ],
@@ -68,9 +65,7 @@ class _VersionCheckWrapperState extends ConsumerState<VersionCheckWrapper> {
             content,
             onTapUrl: (url) {
               final prov = ref.read(versionControllerProvider.notifier);
-              url == 'closeAction'
-                  ? prov.dismissMessage()
-                  : prov.openStore(context);
+              url == 'closeAction' ? prov.dismissMessage() : prov.openStore(context);
               return true;
             },
           ),

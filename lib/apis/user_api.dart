@@ -32,11 +32,7 @@ class UserAPI implements IUserAPI {
 
       return right(UserDTO.fromJson(response.data?['user']));
     } on DioException catch (e, stackTrace) {
-      developer.log(
-        'Error syncing user progress',
-        error: e.toString(),
-        stackTrace: stackTrace,
-      );
+      developer.log('Error syncing user progress', error: e.toString(), stackTrace: stackTrace);
 
       return left(Failure(message: parseError(e.type)));
     }

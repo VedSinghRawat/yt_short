@@ -15,8 +15,7 @@ class ActivityLogControllerState {
 class ActivityLogController extends StateNotifier<ActivityLogControllerState> {
   final IActivityLogAPI activityLogAPI;
 
-  ActivityLogController(this.activityLogAPI)
-    : super(ActivityLogControllerState());
+  ActivityLogController(this.activityLogAPI) : super(ActivityLogControllerState());
 
   Future<void> syncActivityLogs(List<ActivityLog> activityLogs) async {
     state = state.copyWith(loading: true);
@@ -26,9 +25,7 @@ class ActivityLogController extends StateNotifier<ActivityLogControllerState> {
 }
 
 final activityLogControllerProvider =
-    StateNotifierProvider<ActivityLogController, ActivityLogControllerState>((
-      ref,
-    ) {
+    StateNotifierProvider<ActivityLogController, ActivityLogControllerState>((ref) {
       final activityLogAPI = ref.read(activityLogAPIProvider);
       return ActivityLogController(activityLogAPI);
     });

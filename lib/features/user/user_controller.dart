@@ -12,31 +12,23 @@ part 'user_controller.g.dart';
 
 @freezed
 class UserControllerState with _$UserControllerState {
-  const factory UserControllerState({
-    @Default(false) bool loading,
-    UserModel? currentUser,
-  }) = _UserControllerState;
+  const factory UserControllerState({@Default(false) bool loading, UserModel? currentUser}) =
+      _UserControllerState;
 
   const UserControllerState._();
 
   int get level {
-    final progress = SharedPref.get(
-      PrefKey.currProgress(userEmail: currentUser?.email),
-    );
+    final progress = SharedPref.get(PrefKey.currProgress(userEmail: currentUser?.email));
     return progress?.level ?? currentUser?.level ?? 1;
   }
 
   int get subLevel {
-    final progress = SharedPref.get(
-      PrefKey.currProgress(userEmail: currentUser?.email),
-    );
+    final progress = SharedPref.get(PrefKey.currProgress(userEmail: currentUser?.email));
     return progress?.subLevel ?? currentUser?.subLevel ?? 1;
   }
 
   String? get levelId {
-    final progress = SharedPref.get(
-      PrefKey.currProgress(userEmail: currentUser?.email),
-    );
+    final progress = SharedPref.get(PrefKey.currProgress(userEmail: currentUser?.email));
     return progress?.levelId ?? currentUser?.levelId;
   }
 }

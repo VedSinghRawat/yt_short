@@ -34,10 +34,7 @@ class AuthAPI implements IAuthAPI {
       await _apiService.setToken(auth.idToken ?? '');
 
       final response = await _apiService.call(
-        params: const ApiParams(
-          endpoint: '/auth/google',
-          method: ApiMethod.get,
-        ),
+        params: const ApiParams(endpoint: '/auth/google', method: ApiMethod.get),
       );
 
       final user = UserDTO.fromJson(response.data['user']);
@@ -46,11 +43,7 @@ class AuthAPI implements IAuthAPI {
     } on DioException catch (e) {
       throw Exception(e.response?.data?.toString() ?? e.toString());
     } catch (e, stackTrace) {
-      developer.log(
-        'Error during Google Sign In',
-        error: e.toString(),
-        stackTrace: stackTrace,
-      );
+      developer.log('Error during Google Sign In', error: e.toString(), stackTrace: stackTrace);
       throw Exception(e.toString());
     }
   }
@@ -61,11 +54,7 @@ class AuthAPI implements IAuthAPI {
       await _googleSignIn.signOut();
       _apiService.setToken('');
     } catch (e, stackTrace) {
-      developer.log(
-        'Error during sign out',
-        error: e.toString(),
-        stackTrace: stackTrace,
-      );
+      developer.log('Error during sign out', error: e.toString(), stackTrace: stackTrace);
       throw Exception(e.toString());
     }
   }
@@ -77,11 +66,7 @@ class AuthAPI implements IAuthAPI {
     if (cyId == null || cyId.isEmpty) return;
 
     await _apiService.call(
-      params: ApiParams(
-        endpoint: '/user/sync-cy-id',
-        method: ApiMethod.post,
-        body: {'cyId': cyId},
-      ),
+      params: ApiParams(endpoint: '/user/sync-cy-id', method: ApiMethod.post, body: {'cyId': cyId}),
     );
 
     SharedPref.store(
@@ -92,6 +77,5 @@ class AuthAPI implements IAuthAPI {
 }
 
 final authAPIProvider = Provider<AuthAPI>(
-  (ref) =>
-      AuthAPI(ref.read(apiServiceProvider), ref.read(googleSignInProvider)),
+  (ref) => AuthAPI(ref.read(apiServiceProvider), ref.read(googleSignInProvider)),
 );

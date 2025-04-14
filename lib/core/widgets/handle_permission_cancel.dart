@@ -22,10 +22,7 @@ Future<void> handlePermissionDenied(
             title: const Text('Permission Required'),
             content: Text(errorMessage),
             actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
               TextButton(
                 onPressed: () {
                   openAppSettings();

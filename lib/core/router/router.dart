@@ -40,33 +40,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.home,
         builder:
-            (context, state) => const AuthWrapper(
-              child: VersionCheckWrapper(child: HomeScreen()),
-            ),
+            (context, state) => const AuthWrapper(child: VersionCheckWrapper(child: HomeScreen())),
       ),
       GoRoute(
         path: Routes.signIn,
-        builder:
-            (context, state) =>
-                const VersionCheckWrapper(child: SignInScreen()),
+        builder: (context, state) => const VersionCheckWrapper(child: SignInScreen()),
       ),
-      GoRoute(
-        path: Routes.deepLinking,
-        builder: (context, state) => const DeepLinkingScreen(),
-      ),
+      GoRoute(path: Routes.deepLinking, builder: (context, state) => const DeepLinkingScreen()),
 
-      GoRoute(
-        path: Routes.initializeScreen,
-        builder: (context, state) => const InitializeScreen(),
-      ),
+      GoRoute(path: Routes.initializeScreen, builder: (context, state) => const InitializeScreen()),
 
-      GoRoute(
-        path: Routes.profile,
-        builder: (context, state) => const ProfileScreen(),
-      ),
+      GoRoute(path: Routes.profile, builder: (context, state) => const ProfileScreen()),
     ],
-    errorBuilder:
-        (context, state) =>
-            Scaffold(body: Center(child: Text('Error: ${state.error}'))),
+    errorBuilder: (context, state) => Scaffold(body: Center(child: Text('Error: ${state.error}'))),
   );
 });

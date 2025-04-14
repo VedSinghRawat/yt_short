@@ -17,8 +17,7 @@ class ActivityLog implements SharedPrefClass {
     int? timestamp,
   }) : timestamp = timestamp ?? DateTime.now().millisecondsSinceEpoch;
 
-  factory ActivityLog.fromJson(Map<String, dynamic> json) =>
-      _$ActivityLogFromJson(json);
+  factory ActivityLog.fromJson(Map<String, dynamic> json) => _$ActivityLogFromJson(json);
 
   @override
   Map<String, dynamic> toJson() => _$ActivityLogToJson(this);

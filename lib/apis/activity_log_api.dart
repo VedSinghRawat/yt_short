@@ -28,11 +28,7 @@ class ActivityLogAPI implements IActivityLogAPI {
         ),
       );
     } catch (e, stackTrace) {
-      developer.log(
-        'activity_log_api:',
-        error: e.toString(),
-        stackTrace: stackTrace,
-      );
+      developer.log('activity_log_api:', error: e.toString(), stackTrace: stackTrace);
     }
   }
 }

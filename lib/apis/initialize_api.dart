@@ -13,11 +13,8 @@ part 'initialize_api.g.dart';
 
 @freezed
 class InitializeResponse with _$InitializeResponse implements VersionData {
-  const factory InitializeResponse({
-    required bool closable,
-    String? content,
-    UserDTO? user,
-  }) = _InitializeResponse;
+  const factory InitializeResponse({required bool closable, String? content, UserDTO? user}) =
+      _InitializeResponse;
 
   factory InitializeResponse.fromJson(Map<String, dynamic> json) =>
       _$InitializeResponseFromJson(json);
@@ -36,10 +33,7 @@ class InitializeAPI implements IInitializeAPI {
   FutureEither<InitializeResponse> initialize(String currentVersion) async {
     try {
       final response = await _apiService.call(
-        params: ApiParams(
-          endpoint: '/initialize?version=$currentVersion',
-          method: ApiMethod.get,
-        ),
+        params: ApiParams(endpoint: '/initialize?version=$currentVersion', method: ApiMethod.get),
       );
 
       return Right(InitializeResponse.fromJson(response.data!));

@@ -16,11 +16,7 @@ class RequireVersionUpdate extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.system_update_alt,
-                  size: 80,
-                  color: Colors.red,
-                ),
+                const Icon(Icons.system_update_alt, size: 80, color: Colors.red),
                 const SizedBox(height: 24),
                 const Text(
                   'Update Required',
@@ -35,9 +31,7 @@ class RequireVersionUpdate extends ConsumerWidget {
                 const SizedBox(height: 32),
                 ElevatedButton(
                   onPressed: () {
-                    ref
-                        .read(versionControllerProvider.notifier)
-                        .openStore(context);
+                    ref.read(versionControllerProvider.notifier).openStore(context);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,

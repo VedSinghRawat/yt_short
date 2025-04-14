@@ -12,10 +12,7 @@ Future<void> showConfirmationDialog(
     builder: (context) {
       return AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Confirm',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-        ),
+        title: const Text('Confirm', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
         content: Text(question, style: const TextStyle(fontSize: 16)),
         actions: [
           TextButton(
@@ -23,9 +20,7 @@ Future<void> showConfirmationDialog(
               Navigator.of(context).pop();
               onResult(false);
             },
-            style:
-                noButtonStyle ??
-                TextButton.styleFrom(foregroundColor: Colors.grey),
+            style: noButtonStyle ?? TextButton.styleFrom(foregroundColor: Colors.grey),
             child: const Text('No'),
           ),
           ElevatedButton(
@@ -37,9 +32,7 @@ Future<void> showConfirmationDialog(
                 yesButtonStyle ??
                 ElevatedButton.styleFrom(
                   backgroundColor: Colors.redAccent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
             child: const Text('Yes'),
           ),

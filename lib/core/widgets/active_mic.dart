@@ -15,10 +15,8 @@ class _ActiveMicState extends State<ActiveMic> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    )..repeat(reverse: true);
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 800))
+      ..repeat(reverse: true);
 
     _animation = Tween<double>(
       begin: 1.0,

@@ -12,27 +12,15 @@ class Progress implements SharedPrefClass {
   final String? levelId;
   final int modified;
 
-  Progress({
-    this.level,
-    this.subLevel,
-    this.maxLevel,
-    this.maxSubLevel,
-    this.levelId,
-  }) : modified = DateTime.now().millisecondsSinceEpoch;
+  Progress({this.level, this.subLevel, this.maxLevel, this.maxSubLevel, this.levelId})
+    : modified = DateTime.now().millisecondsSinceEpoch;
 
-  factory Progress.fromJson(Map<String, dynamic> json) =>
-      _$ProgressFromJson(json);
+  factory Progress.fromJson(Map<String, dynamic> json) => _$ProgressFromJson(json);
 
   @override
   Map<String, dynamic> toJson() => _$ProgressToJson(this);
 
-  Progress copyWith({
-    int? level,
-    int? subLevel,
-    int? maxLevel,
-    int? maxSubLevel,
-    String? levelId,
-  }) {
+  Progress copyWith({int? level, int? subLevel, int? maxLevel, int? maxSubLevel, String? levelId}) {
     return Progress(
       level: level ?? this.level,
       subLevel: subLevel ?? this.subLevel,

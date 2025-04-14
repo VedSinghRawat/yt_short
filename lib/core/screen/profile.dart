@@ -14,9 +14,7 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(userControllerProvider).currentUser;
-    final progress = SharedPref.get(
-      PrefKey.currProgress(userEmail: user?.email),
-    );
+    final progress = SharedPref.get(PrefKey.currProgress(userEmail: user?.email));
     final authController = ref.read(authControllerProvider.notifier);
     final isLoading = ref.watch(authControllerProvider).loading;
 
@@ -60,10 +58,7 @@ class ProfileScreen extends ConsumerWidget {
                         backgroundColor: Colors.white,
                         child: Text(
                           user?.email.substring(0, 1).toUpperCase() ?? 'G',
-                          style: TextStyle(
-                            fontSize: 40,
-                            color: Theme.of(context).primaryColor,
-                          ),
+                          style: TextStyle(fontSize: 40, color: Theme.of(context).primaryColor),
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -78,10 +73,7 @@ class ProfileScreen extends ConsumerWidget {
                       const SizedBox(height: 5),
                       Text(
                         user?.role == UserRole.admin ? 'Admin' : 'Student',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 16,
-                        ),
+                        style: const TextStyle(color: Colors.white70, fontSize: 16),
                       ),
                       const SizedBox(height: 20),
                     ],
@@ -95,14 +87,8 @@ class ProfileScreen extends ConsumerWidget {
                     children: [
                       _buildInfoRow('Current Level', '${progress.level}'),
                       _buildInfoRow('Current Sublevel', '${progress.subLevel}'),
-                      _buildInfoRow(
-                        'Max Level Reached',
-                        '${progress.maxLevel}',
-                      ),
-                      _buildInfoRow(
-                        'Max Sublevel Reached',
-                        '${progress.maxSubLevel}',
-                      ),
+                      _buildInfoRow('Max Level Reached', '${progress.maxLevel}'),
+                      _buildInfoRow('Max Sublevel Reached', '${progress.maxSubLevel}'),
                     ],
                   ),
               ],
@@ -128,10 +114,7 @@ class ProfileScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
+            Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const Divider(height: 20),
             ...children,
           ],
@@ -147,10 +130,7 @@ class ProfileScreen extends ConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(fontSize: 16, color: Colors.grey)),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-          ),
+          Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
         ],
       ),
     );

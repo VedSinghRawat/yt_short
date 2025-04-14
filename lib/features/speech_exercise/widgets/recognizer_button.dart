@@ -69,10 +69,7 @@ class _RecognizerButtonState extends State<RecognizerButton> {
       }
     } catch (e) {
       if (mounted) {
-        showSnackBar(
-          context,
-          'An error occurred while starting the recognizer',
-        );
+        showSnackBar(context, 'An error occurred while starting the recognizer');
       }
     }
   }
@@ -85,10 +82,7 @@ class _RecognizerButtonState extends State<RecognizerButton> {
       });
     } catch (e) {
       if (mounted) {
-        showSnackBar(
-          context,
-          'An error occurred while starting the recognizer',
-        );
+        showSnackBar(context, 'An error occurred while starting the recognizer');
       }
     }
   }
@@ -108,8 +102,7 @@ class _RecognizerButtonState extends State<RecognizerButton> {
           height: widget.testCompleted ? 60 : 80,
           decoration: BoxDecoration(
             shape: widget.testCompleted ? BoxShape.rectangle : BoxShape.circle,
-            borderRadius:
-                widget.testCompleted ? BorderRadius.circular(40) : null,
+            borderRadius: widget.testCompleted ? BorderRadius.circular(40) : null,
             color:
                 widget.failed
                     ? Colors.red.shade100
@@ -141,21 +134,14 @@ class _RecognizerButtonState extends State<RecognizerButton> {
                         ? Text(
                           widget.passed ? 'Continue' : 'Retry',
                           style: TextStyle(
-                            color:
-                                widget.passed
-                                    ? Colors.green.shade700
-                                    : Colors.red.shade700,
+                            color: widget.passed ? Colors.green.shade700 : Colors.red.shade700,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
                         )
                         : isListening
                         ? const ActiveMic()
-                        : const Icon(
-                          Icons.mic_none,
-                          color: Colors.blue,
-                          size: 32,
-                        ),
+                        : const Icon(Icons.mic_none, color: Colors.blue, size: 32),
               ),
             ),
           ),

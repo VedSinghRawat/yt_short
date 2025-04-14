@@ -15,10 +15,7 @@ class VersionState {
   const VersionState({this.content, this.closable = false});
 
   VersionState copyWith({String? content, bool? closable}) {
-    return VersionState(
-      content: content ?? this.content,
-      closable: closable ?? this.closable,
-    );
+    return VersionState(content: content ?? this.content, closable: closable ?? this.closable);
   }
 
   VersionState clearContent() {
@@ -27,11 +24,10 @@ class VersionState {
 }
 
 // Remove the separate packageInfoProvider as we now use globalPackageInfo
-final versionControllerProvider =
-    StateNotifierProvider<VersionController, VersionState>((ref) {
-      // Use the global package info that's guaranteed to be loaded
-      return VersionController(ref.read(infoServiceProvider));
-    });
+final versionControllerProvider = StateNotifierProvider<VersionController, VersionState>((ref) {
+  // Use the global package info that's guaranteed to be loaded
+  return VersionController(ref.read(infoServiceProvider));
+});
 
 class VersionController extends StateNotifier<VersionState> {
   final InfoService _infoService;
@@ -44,10 +40,7 @@ class VersionController extends StateNotifier<VersionState> {
 
       if (versionRes == null) return;
 
-      state = state.copyWith(
-        content: versionRes.content,
-        closable: versionRes.closable,
-      );
+      state = state.copyWith(content: versionRes.content, closable: versionRes.closable);
     } catch (e) {
       developer.log(e.toString());
     }

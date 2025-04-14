@@ -50,15 +50,10 @@ class InitializeService {
 
       final localLastModified = currProgress?.modified ?? 0;
       final apiLastModified =
-          apiUser != null
-              ? DateTime.parse(apiUser.modified).millisecondsSinceEpoch
-              : 0;
+          apiUser != null ? DateTime.parse(apiUser.modified).millisecondsSinceEpoch : 0;
 
       localLastModified > apiLastModified
-          ? await userController.sync(
-            currProgress!.levelId!,
-            currProgress.subLevel!,
-          )
+          ? await userController.sync(currProgress!.levelId!, currProgress.subLevel!)
           : await SharedPref.copyWith(
             PrefKey.currProgress(userEmail: apiUser?.email),
             Progress(
@@ -72,11 +67,7 @@ class InitializeService {
 
       await SharedPref.store(PrefKey.isFirstLaunch, false);
     } catch (e, stackTrace) {
-      developer.log(
-        'Error during initialize',
-        error: e.toString(),
-        stackTrace: stackTrace,
-      );
+      developer.log('Error during initialize', error: e.toString(), stackTrace: stackTrace);
     }
   }
 
@@ -138,9 +129,7 @@ class InitializeService {
   }
 }
 
-final initializeServiceProvider = FutureProvider<InitializeService>((
-  ref,
-) async {
+final initializeServiceProvider = FutureProvider<InitializeService>((ref) async {
   final service = InitializeService(
     userControllerState: ref.read(userControllerProvider),
     initializeAPI: ref.read(initializeAPIService),

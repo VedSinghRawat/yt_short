@@ -29,9 +29,7 @@ class SuggestVersionUpdate extends ConsumerWidget {
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: () {
-                  ref
-                      .read(versionControllerProvider.notifier)
-                      .openStore(context);
+                  ref.read(versionControllerProvider.notifier).openStore(context);
                 },
                 child: const Text('Update Now'),
               ),

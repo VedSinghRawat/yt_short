@@ -20,9 +20,7 @@ class LevelApi implements ILevelApi {
   @override
   FutureEither<LevelDTO?> get(String id) async {
     try {
-      final response = await apiService.getCloudStorageData(
-        endpoint: getLevelJsonPath(id),
-      );
+      final response = await apiService.getCloudStorageData(endpoint: getLevelJsonPath(id));
 
       if (response == null) return right(null);
 
@@ -34,34 +32,23 @@ class LevelApi implements ILevelApi {
         return right(null);
       }
 
-      return left(
-        Failure(
-          message: e.response?.data?.toString() ?? e.toString(),
-          type: e.type,
-        ),
-      );
+      return left(Failure(message: e.response?.data?.toString() ?? e.toString(), type: e.type));
     }
   }
 
   @override
   FutureEither<List<String>?> getOrderedIds() async {
     try {
-      final response = await apiService
-          .getCloudStorageData<Map<String, dynamic>?>(
-            endpoint: getOrderedIdsPath(),
-          );
+      final response = await apiService.getCloudStorageData<Map<String, dynamic>?>(
+        endpoint: getOrderedIdsPath(),
+      );
 
       final ids = response?.data?['orderedIds'];
       if (ids == null) return right(null);
 
       return right(List<String>.from(ids));
     } on DioException catch (e) {
-      return left(
-        Failure(
-          message: e.response?.data.toString() ?? unknownErrorMsg,
-          type: e.type,
-        ),
-      );
+      return left(Failure(message: e.response?.data.toString() ?? unknownErrorMsg, type: e.type));
     } catch (e) {
       return left(Failure(message: e.toString()));
     }

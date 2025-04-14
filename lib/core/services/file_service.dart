@@ -35,18 +35,12 @@ class FileService {
         }
       }
     } catch (e) {
-      developer.log(
-        "Error calculating directory size: $e",
-        name: 'FileService',
-      );
+      developer.log("Error calculating directory size: $e", name: 'FileService');
     }
     return totalSize;
   }
 
-  static Future<List<String>> listEntities(
-    Directory directory, {
-    EntitiesType? type,
-  }) async {
+  static Future<List<String>> listEntities(Directory directory, {EntitiesType? type}) async {
     if (!await directory.exists()) {
       throw Exception("Directory does not exist");
     }

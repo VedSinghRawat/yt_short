@@ -6,11 +6,7 @@ class SpeechExerciseCard extends StatefulWidget {
   final String text;
   final VoidCallback onContinue;
 
-  const SpeechExerciseCard({
-    super.key,
-    required this.text,
-    required this.onContinue,
-  });
+  const SpeechExerciseCard({super.key, required this.text, required this.onContinue});
 
   @override
   State<SpeechExerciseCard> createState() => _SpeechExerciseCardState();
@@ -25,8 +21,7 @@ class _SpeechExerciseCardState extends State<SpeechExerciseCard> {
 
   bool get passed => _wordMarking.every((mark) => mark == true);
   bool get failed =>
-      _recognizedWords.where((word) => word.isNotEmpty).toList().length ==
-          _totalWordCount &&
+      _recognizedWords.where((word) => word.isNotEmpty).toList().length == _totalWordCount &&
       !passed;
   bool get testCompleted => passed || failed;
 
@@ -67,10 +62,7 @@ class _SpeechExerciseCardState extends State<SpeechExerciseCard> {
 
   void _onSpeechResult(SpeechRecognitionResult result) {
     List<String> currRecognizedWords =
-        result.recognizedWords
-            .split(' ')
-            .where((word) => word.isNotEmpty)
-            .toList();
+        result.recognizedWords.split(' ').where((word) => word.isNotEmpty).toList();
 
     setState(() {
       if (currRecognizedWords.isEmpty) {
@@ -82,11 +74,7 @@ class _SpeechExerciseCardState extends State<SpeechExerciseCard> {
         _recognizedWords[i + _offset] = currRecognizedWords[i];
       }
 
-      for (
-        int i = 0;
-        i < _recognizedWords.where((word) => word.isNotEmpty).length;
-        i++
-      ) {
+      for (int i = 0; i < _recognizedWords.where((word) => word.isNotEmpty).length; i++) {
         // Get the actual word from the nested structure
         String targetWord = _getWordAtIndex(i);
         String formatedTargetWord = formatWord(targetWord);
@@ -126,8 +114,7 @@ class _SpeechExerciseCardState extends State<SpeechExerciseCard> {
       height: recognizedWordLineHeight,
     );
 
-    const recognizedWordHeight =
-        recognizedWordFontSize * recognizedWordLineHeight;
+    const recognizedWordHeight = recognizedWordFontSize * recognizedWordLineHeight;
 
     return Container(
       padding: const EdgeInsets.all(16.0),
@@ -153,11 +140,7 @@ class _SpeechExerciseCardState extends State<SpeechExerciseCard> {
                     // Display each line in its own Wrap
                     Column(
                       children: [
-                        for (
-                          int lineIndex = 0;
-                          lineIndex < _words.length;
-                          lineIndex++
-                        )
+                        for (int lineIndex = 0; lineIndex < _words.length; lineIndex++)
                           Padding(
                             padding: const EdgeInsets.only(bottom: 16.0),
                             child: Wrap(
@@ -186,47 +169,34 @@ class _SpeechExerciseCardState extends State<SpeechExerciseCard> {
                                           // Recognized word
                                           return Column(
                                             children: [
-                                              _recognizedWords[flatIndex]
-                                                      .isNotEmpty
+                                              _recognizedWords[flatIndex].isNotEmpty
                                                   ? Text(
                                                     _recognizedWords[flatIndex],
-                                                    style: recognizedWordStyle
-                                                        .copyWith(
-                                                          textBaseline:
-                                                              TextBaseline
-                                                                  .alphabetic,
-                                                        ),
+                                                    style: recognizedWordStyle.copyWith(
+                                                      textBaseline: TextBaseline.alphabetic,
+                                                    ),
                                                   )
-                                                  : const SizedBox(
-                                                    height:
-                                                        recognizedWordHeight,
-                                                  ),
+                                                  : const SizedBox(height: recognizedWordHeight),
 
                                               // Target word
                                               Text(
                                                 _words[lineIndex][wordIndex],
                                                 style: TextStyle(
                                                   color:
-                                                      _wordMarking[flatIndex] ==
-                                                              null
+                                                      _wordMarking[flatIndex] == null
                                                           ? Colors.white60
-                                                          : _wordMarking[flatIndex] ==
-                                                              true
-                                                          ? Colors
-                                                              .lightBlue[200]
-                                                          : _wordMarking[flatIndex] ==
-                                                              false
+                                                          : _wordMarking[flatIndex] == true
+                                                          ? Colors.lightBlue[200]
+                                                          : _wordMarking[flatIndex] == false
                                                           ? Colors.red
                                                           : Colors.white,
                                                   fontSize: 24,
                                                   fontWeight:
-                                                      _wordMarking[flatIndex] !=
-                                                              null
+                                                      _wordMarking[flatIndex] != null
                                                           ? FontWeight.bold
                                                           : FontWeight.normal,
                                                   height: 1.4,
-                                                  textBaseline:
-                                                      TextBaseline.alphabetic,
+                                                  textBaseline: TextBaseline.alphabetic,
                                                 ),
                                               ),
                                             ],
@@ -249,9 +219,7 @@ class _SpeechExerciseCardState extends State<SpeechExerciseCard> {
                         ),
                         child: Center(
                           child: Icon(
-                            passed
-                                ? Icons.download_done_rounded
-                                : Icons.error_rounded,
+                            passed ? Icons.download_done_rounded : Icons.error_rounded,
                             color: Colors.white,
                             size: 30,
                           ),
@@ -264,10 +232,7 @@ class _SpeechExerciseCardState extends State<SpeechExerciseCard> {
           ),
           const Spacer(),
           Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16.0,
-              vertical: 24.0,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
             child: RecognizerButton(
               testCompleted: testCompleted,
               passed: passed,

@@ -5,12 +5,7 @@ class ErrorPage extends StatelessWidget {
   final String text;
   final String? buttonText;
 
-  const ErrorPage({
-    super.key,
-    this.onRefresh,
-    required this.text,
-    this.buttonText,
-  });
+  const ErrorPage({super.key, this.onRefresh, required this.text, this.buttonText});
 
   @override
   Widget build(BuildContext context) {
@@ -25,8 +20,7 @@ class ErrorPage extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),
-          if (buttonText != null)
-            ElevatedButton(onPressed: onRefresh, child: Text(buttonText!)),
+          if (buttonText != null) ElevatedButton(onPressed: onRefresh, child: Text(buttonText!)),
         ],
       ),
     );
