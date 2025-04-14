@@ -8,6 +8,10 @@ import 'package:myapp/features/sublevel/widget/last_level.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:myapp/core/services/level_service.dart';
+import 'package:myapp/core/utils.dart';
+import 'package:flutter/foundation.dart'; // Import for listEquals
 
 class Player extends ConsumerStatefulWidget {
   final String? videoLocalPath;
@@ -40,9 +44,42 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
   IconData _iconData = Icons.play_arrow;
   Timer? _iconTimer;
 
+  final _audioPlayer = AudioPlayer();
+  List<Dialogue> _displayableDialogues = [];
+  List<Dialogue> _sourceDialogues = []; // List to hold the source data (dummy or real)
+
+  // --- Set to TRUE to test filtering with dummy data ---
+  final bool _useDummyDialoguesForTesting = true;
+  // --- Set to false to use actual data logic ---
+
   @override
   void initState() {
     super.initState();
+
+    if (_useDummyDialoguesForTesting) {
+      // Create dummy data
+      _sourceDialogues = [
+        const Dialogue(
+            text: "Dialogue at ~2.9s", time: 2.9, audioFilename: "dummy5.mp3", zipNum: 1),
+        const Dialogue(
+            text: "Dialogue at ~2.5s", time: 2.5, audioFilename: "dummy4.mp3", zipNum: 1),
+        const Dialogue(
+            text: "Dialogue at ~2.1s", time: 2.1, audioFilename: "dummy3.mp3", zipNum: 1),
+        const Dialogue(
+            text: "Dialogue at ~1.8s", time: 1.8, audioFilename: "dummy2.mp3", zipNum: 1),
+        const Dialogue(
+            text: "Dialogue at ~0.5s", time: 0.5, audioFilename: "dummy1.mp3", zipNum: 1),
+      ];
+      developer.log("Using dummy dialogues as source for testing filtering.");
+    } else {
+      // Use actual data from widget
+      _sourceDialogues = widget.dialogues;
+      developer.log("Using widget dialogues as source.");
+    }
+
+    // Initialize displayable dialogues based on the chosen source at time zero
+    _updateDisplayableDialogues(Duration.zero);
+
     _initializeVideoPlayerController();
     WidgetsBinding.instance.addObserver(this);
   }
@@ -53,6 +90,7 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
     _iconTimer?.cancel();
     _controller?.removeListener(_listener);
     _controller?.dispose();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -88,6 +126,9 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
     final value = _controller!.value;
     if (!value.isInitialized) return;
 
+    // Always update displayable dialogues based on source list and current time
+    _updateDisplayableDialogues(value.position);
+
     if (value.hasError && error == null) {
       developer.log('error in video player ${value.errorDescription}');
       if (mounted) {
@@ -101,13 +142,11 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
 
     _listenerVideoFinished();
 
-    if (mounted && _controller!.value.isPlaying != (_iconData == Icons.pause)) {
-      // This might fight with the timed icon, consider if needed
+    if (mounted && value.isPlaying != (_iconData == Icons.pause)) {
       setState(() {
-        _iconData = _controller!.value.isPlaying ? Icons.play_arrow : Icons.pause;
+        _iconData = value.isPlaying ? Icons.play_arrow : Icons.pause;
       });
     }
-    ;
   }
 
   void _listenerVideoFinished() {
@@ -132,6 +171,8 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
 
     if (isPlaying || !changeToPlay) {
       await _controller!.pause();
+      // Explicitly update dialogues state after pausing
+      _updateDisplayableDialogues(_controller!.value.position);
     } else {
       if (_controller!.value.position >= _controller!.value.duration) {
         await _controller!.seekTo(Duration.zero);
@@ -255,11 +296,62 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
     }
   }
 
+  Future<void> _playDialogueAudio(String audioFilename) async {
+    try {
+      await _audioPlayer.stop();
+
+      final levelService = ref.read(levelServiceProvider);
+      final basePath = levelService.dialogueAudioBaseDirPath;
+      final filePath = '$basePath/$audioFilename';
+      developer.log("Attempting to play audio: $filePath");
+
+      final file = File(filePath);
+      if (!await file.exists()) {
+        developer.log("Audio file not found: $filePath");
+        return;
+      }
+
+      await _audioPlayer.setFilePath(filePath);
+      await _audioPlayer.play();
+      developer.log("Playing audio: $filePath");
+    } catch (e) {
+      developer.log("Error playing dialogue audio: $e");
+    }
+  }
+
+  void _updateDisplayableDialogues(Duration currentPosition) {
+    // Remove the check for the testing flag here
+    // if (_useDummyDialoguesForTesting) return;
+    if (!mounted) return;
+
+    final currentSeconds = currentPosition.inSeconds.toDouble();
+
+    // Filter the _sourceDialogues list (which is either dummy or real)
+    final newDialogues = _sourceDialogues.where((d) => d.time <= currentSeconds).toList();
+
+    // Sort descending by time
+    newDialogues.sort((a, b) => b.time.compareTo(a.time));
+
+    // Update state if the list content has changed
+    if (!listEquals(_displayableDialogues, newDialogues)) {
+      developer.log("Updating displayable dialogues. Count: ${newDialogues.length}");
+      setState(() {
+        _displayableDialogues = newDialogues;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isPlayerReady =
         _isInitialized && _controller != null && _controller!.value.isInitialized;
     final bool isPaused = isPlayerReady && !_controller!.value.isPlaying;
+    final bool showDialogueArea = isPaused;
+
+    // Define heights
+    final double screenHeight = MediaQuery.of(context).size.height;
+    final double standardDialogueHeight = screenHeight * 0.2;
+    const double emptyDialogueHeight = 65.0;
 
     return VisibilityDetector(
       key: Key(widget.uniqueId ?? widget.videoLocalPath ?? widget.videoUrl ?? ''),
@@ -294,6 +386,42 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
                     child: Center(child: CircularProgressIndicator()),
                   ),
                 PlayPauseButton(showPlayPauseIcon: _showPlayPauseIcon, iconData: _iconData),
+                Visibility(
+                  visible: showDialogueArea,
+                  child: Positioned.fill(
+                    child: Container(
+                      color: Colors.black.withOpacity(0.3),
+                    ),
+                  ),
+                ),
+                Visibility(
+                  visible: showDialogueArea,
+                  child: Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      height: _displayableDialogues.isNotEmpty
+                          ? standardDialogueHeight
+                          : emptyDialogueHeight,
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.8),
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(16.0)),
+                      ),
+                      child: _displayableDialogues.isNotEmpty
+                          ? _buildDialogueList(
+                              dialogues: _displayableDialogues,
+                              standardHeight: standardDialogueHeight)
+                          : const Center(
+                              child: Text(
+                                "No dialogue to show yet.",
+                                style: TextStyle(color: Colors.white70, fontSize: 14),
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -307,34 +435,61 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
                   return const SizedBox(height: 10);
                 }
               },
-            ),
-          if (isPaused && widget.dialogues.isNotEmpty) _buildDialogueList(),
+            )
+          else
+            const SizedBox(height: 10),
         ],
       ),
     );
   }
 
-  Widget _buildDialogueList() {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.15,
-      margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-      padding: const EdgeInsets.all(8.0),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.1),
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(8.0),
-      ),
-      child: Scrollbar(
-        thumbVisibility: true,
-        child: ListView.builder(
-          itemCount: widget.dialogues.length,
-          itemBuilder: (context, index) {
-            final dialogue = widget.dialogues[index];
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4.0),
-              child: Text(
-                dialogue.text,
-                style: const TextStyle(fontSize: 14),
+  Widget _buildDialogueList({required List<Dialogue> dialogues, required double standardHeight}) {
+    final double itemHeight = standardHeight / 3.5;
+
+    return ListWheelScrollView.useDelegate(
+      itemExtent: itemHeight,
+      diameterRatio: 2.5,
+      perspective: 0.004,
+      magnification: 1.3,
+      useMagnifier: true,
+      physics: const FixedExtentScrollPhysics(),
+      childDelegate: ListWheelChildListDelegate(
+        children: List<Widget>.generate(
+          dialogues.length,
+          (index) {
+            final dialogue = dialogues[index];
+            final formattedTime = formatDurationMMSS(dialogue.time);
+
+            return Center(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    formattedTime,
+                    style: const TextStyle(fontSize: 12, color: Colors.white70),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    dialogue.text,
+                    style: const TextStyle(
+                        fontSize: 18, color: Colors.white, fontWeight: FontWeight.w500),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(width: 8),
+                  InkWell(
+                    onTap: () {
+                      _playDialogueAudio(dialogue.audioFilename);
+                    },
+                    child: const Icon(
+                      Icons.volume_up,
+                      color: Colors.white70,
+                      size: 18,
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ],
               ),
             );
           },
@@ -376,7 +531,6 @@ class PlayPauseButton extends StatelessWidget {
   }
 }
 
-// New stateful widget for smoother progress bar updates using AnimationController
 class _VideoProgressBar extends StatefulWidget {
   final VideoPlayerController controller;
 
@@ -394,31 +548,27 @@ class _VideoProgressBarState extends State<_VideoProgressBar> with SingleTickerP
   double _playbackSpeed = 1.0;
   DateTime _lastUpdateTime = DateTime.now();
   VideoPlayerValue? _lastValue;
-  bool _controllerDisposed = false; // Track if the controller was disposed
+  bool _controllerDisposed = false;
 
   @override
   void initState() {
     super.initState();
-    // Use an AnimationController to trigger frequent rebuilds for smooth progress
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 1), // Doesn't really matter for repeat
+      duration: const Duration(seconds: 1),
     )..addListener(() {
         if (mounted) {
           setState(() {});
         }
       });
 
-    // Listen to the controller's playing state to start/stop the ticker
     widget.controller.addListener(_updateVideoState);
-    // Initialize state
     _updateVideoState();
   }
 
   @override
   void didUpdateWidget(covariant _VideoProgressBar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // If the controller instance changes, remove old listener and add new one
     if (widget.controller != oldWidget.controller) {
       oldWidget.controller.removeListener(_updateVideoState);
       widget.controller.addListener(_updateVideoState);
@@ -430,13 +580,13 @@ class _VideoProgressBarState extends State<_VideoProgressBar> with SingleTickerP
 
     try {
       final value = widget.controller.value;
-      _lastValue = value; // Store the last valid value
+      _lastValue = value;
 
       final bool isCurrentlyPlaying = value.isPlaying;
       if (_isPlaying != isCurrentlyPlaying) {
         setState(() {
           _isPlaying = isCurrentlyPlaying;
-          _lastUpdateTime = DateTime.now(); // Reset time on play/pause change
+          _lastUpdateTime = DateTime.now();
 
           if (_isPlaying && !_animationController.isAnimating) {
             _animationController.repeat();
@@ -445,14 +595,11 @@ class _VideoProgressBarState extends State<_VideoProgressBar> with SingleTickerP
           }
         });
       } else {
-        // If playing state hasn't changed, but the controller is playing,
-        // ensure the ticker is running (might have stopped erroneously)
         if (_isPlaying && !_animationController.isAnimating) {
           _animationController.repeat();
         }
       }
 
-      // Update position/duration state only if necessary (less frequent updates)
       if (_lastKnownPosition != value.position ||
           _lastKnownDuration != value.duration ||
           _playbackSpeed != value.playbackSpeed) {
@@ -460,18 +607,17 @@ class _VideoProgressBarState extends State<_VideoProgressBar> with SingleTickerP
           _lastKnownPosition = value.position;
           _lastKnownDuration = value.duration;
           _playbackSpeed = value.playbackSpeed;
-          _lastUpdateTime = DateTime.now(); // Also update time when position/duration changes
+          _lastUpdateTime = DateTime.now();
         });
       }
     } catch (e) {
       developer.log("Error accessing controller value in _updateVideoState (likely disposed): $e");
-      _controllerDisposed = true; // Mark as disposed
+      _controllerDisposed = true;
       if (_animationController.isAnimating) {
         _animationController.stop();
       }
       if (mounted) {
         setState(() {
-          // Reset state or show an indicator if needed
           _isPlaying = false;
         });
       }
@@ -481,29 +627,23 @@ class _VideoProgressBarState extends State<_VideoProgressBar> with SingleTickerP
   @override
   void dispose() {
     _animationController.dispose();
-    // Safely remove listener
     try {
-      // Check if the controller is still valid before removing listener
-      widget.controller.value; // Throws if disposed
+      widget.controller.value;
       widget.controller.removeListener(_updateVideoState);
     } catch (e) {
       developer.log("Error removing listener from controller (likely disposed): $e");
-      // No need to set _controllerDisposed here as the widget is disposing anyway
     }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Use the last known value if the controller is disposed or has an error
     final value = _controllerDisposed ? _lastValue : widget.controller.value;
 
-    // Handle cases where value might still be null or uninitialized
     if (value == null || !value.isInitialized || value.duration <= Duration.zero) {
       return const SizedBox(
-        height: 10, // Maintain height even when bar isn't showing
+        height: 10,
         child: LinearProgressIndicator(
-          // Show a generic loading indicator
           value: 0,
           backgroundColor: Colors.grey,
           valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
@@ -511,16 +651,13 @@ class _VideoProgressBarState extends State<_VideoProgressBar> with SingleTickerP
       );
     }
 
-    // Removed Positioned wrapper, Column handles placement now
     return SizedBox(
-      height: 10, // Height for the bar and circle area
+      height: 10,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          // Access controller via widget.controller in StatefulWidget
           Duration currentPosition = _lastKnownPosition;
           final duration = _lastKnownDuration;
 
-          // Estimate position based on time elapsed since last update
           if (_isPlaying && _playbackSpeed > 0 && _animationController.isAnimating) {
             final now = DateTime.now();
             final elapsed = now.difference(_lastUpdateTime);
@@ -529,7 +666,6 @@ class _VideoProgressBarState extends State<_VideoProgressBar> with SingleTickerP
             currentPosition += estimatedDelta;
           }
 
-          // Clamp position between 0 and duration
           if (currentPosition > duration) {
             currentPosition = duration;
           }
@@ -540,40 +676,33 @@ class _VideoProgressBarState extends State<_VideoProgressBar> with SingleTickerP
           final durationMs = duration.inMilliseconds;
           final positionMs = currentPosition.inMilliseconds;
 
-          // Avoid division by zero and handle invalid states
           final double progress = (durationMs > 0 && positionMs <= durationMs && positionMs >= 0)
               ? positionMs / durationMs
               : 0.0;
-          // Ensure progress is clamped between 0.0 and 1.0
           final double clampedProgress = progress.clamp(0.0, 1.0);
 
           final double progressBarWidth = constraints.maxWidth;
-          final double indicatorPosition =
-              progressBarWidth * clampedProgress; // Use clampedProgress
+          final double indicatorPosition = progressBarWidth * clampedProgress;
 
-          // Ensure indicator position is within bounds (redundant due to clampedProgress, but safe)
           final double clampedIndicatorPosition = indicatorPosition.clamp(0.0, progressBarWidth);
 
           return Stack(
-            clipBehavior: Clip.none, // Allow circle to overflow slightly
-            alignment: Alignment.centerLeft, // Align children to the start
+            clipBehavior: Clip.none,
+            alignment: Alignment.centerLeft,
             children: [
-              // Background for the bar
               Container(
                 height: 3,
                 width: progressBarWidth,
-                color: Colors.grey.withAlpha(128), // 0.5 opacity = 128 alpha (0.5 * 255)
+                color: Colors.grey.withAlpha(128),
               ),
-              // Actual Progress (smoothness from AnimationController)
               Container(
                 height: 3,
                 width: clampedIndicatorPosition,
                 color: Colors.red,
               ),
-              // Indicator Circle (smoothness from AnimationController)
               Positioned(
-                left: clampedIndicatorPosition - 5, // Center the circle on the progress point
-                top: 0, // Adjust to center the circle vertically on the line ( (10-3)/2 = 3.5 )
+                left: clampedIndicatorPosition - 5,
+                top: 0,
                 child: Container(
                   width: 10,
                   height: 10,

@@ -87,3 +87,12 @@ bool isPrimitive(dynamic value) {
 bool isListOfPrimitives(dynamic value) {
   return value is List && value.every(isPrimitive);
 }
+
+/// Formats a duration in seconds into MM:SS string format.
+String formatDurationMMSS(double seconds) {
+  final duration = Duration(seconds: seconds.toInt());
+  String twoDigits(int n) => n.toString().padLeft(2, '0');
+  final minutes = twoDigits(duration.inMinutes.remainder(60));
+  final secs = twoDigits(duration.inSeconds.remainder(60));
+  return '$minutes:$secs';
+}

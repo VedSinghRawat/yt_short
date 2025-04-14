@@ -33,6 +33,7 @@ dependencies:
   app_links: ^6.4.0
   video_player: ^2.8.6
   flutter_archive: ^6.0.3
+  just_audio: ^0.9.46
 
 dev_dependencies:
   flutter_test:
