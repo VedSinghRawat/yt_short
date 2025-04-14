@@ -20,13 +20,11 @@ class SubLevelAPI implements ISubLevelAPI {
   final LevelService levelService;
 
   @override
-  FutureEither<Uint8List?> getVideo(
-    String levelId,
-    String videoFilename,
-  ) async {
+  FutureEither<Uint8List?> getVideo(String levelId, String videoFilename) async {
     try {
-      final response = await apiService.getCloudStorageData<Uint8List?>(
-        endpoint: levelService.getVideoPathEndPoint(levelId, videoFilename),
+      final response = await apiService.getCloudStorageData(
+        endpoint: levelService.getVideoPath(levelId, videoFilename),
+        responseType: ResponseType.bytes,
       );
 
       return Right(response?.data);

@@ -28,9 +28,7 @@ class SubLevelService {
     await downloadVideo(levelId, videoFilename);
 
     if (!await levelService.doesVideoExists(levelId, videoFilename)) {
-      SharedPref.removeValue(
-        PrefKey.eTag(levelService.getVideoPathEndPoint(levelId, videoFilename)),
-      );
+      SharedPref.removeValue(PrefKey.eTag(levelService.getVideoPath(levelId, videoFilename)));
     }
   }
 
@@ -45,19 +43,13 @@ class SubLevelService {
   }
 
   Future<void> _storeVideo(String levelId, String videoFilename, Uint8List videoData) async {
-    final file = File(levelService.getVideoPath(levelId, videoFilename));
+    final file = File(levelService.getFullVideoPath(levelId, videoFilename));
     await Directory(file.parent.path).create(recursive: true);
-
-    await compute(_writeVideoToFile, {'filePath': file.path, 'videoData': videoData});
-  }
-
-  Future<void> _writeVideoToFile(Map<String, dynamic> params) async {
-    final file = File(params['filePath']);
-    await file.writeAsBytes(params['videoData']);
+    await file.writeAsBytes(videoData);
   }
 
   String getVideoUrl(String levelId, String videoFilename, BaseUrl baseUrl) {
-    return '${baseUrl.url}${levelService.getVideoPathEndPoint(levelId, videoFilename)}';
+    return '${baseUrl.url}${levelService.getVideoPath(levelId, videoFilename)}';
   }
 }
 

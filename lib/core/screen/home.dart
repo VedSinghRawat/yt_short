@@ -32,9 +32,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      await ref
-          .read(sublevelControllerProvider.notifier)
-          .handleFetchSublevels();
+      await ref.read(sublevelControllerProvider.notifier).handleFetchSublevels();
     });
   }
 
@@ -50,23 +48,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   ) {
     if (isAdmin) return false;
 
-    final levelAfter =
-        !hasLocalProgress ||
-        isLevelAfter(level, subLevel, maxLevel, maxSubLevel);
+    final levelAfter = !hasLocalProgress || isLevelAfter(level, subLevel, maxLevel, maxSubLevel);
 
     if (!levelAfter) return false;
 
     if (isDailyLimitReached(doneToday)) return true;
 
-    final hasFinishedVideo =
-        ref.read(sublevelControllerProvider).hasFinishedVideo;
+    final hasFinishedVideo = ref.read(sublevelControllerProvider).hasFinishedVideo;
 
     if (hasFinishedVideo) return false;
 
-    showSnackBar(
-      context,
-      'Please complete the current sublevel before proceeding',
-    );
+    showSnackBar(context, 'Please complete the current sublevel before proceeding');
 
     return true;
   }
@@ -74,8 +66,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool isDailyLimitReached(int? doneToday) {
     final done = doneToday ?? SharedPref.get(PrefKey.doneToday);
 
-    final exceedsDailyLimit =
-        done != null && done >= kMaxLevelCompletionsPerDay;
+    final exceedsDailyLimit = done != null && done >= kMaxLevelCompletionsPerDay;
 
     if (doneToday == null) {
       if (exceedsDailyLimit) {
@@ -88,10 +79,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       }
     } else {
       if (exceedsDailyLimit) {
-        showSnackBar(
-          context,
-          'You can only complete $kMaxLevelCompletionsPerDay levels per day',
-        );
+        showSnackBar(context, 'You can only complete $kMaxLevelCompletionsPerDay levels per day');
         return true;
       }
     }
@@ -129,12 +117,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           .sync(currSubLevel.levelId, subLevel);
     }
 
-    await updateDailyProgressIfNeeded(
-      sublevels,
-      index,
-      maxLevel,
-      isSyncSucceed,
-    );
+    await updateDailyProgressIfNeeded(sublevels, index, maxLevel, isSyncSucceed);
   }
 
   bool isLevelChanged(int index, List<SubLevel> sublevels) {
@@ -159,8 +142,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final previousSubLevel = sublevels[index - 1];
     final currSubLevel = sublevels[index];
 
-    if (((previousSubLevel.level < currSubLevel.level &&
-                previousSubLevel.level <= maxLevel) ||
+    if (((previousSubLevel.level < currSubLevel.level && previousSubLevel.level <= maxLevel) ||
             !isSyncSucceed) &&
         currSubLevel.level > kAuthRequiredLevel) {
       await SharedPref.store(PrefKey.doneToday, 1);
@@ -182,17 +164,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     if (activityLogs == null || activityLogs.isEmpty) return;
 
-    await ref
-        .read(activityLogControllerProvider.notifier)
-        .syncActivityLogs(activityLogs);
+    await ref.read(activityLogControllerProvider.notifier).syncActivityLogs(activityLogs);
 
     // Clear the activity logs and update the last sync time
     await SharedPref.removeValue(PrefKey.activityLogs);
 
-    await SharedPref.store(
-      PrefKey.lastSync,
-      DateTime.now().millisecondsSinceEpoch,
-    );
+    await SharedPref.store(PrefKey.lastSync, DateTime.now().millisecondsSinceEpoch);
   }
 
   Future<void> syncLocalProgress(
@@ -203,12 +180,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     int localMaxSubLevel,
     String? userEmail,
   ) async {
-    final isCurrLevelAfter = isLevelAfter(
-      level,
-      sublevelIndex,
-      localMaxLevel,
-      localMaxSubLevel,
-    );
+    final isCurrLevelAfter = isLevelAfter(level, sublevelIndex, localMaxLevel, localMaxSubLevel);
 
     // Update the user's current progress in shared preferences
     await SharedPref.copyWith(
@@ -239,9 +211,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final userEmail = user?.email;
 
-    final localProgress = SharedPref.get(
-      PrefKey.currProgress(userEmail: userEmail),
-    );
+    final localProgress = SharedPref.get(PrefKey.currProgress(userEmail: userEmail));
 
     final localMaxLevel = localProgress?.maxLevel ?? 0;
     final localMaxSubLevel = localProgress?.maxSubLevel ?? 0;
@@ -290,21 +260,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // If the user is logged in, add an activity log entry
     await SharedPref.pushValue(
       PrefKey.activityLogs,
-      ActivityLog(
-        subLevel: sublevelIndex,
-        level: level,
-        userEmail: userEmail ?? lastLoggedInEmail,
-      ),
+      ActivityLog(subLevel: sublevelIndex, level: level, userEmail: userEmail ?? lastLoggedInEmail),
     );
 
     // Sync the progress with db if the user moves to a new level
-    await syncProgress(
-      index,
-      _cachedSublevels!,
-      userEmail,
-      sublevelIndex,
-      user?.maxLevel ?? 0,
-    );
+    await syncProgress(index, _cachedSublevels!, userEmail, sublevelIndex, user?.maxLevel ?? 0);
 
     // Sync the last sync time with the server
     await syncActivityLogs();
@@ -332,13 +292,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       sublevelControllerProvider.select((state) => state.loadingLevelIds),
     );
 
-    final sublevels = ref.watch(
-      sublevelControllerProvider.select((state) => state.sublevels),
-    );
+    final sublevels = ref.watch(sublevelControllerProvider.select((state) => state.sublevels));
 
     // Only sort sublevels if they have changed
-    if (_cachedSublevels == null ||
-        _cachedSublevels!.length != sublevels.toList().length) {
+    if (_cachedSublevels == null || _cachedSublevels!.length != sublevels.toList().length) {
       _cachedSublevels = _getSortedSublevels(sublevels.toList());
     }
 

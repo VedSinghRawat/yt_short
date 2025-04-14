@@ -133,7 +133,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
 
           String? localPath = ref
               .read(levelServiceProvider)
-              .getVideoPath(sublevel.levelId, sublevel.videoFilename);
+              .getFullVideoPath(sublevel.levelId, sublevel.videoFilename);
 
           final urls = [
             ref

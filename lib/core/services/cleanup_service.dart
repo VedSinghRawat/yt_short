@@ -48,7 +48,7 @@ class StorageCleanupService {
 
         // Delete videos one by one and update size
         for (var (index, sub) in level.sub_levels.indexed) {
-          final videoPath = levelService.getVideoPath(id, sub.videoFilename);
+          final videoPath = levelService.getFullVideoPath(id, sub.videoFilename);
 
           final videoFile = File(videoPath);
 
@@ -73,9 +73,7 @@ class StorageCleanupService {
 
           // Remove video ETag
           await SharedPref.removeValue(
-            PrefKey.eTag(
-              levelService.getVideoPathEndPoint(id, sub.videoFilename),
-            ),
+            PrefKey.eTag(levelService.getVideoPath(id, sub.videoFilename)),
           );
 
           i++;
@@ -124,8 +122,7 @@ class StorageCleanupService {
 
   /// Prevents deletion of current, previous and next two levels
   bool _isProtectedLevel(int dist) {
-    if ((dist < 0 && dist.abs() <= kMaxPreviousLevelsToKeep) ||
-        dist <= kMaxNextLevelsToKeep) {
+    if ((dist < 0 && dist.abs() <= kMaxPreviousLevelsToKeep) || dist <= kMaxNextLevelsToKeep) {
       return true;
     }
 
@@ -134,8 +131,5 @@ class StorageCleanupService {
 }
 
 final storageCleanupServiceProvider = Provider<StorageCleanupService>(
-  (ref) => StorageCleanupService(
-    ref.read(fileServiceProvider),
-    ref.read(levelServiceProvider),
-  ),
+  (ref) => StorageCleanupService(ref.read(fileServiceProvider), ref.read(levelServiceProvider)),
 );

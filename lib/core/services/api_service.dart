@@ -117,9 +117,16 @@ class ApiService {
 
   /// first get from cloudflare then s3
   /// Store the ETag of the data. It will fetch and return null if the data has not changed.
-  Future<Response<T>?> getCloudStorageData<T>({required String endpoint}) async {
+  Future<Response<T>?> getCloudStorageData<T>({
+    required String endpoint,
+    ResponseType? responseType,
+  }) async {
     try {
-      return await _getCloudData(endpoint: endpoint, baseUrl: BaseUrl.cloudflare);
+      return await _getCloudData(
+        endpoint: endpoint,
+        baseUrl: BaseUrl.cloudflare,
+        responseType: responseType,
+      );
     } on DioException catch (e) {
       if (e.type != DioExceptionType.unknown && e.type != DioExceptionType.badResponse) {
         rethrow;
@@ -132,10 +139,16 @@ class ApiService {
   Future<Response<T>?> _getCloudData<T>({
     required String endpoint,
     required BaseUrl baseUrl,
+    ResponseType? responseType,
   }) async {
     /// NOTE: don't change it if have to change then change from all place where this function is used [getCloudStorageData]
 
-    final params = ApiParams(endpoint: endpoint, method: ApiMethod.get, baseUrl: baseUrl);
+    final params = ApiParams(
+      endpoint: endpoint,
+      method: ApiMethod.get,
+      baseUrl: baseUrl,
+      responseType: responseType,
+    );
 
     final eTagId = endpoint;
 
