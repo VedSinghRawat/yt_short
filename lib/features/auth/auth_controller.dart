@@ -20,10 +20,7 @@ class AuthControllerState {
   AuthControllerState({required this.loading, this.error});
 
   AuthControllerState copyWith({bool? loading, String? error}) {
-    return AuthControllerState(
-      loading: loading ?? this.loading,
-      error: error ?? this.error,
-    );
+    return AuthControllerState(loading: loading ?? this.loading, error: error ?? this.error);
   }
 }
 
@@ -53,24 +50,25 @@ class AuthController extends _$AuthController {
 
       final user = userController.updateCurrentUser(userDTO);
 
-      await SharedPref.store(PrefKey.lastLoggedInEmail, user.email);
-
       await SharedPref.store(PrefKey.doneToday, user.doneToday);
 
       await authAPI.syncCyId();
 
       await Future.delayed(Duration.zero); // Yield control to UI
 
+      // first get the guest progress
       final progress = SharedPref.get(
-        PrefKey.currProgress(userEmail: null),
+        PrefKey.currProgress(),
       ); // null because user is not logged in before sign in
+
+      // then update the last logged in email to the user's email
+      await SharedPref.store(PrefKey.lastLoggedInEmail, user.email);
 
       final level = progress?.maxLevel ?? kAuthRequiredLevel;
       final subLevel = progress?.maxSubLevel ?? 1;
 
       if (context.mounted &&
-          (user.maxLevel > level ||
-              (user.maxLevel == level && userDTO.maxSubLevel > subLevel))) {
+          (user.maxLevel > level || (user.maxLevel == level && userDTO.maxSubLevel > subLevel))) {
         await showLevelChangeConfirmationDialog(context, user);
       } else {
         // Store the progress to the shared preferences by user email
@@ -139,11 +137,7 @@ class AuthController extends _$AuthController {
         await Future.delayed(Duration.zero); // Allow UI to update
       }
     } catch (e, stackTrace) {
-      developer.log(
-        'Error in AuthController.signOut',
-        error: e.toString(),
-        stackTrace: stackTrace,
-      );
+      developer.log('Error in AuthController.signOut', error: e.toString(), stackTrace: stackTrace);
       if (context.mounted) {
         showErrorSnackBar(context, e.toString());
       }

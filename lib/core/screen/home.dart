@@ -64,7 +64,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   bool isDailyLimitReached(int? doneToday) {
-    final done = doneToday ?? SharedPref.get(PrefKey.doneToday);
+    final done =
+        doneToday == null || doneToday == 0 ? SharedPref.get(PrefKey.doneToday) : doneToday;
 
     final exceedsDailyLimit = done != null && done >= kMaxLevelCompletionsPerDay;
 
@@ -88,7 +89,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<bool> handleFetchSublevels(int index) async {
-    if (isLevelChanged(index, _cachedSublevels!)) {
+    if (!isLevelNotChanged(index, _cachedSublevels!)) {
       await fetchSublevels();
     }
 
@@ -106,7 +107,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     int subLevel,
     int maxLevel,
   ) async {
-    if (isLevelChanged(index, sublevels)) return;
+    if (isLevelNotChanged(index, sublevels)) return;
 
     bool isSyncSucceed = false;
 
@@ -117,10 +118,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           .sync(currSubLevel.levelId, subLevel);
     }
 
-    await updateDailyProgressIfNeeded(sublevels, index, maxLevel, isSyncSucceed);
+    final previousSubLevel = sublevels[index - 1];
+    final currSubLevel = sublevels[index];
+
+    if (((previousSubLevel.level < currSubLevel.level && previousSubLevel.level <= maxLevel) ||
+            !isSyncSucceed) &&
+        currSubLevel.level > kAuthRequiredLevel) {
+      await SharedPref.store(PrefKey.doneToday, 1);
+    }
   }
 
-  bool isLevelChanged(int index, List<SubLevel> sublevels) {
+  bool isLevelNotChanged(int index, List<SubLevel> sublevels) {
     if (index <= 0) return true;
 
     final previousSubLevel = sublevels[index - 1];
@@ -131,22 +139,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Future<void> fetchSublevels() async {
     await ref.read(sublevelControllerProvider.notifier).handleFetchSublevels();
-  }
-
-  Future<void> updateDailyProgressIfNeeded(
-    List<SubLevel> sublevels,
-    int index,
-    int maxLevel,
-    bool isSyncSucceed,
-  ) async {
-    final previousSubLevel = sublevels[index - 1];
-    final currSubLevel = sublevels[index];
-
-    if (((previousSubLevel.level < currSubLevel.level && previousSubLevel.level <= maxLevel) ||
-            !isSyncSucceed) &&
-        currSubLevel.level > kAuthRequiredLevel) {
-      await SharedPref.store(PrefKey.doneToday, 1);
-    }
   }
 
   Future<void> syncActivityLogs() async {

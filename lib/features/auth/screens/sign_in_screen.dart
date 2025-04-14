@@ -16,9 +16,7 @@ class SignInScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isLoading = ref.watch(
-      authControllerProvider.select((state) => state.loading),
-    );
+    final isLoading = ref.watch(authControllerProvider.select((state) => state.loading));
 
     return Scaffold(
       appBar: CustomAppBar(title: 'Sign In', ignoreInteractions: isLoading),
@@ -47,10 +45,7 @@ class SignInScreen extends ConsumerWidget {
                         ),
                         Text(
                           "CodeYogi's English Course",
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                           textAlign: TextAlign.center,
                         ),
                       ],
@@ -68,8 +63,7 @@ class SignInScreen extends ConsumerWidget {
 
                               if (!context.mounted) return;
 
-                              final user =
-                                  ref.read(userControllerProvider).currentUser;
+                              final user = ref.read(userControllerProvider).currentUser;
 
                               if (user != null) {
                                 context.go(Routes.home);
@@ -84,10 +78,7 @@ class SignInScreen extends ConsumerWidget {
                     ),
                     label: const Text('Sign in with Google'),
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       textStyle: const TextStyle(fontSize: 16),
                     ),
                   ),
@@ -108,8 +99,7 @@ showLevelChangeConfirmationDialog(BuildContext context, UserModel user) {
     question:
         'We notice that you are already at Level ${user.maxLevel}, Sublevel ${user.maxSubLevel}. Do you want to continue from there?',
     onResult: (result) async {
-      final guestProgress =
-          SharedPref.get(PrefKey.currProgress(userEmail: null)) ?? Progress();
+      final guestProgress = SharedPref.get(PrefKey.currProgress(userEmail: null)) ?? Progress();
 
       await SharedPref.store(
         PrefKey.currProgress(userEmail: user.email),
