@@ -3,24 +3,22 @@ import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:myapp/core/console.dart';
 import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'package:myapp/features/sublevel/widget/last_level.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
-import 'package:video_player/video_player.dart';
+import 'package:video_player/video_player.dart' as video_player;
 import 'package:visibility_detector/visibility_detector.dart';
-import 'package:myapp/core/utils.dart';
 import 'package:flutter/foundation.dart'; // Import for listEquals
 import './dialogue_list.dart'; // Import the new dialogue list widget
 
-class Player extends ConsumerStatefulWidget {
+class VideoPlayer extends ConsumerStatefulWidget {
   final String? videoLocalPath;
   final String? uniqueId;
   final String? videoUrl;
-  final Function(VideoPlayerController controller)? onControllerInitialized;
+  final Function(video_player.VideoPlayerController controller)? onControllerInitialized;
   final List<Dialogue> dialogues;
 
-  const Player({
+  const VideoPlayer({
     super.key,
     required this.videoLocalPath,
     this.uniqueId,
@@ -30,11 +28,11 @@ class Player extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<Player> createState() => _PlayerState();
+  ConsumerState<VideoPlayer> createState() => _VideoPlayerState();
 }
 
-class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
-  VideoPlayerController? _controller;
+class _VideoPlayerState extends ConsumerState<VideoPlayer> with WidgetsBindingObserver {
+  video_player.VideoPlayerController? _controller;
   Duration? _lastPosition;
   bool _isInitialized = false;
   String? error;
@@ -258,8 +256,8 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
       }
 
       _controller = file != null
-          ? VideoPlayerController.file(file)
-          : VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl!));
+          ? video_player.VideoPlayerController.file(file)
+          : video_player.VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl!));
 
       _controller!.addListener(_listener);
       await _controller!.setLooping(true);
@@ -359,7 +357,7 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
                       Center(
                         child: AspectRatio(
                           aspectRatio: _controller!.value.aspectRatio,
-                          child: VideoPlayer(_controller!),
+                          child: video_player.VideoPlayer(_controller!),
                         ),
                       )
                     else
@@ -474,7 +472,7 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
           ),
           // Progress bar remains outside the main Stack
           if (isPlayerReady)
-            ValueListenableBuilder<VideoPlayerValue>(
+            ValueListenableBuilder<video_player.VideoPlayerValue>(
               valueListenable: _controller!,
               builder: (context, value, child) {
                 if (value.duration > Duration.zero) {
@@ -525,7 +523,7 @@ class PlayPauseButton extends StatelessWidget {
 }
 
 class _VideoProgressBar extends StatefulWidget {
-  final VideoPlayerController controller;
+  final video_player.VideoPlayerController controller;
 
   const _VideoProgressBar({required this.controller});
 
@@ -540,7 +538,7 @@ class _VideoProgressBarState extends State<_VideoProgressBar> with SingleTickerP
   bool _isPlaying = false;
   double _playbackSpeed = 1.0;
   DateTime _lastUpdateTime = DateTime.now();
-  VideoPlayerValue? _lastValue;
+  video_player.VideoPlayerValue? _lastValue;
   bool _controllerDisposed = false;
 
   @override

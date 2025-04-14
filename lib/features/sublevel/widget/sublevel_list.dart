@@ -138,7 +138,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
             children: [
               Center(
                 child: sublevel.when(
-                  video: (video) => Player(
+                  video: (video) => VideoPlayer(
                     key: Key(positionText),
                     uniqueId: positionText,
                     videoLocalPath: localPath,

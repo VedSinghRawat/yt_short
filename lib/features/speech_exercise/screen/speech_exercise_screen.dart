@@ -114,7 +114,7 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Player(
+    return VideoPlayer(
       key: Key(widget.uniqueId ?? widget.videoLocalPath ?? widget.videoUrl ?? ''),
       videoLocalPath: widget.videoLocalPath,
       videoUrl: widget.videoUrl,
