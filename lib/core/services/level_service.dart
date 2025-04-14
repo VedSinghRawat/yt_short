@@ -51,8 +51,7 @@ class LevelService {
   String get dialogueAudioBaseDirPath => '$_dialoguesBasePath/audios';
 
   String getDialogueAudioFilePath(String audioFilename) {
-    // Audio files are directly inside the base audio directory
-    return '$dialogueAudioBaseDirPath/$audioFilename';
+    return '$dialogueAudioBaseDirPath/$audioFilename.mp3';
   }
 
   String getDialogueAudioTempZipPath(int zipNum) {

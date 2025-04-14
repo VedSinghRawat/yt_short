@@ -32,9 +32,9 @@ class SubLevelService {
           case Right(value: final videoData) when videoData == null:
             return null;
           case Right(value: final videoData):
-            final file = File(
-              levelService.getVideoPath(levelDTO.id, subLevelDTO.videoFilename),
-            );
+            final a = levelService.getVideoPath(levelDTO.id, subLevelDTO.videoFilename);
+            Console.log(a);
+            final file = File(a);
             await Directory(file.parent.path).create(recursive: true);
             await file.writeAsBytes(videoData!);
             return null;
@@ -70,7 +70,6 @@ class SubLevelService {
             await tempZipFile.parent.create(recursive: true);
             await tempZipFile.writeAsBytes(zipData!);
 
-            await destinationDir.create(recursive: true);
             await fileService.unzip(tempZipFile, destinationDir);
           } catch (e, stackTrace) {
             Console.log(

@@ -50,7 +50,7 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
   List<Dialogue> _sourceDialogues = []; // List to hold the source data (dummy or real)
 
   // --- Set to TRUE to test filtering with dummy data ---
-  final bool _useDummyDialoguesForTesting = true;
+  final bool _useDummyDialoguesForTesting = false;
   // --- Set to false to use actual data logic ---
 
   // Controller and state for ListWheelScrollView focus effect
@@ -319,8 +319,7 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
       await _audioPlayer.stop();
 
       final levelService = ref.read(levelServiceProvider);
-      final basePath = levelService.dialogueAudioBaseDirPath;
-      final filePath = '$basePath/$audioFilename';
+      final filePath = levelService.getDialogueAudioFilePath(audioFilename);
       developer.log("Attempting to play audio: $filePath");
 
       final file = File(filePath);
@@ -376,122 +375,144 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          GestureDetector(
-            onTap: _changePlayingState,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                if (error != null)
-                  Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: ErrorPage(
-                        text: error!,
+          // Use a Stack to layer video, overlay, and dialogues
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              // GestureDetector now only wraps the video/button area
+              GestureDetector(
+                onTap: _changePlayingState,
+                // Use a Stack for video/loading/error + button
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Video Player, Loading, or Error
+                    if (error != null)
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: ErrorPage(
+                            text: error!,
+                          ),
+                        ),
+                      )
+                    else if (isPlayerReady)
+                      Center(
+                        child: AspectRatio(
+                          aspectRatio: _controller!.value.aspectRatio,
+                          child: VideoPlayer(_controller!),
+                        ),
+                      )
+                    else
+                      const AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: Center(child: CircularProgressIndicator()),
                       ),
-                    ),
-                  )
-                else if (isPlayerReady)
-                  Center(
-                    child: AspectRatio(
-                      aspectRatio: _controller!.value.aspectRatio,
-                      child: VideoPlayer(_controller!),
-                    ),
-                  )
-                else
-                  const AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-                PlayPauseButton(showPlayPauseIcon: _showPlayPauseIcon, iconData: _iconData),
-                Visibility(
-                  visible: showDialogueArea,
-                  child: Positioned.fill(
+                    // Play/Pause Button (inside the tap area)
+                    PlayPauseButton(showPlayPauseIcon: _showPlayPauseIcon, iconData: _iconData),
+                  ],
+                ),
+              ),
+              // Semi-transparent overlay (outside GestureDetector)
+              Visibility(
+                visible: showDialogueArea,
+                child: Positioned.fill(
+                  child: IgnorePointer(
+                    // Prevents overlay from blocking taps on video
                     child: Container(
                       color: Colors.black.withOpacity(0.3),
                     ),
                   ),
                 ),
-                Visibility(
-                  visible: showDialogueArea,
-                  child: Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      height: _displayableDialogues.isNotEmpty
-                          ? standardDialogueHeight
-                          : emptyDialogueHeight,
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.8),
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(16.0)),
-                      ),
-                      child: _displayableDialogues.isNotEmpty
-                          ? Stack(
-                              children: [
-                                _buildDialogueList(
-                                  dialogues: _displayableDialogues,
-                                  standardHeight: standardDialogueHeight,
-                                ),
-                                // Top Gradient Overlay
-                                Positioned(
-                                  top: 0,
-                                  left: 0,
-                                  right: 0,
-                                  child: IgnorePointer(
-                                    child: Container(
-                                      height: standardDialogueHeight / 3.0,
-                                      decoration: BoxDecoration(
-                                        borderRadius:
-                                            const BorderRadius.vertical(top: Radius.circular(16.0)),
-                                        gradient: LinearGradient(
-                                          begin: Alignment.topCenter,
-                                          end: Alignment.bottomCenter,
-                                          colors: [
-                                            Colors.black,
-                                            Colors.black.withOpacity(0.0),
-                                          ],
-                                          stops: const [0.0, 0.9],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                // Bottom Gradient Overlay
-                                Positioned(
-                                  bottom: 0,
-                                  left: 0,
-                                  right: 0,
-                                  child: IgnorePointer(
-                                    child: Container(
-                                      height: standardDialogueHeight / 3.0,
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          begin: Alignment.bottomCenter,
-                                          end: Alignment.topCenter,
-                                          colors: [
-                                            Colors.black,
-                                            Colors.black.withOpacity(0.0),
-                                          ],
-                                          stops: const [0.0, 0.9],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            )
-                          : const Center(
-                              child: Text(
-                                "No dialogue to show yet.",
-                                style: TextStyle(color: Colors.white70, fontSize: 14),
-                              ),
-                            ),
+              ),
+              // Dialogue Area (outside GestureDetector)
+              Visibility(
+                visible: showDialogueArea,
+                child: Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  // The Container holding the dialogues remains interactive
+                  child: Container(
+                    height: _displayableDialogues.isNotEmpty
+                        ? standardDialogueHeight
+                        : emptyDialogueHeight,
+                    decoration: const BoxDecoration(
+                      color: Colors.black,
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
                     ),
+                    child: _displayableDialogues.isNotEmpty
+                        ? Stack(
+                            // Wrap the ListWheelScrollView with a Stack for overlays
+                            children: [
+                              _buildDialogueList(
+                                dialogues: _displayableDialogues,
+                                standardHeight: standardDialogueHeight,
+                              ),
+                              // Top Gradient Overlay
+                              Positioned(
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                child: IgnorePointer(
+                                  // Make overlay non-interactive
+                                  child: Container(
+                                    height: standardDialogueHeight / 3.0, // Match item extent
+                                    decoration: BoxDecoration(
+                                      borderRadius: const BorderRadius.vertical(
+                                          top: Radius.circular(
+                                              16.0)), // Add rounded corners to top overlay
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                        colors: [
+                                          Colors.black, // Make starting color fully opaque black
+                                          Colors.black.withAlpha(0), // Fade to transparent
+                                        ],
+                                        stops: const [0.0, 0.9], // Adjust stops for smoothness
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              // Bottom Gradient Overlay
+                              Positioned(
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                child: IgnorePointer(
+                                  // Make overlay non-interactive
+                                  child: Container(
+                                    height: standardDialogueHeight / 3.0, // Match item extent
+                                    decoration: BoxDecoration(
+                                      // No border radius for bottom overlay
+                                      gradient: LinearGradient(
+                                        begin: Alignment.bottomCenter,
+                                        end: Alignment.topCenter,
+                                        colors: [
+                                          Colors.black, // Make starting color fully opaque black
+                                          Colors.black.withAlpha(0), // Fade to transparent
+                                        ],
+                                        stops: const [0.0, 0.9], // Adjust stops for smoothness
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : const Center(
+                            child: Text(
+                              "No dialogue to show yet.",
+                              style: TextStyle(color: Colors.white70, fontSize: 14),
+                            ),
+                          ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
+          // Progress bar remains outside the main Stack
           if (isPlayerReady)
             ValueListenableBuilder<VideoPlayerValue>(
               valueListenable: _controller!,
@@ -527,7 +548,6 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
           (index) {
             final dialogue = dialogues[index];
             final formattedTime = formatDurationMMSS(dialogue.time);
-            final bool isSelected = index == _selectedDialogueIndex;
             return Center(
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -542,19 +562,30 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
                   Text(
                     dialogue.text,
                     style: const TextStyle(
-                        fontSize: 18, color: Colors.white, fontWeight: FontWeight.w500),
+                      fontSize: 18,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(width: 12),
-                  InkWell(
-                    onTap: () {
-                      _playDialogueAudio(dialogue.audioFilename);
+                  GestureDetector(
+                    onTap: () async {
+                      Console.log("Tapped");
+                      await _playDialogueAudio(dialogue.audioFilename);
                     },
-                    borderRadius: BorderRadius.circular(10),
-                    child: const Icon(
-                      Icons.volume_up,
-                      color: Colors.white70,
-                      size: 18,
+                    child: Container(
+                      padding: const EdgeInsets.all(4.0),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white70, width: 1),
+                      ),
+                      child: const Icon(
+                        Icons.volume_up,
+                        color: Colors.white70,
+                        size: 18,
+                      ),
                     ),
                   ),
                 ],
