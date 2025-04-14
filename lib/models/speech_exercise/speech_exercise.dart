@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:flutter/foundation.dart';
+import 'package:myapp/models/sublevel/sublevel.dart';
 
 part 'speech_exercise.g.dart';
 part 'speech_exercise.freezed.dart';
@@ -13,6 +14,7 @@ class SpeechExercise with _$SpeechExercise {
     required int index,
     required String levelId,
     required String videoFilename,
+    required List<Dialogue> dialogues,
   }) = _SpeechExercise;
 
   factory SpeechExercise.fromJson(Map<String, dynamic> json) => _$SpeechExerciseFromJson(json);

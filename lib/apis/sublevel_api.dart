@@ -14,6 +14,8 @@ abstract class ISubLevelAPI {
     String levelId,
     String videoFilename,
   );
+
+  FutureEither<Uint8List?> getDialogueZip(int zipNum);
 }
 
 class SubLevelAPI implements ISubLevelAPI {
@@ -23,10 +25,7 @@ class SubLevelAPI implements ISubLevelAPI {
   final LevelService levelService;
 
   @override
-  FutureEither<Uint8List?> getVideo(
-    String levelId,
-    String videoFilename,
-  ) async {
+  FutureEither<Uint8List?> getVideo(String levelId, String videoFilename) async {
     try {
       final response = await apiService.getCloudStorageData<Uint8List?>(
         params: ApiParams(
@@ -34,6 +33,25 @@ class SubLevelAPI implements ISubLevelAPI {
             levelId,
             videoFilename,
           ),
+          baseUrl: BaseUrl.s3,
+          method: ApiMethod.get,
+          responseType: ResponseType.bytes,
+        ),
+      );
+
+      return Right(response?.data);
+    } on DioException catch (e) {
+      developer.log('Error in SubLevelAPI.getVideo: $e');
+      return Left(Failure(message: e.toString()));
+    }
+  }
+
+  @override
+  FutureEither<Uint8List?> getDialogueZip(int zipNum) async {
+    try {
+      final response = await apiService.getCloudStorageData<Uint8List?>(
+        params: ApiParams(
+          endpoint: '/dialogues/zips/$zipNum.zip',
           baseUrl: BaseUrl.s3,
           method: ApiMethod.get,
           responseType: ResponseType.bytes,

@@ -5,16 +5,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'package:myapp/features/sublevel/widget/last_level.dart';
+import 'package:myapp/models/sublevel/sublevel.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
-
-import '../console.dart';
 
 class Player extends ConsumerStatefulWidget {
   final String? videoLocalPath;
   final String? uniqueId;
   final String? videoUrl;
   final Function(VideoPlayerController controller)? onControllerInitialized;
+  final List<Dialogue> dialogues;
 
   const Player({
     super.key,
@@ -22,6 +22,7 @@ class Player extends ConsumerStatefulWidget {
     this.uniqueId,
     this.onControllerInitialized,
     this.videoUrl,
+    required this.dialogues,
   });
 
   @override
@@ -256,51 +257,87 @@ class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final bool isPlayerReady = _isInitialized && _controller != null;
+    final bool isPlayerReady =
+        _isInitialized && _controller != null && _controller!.value.isInitialized;
+    final bool isPaused = isPlayerReady && !_controller!.value.isPlaying;
 
     return VisibilityDetector(
       key: Key(widget.uniqueId ?? widget.videoLocalPath ?? widget.videoUrl ?? ''),
       onVisibilityChanged: _onVisibilityChanged,
-      child: GestureDetector(
-        onTap: _changePlayingState,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            if (error != null)
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ErrorPage(
-                    text: error!,
-                  ),
-                ),
-              )
-            else if (isPlayerReady)
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          GestureDetector(
+            onTap: _changePlayingState,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                if (error != null)
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: ErrorPage(
+                        text: error!,
+                      ),
+                    ),
+                  )
+                else if (isPlayerReady)
                   Center(
                     child: AspectRatio(
                       aspectRatio: _controller!.value.aspectRatio,
                       child: VideoPlayer(_controller!),
                     ),
+                  )
+                else
+                  const AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: Center(child: CircularProgressIndicator()),
                   ),
-                  ValueListenableBuilder<VideoPlayerValue>(
-                    valueListenable: _controller!,
-                    builder: (context, value, child) {
-                      if (value.duration > Duration.zero) {
-                        return _VideoProgressBar(controller: _controller!);
-                      } else {
-                        return const SizedBox.shrink();
-                      }
-                    },
-                  ),
-                ],
-              )
-            else
-              const Center(child: CircularProgressIndicator()),
-            PlayPauseButton(showPlayPauseIcon: _showPlayPauseIcon, iconData: _iconData),
-          ],
+                PlayPauseButton(showPlayPauseIcon: _showPlayPauseIcon, iconData: _iconData),
+              ],
+            ),
+          ),
+          if (isPlayerReady)
+            ValueListenableBuilder<VideoPlayerValue>(
+              valueListenable: _controller!,
+              builder: (context, value, child) {
+                if (value.duration > Duration.zero) {
+                  return _VideoProgressBar(controller: _controller!);
+                } else {
+                  return const SizedBox(height: 10);
+                }
+              },
+            ),
+          if (isPaused && widget.dialogues.isNotEmpty) _buildDialogueList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDialogueList() {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.15,
+      margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+      padding: const EdgeInsets.all(8.0),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.1),
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      child: Scrollbar(
+        thumbVisibility: true,
+        child: ListView.builder(
+          itemCount: widget.dialogues.length,
+          itemBuilder: (context, index) {
+            final dialogue = widget.dialogues[index];
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4.0),
+              child: Text(
+                dialogue.text,
+                style: const TextStyle(fontSize: 14),
+              ),
+            );
+          },
         ),
       ),
     );

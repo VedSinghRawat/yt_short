@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:flutter/foundation.dart';
+import 'package:myapp/models/sublevel/sublevel.dart';
 
 part 'video.g.dart';
 part 'video.freezed.dart';
@@ -11,6 +12,7 @@ class Video with _$Video {
     required int index,
     required String levelId,
     required String videoFilename,
+    required List<Dialogue> dialogues,
   }) = _Video;
 
   factory Video.fromJson(Map<String, dynamic> json) => _$VideoFromJson(json);

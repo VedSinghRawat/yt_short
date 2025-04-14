@@ -3,6 +3,19 @@ import 'package:myapp/models/speech_exercise/speech_exercise.dart';
 import 'package:myapp/models/video/video.dart';
 
 part 'sublevel.freezed.dart';
+part 'sublevel.g.dart';
+
+@freezed
+class Dialogue with _$Dialogue {
+  const factory Dialogue({
+    required String text,
+    required double time,
+    required String audioFilename,
+    required int zipNum,
+  }) = _Dialogue;
+
+  factory Dialogue.fromJson(Map<String, dynamic> json) => _$DialogueFromJson(json);
+}
 
 @freezed
 class SubLevel with _$SubLevel {
@@ -51,6 +64,11 @@ class SubLevel with _$SubLevel {
   String get videoFilename => when(
         speechExercise: (speechExercise) => speechExercise.videoFilename,
         video: (video) => video.videoFilename,
+      );
+
+  List<Dialogue> get dialogues => when(
+        speechExercise: (speechExercise) => speechExercise.dialogues,
+        video: (video) => video.dialogues,
       );
 
   bool get isVideo => this is _Video;

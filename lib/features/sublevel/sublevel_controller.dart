@@ -9,12 +9,12 @@ import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/services/cleanup_service.dart';
 import 'package:myapp/core/services/file_service.dart';
 import 'package:myapp/core/services/level_service.dart';
-import 'package:myapp/core/services/sub_level_service.dart';
+import 'package:myapp/core/services/sublevel_service.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/features/sublevel/ordered_ids_notifier.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'package:myapp/models/level/level.dart';
-import '../../apis/sub_level_api.dart';
+import '../../apis/sublevel_api.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 

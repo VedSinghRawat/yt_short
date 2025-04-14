@@ -4,7 +4,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/core/services/level_service.dart';
-import 'package:myapp/core/services/sub_level_service.dart';
+import 'package:myapp/core/services/sublevel_service.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/widgets/loader.dart';
