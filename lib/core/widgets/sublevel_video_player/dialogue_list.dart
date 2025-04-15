@@ -1,24 +1,19 @@
 import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // Import Riverpod
-import 'package:just_audio/just_audio.dart'; // Import just_audio
-import 'package:myapp/core/console.dart';
-import 'package:myapp/core/services/level_service.dart'; // Import LevelService provider
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:myapp/core/services/level_service.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 
-// Convert to ConsumerStatefulWidget
 class DialogueList extends ConsumerStatefulWidget {
   final List<Dialogue> dialogues;
   final double itemHeight;
-  // Remove onPlayAudio parameter
-  // final Function(String audioFilename) onPlayAudio;
 
   const DialogueList({
     super.key,
     required this.dialogues,
     required this.itemHeight,
-    // required this.onPlayAudio, // Removed
   });
 
   @override
@@ -26,10 +21,9 @@ class DialogueList extends ConsumerStatefulWidget {
 }
 
 class _DialogueListState extends ConsumerState<DialogueList> {
-  // Change to ConsumerState
   late FixedExtentScrollController _scrollController;
   int _selectedDialogueIndex = 0;
-  final _audioPlayer = AudioPlayer(); // Add AudioPlayer instance
+  final _audioPlayer = AudioPlayer();
 
   @override
   void initState() {
@@ -49,7 +43,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
   @override
   void dispose() {
     _scrollController.dispose();
-    _audioPlayer.dispose(); // Dispose audio player
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -60,25 +54,23 @@ class _DialogueListState extends ConsumerState<DialogueList> {
   void didUpdateWidget(covariant DialogueList oldWidget) {
     super.didUpdateWidget(oldWidget);
     // If the list of dialogues changes (e.g., filtered), reset scroll position
-    if (!listEquals(widget.dialogues, _previousDialogues)) {
-      _previousDialogues = List.from(widget.dialogues); // Update previous list
-      if (_scrollController.hasClients) {
-        // Using a post-frame callback to ensure the scroll view has updated
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && _scrollController.hasClients) {
-            // Animate to the top if the list content changes
-            _scrollController.animateToItem(0,
-                duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
-            // Update selected index immediately if needed
-            if (_selectedDialogueIndex != 0) {
-              setState(() {
-                _selectedDialogueIndex = 0;
-              });
-            }
-          }
-        });
-      }
-    }
+    if (listEquals(widget.dialogues, _previousDialogues)) return;
+    _previousDialogues = List.from(widget.dialogues); // Update previous list
+
+    if (!_scrollController.hasClients) return;
+    // Using a post-frame callback to ensure the scroll view has updated
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      _scrollController.animateToItem(
+        0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+
+      // Update selected index immediately if needed
+      if (_selectedDialogueIndex == 0) return;
+      setState(() => _selectedDialogueIndex = 0);
+    });
   }
 
   // Move audio playback logic here
@@ -132,7 +124,6 @@ class _DialogueListState extends ConsumerState<DialogueList> {
             // Wrap the Center and Row with GestureDetector
             return GestureDetector(
               onTap: () async {
-                Console.log("Tapped dialogue: ${dialogue.text}");
                 // Call the local audio playback method
                 await _playDialogueAudio(dialogue.audioFilename);
               },

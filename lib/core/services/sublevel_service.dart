@@ -32,9 +32,7 @@ class SubLevelService {
           case Right(value: final videoData) when videoData == null:
             return null;
           case Right(value: final videoData):
-            final a = levelService.getVideoPath(levelDTO.id, subLevelDTO.videoFilename);
-            Console.log(a);
-            final file = File(a);
+            final file = File(levelService.getVideoPath(levelDTO.id, subLevelDTO.videoFilename));
             await Directory(file.parent.path).create(recursive: true);
             await file.writeAsBytes(videoData!);
             return null;

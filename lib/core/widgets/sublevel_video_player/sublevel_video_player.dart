@@ -309,7 +309,6 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
 
     // Update state if the list content has changed
     if (!listEquals(_displayableDialogues, newDialogues)) {
-      developer.log("Updating displayable dialogues. Count: ${newDialogues.length}");
       setState(() {
         _displayableDialogues = newDialogues;
       });
