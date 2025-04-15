@@ -477,7 +477,11 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
               valueListenable: _controller!,
               builder: (context, value, child) {
                 if (value.duration > Duration.zero) {
-                  return VideoProgressBar(controller: _controller!);
+                  return VideoProgressBar(
+                    durationMs: value.duration.inMilliseconds,
+                    currentPositionMs: value.position.inMilliseconds,
+                    isPlaying: value.isPlaying,
+                  );
                 } else {
                   return const SizedBox(height: 10);
                 }

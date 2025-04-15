@@ -1,33 +1,30 @@
 import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
 import 'dart:math';
 import 'dart:developer' as developer;
 
 class VideoProgressBar extends StatefulWidget {
-  final VideoPlayerController controller;
+  final int durationMs;
+  final int currentPositionMs;
+  final bool isPlaying;
 
-  const VideoProgressBar({super.key, required this.controller});
+  const VideoProgressBar({
+    super.key,
+    required this.durationMs,
+    required this.currentPositionMs,
+    required this.isPlaying,
+  });
 
   @override
   State<VideoProgressBar> createState() => _VideoProgressBarState();
 }
 
 class _VideoProgressBarState extends State<VideoProgressBar> with SingleTickerProviderStateMixin {
-  /// Controls a simple animation that runs when the video is playing.
-  /// Its primary purpose is to trigger frequent [setState] calls,
-  /// ensuring the progress bar updates smoothly even if the [VideoPlayerController]
-  /// doesn't emit position updates frequently enough (e.g., every frame).
   late AnimationController _timerController;
 
-  /// The last known [VideoPlayerValue] received from the controller.
-  /// Used as the base for estimating the current position.
-  VideoPlayerValue? _lastValue;
-
-  /// The timestamp when [_lastValue] was received.
-  /// Used to calculate the time elapsed since the last known position.
+  int _lastEstimatedPositionMs = 0;
+  int _pausedPositionMs = 0;
   DateTime _lastUpdateTime = DateTime.now();
-
-  double _lastProgress = 0.0;
+  double _currentProgress = 0.0;
 
   @override
   void initState() {
@@ -37,126 +34,77 @@ class _VideoProgressBarState extends State<VideoProgressBar> with SingleTickerPr
       vsync: this,
       duration: const Duration(milliseconds: 500),
     )..addListener(() {
-        if (mounted) {
-          setState(() {});
+        final estimatedProgress = _estimateCurrentProgress();
+
+        if (_currentProgress != estimatedProgress) {
+          setState(() {
+            _currentProgress = estimatedProgress;
+          });
         }
       });
-
-    widget.controller.addListener(_updateVideoState);
-
-    developer.log(' initState: Listener added and initial state set.');
   }
 
-  /// Callback function triggered whenever the [VideoPlayerController]'s value changes.
-  void _updateVideoState() {
-    if (!mounted) return;
-
-    if (!widget.controller.value.isInitialized) {
-      developer.log(' _updateVideoState: Controller not initialized.');
-      if (_timerController.isAnimating) {
-        _timerController.stop();
-        developer.log(' _updateVideoState: Timer stopped due to uninitialized controller.');
-      }
-      if (_lastValue != null) {
-        setState(() {
-          _lastValue = null;
-        });
-      }
-      return;
-    }
-
-    final VideoPlayerValue currentValue = widget.controller.value;
-
-    final bool changed = _lastValue == null ||
-        _lastValue?.position != currentValue.position ||
-        _lastValue?.duration != currentValue.duration ||
-        _lastValue?.isPlaying != currentValue.isPlaying ||
-        _lastValue?.playbackSpeed != currentValue.playbackSpeed ||
-        _lastValue?.isBuffering != currentValue.isBuffering ||
-        _lastValue?.hasError != currentValue.hasError;
-
-    if (!changed) return;
-
-    final bool shouldBePlaying = currentValue.isInitialized &&
-        currentValue.isPlaying &&
-        !currentValue.isBuffering &&
-        !currentValue.hasError;
+  @override
+  void didUpdateWidget(covariant VideoProgressBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
 
     setState(() {
-      if (!shouldBePlaying) {
-        developer.log(
-          ' _updateVideoState: position changed: ${currentValue.position.inMilliseconds} lastValue: ${_lastValue?.position.inMilliseconds}',
-        );
+      if (oldWidget.isPlaying && !widget.isPlaying) {
+        _pausedPositionMs = _lastEstimatedPositionMs;
       }
-      _lastValue = currentValue;
-      _lastUpdateTime = DateTime.now();
+
+      if (!oldWidget.isPlaying && widget.isPlaying) {
+        _lastUpdateTime = DateTime.now();
+      }
+
+      if (widget.currentPositionMs < 1000 && _pausedPositionMs != 0) {
+        _lastUpdateTime = DateTime.now();
+        _currentProgress = 0.0;
+        _lastEstimatedPositionMs = 0;
+        _pausedPositionMs = 0;
+      }
     });
 
-    shouldBePlaying ? _timerController.repeat() : _timerController.stop();
+    widget.isPlaying ? _timerController.repeat() : _timerController.stop();
   }
 
-  /// Estimates the current playback position based on the last known position
-  /// and the time elapsed since that position was recorded.
-  double _estimateCurrentProgress() {
-    final Duration duration = _lastValue!.duration;
-    final Duration basePosition = _lastValue!.position;
-    final double playbackSpeed = _lastValue!.playbackSpeed;
+  // Calculates progress based on position and duration in milliseconds
+  double _calculateProgress(int positionMs, int durationMs) {
+    if (durationMs <= 0) return 0.0;
+    return min(1.0, max(0.0, positionMs / durationMs));
+  }
 
-    if (!_lastValue!.isPlaying) {
-      developer.log(
-        ' _estimateCurrentProgress: not playing: ${_lastValue!.position.inMilliseconds} lastProgress: $_lastProgress',
-      );
-      return _lastProgress;
+  // Estimates progress based on the last known position and time elapsed
+  double _estimateCurrentProgress() {
+    if (!widget.isPlaying) {
+      return _currentProgress;
     }
 
     final now = DateTime.now();
     final timeSinceLastUpdate = now.difference(_lastUpdateTime);
+    final estimatedDeltaMs = timeSinceLastUpdate.inMilliseconds;
+    int estimatedPositionMs = _pausedPositionMs + estimatedDeltaMs;
 
-    final estimatedDeltaMs = (timeSinceLastUpdate.inMilliseconds * playbackSpeed).round();
-    Duration estimatedPosition = basePosition + Duration(milliseconds: estimatedDeltaMs);
+    // Clamp estimated position in milliseconds
+    estimatedPositionMs = estimatedPositionMs.clamp(0, widget.durationMs);
 
-    if (estimatedPosition > duration) {
-      estimatedPosition = duration;
-    }
-    if (estimatedPosition < Duration.zero) {
-      estimatedPosition = Duration.zero;
-    }
+    _lastEstimatedPositionMs = estimatedPositionMs;
 
-    final double estimatedProgress = (duration.inMilliseconds > 0)
-        ? min(1.0, max(0.0, estimatedPosition.inMilliseconds / duration.inMilliseconds))
-        : 0.0;
-
-    setState(() {
-      if (_lastProgress > estimatedProgress) {
-        developer.log(
-          ' _estimateCurrentProgress: estimatedProgress: $estimatedProgress lastProgress: $_lastProgress',
-        );
-      }
-
-      _lastProgress = _lastProgress > estimatedProgress
-          ? estimatedProgress < 0.1 && _lastProgress == 1.0
-              ? estimatedProgress
-              : _lastProgress
-          : estimatedProgress;
-    });
-
-    return _lastProgress;
+    double estimatedProgress = _calculateProgress(estimatedPositionMs, widget.durationMs);
+    return estimatedProgress;
   }
 
   @override
   void dispose() {
-    developer.log(' dispose: Cleaning up.');
     _timerController.dispose();
-    widget.controller.removeListener(_updateVideoState);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_lastValue == null ||
-        !_lastValue!.isInitialized ||
-        _lastValue!.duration <= Duration.zero ||
-        _lastValue!.hasError) {
+    final double displayProgress = _currentProgress;
+
+    if (widget.durationMs <= 0) {
       return SizedBox(
         height: 10,
         child: LinearProgressIndicator(
@@ -167,14 +115,13 @@ class _VideoProgressBarState extends State<VideoProgressBar> with SingleTickerPr
       );
     }
 
-    final double progress = _estimateCurrentProgress();
-
     return SizedBox(
       height: 10,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final double progressBarWidth = constraints.maxWidth;
-          final double indicatorPosition = progressBarWidth * progress;
+          final double clampedProgress = displayProgress.clamp(0.0, 1.0);
+          final double indicatorPosition = progressBarWidth * clampedProgress;
           final double clampedIndicatorPosition = indicatorPosition.clamp(0.0, progressBarWidth);
 
           return Stack(
