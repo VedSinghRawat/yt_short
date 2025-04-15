@@ -151,7 +151,7 @@ class _RecognizerButtonState extends State<RecognizerButton> {
             padding: const EdgeInsets.only(top: 4),
             child: Text(
               isListening ? 'Listening...' : 'Tap to listen',
-              style: const TextStyle(color: Colors.blue, fontSize: 12),
+              style: TextStyle(color: isListening ? Colors.green : Colors.blue, fontSize: 12),
             ),
           ),
       ],

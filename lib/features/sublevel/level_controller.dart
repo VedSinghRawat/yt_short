@@ -2,14 +2,13 @@ import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/error/failure.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:fpdart/fpdart.dart';
 import 'package:myapp/apis/level_api.dart';
 import 'package:myapp/core/shared_pref.dart';
 
-part 'ordered_ids_notifier.g.dart';
+part 'level_controller.g.dart';
 
 @Riverpod(keepAlive: true)
-class OrderedIdsNotifier extends _$OrderedIdsNotifier {
+class LevelController extends _$LevelController {
   @override
   AsyncValue<List<String>> build() {
     return const AsyncData([]);
@@ -21,16 +20,15 @@ class OrderedIdsNotifier extends _$OrderedIdsNotifier {
     try {
       final res = await ref.read(levelApiProvider).getOrderedIds();
 
-      state = switch (res) {
-        Left(value: final l) => await _handleLeft(l),
-        Right(value: final r) => await _handleRight(r),
-      };
+      state = await _handleRes(res);
+    } on Failure catch (e) {
+      state = await _handleErr(e);
     } catch (e) {
       state = AsyncValue.error(Failure(message: e.toString()), StackTrace.current);
     }
   }
 
-  Future<AsyncValue<List<String>>> _handleLeft(Failure error) async {
+  Future<AsyncValue<List<String>>> _handleErr(Failure error) async {
     final localIds = SharedPref.get(PrefKey.orderedIds);
 
     if (dioConnectionErrors.contains(error.type) && localIds != null) {
@@ -43,7 +41,7 @@ class OrderedIdsNotifier extends _$OrderedIdsNotifier {
     );
   }
 
-  Future<AsyncValue<List<String>>> _handleRight(List<String>? ids) async {
+  Future<AsyncValue<List<String>>> _handleRes(List<String>? ids) async {
     if (ids != null) {
       await SharedPref.store(PrefKey.orderedIds, ids);
       return AsyncValue.data(ids);

@@ -6,14 +6,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/core/console.dart';
 import 'package:myapp/core/error/failure.dart';
 import 'package:myapp/core/services/api_service.dart';
-import 'package:myapp/core/services/level_service.dart';
+import 'package:myapp/core/services/path_service.dart';
 import 'package:myapp/core/services/sub_level_service.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/widgets/loader.dart';
 import 'package:myapp/core/widgets/video_player.dart';
 import 'package:myapp/features/sublevel/sublevel_controller.dart';
-import 'package:myapp/features/sublevel/widget/last_level.dart';
+import 'package:myapp/features/sublevel/widget/error_page.dart';
 import 'package:myapp/features/speech_exercise/screen/speech_exercise_screen.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
@@ -132,17 +132,17 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
           final positionText = '${sublevel.level}-${sublevel.index}';
 
           String? localPath = ref
-              .read(levelServiceProvider)
-              .getFullVideoPath(sublevel.levelId, sublevel.videoFilename);
+              .read(pathServiceProvider)
+              .fullVideoLocalPath(sublevel.levelId, sublevel.videoFilename);
 
-          final urls = [
-            ref
-                .read(subLevelServiceProvider)
-                .getVideoUrl(sublevel.levelId, sublevel.videoFilename, BaseUrl.cloudflare),
-            ref
-                .read(subLevelServiceProvider)
-                .getVideoUrl(sublevel.levelId, sublevel.videoFilename, BaseUrl.s3),
-          ];
+          final urls =
+              [BaseUrl.cloudflare, BaseUrl.s3]
+                  .map(
+                    (url) => ref
+                        .read(subLevelServiceProvider)
+                        .getVideoUrl(sublevel.levelId, sublevel.videoFilename, url),
+                  )
+                  .toList();
 
           if (index == 0 && !File(localPath).existsSync()) {
             localPath = null;

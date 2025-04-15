@@ -57,22 +57,17 @@ class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
 
               if (!context.mounted) return;
 
-              if (isSuccess) {
-                showSnackBar(context, 'User data refreshed successfully');
-              } else {
-                showSnackBar(context, 'Failed to refresh user data');
-              }
+              showSnackBar(
+                context,
+                isSuccess ? 'User data refreshed successfully' : 'Failed to refresh user data',
+              );
             },
           ),
         IconButton(
           onPressed: () {
-            if (isLoggedIn) {
-              context.push(Routes.profile);
-            } else {
-              context.push(Routes.signIn);
-            }
+            context.push(isLoggedIn ? Routes.profile : Routes.signIn);
           },
-          icon: isLoggedIn ? const Icon(Icons.account_circle) : const Icon(Icons.person_add),
+          icon: Icon(isLoggedIn ? Icons.account_circle : Icons.person_add),
         ),
       ],
     );

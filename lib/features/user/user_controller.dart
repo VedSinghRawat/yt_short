@@ -1,7 +1,8 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:myapp/apis/user_api.dart';
 import 'package:myapp/core/shared_pref.dart';
-import 'package:myapp/features/sublevel/ordered_ids_notifier.dart';
+import 'package:myapp/core/util_types/progress.dart';
+import 'package:myapp/features/sublevel/level_controller.dart';
 import 'package:myapp/models/models.dart';
 import 'dart:developer' as developer;
 
@@ -17,18 +18,17 @@ class UserControllerState with _$UserControllerState {
 
   const UserControllerState._();
 
+  Progress? get progress => SharedPref.get(PrefKey.currProgress(userEmail: currentUser?.email));
+
   int get level {
-    final progress = SharedPref.get(PrefKey.currProgress(userEmail: currentUser?.email));
     return progress?.level ?? currentUser?.level ?? 1;
   }
 
   int get subLevel {
-    final progress = SharedPref.get(PrefKey.currProgress(userEmail: currentUser?.email));
     return progress?.subLevel ?? currentUser?.subLevel ?? 1;
   }
 
   String? get levelId {
-    final progress = SharedPref.get(PrefKey.currProgress(userEmail: currentUser?.email));
     return progress?.levelId ?? currentUser?.levelId;
   }
 }
@@ -44,7 +44,7 @@ class UserController extends _$UserController {
   }
 
   UserModel updateCurrentUser(UserDTO userDTO) {
-    final orderedIds = ref.read(orderedIdsNotifierProvider).value;
+    final orderedIds = ref.read(levelControllerProvider).value;
 
     final maxLevelIndex = orderedIds?.indexOf(userDTO.maxLevelId) ?? -1;
     final userMaxLevel = maxLevelIndex != -1 ? maxLevelIndex + 1 : 1;
@@ -67,12 +67,10 @@ class UserController extends _$UserController {
 
   Future<bool> sync(String levelId, int subLevel) async {
     try {
-      final userEither = await _userAPI.sync(levelId, subLevel);
+      final user = await _userAPI.sync(levelId, subLevel);
 
-      return userEither.match((l) => false, (r) {
-        updateCurrentUser(r);
-        return true;
-      });
+      updateCurrentUser(user);
+      return true;
     } catch (e, stack) {
       developer.log('Error in sync', error: e, stackTrace: stack);
       return false;

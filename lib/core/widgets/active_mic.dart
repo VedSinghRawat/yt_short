@@ -47,12 +47,12 @@ class _ActiveMicState extends State<ActiveMic> with TickerProviderStateMixin {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.2),
+                    color: Colors.green.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
                 ),
               ),
-              const Icon(Icons.mic, size: 32, color: Colors.red),
+              const Icon(Icons.mic, size: 32, color: Colors.green),
             ],
           );
         },

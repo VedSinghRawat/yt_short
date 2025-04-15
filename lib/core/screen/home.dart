@@ -64,32 +64,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   bool isDailyLimitReached(int? doneToday) {
-    final done =
-        doneToday == null || doneToday == 0 ? SharedPref.get(PrefKey.doneToday) : doneToday;
+    final isDoneTodayNull = doneToday == null || doneToday == 0;
+
+    final done = isDoneTodayNull ? SharedPref.get(PrefKey.doneToday) : doneToday;
 
     final exceedsDailyLimit = done != null && done >= kMaxLevelCompletionsPerDay;
 
-    if (doneToday == null) {
-      if (exceedsDailyLimit) {
-        showSnackBar(
-          context,
-          'Connection failed please click on reload icon at the top right corner',
-        );
+    if (!exceedsDailyLimit) return false;
 
-        return true;
-      }
-    } else {
-      if (exceedsDailyLimit) {
-        showSnackBar(context, 'You can only complete $kMaxLevelCompletionsPerDay levels per day');
-        return true;
-      }
-    }
+    showSnackBar(
+      context,
+      isDoneTodayNull
+          ? 'Connection failed please click on reload icon at the top right corner'
+          : 'You can only complete $kMaxLevelCompletionsPerDay levels per day',
+    );
 
-    return false;
+    return true;
   }
 
   Future<bool> handleFetchSublevels(int index) async {
-    if (!isLevelNotChanged(index, _cachedSublevels!)) {
+    if (isLevelChanged(index, _cachedSublevels!)) {
       await fetchSublevels();
     }
 
@@ -107,7 +101,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     int subLevel,
     int maxLevel,
   ) async {
-    if (isLevelNotChanged(index, sublevels)) return;
+    if (!isLevelChanged(index, sublevels)) return;
 
     bool isSyncSucceed = false;
 
@@ -128,13 +122,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  bool isLevelNotChanged(int index, List<SubLevel> sublevels) {
-    if (index <= 0) return true;
+  bool isLevelChanged(int index, List<SubLevel> sublevels) {
+    if (index <= 0) return false;
 
     final previousSubLevel = sublevels[index - 1];
     final currSubLevel = sublevels[index];
 
-    return previousSubLevel.levelId == currSubLevel.levelId;
+    return previousSubLevel.levelId != currSubLevel.levelId;
   }
 
   Future<void> fetchSublevels() async {

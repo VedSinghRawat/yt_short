@@ -8,9 +8,10 @@ import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/services/cleanup_service.dart';
 import 'package:myapp/core/services/file_service.dart';
 import 'package:myapp/core/services/level_service.dart';
+import 'package:myapp/core/services/path_service.dart';
 import 'package:myapp/core/services/sub_level_service.dart';
 import 'package:myapp/core/utils.dart';
-import 'package:myapp/features/sublevel/ordered_ids_notifier.dart';
+import 'package:myapp/features/sublevel/level_controller.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'package:myapp/models/level/level.dart';
 import '../../apis/sub_level_api.dart';
@@ -44,7 +45,7 @@ class SublevelController extends _$SublevelController {
   late final ILevelApi levelApi = ref.read(levelApiProvider);
   late final SubLevelService subLevelService = ref.read(subLevelServiceProvider);
   late final FileService fileService = ref.read(fileServiceProvider);
-  late final OrderedIdsNotifier orderedIdNotifier = ref.read(orderedIdsNotifierProvider.notifier);
+  late final LevelController levelController = ref.read(levelControllerProvider.notifier);
   late final StorageCleanupService storageCleanupService = ref.read(storageCleanupServiceProvider);
   late final LevelService levelService = ref.read(levelServiceProvider);
 
@@ -103,7 +104,7 @@ class SublevelController extends _$SublevelController {
 
   Future<void> _addExistVideoSublevelEntries(LevelDTO levelDTO, int level, String levelId) async {
     final entries = await FileService.listEntities(
-      Directory(levelService.getVideoDirPath(levelId)),
+      Directory(ref.read(pathServiceProvider).videoDirLocalPath(levelId)),
     );
 
     final videoFiles = entries.toSet();
@@ -123,7 +124,7 @@ class SublevelController extends _$SublevelController {
 
   Future<void> handleFetchSublevels() async {
     try {
-      final asyncOrderIds = ref.read(orderedIdsNotifierProvider);
+      final asyncOrderIds = ref.read(levelControllerProvider);
       final isFirstFetch = state.isFirstFetch;
 
       if (asyncOrderIds.hasError) {
@@ -182,7 +183,7 @@ class SublevelController extends _$SublevelController {
   Future<void> _cleanOldLevels(List<String> orderedIds, String currLevelId) async {
     try {
       final cachedIds = await FileService.listEntities(
-        Directory(levelService.levelsDocDirPath),
+        Directory(ref.read(pathServiceProvider).levelsDocDirPath),
         type: EntitiesType.folders,
       );
 

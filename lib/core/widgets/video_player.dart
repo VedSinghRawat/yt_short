@@ -5,7 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/features/sublevel/sublevel_controller.dart';
-import 'package:myapp/features/sublevel/widget/last_level.dart';
+import 'package:myapp/features/sublevel/widget/error_page.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 

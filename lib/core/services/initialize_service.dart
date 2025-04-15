@@ -10,7 +10,7 @@ import 'package:myapp/core/services/file_service.dart';
 import 'package:myapp/core/services/info_service.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
-import 'package:myapp/features/sublevel/ordered_ids_notifier.dart';
+import 'package:myapp/features/sublevel/level_controller.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'dart:developer' as developer;
 
@@ -20,13 +20,13 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 class InitializeService {
   UserControllerState userControllerState;
   InitializeAPI initializeAPI;
-  OrderedIdsNotifier orderedIdNotifier;
+  LevelController levelController;
   UserController userController;
 
   InitializeService({
     required this.userControllerState,
     required this.initializeAPI,
-    required this.orderedIdNotifier,
+    required this.levelController,
     required this.userController,
   });
 
@@ -36,10 +36,13 @@ class InitializeService {
       await SharedPref.init(); // first init shared pref
       await InfoService.instance.init(); // then init info service
       await initialApiCall(); // then call api because it depends on info service
-      await storeCyId();
-      await FileService.instance.init();
-      await orderedIdNotifier.getOrderedIds();
-      await handleDeepLinking(); // deep linking depends on user
+
+      await Future.wait([
+        storeCyId(), // depend on user
+        FileService.instance.init(),
+        levelController.getOrderedIds(),
+        handleDeepLinking(), // deep linking depends on user
+      ]);
 
       final currProgress = SharedPref.get(
         PrefKey.currProgress(userEmail: userControllerState.currentUser?.email),
@@ -105,27 +108,25 @@ class InitializeService {
   }
 
   Future<bool> initialApiCall() async {
-    final version = InfoService.instance.packageInfo.version;
+    try {
+      final version = InfoService.instance.packageInfo.version;
 
-    final initialDataEither = await initializeAPI.initialize(version);
+      final initialData = await initializeAPI.initialize(version);
 
-    return initialDataEither.match(
-      (l) {
-        developer.log(l.toString());
-        return false;
-      },
-      (r) async {
-        if (r.user != null) {
-          userController.updateCurrentUser(r.user!);
-          // Store doneToday from API user
-          await SharedPref.store(PrefKey.doneToday, r.user!.doneToday);
-          // Store last logged in email
-          await SharedPref.store(PrefKey.lastLoggedInEmail, r.user!.email);
-        }
-        await InfoService.instance.initVersionData(r);
-        return true;
-      },
-    );
+      if (initialData.user != null) {
+        userController.updateCurrentUser(initialData.user!);
+        // Store doneToday from API user
+        await SharedPref.store(PrefKey.doneToday, initialData.user!.doneToday);
+        // Store last logged in email
+        await SharedPref.store(PrefKey.lastLoggedInEmail, initialData.user!.email);
+      }
+
+      await InfoService.instance.initVersionData(initialData);
+      return true;
+    } catch (e, stackTrace) {
+      developer.log('Error during initialize', error: e.toString(), stackTrace: stackTrace);
+      return false;
+    }
   }
 }
 
@@ -133,7 +134,7 @@ final initializeServiceProvider = FutureProvider<InitializeService>((ref) async 
   final service = InitializeService(
     userControllerState: ref.read(userControllerProvider),
     initializeAPI: ref.read(initializeAPIService),
-    orderedIdNotifier: ref.read(orderedIdsNotifierProvider.notifier),
+    levelController: ref.read(levelControllerProvider.notifier),
     userController: ref.read(userControllerProvider.notifier),
   );
 

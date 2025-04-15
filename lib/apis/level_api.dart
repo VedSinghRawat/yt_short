@@ -1,62 +1,66 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:fpdart/fpdart.dart';
 import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/error/failure.dart';
 import 'package:myapp/core/services/api_service.dart';
+import 'package:myapp/core/services/path_service.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/level/level.dart';
 
 abstract class ILevelApi {
-  FutureEither<LevelDTO?> get(String id);
-  FutureEither<List<String>?> getOrderedIds();
+  Future<LevelDTO?> get(String id);
+  Future<List<String>?> getOrderedIds();
 }
 
 class LevelApi implements ILevelApi {
   final ApiService apiService;
+  final PathService pathService;
 
-  LevelApi({required this.apiService});
+  LevelApi({required this.apiService, required this.pathService});
 
   @override
-  FutureEither<LevelDTO?> get(String id) async {
+  Future<LevelDTO?> get(String id) async {
     try {
-      final response = await apiService.getCloudStorageData(endpoint: getLevelJsonPath(id));
+      final response = await apiService.getCloudStorageData(
+        endpoint: pathService.levelJsonPath(id),
+      );
 
-      if (response == null) return right(null);
+      if (response == null) return null;
 
       final levelDTO = LevelDTO.fromJson({...response.data, 'id': id});
 
-      return right(levelDTO);
+      return levelDTO;
     } on DioException catch (e) {
       if (dioConnectionErrors.contains(e.type)) {
-        return right(null);
+        return null;
       }
 
-      return left(Failure(message: e.response?.data?.toString() ?? e.toString(), type: e.type));
+      throw Failure(message: e.response?.data?.toString() ?? e.toString(), type: e.type);
     }
   }
 
   @override
-  FutureEither<List<String>?> getOrderedIds() async {
+  Future<List<String>?> getOrderedIds() async {
     try {
       final response = await apiService.getCloudStorageData<Map<String, dynamic>?>(
-        endpoint: getOrderedIdsPath(),
+        endpoint: pathService.orderedIdsPath(),
       );
 
       final ids = response?.data?['orderedIds'];
-      if (ids == null) return right(null);
+      if (ids == null) return null;
 
-      return right(List<String>.from(ids));
+      return List<String>.from(ids);
     } on DioException catch (e) {
-      return left(Failure(message: e.response?.data.toString() ?? unknownErrorMsg, type: e.type));
+      throw Failure(message: e.response?.data.toString() ?? unknownErrorMsg, type: e.type);
     } catch (e) {
-      return left(Failure(message: e.toString()));
+      throw Failure(message: e.toString());
     }
   }
 }
 
 final levelApiProvider = Provider<ILevelApi>((ref) {
   final apiService = ref.read(apiServiceProvider);
+  final pathService = ref.read(pathServiceProvider);
 
-  return LevelApi(apiService: apiService);
+  return LevelApi(apiService: apiService, pathService: pathService);
 });
