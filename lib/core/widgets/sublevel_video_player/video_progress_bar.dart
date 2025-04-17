@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
-import 'dart:developer' as developer;
 
 class VideoProgressBar extends StatefulWidget {
   final int durationMs;
@@ -49,19 +48,21 @@ class _VideoProgressBarState extends State<VideoProgressBar> with SingleTickerPr
     super.didUpdateWidget(oldWidget);
 
     setState(() {
+      // paused
       if (oldWidget.isPlaying && !widget.isPlaying) {
         _pausedPositionMs = _lastEstimatedPositionMs;
       }
-
+      // played
       if (!oldWidget.isPlaying && widget.isPlaying) {
         _lastUpdateTime = DateTime.now();
       }
 
-      if (widget.currentPositionMs < 1000 && _pausedPositionMs != 0) {
+      // loopback
+      if (widget.currentPositionMs < 500) {
         _lastUpdateTime = DateTime.now();
         _currentProgress = 0.0;
-        _lastEstimatedPositionMs = 0;
-        _pausedPositionMs = 0;
+        _lastEstimatedPositionMs = widget.currentPositionMs;
+        _pausedPositionMs = widget.currentPositionMs;
       }
     });
 
