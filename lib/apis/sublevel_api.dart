@@ -1,74 +1,56 @@
 import 'dart:developer' as developer show log;
 import 'dart:typed_data';
-
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:fpdart/fpdart.dart';
 import 'package:myapp/core/error/failure.dart';
 import 'package:myapp/core/services/api_service.dart';
-import 'package:myapp/core/services/level_service.dart';
-import 'package:myapp/core/utils.dart';
+import 'package:myapp/core/services/path_service.dart';
 
 abstract class ISubLevelAPI {
-  FutureEither<Uint8List?> getVideo(
-    String levelId,
-    String videoFilename,
-  );
-
-  FutureEither<Uint8List?> getDialogueZip(int zipNum);
+  Future<Uint8List?> getDialogueZip(int zipNum);
+  Future<Uint8List?> getVideo(String levelId, String videoFilename);
 }
 
 class SubLevelAPI implements ISubLevelAPI {
-  SubLevelAPI(this.apiService, this.levelService);
+  SubLevelAPI(this.apiService, this.pathService);
 
   final ApiService apiService;
-  final LevelService levelService;
+  final PathService pathService;
 
   @override
-  FutureEither<Uint8List?> getVideo(String levelId, String videoFilename) async {
+  Future<Uint8List?> getVideo(String levelId, String videoFilename) async {
     try {
-      final response = await apiService.getCloudStorageData<Uint8List?>(
-        params: ApiParams(
-          endpoint: levelService.getVideoPathEndPoint(
-            levelId,
-            videoFilename,
-          ),
-          baseUrl: BaseUrl.s3,
-          method: ApiMethod.get,
-          responseType: ResponseType.bytes,
-        ),
+      final response = await apiService.getCloudStorageData(
+        endpoint: pathService.videoPath(levelId, videoFilename),
+        responseType: ResponseType.bytes,
       );
 
-      return Right(response?.data);
+      return response?.data;
     } on DioException catch (e) {
       developer.log('Error in SubLevelAPI.getVideo: $e');
-      return Left(Failure(message: e.toString()));
+      throw Failure(message: e.toString());
     }
   }
 
   @override
-  FutureEither<Uint8List?> getDialogueZip(int zipNum) async {
+  Future<Uint8List?> getDialogueZip(int zipNum) async {
     try {
       final response = await apiService.getCloudStorageData<Uint8List?>(
-        params: ApiParams(
-          endpoint: '/dialogues/zips/$zipNum.zip',
-          baseUrl: BaseUrl.s3,
-          method: ApiMethod.get,
-          responseType: ResponseType.bytes,
-        ),
+        endpoint: '/dialogues/zips/$zipNum.zip',
+        responseType: ResponseType.bytes,
       );
 
-      return Right(response?.data);
+      return response?.data;
     } on DioException catch (e) {
       developer.log('Error in SubLevelAPI.getDialogueZip for zipNum $zipNum: $e');
-      return Left(Failure(message: e.toString()));
+      throw Failure(message: e.toString());
     }
   }
 }
 
 final subLevelAPIProvider = Provider<ISubLevelAPI>((ref) {
   final apiService = ref.read(apiServiceProvider);
-  final levelService = ref.read(levelServiceProvider);
+  final pathService = ref.read(pathServiceProvider);
 
-  return SubLevelAPI(apiService, levelService);
+  return SubLevelAPI(apiService, pathService);
 });

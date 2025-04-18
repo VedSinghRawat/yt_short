@@ -22,15 +22,23 @@ class PrefKey<ST, LT> {
   static const googleIdToken = PrefKey<String, Unit>(name: 'googleIdToken');
   static const isFirstLaunch = PrefKey<bool, Unit>(name: 'isFirstLaunch');
   static const orderedIds = PrefKey<List<String>, String>(name: 'orderedIds');
+  static const doneToday = PrefKey<int, Unit>(name: 'doneToday');
+  static const lastLoggedInEmail = PrefKey<String, Unit>(name: 'lastLoggedInEmail');
 
   static const activityLogs = PrefKey<List<ActivityLog>, ActivityLog>(
     fromJson: ActivityLog.fromJson,
     name: 'activityLogs',
   );
-  static const currProgress = PrefKey<Progress, Unit>(
-    fromJson: Progress.fromJson,
-    name: 'currProgress',
-  );
+
+  /// [userEmail] is optional because it is not always available if the user is not logged in
+  static PrefKey<Progress, Unit> currProgress({String? userEmail}) {
+    final lastLoggedInEmail = SharedPref.get(PrefKey.lastLoggedInEmail);
+
+    return PrefKey<Progress, Unit>(
+      fromJson: Progress.fromJson,
+      name: 'currProgress_${userEmail ?? lastLoggedInEmail ?? 'guest'}',
+    );
+  }
 
   static PrefKey<String, Unit> eTag(String id) => PrefKey<String, Unit>(name: 'eTag_$id');
 }
@@ -83,9 +91,10 @@ class SharedPref {
             result = List.from(decoded).cast<LT>();
           }
         } else if (decoded is Map) {
-          result = destructedKey.fromJson != null
-              ? destructedKey.fromJson!(decoded as Map<String, dynamic>)
-              : Map.from(decoded);
+          result =
+              destructedKey.fromJson != null
+                  ? destructedKey.fromJson!(decoded as Map<String, dynamic>)
+                  : Map.from(decoded);
         } else {
           throw UnsupportedError("Cannot decode value for ${destructedKey.key}");
         }
@@ -115,16 +124,13 @@ class SharedPref {
         validVal = jsonEncode(list);
       } else {
         throw UnsupportedError(
-          " SharedPred error(Unsupported type): \${value.runtimeType}: \${ST.toString()} if it is custom class consider implementing SharedPrefClass class",
+          " SharedPred error(Unsupported type): ${value.runtimeType}: ${ST.toString()} if it is custom class consider implementing SharedPrefClass class",
         );
       }
 
       await _pref.setString(destructedKey.key, validVal);
     } catch (e) {
-      Console.error(
-        Failure(message: e.toString()),
-        StackTrace.current,
-      );
+      Console.error(Failure(message: e.toString()), StackTrace.current);
 
       rethrow;
     }
@@ -132,7 +138,7 @@ class SharedPref {
 
   static Future<void> pushValue<LT, ST extends List<LT>, K extends PrefKey<ST, LT>>(
     K prefKey,
-    dynamic newValue,
+    LT newValue,
   ) async {
     final existing = get(prefKey);
     dynamic updated;
@@ -167,9 +173,12 @@ class SharedPref {
         throw 'Unsupported type for copyWith in SharedPref';
       }
 
-      final merged = oldValueMap.map((k, v) => valueMap.containsKey(k) && valueMap[k] != null
-          ? MapEntry(k, valueMap[k])
-          : MapEntry(k, v));
+      final merged = oldValueMap.map(
+        (k, v) =>
+            valueMap.containsKey(k) && valueMap[k] != null
+                ? MapEntry(k, valueMap[k])
+                : MapEntry(k, v),
+      );
 
       if (key.fromJson != null) {
         final updatedObj = key.fromJson!(Map<String, dynamic>.from(merged));

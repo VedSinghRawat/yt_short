@@ -11,13 +11,13 @@ class SpeechExerciseScreen extends ConsumerStatefulWidget {
   final SpeechExercise exercise;
   final String? uniqueId;
   final String? videoLocalPath;
-  final String? videoUrl;
+  final List<String>? videoUrls;
 
   const SpeechExerciseScreen({
     super.key,
     required this.exercise,
     this.videoLocalPath,
-    this.videoUrl,
+    this.videoUrls,
     this.uniqueId,
   });
 
@@ -28,6 +28,7 @@ class SpeechExerciseScreen extends ConsumerStatefulWidget {
 class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
   VideoPlayerController? _exerciseController;
   bool _hasShownDialog = false;
+  bool _isDialogOpen = false;
 
   void _onControllerInitialized(VideoPlayerController controller) {
     if (!mounted) return;
@@ -70,6 +71,7 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
 
     setState(() {
       _hasShownDialog = true;
+      _isDialogOpen = true;
     });
 
     final isAdmin = ref.read(userControllerProvider).currentUser?.isAdmin ?? false;
@@ -78,35 +80,41 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
       context: context,
       barrierDismissible: isAdmin || kDebugMode,
       barrierColor: const Color.fromRGBO(0, 0, 0, 0.9),
-      builder: (context) => PopScope(
-        canPop: isAdmin || kDebugMode,
-        child: Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
-          child: Container(
-            decoration: BoxDecoration(
-              color: const Color.fromRGBO(255, 255, 255, 0.75),
-              borderRadius: BorderRadius.circular(30),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color.fromRGBO(255, 255, 255, 0.2),
-                  blurRadius: 12.0,
-                  spreadRadius: 4.0,
+      builder:
+          (context) => PopScope(
+            canPop: isAdmin || kDebugMode,
+            onPopInvokedWithResult: (bool result, bool? didPop) {
+              setState(() {
+                _isDialogOpen = false;
+              });
+            },
+            child: Dialog(
+              backgroundColor: Colors.transparent,
+              insetPadding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color.fromRGBO(255, 255, 255, 0.75),
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color.fromRGBO(255, 255, 255, 0.2),
+                      blurRadius: 12.0,
+                      spreadRadius: 4.0,
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: SpeechExerciseCard(
-              text: widget.exercise.text,
-              onContinue: () {
-                if (mounted) {
-                  _exerciseController?.play();
-                  Navigator.of(context).pop();
-                }
-              },
+                child: SpeechExerciseCard(
+                  text: widget.exercise.text,
+                  onContinue: () {
+                    if (mounted) {
+                      _exerciseController?.play();
+                      Navigator.of(context).pop();
+                    }
+                  },
+                ),
+              ),
             ),
           ),
-        ),
-      ),
     ).then((_) {
       if (mounted) {}
     });
@@ -115,12 +123,13 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
   @override
   Widget build(BuildContext context) {
     return SublevelVideoPlayer(
-      key: Key(widget.uniqueId ?? widget.videoLocalPath ?? widget.videoUrl ?? ''),
+      key: Key(widget.uniqueId ?? widget.videoLocalPath ?? widget.exercise.videoFilename ?? ''),
       videoLocalPath: widget.videoLocalPath,
-      videoUrl: widget.videoUrl,
+      videoUrls: widget.videoUrls,
       uniqueId: widget.uniqueId,
       onControllerInitialized: _onControllerInitialized,
       dialogues: widget.exercise.dialogues,
+      stayPause: _isDialogOpen,
     );
   }
 }

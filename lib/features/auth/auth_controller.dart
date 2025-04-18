@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:myapp/constants/constants.dart';
@@ -14,15 +15,16 @@ part 'auth_controller.g.dart';
 
 class AuthControllerState {
   final bool loading;
+  final String? error;
 
-  AuthControllerState({required this.loading});
+  AuthControllerState({required this.loading, this.error});
 
-  AuthControllerState copyWith({bool? loading}) {
-    return AuthControllerState(loading: loading ?? this.loading);
+  AuthControllerState copyWith({bool? loading, String? error}) {
+    return AuthControllerState(loading: loading ?? this.loading, error: error ?? this.error);
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 class AuthController extends _$AuthController {
   // Internal flag to prevent overlapping requests.
   bool _isProcessing = false;
@@ -48,28 +50,39 @@ class AuthController extends _$AuthController {
 
       final user = userController.updateCurrentUser(userDTO);
 
+      await SharedPref.store(PrefKey.doneToday, user.doneToday);
+
       await authAPI.syncCyId();
 
       await Future.delayed(Duration.zero); // Yield control to UI
 
-      final progress = SharedPref.get(PrefKey.currProgress);
+      // first get the guest progress
+      final progress = SharedPref.get(
+        PrefKey.currProgress(),
+      ); // null because user is not logged in before sign in
+
+      // then update the last logged in email to the user's email
+      await SharedPref.store(PrefKey.lastLoggedInEmail, user.email);
+
       final level = progress?.maxLevel ?? kAuthRequiredLevel;
-      final subLevel = progress?.maxSubLevel ?? 0;
+      final subLevel = progress?.maxSubLevel ?? 1;
 
       if (context.mounted &&
-          (user.maxLevel > level || (user.maxLevel == level && userDTO.maxSubLevel >= subLevel))) {
-        await showLevelChangeConfirmationDialog(
-          context,
-          user.maxLevel,
-          userDTO.maxSubLevel,
-          sublevelController,
-        );
+          (user.maxLevel > level || (user.maxLevel == level && userDTO.maxSubLevel > subLevel))) {
+        await showLevelChangeConfirmationDialog(context, user);
+      } else {
+        // Store the progress to the shared preferences by user email
+
+        SharedPref.store(PrefKey.currProgress(userEmail: user.email), progress);
       }
 
       await sublevelController.handleFetchSublevels();
     } catch (e, stackTrace) {
-      developer.log('Error in AuthController.signInWithGoogle',
-          error: e.toString(), stackTrace: stackTrace);
+      developer.log(
+        'Error in AuthController.signInWithGoogle',
+        error: e.toString(),
+        stackTrace: stackTrace,
+      );
       final userController = ref.read(userControllerProvider.notifier);
       userController.removeCurrentUser();
       if (context.mounted) {
@@ -77,6 +90,30 @@ class AuthController extends _$AuthController {
       }
     } finally {
       _isProcessing = false;
+      state = state.copyWith(loading: false);
+    }
+  }
+
+  Future<void> syncCyId() async {
+    try {
+      state = state.copyWith(error: null, loading: true);
+
+      final user = ref.read(userControllerProvider).currentUser;
+
+      if (user == null) {
+        state = state.copyWith(loading: false);
+        return;
+      }
+
+      final authAPI = ref.read(authAPIProvider);
+      await authAPI.syncCyId();
+
+      state = state.copyWith(error: null);
+    } on DioException catch (e) {
+      state = state.copyWith(error: parseError(e.type));
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+    } finally {
       state = state.copyWith(loading: false);
     }
   }

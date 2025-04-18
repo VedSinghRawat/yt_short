@@ -15,17 +15,11 @@ class VersionState {
   const VersionState({this.content, this.closable = false});
 
   VersionState copyWith({String? content, bool? closable}) {
-    return VersionState(
-      content: content ?? this.content,
-      closable: closable ?? this.closable,
-    );
+    return VersionState(content: content ?? this.content, closable: closable ?? this.closable);
   }
 
   VersionState clearContent() {
-    return VersionState(
-      content: null,
-      closable: closable,
-    );
+    return VersionState(content: null, closable: closable);
   }
 }
 
@@ -46,19 +40,17 @@ class VersionController extends StateNotifier<VersionState> {
 
       if (versionRes == null) return;
 
-      state = state.copyWith(
-        content: versionRes['content'],
-        closable: versionRes['closable'],
-      );
+      state = state.copyWith(content: versionRes.content, closable: versionRes.closable);
     } catch (e) {
       developer.log(e.toString());
     }
   }
 
   Future<void> openStore(BuildContext context) async {
-    final platformUrl = Platform.isAndroid
-        ? kPlayStoreBaseUrl + _infoService.packageInfo.packageName
-        : kAppStoreBaseUrl + kIOSAppId;
+    final platformUrl =
+        Platform.isAndroid
+            ? kPlayStoreBaseUrl + _infoService.packageInfo.packageName
+            : kAppStoreBaseUrl + kIOSAppId;
 
     final Uri url = Uri.parse(Uri.encodeFull(platformUrl));
 

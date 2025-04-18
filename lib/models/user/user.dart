@@ -58,7 +58,4 @@ class UserDTO with _$UserDTO {
   factory UserDTO.fromJson(Map<String, dynamic> json) => _$UserDTOFromJson(json);
 }
 
-enum UserRole {
-  admin,
-  student,
-}
+enum UserRole { admin, student }

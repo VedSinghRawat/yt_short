@@ -31,60 +31,53 @@ class SubLevel with _$SubLevel {
     };
   }
 
-  factory SubLevel.fromSubLevelDTO(
-    SubLevelDTO subLevelDTO,
-    int level,
-    int index,
-    String levelId,
-  ) {
+  factory SubLevel.fromSubLevelDTO(SubLevelDTO subLevelDTO, int level, int index, String levelId) {
     return subLevelDTO.when(
-      speechExercise: (dto) => SubLevel.speechExercise(
-        SpeechExercise(
-          level: level,
-          index: index,
-          levelId: levelId,
-          text: dto.text,
-          pauseAt: dto.pauseAt,
-          videoFilename: dto.videoFilename,
-          dialogues: dto.dialogues,
-        ),
-      ),
-      video: (dto) => SubLevel.video(
-        Video(
-          level: level,
-          index: index,
-          levelId: levelId,
-          videoFilename: dto.videoFilename,
-          dialogues: dto.dialogues,
-        ),
-      ),
+      speechExercise:
+          (dto) => SubLevel.speechExercise(
+            SpeechExercise(
+              level: level,
+              index: index,
+              levelId: levelId,
+              text: dto.text,
+              pauseAt: dto.pauseAt,
+              videoFilename: dto.videoFilename,
+              dialogues: dto.dialogues,
+            ),
+          ),
+      video:
+          (dto) => SubLevel.video(
+            Video(
+              level: level,
+              index: index,
+              levelId: levelId,
+              videoFilename: dto.videoFilename,
+              dialogues: dto.dialogues,
+            ),
+          ),
     );
   }
 
   String get levelId => when(
-        speechExercise: (speechExercise) => speechExercise.levelId,
-        video: (video) => video.levelId,
-      );
+    speechExercise: (speechExercise) => speechExercise.levelId,
+    video: (video) => video.levelId,
+  );
 
-  int get level => when(
-        speechExercise: (speechExercise) => speechExercise.level,
-        video: (video) => video.level,
-      );
+  int get level =>
+      when(speechExercise: (speechExercise) => speechExercise.level, video: (video) => video.level);
 
-  int get index => when(
-        speechExercise: (speechExercise) => speechExercise.index,
-        video: (video) => video.index,
-      );
+  int get index =>
+      when(speechExercise: (speechExercise) => speechExercise.index, video: (video) => video.index);
 
   String get videoFilename => when(
-        speechExercise: (speechExercise) => speechExercise.videoFilename,
-        video: (video) => video.videoFilename,
-      );
+    speechExercise: (speechExercise) => speechExercise.videoFilename,
+    video: (video) => video.videoFilename,
+  );
 
   List<Dialogue> get dialogues => when(
-        speechExercise: (speechExercise) => speechExercise.dialogues,
-        video: (video) => video.dialogues,
-      );
+    speechExercise: (speechExercise) => speechExercise.dialogues,
+    video: (video) => video.dialogues,
+  );
 
   bool get isVideo => this is _Video;
 
@@ -113,12 +106,12 @@ class SubLevelDTO with _$SubLevelDTO {
   }
 
   String get videoFilename => when(
-        speechExercise: (speechExercise) => speechExercise.videoFilename,
-        video: (video) => video.videoFilename,
-      );
+    speechExercise: (speechExercise) => speechExercise.videoFilename,
+    video: (video) => video.videoFilename,
+  );
 
   List<Dialogue> get dialogues => when(
-        speechExercise: (speechExercise) => speechExercise.dialogues,
-        video: (video) => video.dialogues,
-      );
+    speechExercise: (speechExercise) => speechExercise.dialogues,
+    video: (video) => video.dialogues,
+  );
 }

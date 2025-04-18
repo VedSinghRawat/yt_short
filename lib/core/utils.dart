@@ -54,15 +54,7 @@ typedef FutureEither<T> = Future<Either<Failure, T>>;
 
 typedef FutureVoid = FutureEither<void>;
 
-final dioConnectionErrors = {
-  DioExceptionType.connectionError,
-};
-
-String getOrderedIdsPath() => '/levels/ordered_ids.json';
-
-String getLevelJsonPathEndpoint(String levelId) {
-  return '/levels/$levelId/data.json';
-}
+final dioConnectionErrors = {DioExceptionType.connectionError};
 
 /// Return user friendly error message based on dio exception type
 String parseError(DioExceptionType? type) {

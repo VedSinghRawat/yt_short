@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/features/sublevel/sublevel_controller.dart';
-import 'package:myapp/features/sublevel/widget/last_level.dart';
+import 'package:myapp/features/sublevel/widget/error_page.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
@@ -15,17 +15,19 @@ import 'video_progress_bar.dart'; // Import the extracted progress bar
 class SublevelVideoPlayer extends ConsumerStatefulWidget {
   final String? videoLocalPath;
   final String? uniqueId;
-  final String? videoUrl;
+  final List<String>? videoUrls;
   final Function(VideoPlayerController controller)? onControllerInitialized;
   final List<Dialogue> dialogues;
+  final bool stayPause;
 
   const SublevelVideoPlayer({
     super.key,
     required this.videoLocalPath,
     this.uniqueId,
     this.onControllerInitialized,
-    this.videoUrl,
+    this.videoUrls,
     required this.dialogues,
+    this.stayPause = false,
   });
 
   @override
@@ -148,7 +150,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
       if (_controller!.value.position >= _controller!.value.duration) {
         await _controller!.seekTo(Duration.zero);
       }
-      await _controller!.play();
+      play();
     }
 
     final targetIcon = !isPlaying && changeToPlay ? Icons.play_arrow : Icons.pause;
@@ -168,16 +170,21 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
     });
   }
 
-  void _handleVisibility(bool isVisible) {
+  Future<void> play() async {
+    if (_controller == null || !_isInitialized) return;
+    await _controller!.play();
+  }
+
+  Future<void> _handleVisibility(bool isVisible) async {
     if (_controller == null || !_isInitialized) return;
 
     if (isVisible) {
       _controller!.addListener(_listener);
       if (!_controller!.value.isPlaying && error == null) {
-        _controller!.play();
+        await play();
       }
     } else {
-      _controller!.pause();
+      await _controller!.pause();
       _controller!.removeListener(_listener);
     }
   }
@@ -230,9 +237,15 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
         throw Exception("Video file not found at ${widget.videoLocalPath}");
       }
 
-      _controller = file != null
-          ? VideoPlayerController.file(file)
-          : VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl!));
+      if (file != null) {
+        _controller = VideoPlayerController.file(file);
+      } else {
+        try {
+          _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrls![0]));
+        } catch (e) {
+          _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrls![1]));
+        }
+      }
 
       _controller!.addListener(_listener);
       await _controller!.setLooping(true);
@@ -250,7 +263,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
 
       // Auto-play if visible after initialization/resuming
       if (_isVisible) {
-        _controller!.play();
+        await play();
       }
 
       widget.onControllerInitialized?.call(_controller!);
@@ -294,7 +307,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
     const double emptyDialogueHeight = 65.0;
 
     return VisibilityDetector(
-      key: Key(widget.uniqueId ?? widget.videoLocalPath ?? widget.videoUrl ?? ''),
+      key: Key(widget.uniqueId ?? widget.videoLocalPath ?? widget.videoUrls?.first ?? ''),
       onVisibilityChanged: _onVisibilityChanged,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -311,9 +324,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
                       Center(
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
-                          child: ErrorPage(
-                            text: error!,
-                          ),
+                          child: ErrorPage(text: error!),
                         ),
                       )
                     else if (isPlayerReady)
@@ -335,11 +346,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
               Visibility(
                 visible: showDialogueArea,
                 child: Positioned.fill(
-                  child: IgnorePointer(
-                    child: Container(
-                      color: Colors.black.withOpacity(0.3),
-                    ),
-                  ),
+                  child: IgnorePointer(child: Container(color: Colors.black.withOpacity(0.3))),
                 ),
               ),
               Visibility(
@@ -349,72 +356,69 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
                   left: 0,
                   right: 0,
                   child: Container(
-                    height: _displayableDialogues.isNotEmpty
-                        ? standardDialogueHeight
-                        : emptyDialogueHeight,
+                    height:
+                        _displayableDialogues.isNotEmpty
+                            ? standardDialogueHeight
+                            : emptyDialogueHeight,
                     decoration: const BoxDecoration(
                       color: Colors.black,
                       borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
                     ),
-                    child: _displayableDialogues.isNotEmpty
-                        ? Stack(
-                            children: [
-                              DialogueList(
-                                dialogues: _displayableDialogues,
-                                itemHeight: itemHeight,
-                              ),
-                              Positioned(
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                child: IgnorePointer(
-                                  child: Container(
-                                    height: standardDialogueHeight / 3.0,
-                                    decoration: BoxDecoration(
-                                      borderRadius:
-                                          const BorderRadius.vertical(top: Radius.circular(16.0)),
-                                      gradient: LinearGradient(
-                                        begin: Alignment.topCenter,
-                                        end: Alignment.bottomCenter,
-                                        colors: [
-                                          Colors.black,
-                                          Colors.black.withAlpha(0),
-                                        ],
-                                        stops: const [0.0, 0.9],
+                    child:
+                        _displayableDialogues.isNotEmpty
+                            ? Stack(
+                              children: [
+                                DialogueList(
+                                  dialogues: _displayableDialogues,
+                                  itemHeight: itemHeight,
+                                ),
+                                Positioned(
+                                  top: 0,
+                                  left: 0,
+                                  right: 0,
+                                  child: IgnorePointer(
+                                    child: Container(
+                                      height: standardDialogueHeight / 3.0,
+                                      decoration: BoxDecoration(
+                                        borderRadius: const BorderRadius.vertical(
+                                          top: Radius.circular(16.0),
+                                        ),
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                          colors: [Colors.black, Colors.black.withAlpha(0)],
+                                          stops: const [0.0, 0.9],
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                              Positioned(
-                                bottom: 0,
-                                left: 0,
-                                right: 0,
-                                child: IgnorePointer(
-                                  child: Container(
-                                    height: standardDialogueHeight / 3.0,
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        begin: Alignment.bottomCenter,
-                                        end: Alignment.topCenter,
-                                        colors: [
-                                          Colors.black,
-                                          Colors.black.withAlpha(0),
-                                        ],
-                                        stops: const [0.0, 0.9],
+                                Positioned(
+                                  bottom: 0,
+                                  left: 0,
+                                  right: 0,
+                                  child: IgnorePointer(
+                                    child: Container(
+                                      height: standardDialogueHeight / 3.0,
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          begin: Alignment.bottomCenter,
+                                          end: Alignment.topCenter,
+                                          colors: [Colors.black, Colors.black.withAlpha(0)],
+                                          stops: const [0.0, 0.9],
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
+                              ],
+                            )
+                            : const Center(
+                              child: Text(
+                                "No dialogue to show yet.",
+                                style: TextStyle(color: Colors.white70, fontSize: 14),
                               ),
-                            ],
-                          )
-                        : const Center(
-                            child: Text(
-                              "No dialogue to show yet.",
-                              style: TextStyle(color: Colors.white70, fontSize: 14),
                             ),
-                          ),
                   ),
                 ),
               ),
@@ -444,12 +448,9 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
 }
 
 class PlayPauseButton extends StatelessWidget {
-  const PlayPauseButton({
-    super.key,
-    required bool showPlayPauseIcon,
-    required IconData iconData,
-  })  : _showPlayPauseIcon = showPlayPauseIcon,
-        _iconData = iconData;
+  const PlayPauseButton({super.key, required bool showPlayPauseIcon, required IconData iconData})
+    : _showPlayPauseIcon = showPlayPauseIcon,
+      _iconData = iconData;
 
   final bool _showPlayPauseIcon;
   final IconData _iconData;
@@ -460,16 +461,9 @@ class PlayPauseButton extends StatelessWidget {
       opacity: _showPlayPauseIcon ? 1.0 : 0.0,
       duration: const Duration(milliseconds: 400),
       child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.black54,
-          shape: BoxShape.circle,
-        ),
+        decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
         padding: const EdgeInsets.all(20),
-        child: Icon(
-          _iconData,
-          size: MediaQuery.of(context).size.width * 0.12,
-          color: Colors.white,
-        ),
+        child: Icon(_iconData, size: MediaQuery.of(context).size.width * 0.12, color: Colors.white),
       ),
     );
   }

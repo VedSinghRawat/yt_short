@@ -1,17 +1,18 @@
 name: myapp
-description: 'A new Flutter project.'
-publish_to: 'none'
+description: "A new Flutter project."
+publish_to: "none"
 
 version: 1.1.8+1
 
 environment:
-  sdk: ^3.5.3
+  sdk: ^3.7.2
 
 dependencies:
   flutter:
     sdk: flutter
 
   cupertino_icons: ^1.0.8
+  permission_handler: ^11.4.0
   visibility_detector: ^0.4.0+2
   flutter_dotenv: ^5.1.0
   flutter_riverpod: ^2.5.1
@@ -25,7 +26,7 @@ dependencies:
   shared_preferences: ^2.4.0
   url_launcher: ^6.3.1
   youtube_explode_dart: ^2.3.10
-  flutter_widget_from_html: 0.15.3
+  flutter_widget_from_html: ^0.16.0
   path_provider: ^2.1.5
   freezed_annotation: ^2.4.4
   fpdart: ^1.1.1

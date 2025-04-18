@@ -5,83 +5,100 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/services/file_service.dart';
 import 'package:myapp/core/services/level_service.dart';
+import 'package:myapp/core/services/path_service.dart';
 import 'package:myapp/core/shared_pref.dart';
 
 class StorageCleanupService {
   final FileService fileService;
+  final PathService pathService;
   final LevelService levelService;
 
-  StorageCleanupService(this.fileService, this.levelService);
+  StorageCleanupService(this.fileService, this.pathService, this.levelService);
 
   /// Main cleanup logic — removes folders from cache if total size exceeds threshold
-  Future<List<String>> cleanLevels(List<String> orderedIds) async {
+  Future<void> cleanLevels(List<String> orderedIds) async {
     try {
-      Directory targetDir = Directory(levelService.levelsDocDirPath);
-
-      const protectedIdsLength = kMaxNextLevelsToKeep + kMaxPreviousLevelsToKeep;
+      Directory targetDir = Directory(pathService.levelsDocDirPath);
 
       // Ensure directory exists and input is valid
       if (!await targetDir.exists() ||
           orderedIds.isEmpty ||
-          orderedIds.length - protectedIdsLength == 0) {
-        return orderedIds;
+          orderedIds.length - kProtectedIdsLength == 0) {
+        return;
       }
 
       // Check total size of the cache folder
       int totalSize = await compute(FileService.getDirectorySize, targetDir);
 
-      developer.log('clean levels total size is $totalSize bytes');
-
       // No need to clean if under limit
       if (totalSize < kMaxStorageSizeBytes) {
-        return orderedIds;
+        return;
       }
 
-      List<String> remainingIds = List.from(orderedIds);
+      int i = 0;
+
+      final toBeDeletedVideoPaths = List<String>.empty();
 
       // Start deleting until space is freed
-      while (totalSize > kDeleteCacheThreshold && remainingIds.length > protectedIdsLength) {
-        final id = remainingIds.removeAt(0);
-        final folderPath = levelService.getLevelPath(id);
+      while (i < orderedIds.length - kProtectedIdsLength) {
+        final id = orderedIds[i];
+        final folderPath = pathService.levelPath(id);
         final folder = Directory(folderPath);
 
         if (!await folder.exists()) continue;
 
-        int folderSize = await compute(FileService.getDirectorySize, targetDir);
-
-        developer.log('folder size is $folderSize bytes for folder $folder');
-
         final level = await levelService.getLocalLevel(id);
-
         if (level == null) continue;
 
-        await compute(_deleteFolderRecursively, folderPath);
+        // Delete videos one by one and update size
+        for (var (index, sub) in level.sub_levels.indexed) {
+          final videoPath = pathService.fullVideoLocalPath(id, sub.videoFilename);
 
-        await SharedPref.removeValue(PrefKey.eTag(id));
+          final videoFile = File(videoPath);
 
-        // delete video ETags
+          if (!await videoFile.exists()) continue;
 
-        for (var e in level.sub_levels) {
-          await SharedPref.removeValue(
-            PrefKey.eTag(
-              levelService.getVideoPathEndPoint(
-                id,
-                e.videoFilename,
+          final videoSize = await videoFile.length();
+
+          toBeDeletedVideoPaths.add(videoPath);
+
+          totalSize -= videoSize;
+
+          // delete full folder if there are no videos left
+          if (index == level.sub_levels.length - 1) {
+            await compute(_deleteFolderRecursively, folderPath);
+
+            await SharedPref.removeValue(PrefKey.eTag(pathService.levelJsonPath(id)));
+          }
+
+          if (totalSize < kDeleteCacheThreshold) {
+            if (index != level.sub_levels.length - 1) {
+              await compute(_deleteVideos, toBeDeletedVideoPaths);
+            }
+
+            await Future.wait(
+              toBeDeletedVideoPaths.map(
+                (videoPath) => SharedPref.removeValue(
+                  PrefKey.eTag(
+                    pathService.videoPath(id, videoPath.split('/').last.replaceAll('.mp4', '')),
+                  ),
+                ),
               ),
-            ),
-          );
+            );
+
+            break;
+          }
         }
 
-        // Update size
-        totalSize -= folderSize;
+        i++;
       }
-
-      developer.log('Remaining IDs after cleanup: $remainingIds');
-      return remainingIds;
     } catch (e) {
       developer.log("Error in cleanup process: $e");
-      return orderedIds;
     }
+  }
+
+  static Future<void> _deleteVideos(List<String> videoPaths) async {
+    await Future.wait(videoPaths.map((videoPath) => File(videoPath).delete()));
   }
 
   static Future<void> _deleteFolderRecursively(String path) async {
@@ -92,13 +109,13 @@ class StorageCleanupService {
   }
 
   /// Removes least-important cached levels while protecting nearby levels
-  Future<List<String>> removeFurthestCachedIds(
+  Future<void> removeFurthestCachedIds(
     List<String> cachedIds,
     List<String> orderedIds,
     String currentId,
   ) async {
     final Map<String, int> idToIndexMap = {
-      for (int i = 0; i < orderedIds.length; i++) orderedIds[i]: i
+      for (int i = 0; i < orderedIds.length; i++) orderedIds[i]: i,
     };
 
     final int currentIndex = idToIndexMap[currentId] ?? -1;
@@ -117,24 +134,18 @@ class StorageCleanupService {
       return distanceA.abs().compareTo(distanceB.abs());
     });
 
-    final List<String> remainingIds = await cleanLevels(cachedIds);
-
-    return remainingIds;
+    await cleanLevels(cachedIds);
   }
 
   /// Prevents deletion of current, previous and next two levels
-  bool _isProtectedLevel(int dist) {
-    if ((dist < 0 && dist.abs() <= kMaxPreviousLevelsToKeep) || dist <= kMaxNextLevelsToKeep) {
-      return true;
-    }
-
-    return false;
-  }
+  bool _isProtectedLevel(int dist) =>
+      (dist < 0 && dist.abs() <= kMaxPreviousLevelsToKeep) || dist <= kMaxNextLevelsToKeep;
 }
 
 final storageCleanupServiceProvider = Provider<StorageCleanupService>(
   (ref) => StorageCleanupService(
     ref.read(fileServiceProvider),
+    ref.read(pathServiceProvider),
     ref.read(levelServiceProvider),
   ),
 );

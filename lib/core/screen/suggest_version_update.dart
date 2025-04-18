@@ -14,27 +14,17 @@ class SuggestVersionUpdate extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.system_update,
-                size: 80,
-                color: Colors.blue,
-              ),
+              const Icon(Icons.system_update, size: 80, color: Colors.blue),
               const SizedBox(height: 24),
               const Text(
                 'New Version Available!',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               const Text(
                 'We recommend updating to the latest version for the best experience.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
-                ),
+                style: TextStyle(fontSize: 16, color: Colors.grey),
               ),
               const SizedBox(height: 32),
               ElevatedButton(
