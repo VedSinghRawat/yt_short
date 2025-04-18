@@ -17,7 +17,6 @@ import 'package:myapp/models/level/level.dart';
 import '../../apis/sublevel_api.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:myapp/core/services/sublevel_service.dart';
 
 part 'sublevel_controller.freezed.dart';
 part 'sublevel_controller.g.dart';
@@ -45,7 +44,6 @@ class SublevelController extends _$SublevelController {
   late final ISubLevelAPI subLevelAPI = ref.read(subLevelAPIProvider);
   late final ILevelApi levelApi = ref.read(levelApiProvider);
   late final SubLevelService subLevelService = ref.read(subLevelServiceProvider);
-  late final FileService fileService = ref.read(fileServiceProvider);
   late final LevelController levelController = ref.read(levelControllerProvider.notifier);
   late final StorageCleanupService storageCleanupService = ref.read(storageCleanupServiceProvider);
   late final LevelService levelService = ref.read(levelServiceProvider);
@@ -108,7 +106,7 @@ class SublevelController extends _$SublevelController {
 
   Future<void> _addExistVideoSublevelEntries(LevelDTO levelDTO, int level, String levelId) async {
     final entries = await FileService.listEntities(
-      Directory(ref.read(pathServiceProvider).videoDirLocalPath(levelId)),
+      Directory(PathService.levelVideosDirLocalPath(levelId)),
     );
 
     final videoFiles = entries.toSet();
@@ -187,7 +185,7 @@ class SublevelController extends _$SublevelController {
   Future<void> _cleanOldLevels(List<String> orderedIds, String currLevelId) async {
     try {
       final cachedIds = await FileService.listEntities(
-        Directory(ref.read(pathServiceProvider).levelsDocDirPath),
+        Directory(PathService.levelsDocDirPath),
         type: EntitiesType.folders,
       );
 

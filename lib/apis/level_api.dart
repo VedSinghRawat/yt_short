@@ -14,15 +14,14 @@ abstract class ILevelApi {
 
 class LevelApi implements ILevelApi {
   final ApiService apiService;
-  final PathService pathService;
 
-  LevelApi({required this.apiService, required this.pathService});
+  LevelApi({required this.apiService});
 
   @override
   Future<LevelDTO?> get(String id) async {
     try {
       final response = await apiService.getCloudStorageData(
-        endpoint: pathService.levelJsonPath(id),
+        endpoint: PathService.levelJsonPath(id),
       );
 
       if (response == null) return null;
@@ -43,7 +42,7 @@ class LevelApi implements ILevelApi {
   Future<List<String>?> getOrderedIds() async {
     try {
       final response = await apiService.getCloudStorageData<Map<String, dynamic>?>(
-        endpoint: pathService.orderedIdsPath(),
+        endpoint: PathService.orderedIdsPath(),
       );
 
       final ids = response?.data?['orderedIds'];
@@ -60,7 +59,6 @@ class LevelApi implements ILevelApi {
 
 final levelApiProvider = Provider<ILevelApi>((ref) {
   final apiService = ref.read(apiServiceProvider);
-  final pathService = ref.read(pathServiceProvider);
 
-  return LevelApi(apiService: apiService, pathService: pathService);
+  return LevelApi(apiService: apiService);
 });

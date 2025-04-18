@@ -9,16 +9,14 @@ import 'package:myapp/core/services/path_service.dart';
 import 'package:myapp/core/shared_pref.dart';
 
 class StorageCleanupService {
-  final FileService fileService;
-  final PathService pathService;
   final LevelService levelService;
 
-  StorageCleanupService(this.fileService, this.pathService, this.levelService);
+  StorageCleanupService(this.levelService);
 
   /// Main cleanup logic — removes folders from cache if total size exceeds threshold
   Future<void> cleanLevels(List<String> orderedIds) async {
     try {
-      Directory targetDir = Directory(pathService.levelsDocDirPath);
+      Directory targetDir = Directory(PathService.levelsDocDirPath);
 
       // Ensure directory exists and input is valid
       if (!await targetDir.exists() ||
@@ -42,7 +40,7 @@ class StorageCleanupService {
       // Start deleting until space is freed
       while (i < orderedIds.length - kProtectedIdsLength) {
         final id = orderedIds[i];
-        final folderPath = pathService.levelPath(id);
+        final folderPath = PathService.levelPath(id);
         final folder = Directory(folderPath);
 
         if (!await folder.exists()) continue;
@@ -52,7 +50,7 @@ class StorageCleanupService {
 
         // Delete videos one by one and update size
         for (var (index, sub) in level.sub_levels.indexed) {
-          final videoPath = pathService.fullVideoLocalPath(id, sub.videoFilename);
+          final videoPath = PathService.videoLocalPath(id, sub.videoFilename);
 
           final videoFile = File(videoPath);
 
@@ -68,7 +66,7 @@ class StorageCleanupService {
           if (index == level.sub_levels.length - 1) {
             await compute(_deleteFolderRecursively, folderPath);
 
-            await SharedPref.removeValue(PrefKey.eTag(pathService.levelJsonPath(id)));
+            await SharedPref.removeValue(PrefKey.eTag(PathService.levelJsonPath(id)));
           }
 
           if (totalSize < kDeleteCacheThreshold) {
@@ -80,7 +78,7 @@ class StorageCleanupService {
               toBeDeletedVideoPaths.map(
                 (videoPath) => SharedPref.removeValue(
                   PrefKey.eTag(
-                    pathService.videoPath(id, videoPath.split('/').last.replaceAll('.mp4', '')),
+                    PathService.videoPath(id, videoPath.split('/').last.replaceAll('.mp4', '')),
                   ),
                 ),
               ),
@@ -143,9 +141,5 @@ class StorageCleanupService {
 }
 
 final storageCleanupServiceProvider = Provider<StorageCleanupService>(
-  (ref) => StorageCleanupService(
-    ref.read(fileServiceProvider),
-    ref.read(pathServiceProvider),
-    ref.read(levelServiceProvider),
-  ),
+  (ref) => StorageCleanupService(ref.read(levelServiceProvider)),
 );

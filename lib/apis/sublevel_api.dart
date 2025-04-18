@@ -12,16 +12,15 @@ abstract class ISubLevelAPI {
 }
 
 class SubLevelAPI implements ISubLevelAPI {
-  SubLevelAPI(this.apiService, this.pathService);
+  SubLevelAPI(this.apiService);
 
   final ApiService apiService;
-  final PathService pathService;
 
   @override
   Future<Uint8List?> getVideo(String levelId, String videoFilename) async {
     try {
       final response = await apiService.getCloudStorageData(
-        endpoint: pathService.videoPath(levelId, videoFilename),
+        endpoint: PathService.videoPath(levelId, videoFilename),
         responseType: ResponseType.bytes,
       );
 
@@ -50,7 +49,6 @@ class SubLevelAPI implements ISubLevelAPI {
 
 final subLevelAPIProvider = Provider<ISubLevelAPI>((ref) {
   final apiService = ref.read(apiServiceProvider);
-  final pathService = ref.read(pathServiceProvider);
 
-  return SubLevelAPI(apiService, pathService);
+  return SubLevelAPI(apiService);
 });

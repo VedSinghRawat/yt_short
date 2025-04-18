@@ -1,49 +1,34 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/core/services/file_service.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-
-part 'path_service.g.dart';
 
 class PathService {
-  final FileService fileService;
+  static String get levelsDocDirPath => '${FileService.documentsDirectory.path}/levels';
+  static String get levelsCacheDirPath => '${FileService.cacheDirectory.path}/levels';
 
-  PathService(this.fileService);
+  static String levelPath(String levelId) => '$levelsDocDirPath/$levelId';
 
-  String get levelsDocDirPath => '${fileService.documentsDirectory.path}/levels';
-  String get levelsCacheDirPath => '${fileService.cacheDirectory.path}/levels';
+  static String levelJsonFullPath(String levelId) =>
+      '${FileService.documentsDirectory.path}${levelJsonPath(levelId)}';
 
-  String levelPath(String levelId) {
-    return '$levelsDocDirPath/$levelId';
-  }
+  static String orderedIdsPath() => '/levels/ordered_ids.json';
 
-  String levelJsonFullPath(String levelId) {
-    return '${fileService.documentsDirectory.path}${levelJsonPath(levelId)}';
-  }
+  static String levelJsonPath(String levelId) => '/levels/$levelId/data.json';
 
-  String orderedIdsPath() => '/levels/ordered_ids.json';
+  static String levelVideosDirPath(String levelId) => '/levels/$levelId/videos';
 
-  String levelJsonPath(String levelId) {
-    return '/levels/$levelId/data.json';
-  }
+  static String videoPath(String levelId, String videoFilename) =>
+      '${levelVideosDirPath(levelId)}/$videoFilename.mp4';
 
-  String levelVideosPath(String levelId) {
-    return '/levels/$levelId/videos';
-  }
+  static String levelVideosDirLocalPath(String levelId) =>
+      '${FileService.documentsDirectory.path}${levelVideosDirPath(levelId)}';
 
-  String videoPath(String levelId, String videoFilename) {
-    return '${levelVideosPath(levelId)}/$videoFilename.mp4';
-  }
+  static String videoLocalPath(String levelId, String videoFilename) =>
+      '${FileService.documentsDirectory.path}${videoPath(levelId, videoFilename)}';
 
-  String videoDirLocalPath(String levelId) {
-    return '${fileService.documentsDirectory.path}${levelVideosPath(levelId)}';
-  }
+  static String get dialogueAudioDirPath => '/dialogue/audios';
 
-  String fullVideoLocalPath(String levelId, String videoFilename) {
-    return '${fileService.documentsDirectory.path}${videoPath(levelId, videoFilename)}';
-  }
-}
+  static String dialogueAudioPath(String fileName) =>
+      '${FileService.documentsDirectory.path}$dialogueAudioDirPath/$fileName';
 
-@riverpod
-PathService pathService(Ref ref) {
-  return PathService(ref.read(fileServiceProvider));
+  static String dialogueTempZipPath(int zipNum) =>
+      '${FileService.cacheDirectory.path}$dialogueAudioDirPath/zips/$zipNum.zip';
 }

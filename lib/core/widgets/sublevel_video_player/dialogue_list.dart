@@ -2,7 +2,7 @@ import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:myapp/core/services/level_service.dart';
+import 'package:myapp/core/services/path_service.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 
@@ -10,11 +10,7 @@ class DialogueList extends ConsumerStatefulWidget {
   final List<Dialogue> dialogues;
   final double itemHeight;
 
-  const DialogueList({
-    super.key,
-    required this.dialogues,
-    required this.itemHeight,
-  });
+  const DialogueList({super.key, required this.dialogues, required this.itemHeight});
 
   @override
   ConsumerState<DialogueList> createState() => _DialogueListState();
@@ -79,8 +75,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
       await _audioPlayer.stop();
 
       // Use ref to read the provider
-      final levelService = ref.read(levelServiceProvider);
-      final filePath = levelService.getDialogueAudioFilePath(audioFilename);
+      final filePath = PathService.dialogueAudioPath(audioFilename);
 
       await _audioPlayer.setFilePath(filePath);
       await _audioPlayer.play();

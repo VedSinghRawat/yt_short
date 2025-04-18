@@ -39,7 +39,7 @@ class InitializeService {
 
       await Future.wait([
         storeCyId(), // depend on user
-        FileService.instance.init(),
+        FileService.init(),
         levelController.getOrderedIds(),
         handleDeepLinking(), // deep linking depends on user
       ]);

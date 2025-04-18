@@ -131,9 +131,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
           }
           final positionText = '${sublevel.level}-${sublevel.index}';
 
-          String? localPath = ref
-              .read(pathServiceProvider)
-              .fullVideoLocalPath(sublevel.levelId, sublevel.videoFilename);
+          String? localPath = PathService.videoLocalPath(sublevel.levelId, sublevel.videoFilename);
 
           final urls =
               [BaseUrl.cloudflare, BaseUrl.s3]

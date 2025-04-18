@@ -5,13 +5,13 @@ import 'package:myapp/core/console.dart';
 import 'package:myapp/core/services/api_service.dart';
 import 'package:myapp/core/services/file_service.dart';
 import 'package:myapp/core/services/level_service.dart';
+import 'package:myapp/core/services/path_service.dart';
 import 'package:myapp/models/level/level.dart';
 
 class SubLevelService {
   final LevelService levelService;
-  final FileService fileService;
 
-  SubLevelService(this.subLevelAPI, this.levelService, this.fileService);
+  SubLevelService(this.subLevelAPI, this.levelService);
 
   final ISubLevelAPI subLevelAPI;
 
@@ -38,7 +38,7 @@ class SubLevelService {
     await Future.wait(
       uniqueZipNums.map((zipNum) async {
         // Destination is now the single base directory for all audios
-        final destinationDir = Directory(levelService.dialogueAudioBaseDirPath);
+        final destinationDir = Directory(PathService.dialogueAudioDirPath);
 
         // 4. Fetch the zip file data
         final zipData = await subLevelAPI.getDialogueZip(zipNum);
@@ -47,12 +47,12 @@ class SubLevelService {
 
         File? tempZipFile;
         try {
-          final tempZipPath = levelService.getDialogueAudioTempZipPath(zipNum);
+          final tempZipPath = PathService.dialogueTempZipPath(zipNum);
           tempZipFile = File(tempZipPath);
           await tempZipFile.parent.create(recursive: true);
           await tempZipFile.writeAsBytes(zipData);
 
-          await fileService.unzip(tempZipFile, destinationDir);
+          await FileService.unzip(tempZipFile, destinationDir);
         } catch (e, stackTrace) {
           Console.log('Error processing dialogue zip $zipNum: $e');
         } finally {
@@ -69,14 +69,13 @@ class SubLevelService {
   }
 
   String getVideoUrl(String levelId, String videoFilename) {
-    return '${BaseUrl.cloudflare.url}${levelService.getVideoPathEndPoint(levelId, videoFilename)}';
+    return '${BaseUrl.cloudflare.url}${PathService.videoPath(levelId, videoFilename)}';
   }
 }
 
 final subLevelServiceProvider = Provider<SubLevelService>((ref) {
   final subLevelAPI = ref.watch(subLevelAPIProvider);
   final levelService = ref.watch(levelServiceProvider);
-  final fileService = ref.watch(fileServiceProvider);
 
-  return SubLevelService(subLevelAPI, levelService, fileService);
+  return SubLevelService(subLevelAPI, levelService);
 });
