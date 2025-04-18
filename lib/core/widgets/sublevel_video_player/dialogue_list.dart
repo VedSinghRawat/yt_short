@@ -81,11 +81,9 @@ class _DialogueListState extends ConsumerState<DialogueList> {
       // Use ref to read the provider
       final levelService = ref.read(levelServiceProvider);
       final filePath = levelService.getDialogueAudioFilePath(audioFilename);
-      developer.log("Attempting to play audio: $filePath");
 
       await _audioPlayer.setFilePath(filePath);
       await _audioPlayer.play();
-      developer.log("Playing audio: $filePath");
     } catch (e) {
       developer.log("Error playing dialogue audio: $e");
       // Optionally show an error message to the user

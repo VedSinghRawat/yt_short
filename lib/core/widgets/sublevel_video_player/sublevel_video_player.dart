@@ -45,41 +45,14 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
   Timer? _iconTimer;
 
   List<Dialogue> _displayableDialogues = [];
-  List<Dialogue> _sourceDialogues = []; // List to hold the source data (dummy or real)
-
-  // --- Set to TRUE to test filtering with dummy data ---
-  final bool _useDummyDialoguesForTesting = true;
-  // --- Set to false to use actual data logic ---
 
   @override
   void initState() {
     super.initState();
 
-    // --- Data setup (dummy or real) ---
-    if (_useDummyDialoguesForTesting) {
-      _sourceDialogues = [
-        const Dialogue(
-            text: "Dialogue at ~2.9s", time: 2.9, audioFilename: "dummy5.mp3", zipNum: 1),
-        const Dialogue(
-            text: "Dialogue at ~2.5s", time: 2.5, audioFilename: "dummy4.mp3", zipNum: 1),
-        const Dialogue(
-            text: "Dialogue at ~2.1s", time: 2.1, audioFilename: "dummy3.mp3", zipNum: 1),
-        const Dialogue(
-            text: "Dialogue at ~1.8s", time: 1.8, audioFilename: "dummy2.mp3", zipNum: 1),
-        const Dialogue(
-            text: "Dialogue at ~0.5s", time: 0.5, audioFilename: "dummy1.mp3", zipNum: 1),
-      ];
-      developer.log("Using dummy dialogues as source for testing filtering.");
-    } else {
-      // Use actual data from widget
-      _sourceDialogues = widget.dialogues;
-      developer.log("Using widget dialogues as source.");
-    }
-
-    // Initialize displayable dialogues based on the chosen source at time zero
     _updateDisplayableDialogues(Duration.zero);
-
     _initializeVideoPlayerController();
+
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -295,24 +268,17 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
   }
 
   void _updateDisplayableDialogues(Duration currentPosition) {
-    // Remove the check for the testing flag here
-    // if (_useDummyDialoguesForTesting) return;
     if (!mounted) return;
-
     final currentSeconds = currentPosition.inSeconds.toDouble();
 
-    // Filter the _sourceDialogues list (which is either dummy or real)
-    final newDialogues = _sourceDialogues.where((d) => d.time <= currentSeconds).toList();
-
-    // Sort descending by time
+    final newDialogues = widget.dialogues.where((d) => d.time <= currentSeconds).toList();
     newDialogues.sort((a, b) => b.time.compareTo(a.time));
 
-    // Update state if the list content has changed
-    if (!listEquals(_displayableDialogues, newDialogues)) {
-      setState(() {
-        _displayableDialogues = newDialogues;
-      });
-    }
+    if (listEquals(_displayableDialogues, newDialogues)) return;
+
+    setState(() {
+      _displayableDialogues = newDialogues;
+    });
   }
 
   @override
@@ -333,18 +299,14 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Use a Stack to layer video, overlay, and dialogues
           Stack(
             alignment: Alignment.center,
             children: [
-              // GestureDetector now only wraps the video/button area
               GestureDetector(
                 onTap: _changePlayingState,
-                // Use a Stack for video/loading/error + button
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    // Video Player, Loading, or Error
                     if (error != null)
                       Center(
                         child: Padding(
@@ -366,31 +328,26 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
                         aspectRatio: 16 / 9,
                         child: Center(child: CircularProgressIndicator()),
                       ),
-                    // Play/Pause Button (inside the tap area)
                     PlayPauseButton(showPlayPauseIcon: _showPlayPauseIcon, iconData: _iconData),
                   ],
                 ),
               ),
-              // Semi-transparent overlay (outside GestureDetector)
               Visibility(
                 visible: showDialogueArea,
                 child: Positioned.fill(
                   child: IgnorePointer(
-                    // Prevents overlay from blocking taps on video
                     child: Container(
                       color: Colors.black.withOpacity(0.3),
                     ),
                   ),
                 ),
               ),
-              // Dialogue Area (outside GestureDetector)
               Visibility(
                 visible: showDialogueArea,
                 child: Positioned(
                   bottom: 0,
                   left: 0,
                   right: 0,
-                  // The Container holding the dialogues remains interactive
                   child: Container(
                     height: _displayableDialogues.isNotEmpty
                         ? standardDialogueHeight
@@ -401,58 +358,50 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
                     ),
                     child: _displayableDialogues.isNotEmpty
                         ? Stack(
-                            // Wrap the ListWheelScrollView with a Stack for overlays
                             children: [
-                              // Replace _buildDialogueList with DialogueList widget
                               DialogueList(
                                 dialogues: _displayableDialogues,
                                 itemHeight: itemHeight,
                               ),
-                              // Top Gradient Overlay
                               Positioned(
                                 top: 0,
                                 left: 0,
                                 right: 0,
                                 child: IgnorePointer(
-                                  // Make overlay non-interactive
                                   child: Container(
-                                    height: standardDialogueHeight / 3.0, // Match item extent
+                                    height: standardDialogueHeight / 3.0,
                                     decoration: BoxDecoration(
-                                      borderRadius: const BorderRadius.vertical(
-                                          top: Radius.circular(
-                                              16.0)), // Add rounded corners to top overlay
+                                      borderRadius:
+                                          const BorderRadius.vertical(top: Radius.circular(16.0)),
                                       gradient: LinearGradient(
                                         begin: Alignment.topCenter,
                                         end: Alignment.bottomCenter,
                                         colors: [
-                                          Colors.black, // Make starting color fully opaque black
-                                          Colors.black.withAlpha(0), // Fade to transparent
+                                          Colors.black,
+                                          Colors.black.withAlpha(0),
                                         ],
-                                        stops: const [0.0, 0.9], // Adjust stops for smoothness
+                                        stops: const [0.0, 0.9],
                                       ),
                                     ),
                                   ),
                                 ),
                               ),
-                              // Bottom Gradient Overlay
                               Positioned(
                                 bottom: 0,
                                 left: 0,
                                 right: 0,
                                 child: IgnorePointer(
-                                  // Make overlay non-interactive
                                   child: Container(
-                                    height: standardDialogueHeight / 3.0, // Match item extent
+                                    height: standardDialogueHeight / 3.0,
                                     decoration: BoxDecoration(
-                                      // No border radius for bottom overlay
                                       gradient: LinearGradient(
                                         begin: Alignment.bottomCenter,
                                         end: Alignment.topCenter,
                                         colors: [
-                                          Colors.black, // Make starting color fully opaque black
-                                          Colors.black.withAlpha(0), // Fade to transparent
+                                          Colors.black,
+                                          Colors.black.withAlpha(0),
                                         ],
-                                        stops: const [0.0, 0.9], // Adjust stops for smoothness
+                                        stops: const [0.0, 0.9],
                                       ),
                                     ),
                                   ),
@@ -471,7 +420,6 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
               ),
             ],
           ),
-          // Progress bar remains outside the main Stack
           if (isPlayerReady)
             ValueListenableBuilder<VideoPlayerValue>(
               valueListenable: _controller!,
