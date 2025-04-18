@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:developer' as developer;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/apis/sublevel_api.dart';
 import 'package:myapp/core/console.dart';
@@ -21,7 +22,21 @@ class SubLevelService {
       levelDTO.sub_levels.map((subLevelDTO) async {
         final videoData = await subLevelAPI.getVideo(levelDTO.id, subLevelDTO.videoFilename);
 
-        return videoData;
+        if (videoData == null) {
+          developer.log('video data for ${subLevelDTO.videoFilename} already present');
+          return; // Skip if no data
+        }
+
+        try {
+          final videoPath = PathService.videoLocalPath(levelDTO.id, subLevelDTO.videoFilename);
+          final videoFile = File(videoPath);
+          await videoFile.parent.create(recursive: true); // Ensure directory exists
+          await videoFile.writeAsBytes(videoData);
+          developer.log('video data for ${subLevelDTO.videoFilename} saved');
+        } catch (e) {
+          Console.log('Error saving video file for ${subLevelDTO.videoFilename}: $e');
+          // Optionally re-throw or handle the error differently
+        }
       }),
     );
   }
