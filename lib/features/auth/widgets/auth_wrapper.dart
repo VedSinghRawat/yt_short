@@ -15,10 +15,24 @@ class AuthWrapper extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentUser = ref.watch(userControllerProvider.select((state) => state.currentUser));
     final loading = ref.watch(userControllerProvider.select((state) => state.loading));
-    final userEmail = currentUser?.email;
-    final progress = SharedPref.get(PrefKey.currProgress(userEmail: userEmail));
-    final lastLoggedInEmail = SharedPref.get(PrefKey.lastLoggedInEmail);
+    // final userEmail = currentUser?.email; // No longer needed here
+    // final progress = SharedPref.get(PrefKey.currProgress(userEmail: userEmail)); // No longer needed here
+    // final lastLoggedInEmail = SharedPref.get(PrefKey.lastLoggedInEmail); // No longer needed here
 
+    // If loading, show loader
+    if (loading) {
+      return const Loader();
+    }
+
+    // If user is not logged in, redirect to sign in screen
+    if (currentUser == null) {
+      return const SignInScreen();
+    }
+
+    // If user is logged in, show the child widget
+    return child;
+
+    /* Previous logic commented out:
     if (progress?.level != null &&
         progress!.level! > kAuthRequiredLevel &&
         lastLoggedInEmail == null) {
@@ -28,7 +42,6 @@ class AuthWrapper extends ConsumerWidget {
     if (currentUser == null && loading) {
       return const Loader();
     }
-
-    return child;
+    */
   }
 }

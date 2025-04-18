@@ -10,7 +10,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'api_service.freezed.dart';
 
-enum ApiMethod { get, post, put, delete }
+enum ApiMethod { get, post, put, delete, patch }
 
 final apiServiceProvider = Provider<ApiService>((ref) {
   return ApiService(googleSignIn: ref.read(googleSignInProvider));
@@ -71,6 +71,10 @@ class ApiService {
       ...?params.headers,
     };
 
+    final baseUrl =
+        params.baseUrl != null
+            ? '${params.baseUrl?.url}${params.endpoint}'
+            : '${BaseUrl.backend.url}${params.endpoint}';
     try {
       final options = Options(
         method: params.method.name.toUpperCase(),
@@ -78,16 +82,10 @@ class ApiService {
         responseType: params.responseType,
         contentType: 'application/json',
       );
-      return await _dio.request(
-        params.baseUrl != null
-            ? '${params.baseUrl?.url}${params.endpoint}'
-            : '${BaseUrl.backend.url}${params.endpoint}',
-        data: params.body,
-        options: options,
-      );
+      return await _dio.request(baseUrl, data: params.body, options: options);
     } on DioException catch (e) {
       if ((e.response?.statusCode ?? 0) != 304) {
-        developer.log('ApiError on uri ${Uri.parse('${params.baseUrl}${params.endpoint}')} :  $e ');
+        developer.log('ApiError on uri $baseUrl :  $e ');
       }
 
       if (e.response?.data == null ||

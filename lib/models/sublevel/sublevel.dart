@@ -12,6 +12,8 @@ class Dialogue with _$Dialogue {
     required double time,
     required String audioFilename,
     required int zipNum,
+    required String hindiText,
+    required String hinglishText,
   }) = _Dialogue;
 
   factory Dialogue.fromJson(Map<String, dynamic> json) => _$DialogueFromJson(json);

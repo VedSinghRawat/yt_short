@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 part 'user.freezed.dart';
 part 'user.g.dart';
 
+enum PrefLang { hindi, hinglish }
+
 @freezed
 class UserModel with _$UserModel {
   const UserModel._();
@@ -22,6 +24,7 @@ class UserModel with _$UserModel {
     required int doneToday,
     required int level,
     required int maxLevel,
+    @Default(PrefLang.hinglish) PrefLang prefLang,
   }) = _UserModel;
 
   factory UserModel.fromJson(Map<String, dynamic> json) => _$UserModelFromJson(json);
@@ -53,6 +56,7 @@ class UserDTO with _$UserDTO {
     required int lastProgress,
     required UserRole role,
     required int doneToday,
+    required PrefLang prefLang,
   }) = _UserDTO;
 
   factory UserDTO.fromJson(Map<String, dynamic> json) => _$UserDTOFromJson(json);

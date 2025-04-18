@@ -13,10 +13,16 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(userControllerProvider).currentUser;
+    final userState = ref.watch(userControllerProvider);
+    final user = userState.currentUser;
+    final userLoading = userState.loading;
     final progress = SharedPref.get(PrefKey.currProgress(userEmail: user?.email));
     final authController = ref.read(authControllerProvider.notifier);
-    final isLoading = ref.watch(authControllerProvider).loading;
+    final authLoading = ref.watch(authControllerProvider).loading;
+    final userController = ref.read(userControllerProvider.notifier);
+
+    // Combine loading states
+    final isLoading = authLoading || userLoading;
 
     return Stack(
       children: [
@@ -79,6 +85,50 @@ class ProfileScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
+                const SizedBox(height: 20),
+                // Language Preference Card
+                if (user != null)
+                  _buildInfoCard(
+                    context,
+                    title: 'Language Preference',
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Dialogue Language', style: TextStyle(fontSize: 16)),
+                          DropdownButton<PrefLang>(
+                            value: user.prefLang,
+                            items:
+                                PrefLang.values.map((PrefLang lang) {
+                                  return DropdownMenuItem<PrefLang>(
+                                    value: lang,
+                                    child: Text(lang.name == 'hindi' ? 'Hindi' : 'Hinglish'),
+                                  );
+                                }).toList(),
+                            onChanged:
+                                userLoading // Disable dropdown while loading
+                                    ? null
+                                    : (PrefLang? newValue) {
+                                      if (newValue != null && newValue != user.prefLang) {
+                                        userController.updatePrefLang(newValue).then((success) {
+                                          if (!success && context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  'Failed to update language preference',
+                                                ),
+                                                backgroundColor: Colors.red,
+                                              ),
+                                            );
+                                          }
+                                        });
+                                      }
+                                    },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 const SizedBox(height: 20),
                 if (progress != null)
                   _buildInfoCard(

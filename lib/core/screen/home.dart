@@ -32,7 +32,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      await ref.read(sublevelControllerProvider.notifier).handleFetchSublevels();
+      await ref.read(sublevelControllerProvider.notifier).fetchSublevels();
     });
   }
 
@@ -89,7 +89,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     if (index < _cachedSublevels!.length) return false;
 
-    await ref.read(sublevelControllerProvider.notifier).handleFetchSublevels();
+    await ref.read(sublevelControllerProvider.notifier).fetchSublevels();
 
     return true;
   }
@@ -132,7 +132,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> fetchSublevels() async {
-    await ref.read(sublevelControllerProvider.notifier).handleFetchSublevels();
+    await ref.read(sublevelControllerProvider.notifier).fetchSublevels();
   }
 
   Future<void> syncActivityLogs() async {
@@ -233,12 +233,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
 
     final lastLoggedInEmail = SharedPref.get(PrefKey.lastLoggedInEmail);
-
-    // If the level requires auth and the user is not logged in, redirect to sign in
-    if (level > kAuthRequiredLevel && lastLoggedInEmail == null && mounted) {
-      context.go(Routes.signIn);
-      return;
-    }
 
     if (lastLoggedInEmail == null) return;
 

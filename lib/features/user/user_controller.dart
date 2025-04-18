@@ -5,6 +5,7 @@ import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/features/sublevel/level_controller.dart';
 import 'package:myapp/models/models.dart';
 import 'dart:developer' as developer;
+import 'package:myapp/models/user/user.dart';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -73,6 +74,22 @@ class UserController extends _$UserController {
       return true;
     } catch (e, stack) {
       developer.log('Error in sync', error: e, stackTrace: stack);
+      return false;
+    }
+  }
+
+  Future<bool> updatePrefLang(PrefLang newLang) async {
+    if (state.currentUser == null) return false;
+
+    state = state.copyWith(loading: true);
+    try {
+      final updatedUserDTO = await _userAPI.updateProfile(prefLang: newLang);
+      updateCurrentUser(updatedUserDTO);
+      state = state.copyWith(loading: false);
+      return true;
+    } catch (e, stack) {
+      developer.log('Error updating prefLang', error: e, stackTrace: stack);
+      state = state.copyWith(loading: false);
       return false;
     }
   }

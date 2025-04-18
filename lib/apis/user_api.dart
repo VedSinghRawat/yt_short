@@ -8,6 +8,7 @@ import '../models/models.dart';
 
 abstract class IUserAPI {
   Future<UserDTO> sync(String levelId, int subLevel);
+  Future<UserDTO> updateProfile({required PrefLang prefLang});
 }
 
 class UserAPI implements IUserAPI {
@@ -34,6 +35,31 @@ class UserAPI implements IUserAPI {
       developer.log('Error syncing user progress', error: e.toString(), stackTrace: stackTrace);
 
       throw Failure(message: parseError(e.type));
+    }
+  }
+
+  @override
+  Future<UserDTO> updateProfile({required PrefLang prefLang}) async {
+    try {
+      final response = await _apiService.call(
+        params: ApiParams(
+          method: ApiMethod.patch,
+          endpoint: '/user/profile',
+          body: {'prefLang': prefLang.name},
+        ),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to update profile: ${response.statusCode}');
+      }
+
+      return UserDTO.fromJson(response.data?['user']);
+    } on DioException catch (e, stackTrace) {
+      developer.log('Error updating user profile', error: e.toString(), stackTrace: stackTrace);
+      throw Failure(message: parseError(e.type));
+    } catch (e, stackTrace) {
+      developer.log('Error updating user profile', error: e.toString(), stackTrace: stackTrace);
+      throw Failure(message: e.toString());
     }
   }
 }

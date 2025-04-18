@@ -9,6 +9,7 @@ import 'dart:developer' as developer;
 import '../../apis/auth_api.dart';
 import '../../core/utils.dart';
 import '../user/user_controller.dart';
+import 'package:myapp/models/user/user.dart'; // Import User model for PrefLang
 import 'dart:async';
 
 part 'auth_controller.g.dart';
@@ -40,43 +41,75 @@ class AuthController extends _$AuthController {
     state = state.copyWith(loading: true);
 
     try {
-      // Access dependencies via ref.
       final authAPI = ref.read(authAPIProvider);
       final userController = ref.read(userControllerProvider.notifier);
       final sublevelController = ref.read(sublevelControllerProvider.notifier);
 
       final userDTO = await authAPI.signInWithGoogle();
-      if (userDTO == null) return;
+      if (userDTO == null) {
+        // Handle case where sign in might be cancelled or fail before getting DTO
+        _isProcessing = false;
+        state = state.copyWith(loading: false);
+        return;
+      }
 
+      // Check if language preference needs to be set
+      // Assuming PrefLang.hinglish is the default and needs confirmation
+      // Or if backend sends null initially, adjust the check accordingly
+      bool needsLanguagePrompt = userDTO.prefLang == PrefLang.hinglish; // Example check
+
+      // Update user model *before* potentially showing dialog
       final user = userController.updateCurrentUser(userDTO);
 
       await SharedPref.store(PrefKey.doneToday, user.doneToday);
-
       await authAPI.syncCyId();
 
       await Future.delayed(Duration.zero); // Yield control to UI
 
-      // first get the guest progress
-      final progress = SharedPref.get(
-        PrefKey.currProgress(),
-      ); // null because user is not logged in before sign in
+      // Ask for language preference if needed
+      if (needsLanguagePrompt && context.mounted) {
+        final chosenLang = await showDialog<PrefLang>(
+          context: context,
+          barrierDismissible: false, // User must choose
+          builder: (BuildContext dialogContext) {
+            return AlertDialog(
+              title: const Text('Choose Dialogue Language'),
+              content: const Text('Select your preferred language for dialogue translations.'),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('Hindi'),
+                  onPressed: () => Navigator.of(dialogContext).pop(PrefLang.hindi),
+                ),
+                TextButton(
+                  child: const Text('Hinglish'),
+                  onPressed: () => Navigator.of(dialogContext).pop(PrefLang.hinglish),
+                ),
+              ],
+            );
+          },
+        );
 
-      // then update the last logged in email to the user's email
+        // If user somehow dismissed dialog without choosing (though barrierDismissible=false)
+        // or if dialog returns null, default to hinglish and save it.
+        final finalLang = chosenLang ?? PrefLang.hinglish;
+        await userController.updatePrefLang(finalLang);
+      }
+
+      // Continue with existing logic (progress check, etc.)
+      final progress = SharedPref.get(PrefKey.currProgress());
       await SharedPref.store(PrefKey.lastLoggedInEmail, user.email);
 
-      final level = progress?.maxLevel ?? kAuthRequiredLevel;
+      final level = progress?.maxLevel ?? 1;
       final subLevel = progress?.maxSubLevel ?? 1;
 
       if (context.mounted &&
-          (user.maxLevel > level || (user.maxLevel == level && userDTO.maxSubLevel > subLevel))) {
+          (user.maxLevel > level || (user.maxLevel == level && user.maxSubLevel > subLevel))) {
         await showLevelChangeConfirmationDialog(context, user);
       } else {
-        // Store the progress to the shared preferences by user email
-
         SharedPref.store(PrefKey.currProgress(userEmail: user.email), progress);
       }
 
-      await sublevelController.handleFetchSublevels();
+      await sublevelController.fetchSublevels();
     } catch (e, stackTrace) {
       developer.log(
         'Error in AuthController.signInWithGoogle',

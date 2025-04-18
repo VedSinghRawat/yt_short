@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:myapp/core/services/path_service.dart';
 import 'package:myapp/core/utils.dart';
+import 'package:myapp/features/user/user_controller.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
+import 'package:myapp/models/user/user.dart';
 
 class DialogueList extends ConsumerStatefulWidget {
   final List<Dialogue> dialogues;
@@ -90,6 +92,11 @@ class _DialogueListState extends ConsumerState<DialogueList> {
     // Store the current dialogues when building
     _previousDialogues = List.from(widget.dialogues);
 
+    // Read user preference
+    final prefLang = ref.watch(
+      userControllerProvider.select((state) => state.currentUser?.prefLang ?? PrefLang.hinglish),
+    );
+
     return ListWheelScrollView.useDelegate(
       // Use the state's scroll controller
       controller: _scrollController,
@@ -125,27 +132,51 @@ class _DialogueListState extends ConsumerState<DialogueList> {
                 color: Colors.transparent, // Ensures the empty space is tappable
                 alignment: Alignment.center, // Center content within the tappable area
                 child: Row(
-                  // Keep Row for layout
+                  // Restore Row layout
                   mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center, // Center align the Row
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text(
-                      formattedTime,
-                      style: TextStyle(fontSize: 12, color: timeColor), // Use conditional color
-                    ),
-                    const SizedBox(width: 16),
-                    Text(
-                      dialogue.text,
-                      style: TextStyle(
-                        // Apply conditional styles
-                        fontSize: textFontSize,
-                        color: Colors.white,
-                        fontWeight: textFontWeight,
+                    Text(formattedTime, style: TextStyle(fontSize: 12, color: timeColor)),
+                    const SizedBox(width: 16), // Restore original spacing
+                    // Wrap the Column with Padding for horizontal spacing
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0,
+                      ), // Add horizontal padding
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            dialogue.text,
+                            style: TextStyle(
+                              fontSize: textFontSize,
+                              color: Colors.white,
+                              fontWeight: textFontWeight,
+                            ),
+                            textAlign: TextAlign.center, // Center align primary text
+                          ),
+                          // Conditional translation text
+                          if (dialogue.hindiText.isNotEmpty && dialogue.hinglishText.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2.0), // Smaller spacing
+                              child: Text(
+                                prefLang == PrefLang.hindi
+                                    ? dialogue.hindiText
+                                    : dialogue.hinglishText,
+                                style: TextStyle(
+                                  fontSize: textFontSize * 0.75, // Slightly smaller font size
+                                  color: Colors.white70,
+                                  fontWeight: FontWeight.normal,
+                                ),
+                                textAlign: TextAlign.center, // Center align translation text
+                              ),
+                            ),
+                        ],
                       ),
-                      textAlign: TextAlign.center,
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 12), // Restore original spacing
                     // Keep the visual part
                     Container(
                       padding: const EdgeInsets.all(4.0),

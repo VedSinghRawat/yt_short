@@ -124,7 +124,7 @@ class SublevelController extends _$SublevelController {
 
   void setHasFinishedVideo(bool to) => state = state.copyWith(hasFinishedVideo: to);
 
-  Future<void> handleFetchSublevels() async {
+  Future<void> fetchSublevels() async {
     try {
       final asyncOrderIds = ref.read(levelControllerProvider);
       final isFirstFetch = state.isFirstFetch;
@@ -143,43 +143,37 @@ class SublevelController extends _$SublevelController {
         return;
       }
 
-      String currLevelId = await fetchSublevels(orderedIds);
+      final currUserLevel = ref.read(userControllerProvider).level;
+
+      final currLevelIndex = currUserLevel - 1;
+
+      final currLevelId = orderedIds[currLevelIndex];
+
+      if (!_isLevelFetched(currLevelId)) {
+        await _listByLevel(currLevelId, currUserLevel);
+      }
+
+      final surroundingLevelIds = _getSurroundingLevelIds(currLevelIndex, orderedIds);
+
+      final fetchTasks =
+          surroundingLevelIds
+              .where((levelId) => levelId != null && !_isLevelFetched(levelId))
+              .map((levelId) => _listByLevel(levelId!, orderedIds.indexOf(levelId) + 1))
+              .toList();
+
+      await Future.wait(fetchTasks);
+
+      if (currLevelIndex < 0 || currUserLevel >= orderedIds.length) {
+        state = state.copyWith(
+          error: 'These are all the lessons for now, Check in after sometime for new content',
+        );
+      }
 
       if (isFirstFetch) await _cleanOldLevels(orderedIds, currLevelId);
     } catch (e) {
       developer.log('error in sublevel controller: $e', stackTrace: StackTrace.current);
       state = state.copyWith(error: e.toString());
     }
-  }
-
-  Future<String> fetchSublevels(List<String> orderedIds) async {
-    final currUserLevel = ref.read(userControllerProvider).level;
-
-    final currLevelIndex = currUserLevel - 1;
-
-    final currLevelId = orderedIds[currLevelIndex];
-
-    if (!_isLevelFetched(currLevelId)) {
-      await _listByLevel(currLevelId, currUserLevel);
-    }
-
-    final surroundingLevelIds = _getSurroundingLevelIds(currLevelIndex, orderedIds);
-
-    final fetchTasks =
-        surroundingLevelIds
-            .where((levelId) => levelId != null && !_isLevelFetched(levelId))
-            .map((levelId) => _listByLevel(levelId!, orderedIds.indexOf(levelId) + 1))
-            .toList();
-
-    await Future.wait(fetchTasks);
-
-    if (currLevelIndex < 0 || currUserLevel >= orderedIds.length) {
-      state = state.copyWith(
-        error: 'These are all the lessons for now, Check in after sometime for new content',
-      );
-    }
-
-    return currLevelId;
   }
 
   Future<void> _cleanOldLevels(List<String> orderedIds, String currLevelId) async {
