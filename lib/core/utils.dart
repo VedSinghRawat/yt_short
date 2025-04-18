@@ -54,16 +54,9 @@ typedef FutureEither<T> = Future<Either<Failure, T>>;
 
 typedef FutureVoid = FutureEither<void>;
 
-final dioConnectionErrors = {
-  DioExceptionType.connectionError,
-};
+final dioConnectionErrors = {DioExceptionType.connectionError};
 
-String getLevelJsonPath(String jsonId) => '/levels/$jsonId/data.json';
-
-String getLevelZipPath(String levelId, int zipNum) => '/levels/$levelId/zips/$zipNum.zip';
-
-String getOrderedIdsPath() => '/levels/ordered_ids.json';
-
+/// Return user friendly error message based on dio exception type
 String parseError(DioExceptionType? type) {
   if (type == null) return unknownErrorMsg;
 
@@ -77,4 +70,12 @@ String parseError(DioExceptionType? type) {
     DioExceptionType.badResponse => badResponseMsg,
     DioExceptionType.unknown => unknownErrorMsg,
   };
+}
+
+bool isPrimitive(dynamic value) {
+  return value is String || value is int || value is double || value is bool;
+}
+
+bool isListOfPrimitives(dynamic value) {
+  return value is List && value.every(isPrimitive);
 }

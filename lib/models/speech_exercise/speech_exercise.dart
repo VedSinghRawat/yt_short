@@ -24,7 +24,6 @@ class SpeechExerciseDTO with _$SpeechExerciseDTO {
     required String videoFilename,
     required String text,
     required int pauseAt,
-    required int zipNum,
   }) = _SpeechExerciseDTO;
 
   factory SpeechExerciseDTO.fromJson(Map<String, dynamic> json) =>

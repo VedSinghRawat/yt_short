@@ -1,4 +1,3 @@
-import 'package:better_player_plus/better_player_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,18 +5,19 @@ import 'package:myapp/core/widgets/video_player.dart';
 import 'package:myapp/features/speech_exercise/widgets/exercise_sentence_card.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'package:myapp/models/speech_exercise/speech_exercise.dart';
+import 'package:video_player/video_player.dart';
 
 class SpeechExerciseScreen extends ConsumerStatefulWidget {
   final SpeechExercise exercise;
-  final Function(BetterPlayerController controller)? onControllerInitialized;
   final String? uniqueId;
-  final String videoPath;
+  final String? videoLocalPath;
+  final List<String>? videoUrls;
 
   const SpeechExerciseScreen({
     super.key,
-    this.onControllerInitialized,
     required this.exercise,
-    required this.videoPath,
+    this.videoLocalPath,
+    this.videoUrls,
     this.uniqueId,
   });
 
@@ -26,30 +26,52 @@ class SpeechExerciseScreen extends ConsumerStatefulWidget {
 }
 
 class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
-  BetterPlayerController? _controller;
+  VideoPlayerController? _exerciseController;
   bool _hasShownDialog = false;
+  bool _isDialogOpen = false;
 
-  void _onControllerInitialized(BetterPlayerController controller) {
-    _controller = controller;
+  void _onControllerInitialized(VideoPlayerController controller) {
+    if (!mounted) return;
 
-    _controller?.addEventsListener((event) {
-      if (_hasShownDialog || event.betterPlayerEventType != BetterPlayerEventType.progress) return;
+    _exerciseController?.removeListener(_exerciseListener);
 
-      final position = _controller?.videoPlayerController?.value.position;
-      final isPlaying = _controller?.videoPlayerController?.value.isPlaying ?? false;
-
-      if (position != null && isPlaying && position.inSeconds >= widget.exercise.pauseAt) {
-        _controller?.pause();
-        _showTestSentenceDialog();
-      }
+    setState(() {
+      _exerciseController = controller;
     });
+    _exerciseController!.addListener(_exerciseListener);
+  }
 
-    widget.onControllerInitialized?.call(controller);
+  void _exerciseListener() {
+    if (!mounted || _exerciseController == null || !_exerciseController!.value.isInitialized) {
+      return;
+    }
+
+    final position = _exerciseController!.value.position;
+    final isPlaying = _exerciseController!.value.isPlaying;
+
+    if (!_hasShownDialog && isPlaying && position.inSeconds >= widget.exercise.pauseAt) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_hasShownDialog) {
+          _showTestSentenceDialog();
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _exerciseController?.removeListener(_exerciseListener);
+    super.dispose();
   }
 
   void _showTestSentenceDialog() {
+    _exerciseController?.pause();
+
+    if (!mounted) return;
+
     setState(() {
       _hasShownDialog = true;
+      _isDialogOpen = true;
     });
 
     final isAdmin = ref.read(userControllerProvider).currentUser?.isAdmin ?? false;
@@ -58,43 +80,55 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
       context: context,
       barrierDismissible: isAdmin || kDebugMode,
       barrierColor: const Color.fromRGBO(0, 0, 0, 0.9),
-      builder: (context) => PopScope(
-        canPop: isAdmin || kDebugMode,
-        child: Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
-          child: Container(
-            decoration: BoxDecoration(
-              color: const Color.fromRGBO(255, 255, 255, 0.75),
-              borderRadius: BorderRadius.circular(30),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color.fromRGBO(255, 255, 255, 0.2),
-                  blurRadius: 12.0,
-                  spreadRadius: 4.0,
+      builder:
+          (context) => PopScope(
+            canPop: isAdmin || kDebugMode,
+            onPopInvokedWithResult: (bool result, bool? didPop) {
+              setState(() {
+                _isDialogOpen = false;
+              });
+            },
+            child: Dialog(
+              backgroundColor: Colors.transparent,
+              insetPadding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color.fromRGBO(255, 255, 255, 0.75),
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color.fromRGBO(255, 255, 255, 0.2),
+                      blurRadius: 12.0,
+                      spreadRadius: 4.0,
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: SpeechExerciseCard(
-              text: widget.exercise.text,
-              onContinue: () {
-                _controller?.play();
-                Navigator.of(context).pop();
-              },
+                child: SpeechExerciseCard(
+                  text: widget.exercise.text,
+                  onContinue: () {
+                    if (mounted) {
+                      _exerciseController?.play();
+                      Navigator.of(context).pop();
+                    }
+                  },
+                ),
+              ),
             ),
           ),
-        ),
-      ),
-    );
+    ).then((_) {
+      if (mounted) {}
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Player(
-      key: Key(widget.uniqueId ?? widget.videoPath),
-      videoPath: widget.videoPath,
+      key: Key(widget.uniqueId ?? widget.videoLocalPath ?? widget.videoUrls?.first ?? ''),
+      videoLocalPath: widget.videoLocalPath,
+      videoUrls: widget.videoUrls,
       uniqueId: widget.uniqueId,
       onControllerInitialized: _onControllerInitialized,
+      stayPause: _isDialogOpen,
     );
   }
 }

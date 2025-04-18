@@ -1,98 +1,153 @@
 import 'dart:async';
 import 'dart:developer' as developer;
+import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:myapp/constants/constants.dart';
 import 'package:myapp/features/sublevel/sublevel_controller.dart';
-import 'package:myapp/features/sublevel/widget/last_level.dart';
-import 'package:better_player_plus/better_player_plus.dart';
+import 'package:myapp/features/sublevel/widget/error_page.dart';
+import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 class Player extends ConsumerStatefulWidget {
-  final String videoPath;
+  final String? videoLocalPath;
   final String? uniqueId;
-  final Function(BetterPlayerController controller)? onControllerInitialized;
+  final List<String>? videoUrls;
+  final bool? stayPause;
+
+  final Function(VideoPlayerController controller)? onControllerInitialized;
 
   const Player({
     super.key,
-    required this.videoPath,
-    this.onControllerInitialized,
+    required this.videoLocalPath,
     this.uniqueId,
+    this.onControllerInitialized,
+    this.videoUrls,
+    this.stayPause,
   });
 
   @override
   ConsumerState<Player> createState() => _PlayerState();
 }
 
-class _PlayerState extends ConsumerState<Player> {
-  BetterPlayerController? _betterPlayerController;
+class _PlayerState extends ConsumerState<Player> with WidgetsBindingObserver {
+  VideoPlayerController? _controller;
+  Duration? _lastPosition;
+  bool _isInitialized = false;
+  String? error;
+  bool _isVisible = false;
 
   bool _showPlayPauseIcon = false;
   IconData _iconData = Icons.play_arrow;
   Timer? _iconTimer;
 
-  String? error;
-  bool _isVisible = false;
-
   @override
   void initState() {
     super.initState();
-    _betterPlayerController = _initializeBetterPlayerController();
+    _initializeVideoPlayerController();
+    WidgetsBinding.instance.addObserver(this);
   }
 
-  void _listenerVideoFinished() async {
-    if (_betterPlayerController == null) return;
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _iconTimer?.cancel();
+    _controller?.removeListener(_listener);
+    _controller?.dispose();
+    super.dispose();
+  }
 
-    final position = await _betterPlayerController!.videoPlayerController?.position;
-    final duration = _betterPlayerController!.videoPlayerController?.value.duration;
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
 
-    if (position != null && duration != null) {
-      final compareDuration = duration.inSeconds - position.inSeconds;
-
-      if (duration != Duration.zero &&
-          compareDuration <= 1 &&
-          !ref.read(sublevelControllerProvider).hasFinishedVideo) {
-        ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
-        _betterPlayerController?.removeEventsListener(_eventListener);
+    if (state == AppLifecycleState.paused) {
+      // Store position before pausing/disposing
+      _controller?.removeListener(_listener);
+      _controller?.pause();
+      _lastPosition = _controller?.value.position;
+      _controller?.dispose();
+      _controller = null;
+      if (mounted) {
+        setState(() {
+          _isInitialized = false;
+          _showPlayPauseIcon = false;
+        });
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      developer.log("App resumed, initializing video controller.");
+      // Only initialize if controller is null (disposed)
+      if (_controller == null) {
+        _initializeVideoPlayerController();
       }
     }
   }
 
-  void _eventListener(BetterPlayerEvent event) {
-    if (event.betterPlayerEventType == BetterPlayerEventType.progress) {
-      _listenerVideoFinished();
+  void _listener() {
+    if (!mounted || _controller == null) return;
+
+    final value = _controller!.value;
+    if (!value.isInitialized) return;
+
+    if (value.hasError && error == null) {
+      developer.log('error in video player ${value.errorDescription}');
+      if (mounted) {
+        ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
+        setState(() {
+          error = 'Playback failed: ${value.errorDescription ?? "Unknown error"}';
+          _isInitialized = false;
+        });
+      }
     }
-    if (event.betterPlayerEventType == BetterPlayerEventType.exception) {
-      developer.log('error in video player ${event.parameters}');
-      if (error != null) return;
 
-      ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
+    _listenerVideoFinished();
 
+    if (mounted && _controller!.value.isPlaying != (_iconData == Icons.pause)) {
+      // This might fight with the timed icon, consider if needed
       setState(() {
-        error = 'Playback failed: ${event.parameters?["exception"] ?? "Unknown error"}';
+        _iconData = _controller!.value.isPlaying ? Icons.play_arrow : Icons.pause;
       });
     }
   }
 
+  void _listenerVideoFinished() {
+    if (_controller == null || !_controller!.value.isInitialized) return;
+
+    final position = _controller!.value.position;
+    final duration = _controller!.value.duration;
+
+    if (duration > Duration.zero) {
+      final bool isNearEnd = (duration - position).inSeconds <= 1;
+      if (isNearEnd && !ref.read(sublevelControllerProvider).hasFinishedVideo) {
+        ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
+        _controller?.removeListener(_listener);
+      }
+    }
+  }
+
   void _changePlayingState({bool changeToPlay = true}) async {
-    if (_betterPlayerController == null) return;
+    if (_controller == null || !_isInitialized) return;
 
-    final isPlaying = _betterPlayerController!.isPlaying();
+    final isPlaying = _controller!.value.isPlaying;
 
-    if (isPlaying == true || !changeToPlay) {
-      _betterPlayerController!.pause();
+    if (isPlaying || !changeToPlay || widget.stayPause == true) {
+      await _controller!.pause();
     } else {
-      _betterPlayerController!.play();
+      if (_controller!.value.position >= _controller!.value.duration) {
+        await _controller!.seekTo(Duration.zero);
+      }
+      await _controller!.play();
     }
 
+    final targetIcon = !isPlaying && changeToPlay ? Icons.play_arrow : Icons.pause;
+
     setState(() {
-      _iconData = isPlaying == false ? Icons.play_arrow : Icons.pause;
+      _iconData = targetIcon;
       _showPlayPauseIcon = true;
     });
 
     _iconTimer?.cancel();
-
-    _iconTimer = Timer(Duration(milliseconds: _iconData == Icons.play_arrow ? 700 : 2000), () {
+    _iconTimer = Timer(Duration(milliseconds: targetIcon == Icons.play_arrow ? 500 : 800), () {
       if (mounted) {
         setState(() {
           _showPlayPauseIcon = false;
@@ -102,82 +157,125 @@ class _PlayerState extends ConsumerState<Player> {
   }
 
   void _handleVisibility(bool isVisible) {
-    _isVisible = isVisible;
-
-    if (_betterPlayerController == null) return;
+    if (_controller == null || !_isInitialized) return;
 
     if (isVisible) {
-      _betterPlayerController?.addEventsListener(_eventListener);
-      _betterPlayerController?.play();
+      _controller!.addListener(_listener);
+      if (!_controller!.value.isPlaying && error == null && widget.stayPause != true) {
+        _controller!.play();
+      }
     } else {
-      _betterPlayerController?.removeEventsListener(_eventListener);
-      _betterPlayerController?.pause();
+      _controller!.pause();
+      _controller!.removeListener(_listener);
     }
   }
 
   void _onVisibilityChanged(VisibilityInfo info) {
+    if (_controller == null) {
+      // Handle case where controller is disposed (e.g., app paused) while visibility changes
+      developer.log("Visibility changed but controller is null.");
+      if (mounted && _isVisible) {
+        // If it was visible, update state
+        setState(() {
+          _isVisible = false;
+        });
+      }
+      return;
+    }
+
     if (!mounted) return;
 
-    final isVisible =
-        info.visibleFraction > 0.8 || (_isVisible == true && info.visibleFraction > 0.3);
+    final isNowVisible = info.visibleFraction > 0.8;
 
-    if (_isVisible == isVisible) return;
+    if (_isVisible == isNowVisible) return;
+
+    setState(() {
+      _isVisible = isNowVisible;
+    });
 
     try {
-      setState(() {
-        _isVisible = isVisible;
-      });
-
-      if (isVisible && error != null) {
+      if (_isVisible && error != null) {
         ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
       }
-
-      _handleVisibility(isVisible);
+      _handleVisibility(_isVisible);
     } catch (e) {
       developer.log('Error in Player._onVisibilityChanged', error: e.toString());
+      if (mounted && error == null) {
+        setState(() {
+          error = 'Error handling visibility: $e';
+        });
+      }
     }
   }
 
-  BetterPlayerController? _initializeBetterPlayerController() {
+  Future<void> _initializeVideoPlayerController() async {
+    if (!mounted) return;
+
     try {
-      final controller = BetterPlayerController(
-        BetterPlayerConfiguration(
-          autoPlay: false,
-          errorBuilder: (context, errorMessage) {
-            ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
+      final file = widget.videoLocalPath != null ? File(widget.videoLocalPath!) : null;
 
-            return ErrorPage(text: errorMessage ?? videoPlayerError);
-          },
-          looping: true,
-          fit: BoxFit.fitHeight,
-          aspectRatio: 9 / 16,
-          controlsConfiguration: const BetterPlayerControlsConfiguration(
-            showControls: false,
-          ),
-        ),
-      );
+      if (file != null && !await file.exists()) {
+        throw Exception("Video file not found at ${widget.videoLocalPath}");
+      }
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        controller.setupDataSource(
-            BetterPlayerDataSource(BetterPlayerDataSourceType.file, widget.videoPath));
+      String url = widget.videoUrls!.first;
 
-        widget.onControllerInitialized?.call(controller);
-      });
+      // check does video is exist in first url if not change to last url
+      if (file == null) {
+        try {
+          await Dio().head(url);
+        } catch (e) {
+          url = widget.videoUrls!.last;
+        }
+      }
 
-      return controller;
-    } on Exception catch (e) {
+      _controller =
+          file != null
+              ? VideoPlayerController.file(file)
+              : VideoPlayerController.networkUrl(Uri.parse(url));
+
+      await _controller!.setLooping(true);
+      await _controller!.initialize();
+
+      if (file == null) {
+        _controller!.addListener(_listener);
+      }
+
       setState(() {
-        error = e.toString();
+        _isInitialized = true;
+        error = null;
       });
 
-      return null;
+      if (_lastPosition != null) {
+        await _controller!.seekTo(_lastPosition!);
+        _lastPosition = null;
+      }
+
+      // Auto-play if visible after initialization/resuming
+      if (_isVisible && widget.stayPause != true) {
+        _controller!.play();
+      }
+
+      widget.onControllerInitialized?.call(_controller!);
+    } catch (e) {
+      developer.log('Error initializing video player', error: e.toString());
+      _controller?.removeListener(_listener);
+      if (mounted) {
+        setState(() {
+          error = "Error initializing video: ${e.toString()}";
+          _isInitialized = false;
+        });
+        ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final bool isPlayerReady = _isInitialized && _controller != null;
+
     return VisibilityDetector(
-      key: Key(widget.uniqueId ?? widget.videoPath),
+      key: Key(widget.uniqueId ?? widget.videoLocalPath ?? widget.videoUrls?.first ?? ''),
       onVisibilityChanged: _onVisibilityChanged,
       child: GestureDetector(
         onTap: _changePlayingState,
@@ -186,25 +284,32 @@ class _PlayerState extends ConsumerState<Player> {
           children: [
             if (error != null)
               Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ErrorPage(
-                    text: error!,
+                child: Padding(padding: const EdgeInsets.all(8.0), child: ErrorPage(text: error!)),
+              )
+            else if (isPlayerReady)
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Center(
+                    child: AspectRatio(
+                      aspectRatio: _controller!.value.aspectRatio,
+                      child: VideoPlayer(_controller!),
+                    ),
                   ),
-                ),
+                  ValueListenableBuilder<VideoPlayerValue>(
+                    valueListenable: _controller!,
+                    builder: (context, value, child) {
+                      if (value.duration > Duration.zero) {
+                        return _VideoProgressBar(controller: _controller!);
+                      } else {
+                        return const SizedBox.shrink();
+                      }
+                    },
+                  ),
+                ],
               )
             else
-              Builder(
-                builder: (_) {
-                  return _betterPlayerController != null
-                      ? SizedBox(
-                          height: MediaQuery.of(context).size.height,
-                          child: BetterPlayer(
-                            controller: _betterPlayerController!,
-                          ))
-                      : const Center(child: CircularProgressIndicator());
-                },
-              ),
+              const Center(child: CircularProgressIndicator()),
             PlayPauseButton(showPlayPauseIcon: _showPlayPauseIcon, iconData: _iconData),
           ],
         ),
@@ -214,12 +319,9 @@ class _PlayerState extends ConsumerState<Player> {
 }
 
 class PlayPauseButton extends StatelessWidget {
-  const PlayPauseButton({
-    super.key,
-    required bool showPlayPauseIcon,
-    required IconData iconData,
-  })  : _showPlayPauseIcon = showPlayPauseIcon,
-        _iconData = iconData;
+  const PlayPauseButton({super.key, required bool showPlayPauseIcon, required IconData iconData})
+    : _showPlayPauseIcon = showPlayPauseIcon,
+      _iconData = iconData;
 
   final bool _showPlayPauseIcon;
   final IconData _iconData;
@@ -230,16 +332,219 @@ class PlayPauseButton extends StatelessWidget {
       opacity: _showPlayPauseIcon ? 1.0 : 0.0,
       duration: const Duration(milliseconds: 400),
       child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.black54,
-          shape: BoxShape.circle,
-        ),
+        decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
         padding: const EdgeInsets.all(20),
-        child: Icon(
-          _iconData,
-          size: MediaQuery.of(context).size.width * 0.12,
-          color: Colors.white,
+        child: Icon(_iconData, size: MediaQuery.of(context).size.width * 0.12, color: Colors.white),
+      ),
+    );
+  }
+}
+
+// New stateful widget for smoother progress bar updates using AnimationController
+class _VideoProgressBar extends StatefulWidget {
+  final VideoPlayerController controller;
+
+  const _VideoProgressBar({required this.controller});
+
+  @override
+  State<_VideoProgressBar> createState() => _VideoProgressBarState();
+}
+
+class _VideoProgressBarState extends State<_VideoProgressBar> with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  Duration _lastKnownPosition = Duration.zero;
+  Duration _lastKnownDuration = Duration.zero;
+  bool _isPlaying = false;
+  double _playbackSpeed = 1.0;
+  DateTime _lastUpdateTime = DateTime.now();
+  VideoPlayerValue? _lastValue;
+  bool _controllerDisposed = false; // Track if the controller was disposed
+
+  @override
+  void initState() {
+    super.initState();
+    // Use an AnimationController to trigger frequent rebuilds for smooth progress
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1), // Doesn't really matter for repeat
+    )..addListener(() {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+
+    // Listen to the controller's playing state to start/stop the ticker
+    widget.controller.addListener(_updateVideoState);
+    // Initialize state
+    _updateVideoState();
+  }
+
+  @override
+  void didUpdateWidget(covariant _VideoProgressBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If the controller instance changes, remove old listener and add new one
+    if (widget.controller != oldWidget.controller) {
+      oldWidget.controller.removeListener(_updateVideoState);
+      widget.controller.addListener(_updateVideoState);
+    }
+  }
+
+  void _updateVideoState() {
+    if (!mounted || _controllerDisposed) return;
+
+    try {
+      final value = widget.controller.value;
+      _lastValue = value; // Store the last valid value
+
+      final bool isCurrentlyPlaying = value.isPlaying;
+      if (_isPlaying != isCurrentlyPlaying) {
+        setState(() {
+          _isPlaying = isCurrentlyPlaying;
+          _lastUpdateTime = DateTime.now(); // Reset time on play/pause change
+
+          if (_isPlaying && !_animationController.isAnimating) {
+            _animationController.repeat();
+          } else if (!_isPlaying && _animationController.isAnimating) {
+            _animationController.stop();
+          }
+        });
+      } else {
+        // If playing state hasn't changed, but the controller is playing,
+        // ensure the ticker is running (might have stopped erroneously)
+        if (_isPlaying && !_animationController.isAnimating) {
+          _animationController.repeat();
+        }
+      }
+
+      // Update position/duration state only if necessary (less frequent updates)
+      if (_lastKnownPosition != value.position ||
+          _lastKnownDuration != value.duration ||
+          _playbackSpeed != value.playbackSpeed) {
+        setState(() {
+          _lastKnownPosition = value.position;
+          _lastKnownDuration = value.duration;
+          _playbackSpeed = value.playbackSpeed;
+          _lastUpdateTime = DateTime.now(); // Also update time when position/duration changes
+        });
+      }
+    } catch (e) {
+      developer.log("Error accessing controller value in _updateVideoState (likely disposed): $e");
+      _controllerDisposed = true; // Mark as disposed
+      if (_animationController.isAnimating) {
+        _animationController.stop();
+      }
+      if (mounted) {
+        setState(() {
+          // Reset state or show an indicator if needed
+          _isPlaying = false;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    // Safely remove listener
+    try {
+      // Check if the controller is still valid before removing listener
+      widget.controller.value; // Throws if disposed
+      widget.controller.removeListener(_updateVideoState);
+    } catch (e) {
+      developer.log("Error removing listener from controller (likely disposed): $e");
+      // No need to set _controllerDisposed here as the widget is disposing anyway
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Use the last known value if the controller is disposed or has an error
+    final value = _controllerDisposed ? _lastValue : widget.controller.value;
+
+    // Handle cases where value might still be null or uninitialized
+    if (value == null || !value.isInitialized || value.duration <= Duration.zero) {
+      return const SizedBox(
+        height: 10, // Maintain height even when bar isn't showing
+        child: LinearProgressIndicator(
+          // Show a generic loading indicator
+          value: 0,
+          backgroundColor: Colors.grey,
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
         ),
+      );
+    }
+
+    // Removed Positioned wrapper, Column handles placement now
+    return SizedBox(
+      height: 10, // Height for the bar and circle area
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Access controller via widget.controller in StatefulWidget
+          Duration currentPosition = _lastKnownPosition;
+          final duration = _lastKnownDuration;
+
+          // Estimate position based on time elapsed since last update
+          if (_isPlaying && _playbackSpeed > 0 && _animationController.isAnimating) {
+            final now = DateTime.now();
+            final elapsed = now.difference(_lastUpdateTime);
+            final estimatedDelta = Duration(
+              milliseconds: (elapsed.inMilliseconds * _playbackSpeed).round(),
+            );
+            currentPosition += estimatedDelta;
+          }
+
+          // Clamp position between 0 and duration
+          if (currentPosition > duration) {
+            currentPosition = duration;
+          }
+          if (currentPosition < Duration.zero) {
+            currentPosition = Duration.zero;
+          }
+
+          final durationMs = duration.inMilliseconds;
+          final positionMs = currentPosition.inMilliseconds;
+
+          // Avoid division by zero and handle invalid states
+          final double progress =
+              (durationMs > 0 && positionMs <= durationMs && positionMs >= 0)
+                  ? positionMs / durationMs
+                  : 0.0;
+          // Ensure progress is clamped between 0.0 and 1.0
+          final double clampedProgress = progress.clamp(0.0, 1.0);
+
+          final double progressBarWidth = constraints.maxWidth;
+          final double indicatorPosition =
+              progressBarWidth * clampedProgress; // Use clampedProgress
+
+          // Ensure indicator position is within bounds (redundant due to clampedProgress, but safe)
+          final double clampedIndicatorPosition = indicatorPosition.clamp(0.0, progressBarWidth);
+
+          return Stack(
+            clipBehavior: Clip.none, // Allow circle to overflow slightly
+            alignment: Alignment.centerLeft, // Align children to the start
+            children: [
+              // Background for the bar
+              Container(
+                height: 3,
+                width: progressBarWidth,
+                color: Colors.grey.withAlpha(128), // 0.5 opacity = 128 alpha (0.5 * 255)
+              ),
+              // Actual Progress (smoothness from AnimationController)
+              Container(height: 3, width: clampedIndicatorPosition, color: Colors.red),
+              // Indicator Circle (smoothness from AnimationController)
+              Positioned(
+                left: clampedIndicatorPosition - 5, // Center the circle on the progress point
+                top: 0, // Adjust to center the circle vertically on the line ( (10-3)/2 = 3.5 )
+                child: Container(
+                  width: 10,
+                  height: 10,
+                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

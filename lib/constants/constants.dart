@@ -1,4 +1,4 @@
-const int kAuthRequiredLevel = 3;
+const int kAuthRequiredLevel = 1;
 const int kMinProgressSyncingDiffInMillis = Duration.millisecondsPerMinute * 1;
 const String kIOSAppId = '';
 
@@ -12,6 +12,11 @@ const double kDeleteCacheThreshold = kMaxStorageSizeBytes * 0.3; // 30%
 
 const kMaxPreviousLevelsToKeep = 1;
 const kMaxNextLevelsToKeep = 2;
+
+// +1 for current level
+const kProtectedIdsLength = kMaxNextLevelsToKeep + kMaxPreviousLevelsToKeep + 1;
+
+const kDefaultReferrer = "utm_source=google-play&utm_medium=organic";
 
 // errors
 

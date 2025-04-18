@@ -18,10 +18,7 @@ class Video with _$Video {
 
 @freezed
 class VideoDTO with _$VideoDTO {
-  const factory VideoDTO({
-    required String videoFilename,
-    required int zipNum,
-  }) = _VideoDTO;
+  const factory VideoDTO({required String videoFilename}) = _VideoDTO;
 
   factory VideoDTO.fromJson(Map<String, dynamic> json) => _$VideoDTOFromJson(json);
 }

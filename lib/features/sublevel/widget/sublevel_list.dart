@@ -1,14 +1,21 @@
+import 'dart:io';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:myapp/core/services/level_service.dart';
+import 'package:myapp/core/console.dart';
+import 'package:myapp/core/error/failure.dart';
+import 'package:myapp/core/services/api_service.dart';
+import 'package:myapp/core/services/path_service.dart';
+import 'package:myapp/core/services/sub_level_service.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/widgets/loader.dart';
 import 'package:myapp/core/widgets/video_player.dart';
 import 'package:myapp/features/sublevel/sublevel_controller.dart';
-import 'package:myapp/features/sublevel/widget/last_level.dart';
+import 'package:myapp/features/sublevel/widget/error_page.dart';
 import 'package:myapp/features/speech_exercise/screen/speech_exercise_screen.dart';
+import 'package:myapp/features/user/user_controller.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 
 class SublevelsList extends ConsumerStatefulWidget {
@@ -31,7 +38,9 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
   late PageController _pageController;
 
   void _jumpToPage(Duration timeStamp) async {
-    final progress = await SharedPref.getValue(PrefKey.currProgress);
+    final userEmail = ref.read(userControllerProvider).currentUser?.email;
+
+    final progress = SharedPref.get(PrefKey.currProgress(userEmail: userEmail));
 
     final jumpTo = widget.sublevels.indexWhere(
       (sublevel) => (sublevel.index == progress?.subLevel && sublevel.level == progress?.level),
@@ -39,16 +48,15 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
 
     if (jumpTo >= widget.sublevels.length || jumpTo < 0) return;
 
+    if (_pageController.page?.round() == jumpTo) return;
+
     final jumpSublevel = widget.sublevels[jumpTo];
 
     _pageController.jumpToPage(jumpTo);
 
     await SharedPref.copyWith(
-      PrefKey.currProgress,
-      Progress(
-        level: jumpSublevel.level,
-        subLevel: jumpSublevel.index,
-      ),
+      PrefKey.currProgress(userEmail: userEmail),
+      Progress(level: jumpSublevel.level, subLevel: jumpSublevel.index),
     );
   }
 
@@ -78,7 +86,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
   Widget build(BuildContext context) {
     return RefreshIndicator(
       onRefresh: () async {
-        if (widget.sublevels[0].level == 1) return;
+        if (widget.sublevels[0].level == 1 && widget.sublevels[0].index == 0) return;
 
         await Future.delayed(const Duration(seconds: 5));
       },
@@ -96,12 +104,15 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
 
           final isLastSublevel = index == widget.sublevels.length;
 
-          final isLoading = sublevel == null
-              ? widget.loadingIds.isNotEmpty
-              : widget.loadingIds.contains(sublevel.levelId);
+          final isLoading =
+              sublevel == null
+                  ? widget.loadingIds.isNotEmpty
+                  : widget.loadingIds.contains(sublevel.levelId);
 
           if ((isLastSublevel || sublevel == null) && !isLoading) {
             final error = ref.watch(sublevelControllerProvider).error;
+
+            Console.error(Failure(message: 'sublevel error is $error $index'), StackTrace.current);
 
             if (error == null) {
               return const Loader();
@@ -115,37 +126,50 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
           }
 
           if (sublevel == null) {
+            Console.error(Failure(message: 'sublevel is null$index '), StackTrace.current);
             return const Loader();
           }
-
           final positionText = '${sublevel.level}-${sublevel.index}';
 
-          final url = ref
-              .read(levelServiceProvider)
-              .getUnzippedVideoPath(sublevel.levelId, sublevel.videoFilename);
+          String? localPath = ref
+              .read(pathServiceProvider)
+              .fullVideoLocalPath(sublevel.levelId, sublevel.videoFilename);
+
+          final urls =
+              [BaseUrl.cloudflare, BaseUrl.s3]
+                  .map(
+                    (url) => ref
+                        .read(subLevelServiceProvider)
+                        .getVideoUrl(sublevel.levelId, sublevel.videoFilename, url),
+                  )
+                  .toList();
+
+          if (index == 0 && !File(localPath).existsSync()) {
+            localPath = null;
+          }
 
           return Stack(
             children: [
               Center(
                 child: sublevel.when(
-                  video: (video) => Player(
-                    key: Key(positionText),
-                    uniqueId: positionText,
-                    videoPath: url,
-                  ),
-                  speechExercise: (speechExercise) => SpeechExerciseScreen(
-                    key: Key(positionText),
-                    uniqueId: positionText,
-                    exercise: speechExercise,
-                    videoPath: url,
-                  ),
+                  video:
+                      (video) => Player(
+                        key: Key(positionText),
+                        uniqueId: positionText,
+                        videoLocalPath: localPath,
+                        videoUrls: urls,
+                      ),
+                  speechExercise:
+                      (speechExercise) => SpeechExerciseScreen(
+                        key: Key(positionText),
+                        uniqueId: positionText,
+                        exercise: speechExercise,
+                        videoLocalPath: localPath,
+                        videoUrls: urls,
+                      ),
                 ),
               ),
-              Positioned(
-                top: 16,
-                right: 16,
-                child: _LevelText(positionText: positionText),
-              ),
+              Positioned(top: 16, right: 16, child: _LevelText(positionText: positionText)),
             ],
           );
         },
@@ -169,11 +193,7 @@ class _LevelText extends StatelessWidget {
       ),
       child: Text(
         'Level $positionText',
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-        ),
+        style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
       ),
     );
   }

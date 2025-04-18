@@ -18,9 +18,7 @@ class AuthAPI implements IAuthAPI {
   final ApiService _apiService;
   final GoogleSignIn _googleSignIn;
 
-  AuthAPI({required ApiService apiService, required GoogleSignIn googleSignIn})
-      : _apiService = apiService,
-        _googleSignIn = googleSignIn;
+  AuthAPI(this._apiService, this._googleSignIn);
 
   @override
   Future<UserDTO?> signInWithGoogle() async {
@@ -36,10 +34,7 @@ class AuthAPI implements IAuthAPI {
       await _apiService.setToken(auth.idToken ?? '');
 
       final response = await _apiService.call(
-        params: const ApiParams(
-          endpoint: '/auth/google',
-          method: ApiMethod.get,
-        ),
+        params: const ApiParams(endpoint: '/auth/google', method: ApiMethod.get),
       );
 
       final user = UserDTO.fromJson(response.data['user']);
@@ -58,8 +53,6 @@ class AuthAPI implements IAuthAPI {
     try {
       await _googleSignIn.signOut();
       _apiService.setToken('');
-
-      await SharedPref.clearAll();
     } catch (e, stackTrace) {
       developer.log('Error during sign out', error: e.toString(), stackTrace: stackTrace);
       throw Exception(e.toString());
@@ -68,24 +61,21 @@ class AuthAPI implements IAuthAPI {
 
   @override
   Future<void> syncCyId() async {
-    final cyId = await SharedPref.getValue(
-      PrefKey.cyId,
-    );
+    final cyId = SharedPref.get(PrefKey.cyId);
 
-    if (cyId == null) return;
+    if (cyId == null || cyId.isEmpty) return;
 
     await _apiService.call(
-        params: ApiParams(
-      endpoint: '/user/sync-cy-id',
-      method: ApiMethod.post,
-      body: {
-        'cyId': cyId,
-      },
-    ));
+      params: ApiParams(endpoint: '/user/sync-cy-id', method: ApiMethod.post, body: {'cyId': cyId}),
+    );
+
+    SharedPref.store(
+      PrefKey.cyId,
+      '',
+    ); // set cyId to empty string to indicate that it has been synced
   }
 }
 
-final authAPIProvider = Provider<AuthAPI>((ref) {
-  return AuthAPI(
-      apiService: ref.read(apiServiceProvider), googleSignIn: ref.read(googleSignInProvider));
-});
+final authAPIProvider = Provider<AuthAPI>(
+  (ref) => AuthAPI(ref.read(apiServiceProvider), ref.read(googleSignInProvider)),
+);

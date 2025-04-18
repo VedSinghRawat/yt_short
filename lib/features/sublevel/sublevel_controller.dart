@@ -1,18 +1,17 @@
 import 'dart:io';
 import 'dart:developer' as developer;
-import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:myapp/apis/level_api.dart';
 import 'package:myapp/constants/constants.dart';
-import 'package:myapp/core/console.dart';
 import 'package:myapp/core/services/cleanup_service.dart';
 import 'package:myapp/core/services/file_service.dart';
 import 'package:myapp/core/services/level_service.dart';
+import 'package:myapp/core/services/path_service.dart';
 import 'package:myapp/core/services/sub_level_service.dart';
 import 'package:myapp/core/utils.dart';
-import 'package:myapp/features/sublevel/ordered_ids_notifier.dart';
+import 'package:myapp/features/sublevel/level_controller.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'package:myapp/models/level/level.dart';
 import '../../apis/sub_level_api.dart';
@@ -46,7 +45,7 @@ class SublevelController extends _$SublevelController {
   late final ILevelApi levelApi = ref.read(levelApiProvider);
   late final SubLevelService subLevelService = ref.read(subLevelServiceProvider);
   late final FileService fileService = ref.read(fileServiceProvider);
-  late final OrderedIdsNotifier orderedIdNotifier = ref.read(orderedIdsNotifierProvider.notifier);
+  late final LevelController levelController = ref.read(levelControllerProvider.notifier);
   late final StorageCleanupService storageCleanupService = ref.read(storageCleanupServiceProvider);
   late final LevelService levelService = ref.read(levelServiceProvider);
 
@@ -58,7 +57,8 @@ class SublevelController extends _$SublevelController {
 
       final levelDTO = switch (levelDTOEither) {
         Right(value: final r) => r,
-        Left(value: final l) => (() {
+        Left(value: final l) =>
+          (() {
             state = state.copyWith(error: parseError(l.type));
             return null;
           })(),
@@ -67,20 +67,32 @@ class SublevelController extends _$SublevelController {
       if (levelDTO == null) return null;
 
       if (state.isFirstFetch) {
-        Console.timeStart('first-fetch');
-        await _fetchCurrSubLevelZip(levelDTO);
-        await _addSublevelEntries(levelDTO, level, levelId);
-        Console.timeEnd('first-fetch');
+        // add curr sub level entry so first video can be played immediately
+
+        final userSublevelNum = ref.read(userControllerProvider).subLevel;
+
+        final currSublevel = SubLevel.fromSubLevelDTO(
+          levelDTO.sub_levels[userSublevelNum - 1],
+          level,
+          userSublevelNum,
+          levelId,
+        );
+
+        state = state.copyWith(sublevels: {...state.sublevels, currSublevel});
       }
 
-      await subLevelService.getZipFiles(levelDTO);
-      await _addSublevelEntries(levelDTO, level, levelId);
+      await subLevelService.getVideoFiles(levelDTO);
+
+      await _addExistVideoSublevelEntries(levelDTO, level, levelId);
 
       state = state.copyWith(loadedLevelIds: {...state.loadedLevelIds, levelId});
       return levelId;
     } catch (e, stackTrace) {
-      developer.log('Error in SublevelController._listByLevel',
-          error: e.toString(), stackTrace: stackTrace);
+      developer.log(
+        'Error in SublevelController._listByLevel',
+        error: e.toString(),
+        stackTrace: stackTrace,
+      );
       state = state.copyWith(error: unknownErrorMsg);
       return null;
     } finally {
@@ -90,54 +102,29 @@ class SublevelController extends _$SublevelController {
 
   void setVideoPlayingError(String e) => state = state.copyWith(error: e);
 
-  Future<void> _addSublevelEntries(
-    LevelDTO levelDTO,
-    int level,
-    String levelId,
-  ) async {
+  Future<void> _addExistVideoSublevelEntries(LevelDTO levelDTO, int level, String levelId) async {
     final entries = await FileService.listEntities(
-      Directory(
-        levelService.getVideoDirPath(levelDTO.id),
-      ),
+      Directory(ref.read(pathServiceProvider).videoDirLocalPath(levelId)),
     );
 
     final videoFiles = entries.toSet();
 
-    final sublevels = levelDTO.sub_levels
-        .where(
-      (dto) => videoFiles.contains(
-        "${dto.videoFilename}.mp4",
-      ),
-    )
-        .map(
-      (dto) {
-        final index = levelDTO.sub_levels.indexOf(dto) + 1;
-        return SubLevel.fromSubLevelDTO(
+    final sublevels =
+        levelDTO.sub_levels.where((dto) => videoFiles.contains("${dto.videoFilename}.mp4")).map((
           dto,
-          level,
-          index,
-          levelId,
-        );
-      },
-    ).toSet();
-
-    developer.log('length of sublevels is ${state.sublevels.length}');
+        ) {
+          final index = levelDTO.sub_levels.indexOf(dto) + 1;
+          return SubLevel.fromSubLevelDTO(dto, level, index, levelId);
+        }).toSet();
 
     state = state.copyWith(sublevels: {...state.sublevels, ...sublevels});
-  }
-
-  Future<SubLevelDTO> _fetchCurrSubLevelZip(LevelDTO currLevelDTO) async {
-    final currUserSubLevel = await ref.read(userControllerProvider).subLevel;
-    final subLevelDTO = currLevelDTO.sub_levels[currUserSubLevel - 1];
-    await subLevelService.getSubLevelFile(currLevelDTO.id, subLevelDTO.zipNum);
-    return subLevelDTO;
   }
 
   void setHasFinishedVideo(bool to) => state = state.copyWith(hasFinishedVideo: to);
 
   Future<void> handleFetchSublevels() async {
     try {
-      final asyncOrderIds = ref.read(orderedIdsNotifierProvider);
+      final asyncOrderIds = ref.read(levelControllerProvider);
       final isFirstFetch = state.isFirstFetch;
 
       if (asyncOrderIds.hasError) {
@@ -164,15 +151,11 @@ class SublevelController extends _$SublevelController {
   }
 
   Future<String> fetchSublevels(List<String> orderedIds) async {
-    final userLevelIndex = await ref.read(userControllerProvider).level;
-    final storedCurrId = await ref.read(userControllerProvider).levelId;
+    final currUserLevel = ref.read(userControllerProvider).level;
 
-    final levelIdIndex =
-        storedCurrId != null ? orderedIds.indexOf(storedCurrId) + 1 : userLevelIndex;
-    final currUserLevel = levelIdIndex > userLevelIndex ? levelIdIndex : userLevelIndex;
     final currLevelIndex = currUserLevel - 1;
 
-    final currLevelId = orderedIds[min(currLevelIndex, orderedIds.length - 1)];
+    final currLevelId = orderedIds[currLevelIndex];
 
     if (!_isLevelFetched(currLevelId)) {
       await _listByLevel(currLevelId, currUserLevel);
@@ -180,10 +163,11 @@ class SublevelController extends _$SublevelController {
 
     final surroundingLevelIds = _getSurroundingLevelIds(currLevelIndex, orderedIds);
 
-    final fetchTasks = surroundingLevelIds
-        .where((levelId) => levelId != null && !_isLevelFetched(levelId))
-        .map((levelId) => _listByLevel(levelId!, orderedIds.indexOf(levelId) + 1))
-        .toList();
+    final fetchTasks =
+        surroundingLevelIds
+            .where((levelId) => levelId != null && !_isLevelFetched(levelId))
+            .map((levelId) => _listByLevel(levelId!, orderedIds.indexOf(levelId) + 1))
+            .toList();
 
     await Future.wait(fetchTasks);
 
@@ -199,18 +183,16 @@ class SublevelController extends _$SublevelController {
   Future<void> _cleanOldLevels(List<String> orderedIds, String currLevelId) async {
     try {
       final cachedIds = await FileService.listEntities(
-        Directory(levelService.levelsDocDirPath),
+        Directory(ref.read(pathServiceProvider).levelsDocDirPath),
         type: EntitiesType.folders,
       );
 
-      await storageCleanupService.removeFurthestCachedIds(
-        cachedIds,
-        orderedIds,
-        currLevelId,
-      );
+      await storageCleanupService.removeFurthestCachedIds(cachedIds, orderedIds, currLevelId);
     } catch (e) {
-      developer.log('error in sublevel controller clean levels: $e',
-          stackTrace: StackTrace.current);
+      developer.log(
+        'error in sublevel controller clean levels: $e',
+        stackTrace: StackTrace.current,
+      );
     }
   }
 

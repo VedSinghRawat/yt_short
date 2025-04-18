@@ -18,7 +18,7 @@ class Console {
     '🟫',
     '🔵',
     '🔴',
-    '🟢'
+    '🟢',
   ];
 
   static String _getOrCreateColorTag(String name) {
@@ -68,10 +68,7 @@ class Console {
     final stopwatch = _stopwatches[name];
 
     if (stopwatch == null) {
-      error(
-        Failure(message: 'No stopwatch found for name: $name'),
-        StackTrace.current,
-      );
+      error(Failure(message: 'No stopwatch found for name: $name'), StackTrace.current);
       return;
     }
 

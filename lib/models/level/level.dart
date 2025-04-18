@@ -8,18 +8,12 @@ part 'level.freezed.dart';
 
 @freezed
 class Level with _$Level {
-  const factory Level({
-    required String id,
-    required String title,
-  }) = _Level;
+  const factory Level({required String id, required String title}) = _Level;
 
   factory Level.fromJson(Map<String, dynamic> json) => _$LevelFromJson(json);
 
   factory Level.fromLevelDTO(LevelDTO levelDTO) {
-    return Level(
-      id: levelDTO.id,
-      title: levelDTO.title,
-    );
+    return Level(id: levelDTO.id, title: levelDTO.title);
   }
 }
 
@@ -28,6 +22,7 @@ class LevelDTO with _$LevelDTO implements SharedPrefClass {
   const factory LevelDTO({
     required String id,
     required String title,
+    // ignore: non_constant_identifier_names
     required List<SubLevelDTO> sub_levels,
   }) = _LevelDTO;
 

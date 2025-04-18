@@ -55,27 +55,20 @@ class ApiService {
   ApiService({required GoogleSignIn googleSignIn}) : _googleSignIn = googleSignIn;
 
   Future<void> setToken(String token) async {
-    await SharedPref.storeValue(
-      PrefKey.googleIdToken,
-      token,
-    );
+    await SharedPref.store(PrefKey.googleIdToken, token);
   }
 
-  Future<String?> getToken() async {
-    return await SharedPref.getValue(
-      PrefKey.googleIdToken,
-    );
+  String? getToken() {
+    return SharedPref.get(PrefKey.googleIdToken);
   }
 
-  Future<Response<T>> call<T>({
-    required ApiParams params,
-  }) async {
-    final String? token = await getToken();
+  Future<Response<T>> call<T>({required ApiParams params}) async {
+    final String? token = getToken();
 
     final effectiveHeaders = {
       'Content-Type': 'application/json',
       if (token != null && params.baseUrl?.isS3 != true) 'Authorization': 'Bearer $token',
-      ...?params.headers
+      ...?params.headers,
     };
 
     try {
@@ -125,33 +118,41 @@ class ApiService {
   /// first get from cloudflare then s3
   /// Store the ETag of the data. It will fetch and return null if the data has not changed.
   Future<Response<T>?> getCloudStorageData<T>({
-    required ApiParams params,
+    required String endpoint,
+    ResponseType? responseType,
   }) async {
     try {
-      final cloudFlareParams = params.copyWith(baseUrl: BaseUrl.cloudflare);
-
-      return await _getCloudData(params: cloudFlareParams);
+      return await _getCloudData(
+        endpoint: endpoint,
+        baseUrl: BaseUrl.cloudflare,
+        responseType: responseType,
+      );
     } on DioException catch (e) {
-      if (e.type != DioExceptionType.unknown && e.type != DioExceptionType.badResponse) rethrow;
+      if (e.type != DioExceptionType.unknown && e.type != DioExceptionType.badResponse) {
+        rethrow;
+      }
 
-      final s3Params = params.copyWith(baseUrl: BaseUrl.s3);
-
-      return await _getCloudData(params: s3Params);
+      return await _getCloudData(endpoint: endpoint, baseUrl: BaseUrl.s3);
     }
   }
 
   Future<Response<T>?> _getCloudData<T>({
-    required ApiParams params,
+    required String endpoint,
+    required BaseUrl baseUrl,
+    ResponseType? responseType,
   }) async {
-    /// NOTE: don't change it if have to change also change this two functions from utils.dart [getLevelJsonPath] and [getLevelZipPath]
+    /// NOTE: don't change it if have to change then change from all place where this function is used [getCloudStorageData]
 
-    final eTagId = params.endpoint;
-
-    final storedETag = await SharedPref.getRawValue(
-      PrefKey.eTagKey(
-        eTagId,
-      ),
+    final params = ApiParams(
+      endpoint: endpoint,
+      method: ApiMethod.get,
+      baseUrl: baseUrl,
+      responseType: responseType,
     );
+
+    final eTagId = endpoint;
+
+    final storedETag = SharedPref.get(PrefKey.eTag(eTagId));
 
     final mergedParams = params.copyWith(
       headers: {
@@ -166,11 +167,7 @@ class ApiService {
       final newETag = response.headers.value(HttpHeaders.etagHeader);
 
       if (newETag != null) {
-        await SharedPref.storeRawValue(
-            PrefKey.eTagKey(
-              eTagId,
-            ),
-            newETag);
+        await SharedPref.store(PrefKey.eTag(eTagId), newETag);
       }
 
       return response;

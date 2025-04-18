@@ -18,12 +18,7 @@ class SubLevel with _$SubLevel {
     };
   }
 
-  factory SubLevel.fromSubLevelDTO(
-    SubLevelDTO subLevelDTO,
-    int level,
-    int index,
-    String levelId,
-  ) {
+  factory SubLevel.fromSubLevelDTO(SubLevelDTO subLevelDTO, int level, int index, String levelId) {
     final json = subLevelDTO.toJson();
 
     json["level"] = level;
@@ -34,24 +29,20 @@ class SubLevel with _$SubLevel {
   }
 
   String get levelId => when(
-        speechExercise: (speechExercise) => speechExercise.levelId,
-        video: (video) => video.levelId,
-      );
+    speechExercise: (speechExercise) => speechExercise.levelId,
+    video: (video) => video.levelId,
+  );
 
-  int get level => when(
-        speechExercise: (speechExercise) => speechExercise.level,
-        video: (video) => video.level,
-      );
+  int get level =>
+      when(speechExercise: (speechExercise) => speechExercise.level, video: (video) => video.level);
 
-  int get index => when(
-        speechExercise: (speechExercise) => speechExercise.index,
-        video: (video) => video.index,
-      );
+  int get index =>
+      when(speechExercise: (speechExercise) => speechExercise.index, video: (video) => video.index);
 
   String get videoFilename => when(
-        speechExercise: (speechExercise) => speechExercise.videoFilename,
-        video: (video) => video.videoFilename,
-      );
+    speechExercise: (speechExercise) => speechExercise.videoFilename,
+    video: (video) => video.videoFilename,
+  );
 
   bool get isVideo => this is _Video;
 
@@ -79,13 +70,8 @@ class SubLevelDTO with _$SubLevelDTO {
     );
   }
 
-  int get zipNum => when(
-        speechExercise: (speechExercise) => speechExercise.zipNum,
-        video: (video) => video.zipNum,
-      );
-
   String get videoFilename => when(
-        speechExercise: (speechExercise) => speechExercise.videoFilename,
-        video: (video) => video.videoFilename,
-      );
+    speechExercise: (speechExercise) => speechExercise.videoFilename,
+    video: (video) => video.videoFilename,
+  );
 }

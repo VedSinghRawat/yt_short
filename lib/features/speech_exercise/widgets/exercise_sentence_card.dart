@@ -6,11 +6,7 @@ class SpeechExerciseCard extends StatefulWidget {
   final String text;
   final VoidCallback onContinue;
 
-  const SpeechExerciseCard({
-    super.key,
-    required this.text,
-    required this.onContinue,
-  });
+  const SpeechExerciseCard({super.key, required this.text, required this.onContinue});
 
   @override
   State<SpeechExerciseCard> createState() => _SpeechExerciseCardState();
@@ -136,10 +132,7 @@ class _SpeechExerciseCardState extends State<SpeechExerciseCard> {
                       padding: EdgeInsets.only(bottom: 24.0),
                       child: Text(
                         "Please speak the sentence given below to continue",
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.white70,
-                        ),
+                        style: TextStyle(fontSize: 18, color: Colors.white70),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -156,54 +149,60 @@ class _SpeechExerciseCardState extends State<SpeechExerciseCard> {
                               alignment: WrapAlignment.center,
                               crossAxisAlignment: WrapCrossAlignment.center,
                               children: [
-                                for (int wordIndex = 0;
-                                    wordIndex < _words[lineIndex].length;
-                                    wordIndex++)
+                                for (
+                                  int wordIndex = 0;
+                                  wordIndex < _words[lineIndex].length;
+                                  wordIndex++
+                                )
                                   Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       // Calculate the flat index for this word
-                                      Builder(builder: (context) {
-                                        int flatIndex = 0;
-                                        for (int i = 0; i < lineIndex; i++) {
-                                          flatIndex += _words[i].length;
-                                        }
-                                        flatIndex += wordIndex;
+                                      Builder(
+                                        builder: (context) {
+                                          int flatIndex = 0;
+                                          for (int i = 0; i < lineIndex; i++) {
+                                            flatIndex += _words[i].length;
+                                          }
+                                          flatIndex += wordIndex;
 
-                                        // Recognized word
-                                        return Column(
-                                          children: [
-                                            _recognizedWords[flatIndex].isNotEmpty
-                                                ? Text(
+                                          // Recognized word
+                                          return Column(
+                                            children: [
+                                              _recognizedWords[flatIndex].isNotEmpty
+                                                  ? Text(
                                                     _recognizedWords[flatIndex],
                                                     style: recognizedWordStyle.copyWith(
                                                       textBaseline: TextBaseline.alphabetic,
                                                     ),
                                                   )
-                                                : const SizedBox(height: recognizedWordHeight),
+                                                  : const SizedBox(height: recognizedWordHeight),
 
-                                            // Target word
-                                            Text(
-                                              _words[lineIndex][wordIndex],
-                                              style: TextStyle(
-                                                color: _wordMarking[flatIndex] == null
-                                                    ? Colors.white60
-                                                    : _wordMarking[flatIndex] == true
-                                                        ? Colors.lightBlue[200]
-                                                        : _wordMarking[flatIndex] == false
-                                                            ? Colors.red
-                                                            : Colors.white,
-                                                fontSize: 24,
-                                                fontWeight: _wordMarking[flatIndex] != null
-                                                    ? FontWeight.bold
-                                                    : FontWeight.normal,
-                                                height: 1.4,
-                                                textBaseline: TextBaseline.alphabetic,
+                                              // Target word
+                                              Text(
+                                                _words[lineIndex][wordIndex],
+                                                style: TextStyle(
+                                                  color:
+                                                      _wordMarking[flatIndex] == null
+                                                          ? Colors.white60
+                                                          : _wordMarking[flatIndex] == true
+                                                          ? Colors.lightBlue[200]
+                                                          : _wordMarking[flatIndex] == false
+                                                          ? Colors.red
+                                                          : Colors.white,
+                                                  fontSize: 24,
+                                                  fontWeight:
+                                                      _wordMarking[flatIndex] != null
+                                                          ? FontWeight.bold
+                                                          : FontWeight.normal,
+                                                  height: 1.4,
+                                                  textBaseline: TextBaseline.alphabetic,
+                                                ),
                                               ),
-                                            ),
-                                          ],
-                                        );
-                                      }),
+                                            ],
+                                          );
+                                        },
+                                      ),
                                     ],
                                   ),
                               ],
@@ -212,18 +211,17 @@ class _SpeechExerciseCardState extends State<SpeechExerciseCard> {
                       ],
                     ),
                     if (testCompleted)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 24.0),
-                        child: Container(
-                          padding: const EdgeInsets.all(8.0),
-                          decoration: BoxDecoration(
-                            color: passed ? Colors.green[300] : Colors.red[300],
-                            shape: BoxShape.circle,
-                          ),
+                      Container(
+                        padding: const EdgeInsets.all(8.0),
+                        decoration: BoxDecoration(
+                          color: passed ? Colors.green[300] : Colors.red[300],
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
                           child: Icon(
-                            passed ? Icons.check : Icons.close,
+                            passed ? Icons.download_done_rounded : Icons.error_rounded,
                             color: Colors.white,
-                            size: 32, // Adjust icon size as needed
+                            size: 30,
                           ),
                         ),
                       ),
