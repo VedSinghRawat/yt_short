@@ -85,7 +85,6 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
         });
       }
     } else if (state == AppLifecycleState.resumed) {
-      developer.log("App resumed, initializing video controller.");
       // Only initialize if controller is null (disposed)
       if (_controller == null) {
         _initializeVideoPlayerController();
@@ -191,10 +190,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
 
   void _onVisibilityChanged(VisibilityInfo info) {
     if (_controller == null) {
-      // Handle case where controller is disposed (e.g., app paused) while visibility changes
-      developer.log("Visibility changed but controller is null.");
       if (mounted && _isVisible) {
-        // If it was visible, update state
         setState(() {
           _isVisible = false;
         });
