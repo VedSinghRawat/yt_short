@@ -181,7 +181,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
                     Container(
                       padding: const EdgeInsets.all(4.0),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 225 * 0.2),
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white70, width: 1),
                       ),

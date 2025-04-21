@@ -60,7 +60,7 @@ class SubLevelService {
           await tempZipFile.writeAsBytes(zipData);
 
           await FileService.unzip(tempZipFile, destinationDir);
-        } catch (e, stackTrace) {
+        } catch (e, _) {
           Console.log('Error processing dialogue zip $zipNum: $e');
         } finally {
           if (tempZipFile != null && await tempZipFile.exists()) {

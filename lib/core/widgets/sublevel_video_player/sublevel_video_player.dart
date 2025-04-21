@@ -346,7 +346,9 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
               Visibility(
                 visible: showDialogueArea,
                 child: Positioned.fill(
-                  child: IgnorePointer(child: Container(color: Colors.black.withOpacity(0.3))),
+                  child: IgnorePointer(
+                    child: Container(color: Colors.black.withValues(alpha: 225 * 0.2)),
+                  ),
                 ),
               ),
               Visibility(
