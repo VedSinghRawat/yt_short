@@ -1,9 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:myapp/constants/constants.dart';
-import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/screen/app_bar.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
@@ -68,7 +66,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final done = isDoneTodayNull ? SharedPref.get(PrefKey.doneToday) : doneToday;
 
-    final exceedsDailyLimit = done != null && done >= kMaxLevelCompletionsPerDay;
+    final exceedsDailyLimit = done != null && done >= AppConstants.kMaxLevelCompletionsPerDay;
 
     if (!exceedsDailyLimit) return false;
 
@@ -76,7 +74,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       context,
       isDoneTodayNull
           ? 'Connection failed please click on reload icon at the top right corner'
-          : 'You can only complete $kMaxLevelCompletionsPerDay levels per day',
+          : 'You can only complete ${AppConstants.kMaxLevelCompletionsPerDay} levels per day',
     );
 
     return true;
@@ -117,7 +115,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     if (((previousSubLevel.level < currSubLevel.level && currSubLevel.level > maxLevel) ||
             !isSyncSucceed) &&
-        currSubLevel.level > kAuthRequiredLevel) {
+        currSubLevel.level > AppConstants.kAuthRequiredLevel) {
       await SharedPref.store(PrefKey.doneToday, 1);
     }
   }
@@ -141,7 +139,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final now = DateTime.now().millisecondsSinceEpoch;
     final diff = now - lastSync;
-    if (diff < kMinProgressSyncingDiffInMillis) return;
+    if (diff < AppConstants.kMinProgressSyncingDiffInMillis) return;
 
     // If the user is logged in, sync their progress with the server
     // Sync any pending activity logs with the server

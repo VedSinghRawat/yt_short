@@ -21,7 +21,7 @@ class StorageCleanupService {
       // Ensure directory exists and input is valid
       if (!await targetDir.exists() ||
           orderedIds.isEmpty ||
-          orderedIds.length - kProtectedIdsLength == 0) {
+          orderedIds.length - AppConstants.kProtectedIdsLength == 0) {
         return;
       }
 
@@ -29,7 +29,7 @@ class StorageCleanupService {
       int totalSize = await compute(FileService.getDirectorySize, targetDir);
 
       // No need to clean if under limit
-      if (totalSize < kMaxStorageSizeBytes) {
+      if (totalSize < AppConstants.kMaxStorageSizeBytes) {
         return;
       }
 
@@ -38,7 +38,7 @@ class StorageCleanupService {
       final toBeDeletedVideoPaths = List<String>.empty();
 
       // Start deleting until space is freed
-      while (i < orderedIds.length - kProtectedIdsLength) {
+      while (i < orderedIds.length - AppConstants.kProtectedIdsLength) {
         final id = orderedIds[i];
         final folderPath = PathService.levelPath(id);
         final folder = Directory(folderPath);
@@ -69,7 +69,7 @@ class StorageCleanupService {
             await SharedPref.removeValue(PrefKey.eTag(PathService.levelJsonPath(id)));
           }
 
-          if (totalSize < kDeleteCacheThreshold) {
+          if (totalSize < AppConstants.kDeleteCacheThreshold) {
             if (index != level.sub_levels.length - 1) {
               await compute(_deleteVideos, toBeDeletedVideoPaths);
             }
@@ -137,7 +137,8 @@ class StorageCleanupService {
 
   /// Prevents deletion of current, previous and next two levels
   bool _isProtectedLevel(int dist) =>
-      (dist < 0 && dist.abs() <= kMaxPreviousLevelsToKeep) || dist <= kMaxNextLevelsToKeep;
+      (dist < 0 && dist.abs() <= AppConstants.kMaxPreviousLevelsToKeep) ||
+      dist <= AppConstants.kMaxNextLevelsToKeep;
 }
 
 final storageCleanupServiceProvider = Provider<StorageCleanupService>(

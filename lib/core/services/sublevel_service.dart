@@ -22,10 +22,7 @@ class SubLevelService {
       levelDTO.sub_levels.map((subLevelDTO) async {
         final videoData = await subLevelAPI.getVideo(levelDTO.id, subLevelDTO.videoFilename);
 
-        if (videoData == null) {
-          developer.log('video data for ${subLevelDTO.videoFilename} already present');
-          return; // Skip if no data
-        }
+        if (videoData == null) return;
 
         try {
           final videoPath = PathService.videoLocalPath(levelDTO.id, subLevelDTO.videoFilename);
@@ -35,30 +32,25 @@ class SubLevelService {
           developer.log('video data for ${subLevelDTO.videoFilename} saved');
         } catch (e) {
           Console.log('Error saving video file for ${subLevelDTO.videoFilename}: $e');
-          // Optionally re-throw or handle the error differently
         }
       }),
     );
   }
 
   Future<void> getDialogueAudioFiles(LevelDTO levelDTO) async {
-    // 1. Find all unique zipNums needed for this level
     final uniqueZipNums =
         levelDTO.sub_levels
             .expand((subLevelDto) => subLevelDto.dialogues)
             .map((dialogue) => dialogue.zipNum)
             .toSet();
 
-    // 2. Process each zipNum
     await Future.wait(
       uniqueZipNums.map((zipNum) async {
-        // Destination is now the single base directory for all audios
         final destinationDir = Directory(PathService.dialogueAudioDirPath);
 
-        // 4. Fetch the zip file data
         final zipData = await subLevelAPI.getDialogueZip(zipNum);
 
-        if (zipData == null) return; // Skip if no data
+        if (zipData == null) return;
 
         File? tempZipFile;
         try {

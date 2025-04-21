@@ -50,7 +50,10 @@ class LevelApi implements ILevelApi {
 
       return List<String>.from(ids);
     } on DioException catch (e) {
-      throw Failure(message: e.response?.data.toString() ?? unknownErrorMsg, type: e.type);
+      throw Failure(
+        message: e.response?.data.toString() ?? AppConstants.unknownErrorMsg,
+        type: e.type,
+      );
     } catch (e) {
       throw Failure(message: e.toString());
     }

@@ -59,7 +59,7 @@ class LevelService {
       if (localLevel == null) {
         return left(
           Failure(
-            message: connectionErrorMsg,
+            message: AppConstants.connectionErrorMsg,
             trace: StackTrace.current,
             type: DioExceptionType.connectionError,
           ),

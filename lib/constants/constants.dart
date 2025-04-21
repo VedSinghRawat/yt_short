@@ -1,32 +1,36 @@
-const int kAuthRequiredLevel = 1;
-const int kMinProgressSyncingDiffInMillis = Duration.millisecondsPerMinute * 1;
-const String kIOSAppId = '';
+class AppConstants {
+  // Auth and sync constants
+  static const int kAuthRequiredLevel = 1;
+  static const int kMinProgressSyncingDiffInMillis = Duration.millisecondsPerMinute * 1;
+  static const String kIOSAppId = '';
+  static const int kMaxLevelCompletionsPerDay = 1;
 
-const String kAppStoreBaseUrl = "https://apps.apple.com/app/"; // iOS
+  // Storage constants
+  static const int kMaxStorageSizeBytes = 100 * 1024 * 1024; // 100mb
+  static const double kDeleteCacheThreshold = kMaxStorageSizeBytes * 0.3; // 30%
 
-const String kPlayStoreBaseUrl = "https://play.google.com/store/apps/details?id="; // Android
+  // Level management constants
+  static const int kMaxPreviousLevelsToKeep = 1;
+  static const int kMaxNextLevelsToKeep = 2;
 
-const int kMaxStorageSizeBytes = 100 * 1024 * 1024; // 100mb
+  // +1 for current level
+  static const int kProtectedIdsLength = kMaxNextLevelsToKeep + kMaxPreviousLevelsToKeep + 1;
 
-const double kDeleteCacheThreshold = kMaxStorageSizeBytes * 0.3; // 30%
+  // Referrer constants
+  static const String kDefaultReferrer = "utm_source=google-play&utm_medium=organic";
 
-const kMaxPreviousLevelsToKeep = 1;
-const kMaxNextLevelsToKeep = 2;
+  // Error messages
+  static const String connectionErrorMsg = 'Internet not working. Please check your connection.';
+  static const String connectionTimeoutMsg = 'Taking too long to connect. Please try again.';
+  static const String receiveTimeoutMsg = 'Taking too long to respond. Please try again.';
+  static const String sendTimeoutMsg = 'Taking too long to send request. Please try again.';
+  static const String badCertificateMsg = 'Could not verify server. Please try again later.';
+  static const String cancelMsg = 'Request cancelled. Please try again.';
+  static const String badResponseMsg = 'Server problem. Please try again after some time.';
+  static const String unknownErrorMsg = 'Something went wrong. Please try again later.';
+  static const String videoPlayerError =
+      'There was some problem while playing this video, you can skip it now.';
 
-// +1 for current level
-const kProtectedIdsLength = kMaxNextLevelsToKeep + kMaxPreviousLevelsToKeep + 1;
-
-const kDefaultReferrer = "utm_source=google-play&utm_medium=organic";
-
-// errors
-
-const connectionErrorMsg = 'Internet not working. Please check your connection.';
-const connectionTimeoutMsg = 'Taking too long to connect. Please try again.';
-const receiveTimeoutMsg = 'Taking too long to respond. Please try again.';
-const sendTimeoutMsg = 'Taking too long to send request. Please try again.';
-const badCertificateMsg = 'Could not verify server. Please try again later.';
-const cancelMsg = 'Request cancelled. Please try again.';
-const badResponseMsg = 'Server problem. Please try again after some time.';
-const unknownErrorMsg = 'Something went wrong. Please try again later.';
-const videoPlayerError = 'There was some problem while playing this video, you can skip it now.';
-const kMaxLevelCompletionsPerDay = 1;
+  // UI constants
+  static const String kViewCloseActionName = 'closeAction';
+}

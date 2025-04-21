@@ -57,6 +57,6 @@ class LevelController extends _$LevelController {
 
     await SharedPref.removeValue(PrefKey.orderedIds);
 
-    return AsyncValue.error(Failure(message: unknownErrorMsg), StackTrace.current);
+    return AsyncValue.error(Failure(message: AppConstants.unknownErrorMsg), StackTrace.current);
   }
 }

@@ -58,17 +58,17 @@ final dioConnectionErrors = {DioExceptionType.connectionError};
 
 /// Return user friendly error message based on dio exception type
 String parseError(DioExceptionType? type) {
-  if (type == null) return unknownErrorMsg;
+  if (type == null) return AppConstants.unknownErrorMsg;
 
   return switch (type) {
-    DioExceptionType.connectionError => connectionErrorMsg,
-    DioExceptionType.connectionTimeout => connectionTimeoutMsg,
-    DioExceptionType.receiveTimeout => receiveTimeoutMsg,
-    DioExceptionType.sendTimeout => sendTimeoutMsg,
-    DioExceptionType.badCertificate => badCertificateMsg,
-    DioExceptionType.cancel => cancelMsg,
-    DioExceptionType.badResponse => badResponseMsg,
-    DioExceptionType.unknown => unknownErrorMsg,
+    DioExceptionType.connectionError => AppConstants.connectionErrorMsg,
+    DioExceptionType.connectionTimeout => AppConstants.connectionTimeoutMsg,
+    DioExceptionType.receiveTimeout => AppConstants.receiveTimeoutMsg,
+    DioExceptionType.sendTimeout => AppConstants.sendTimeoutMsg,
+    DioExceptionType.badCertificate => AppConstants.badCertificateMsg,
+    DioExceptionType.cancel => AppConstants.cancelMsg,
+    DioExceptionType.badResponse => AppConstants.badResponseMsg,
+    DioExceptionType.unknown => AppConstants.unknownErrorMsg,
   };
 }
 

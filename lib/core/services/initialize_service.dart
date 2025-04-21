@@ -34,7 +34,7 @@ class InitializeService {
     try {
       // order matters
       await SharedPref.init(); // first init shared pref
-      await InfoService.instance.init(); // then init info service
+      await InfoService.init(); // then init info service
       await initialApiCall(); // then call api because it depends on info service
 
       await Future.wait([
@@ -82,7 +82,7 @@ class InitializeService {
     final cyId = referrer.installReferrer;
 
     // Skip if no referrer or if it's just the default Google Play organic referrer
-    if (cyId == null || cyId == kDefaultReferrer) return;
+    if (cyId == null || cyId == AppConstants.kDefaultReferrer) return;
 
     await SharedPref.store(PrefKey.cyId, cyId);
   }
@@ -109,7 +109,7 @@ class InitializeService {
 
   Future<bool> initialApiCall() async {
     try {
-      final version = InfoService.instance.packageInfo.version;
+      final version = InfoService.packageInfo.version;
 
       final initialData = await initializeAPI.initialize(version);
 
@@ -121,7 +121,6 @@ class InitializeService {
         await SharedPref.store(PrefKey.lastLoggedInEmail, initialData.user!.email);
       }
 
-      await InfoService.instance.initVersionData(initialData);
       return true;
     } catch (e, stackTrace) {
       developer.log('Error during initialize', error: e.toString(), stackTrace: stackTrace);

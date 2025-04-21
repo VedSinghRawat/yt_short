@@ -95,7 +95,7 @@ class SublevelController extends _$SublevelController {
         error: e.toString(),
         stackTrace: stackTrace,
       );
-      state = state.copyWith(error: unknownErrorMsg);
+      state = state.copyWith(error: AppConstants.unknownErrorMsg);
       return null;
     } finally {
       state = state.copyWith(loadingLevelIds: {...state.loadingLevelIds}..remove(levelId));
@@ -139,7 +139,7 @@ class SublevelController extends _$SublevelController {
       final orderedIds = asyncOrderIds.value;
 
       if (orderedIds == null) {
-        state = state.copyWith(error: unknownErrorMsg);
+        state = state.copyWith(error: AppConstants.unknownErrorMsg);
         return;
       }
 
