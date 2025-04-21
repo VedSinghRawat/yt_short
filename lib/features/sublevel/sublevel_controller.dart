@@ -26,14 +26,14 @@ class SublevelControllerState with _$SublevelControllerState {
   const SublevelControllerState._();
 
   const factory SublevelControllerState({
-    @Default({}) Set<SubLevel> sublevels,
+    Set<SubLevel>? sublevels,
     @Default(false) bool hasFinishedVideo,
     @Default({}) Set<String> loadedLevelIds,
     @Default({}) Set<String> loadingLevelIds,
     String? error,
   }) = _SublevelControllerState;
 
-  bool get isFirstFetch => sublevels.isEmpty;
+  bool get isFirstFetch => sublevels?.isEmpty ?? true;
 }
 
 @Riverpod(keepAlive: true)
@@ -77,7 +77,9 @@ class SublevelController extends _$SublevelController {
           levelId,
         );
 
-        state = state.copyWith(sublevels: {...state.sublevels, currSublevel});
+        state = state.copyWith(
+          sublevels: state.sublevels == null ? {currSublevel} : {...state.sublevels!, currSublevel},
+        );
       }
 
       await subLevelService.getVideoFiles(levelDTO);
@@ -119,7 +121,9 @@ class SublevelController extends _$SublevelController {
           return SubLevel.fromSubLevelDTO(dto, level, index, levelId);
         }).toSet();
 
-    state = state.copyWith(sublevels: {...state.sublevels, ...sublevels});
+    state = state.copyWith(
+      sublevels: state.sublevels == null ? sublevels : {...state.sublevels!, ...sublevels},
+    );
   }
 
   void setHasFinishedVideo(bool to) => state = state.copyWith(hasFinishedVideo: to);

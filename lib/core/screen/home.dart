@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
+import 'package:myapp/core/console.dart';
 import 'package:myapp/core/screen/app_bar.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
@@ -22,7 +23,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  List<SubLevel>? _cachedSublevels;
+  List<SubLevel>? _sortedSublevels;
 
   @override
   void initState() {
@@ -81,11 +82,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<bool> handleFetchSublevels(int index) async {
-    if (isLevelChanged(index, _cachedSublevels!)) {
+    if (isLevelChanged(index, _sortedSublevels!)) {
       await fetchSublevels();
     }
 
-    if (index < _cachedSublevels!.length) return false;
+    if (index < _sortedSublevels!.length) return false;
 
     await ref.read(sublevelControllerProvider.notifier).fetchSublevels();
 
@@ -179,13 +180,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> onVideoChange(int index, PageController controller) async {
-    if (!mounted || _cachedSublevels == null) return;
+    if (!mounted || _sortedSublevels == null) return;
 
     // If the index is greater than the length of the cached sublevels, fetch the sublevels and return
     if (await handleFetchSublevels(index)) return;
 
     // Get the sublevel, level, and sublevel for the current index
-    final sublevel = _cachedSublevels![index];
+    final sublevel = _sortedSublevels![index];
     final level = sublevel.level;
     final sublevelIndex = sublevel.index;
 
@@ -241,7 +242,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
 
     // Sync the progress with db if the user moves to a new level
-    await syncProgress(index, _cachedSublevels!, userEmail, sublevelIndex, user?.maxLevel ?? 0);
+    await syncProgress(index, _sortedSublevels!, userEmail, sublevelIndex, user?.maxLevel ?? 0);
 
     // Sync the last sync time with the server
     await syncActivityLogs();
@@ -271,12 +272,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final sublevels = ref.watch(sublevelControllerProvider.select((state) => state.sublevels));
 
-    // Only sort sublevels if they have changed
-    if (_cachedSublevels == null || _cachedSublevels!.length != sublevels.toList().length) {
-      _cachedSublevels = _getSortedSublevels(sublevels.toList());
+    if (sublevels == null) {
+      return const Loader();
     }
 
-    if (loadingLevelIds.isNotEmpty && _cachedSublevels!.isEmpty) {
+    // Only sort sublevels if they have changed
+    if (_sortedSublevels == null || _sortedSublevels!.length != sublevels.toList().length) {
+      _sortedSublevels = _getSortedSublevels(sublevels.toList());
+    }
+
+    if (loadingLevelIds.isNotEmpty && _sortedSublevels!.isEmpty) {
       return const Loader();
     }
 
@@ -284,7 +289,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: const HomeScreenAppBar(),
       body: SublevelsList(
         loadingIds: loadingLevelIds,
-        sublevels: _cachedSublevels!,
+        sublevels: _sortedSublevels!,
         onVideoChange: onVideoChange,
       ),
     );
