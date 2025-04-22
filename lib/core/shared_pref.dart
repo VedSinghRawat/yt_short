@@ -24,7 +24,7 @@ class PrefKey<ST, LT> {
   static const isFirstLaunch = PrefKey<bool, Unit>(name: 'isFirstLaunch');
   static const orderedIds = PrefKey<List<String>, String>(name: 'orderedIds');
   static const doneToday = PrefKey<int, Unit>(name: 'doneToday');
-  static const user = PrefKey<UserModel, Unit>(name: 'user');
+  static const user = PrefKey<UserModel, Unit>(name: 'user', fromJson: UserModel.fromJson);
 
   static const activityLogs = PrefKey<List<ActivityLog>, ActivityLog>(
     fromJson: ActivityLog.fromJson,

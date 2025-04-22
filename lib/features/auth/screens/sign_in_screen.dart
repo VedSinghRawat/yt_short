@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
@@ -93,11 +94,19 @@ class SignInScreen extends ConsumerWidget {
   }
 }
 
-showLevelChangeConfirmationDialog(BuildContext context, UserModel user) {
+showLevelChangeConfirmationDialog(BuildContext context, UserModel user, Ref ref) {
   return showConfirmationDialog(
     context,
-    question:
-        'We notice that you are already at Level ${user.maxLevel}, Sublevel ${user.maxSubLevel}. Do you want to continue from there?',
+    question: ref
+        .read(langProvider.notifier)
+        .prefLangText(
+          PrefLangText(
+            hindi:
+                'आप पहले से Level ${user.maxLevel}, Sublevel ${user.maxSubLevel} पर हैं। क्या आप वहीं से आगे बढ़ना चाहेंगे?',
+            hinglish:
+                'Aap already Level ${user.maxLevel}, Sublevel ${user.maxSubLevel} par hain. Kya aap wahan se continue karna chahenge?',
+          ),
+        ),
     onResult: (result) async {
       final guestProgress = SharedPref.get(PrefKey.currProgress(userEmail: null)) ?? Progress();
 

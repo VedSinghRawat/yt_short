@@ -1,6 +1,8 @@
 import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/widgets/handle_permission_cancel.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
@@ -23,22 +25,31 @@ class SpeechRecognizer {
     _speech = stt.SpeechToText();
   }
 
-  Future<void> _showMicPermissionDeniedDialog(BuildContext context) async {
+  Future<void> _showMicPermissionDeniedDialog(BuildContext context, WidgetRef ref) async {
     await handlePermissionDenied(
       context,
-      'Microphone permission is denied. Please open app settings and grant permission to use this feature.',
+      ref
+          .read(langProvider.notifier)
+          .prefLangText(
+            const PrefLangText(
+              hindi:
+                  'माइक्रोफोन की अनुमति नहीं दी गई है। कृपया ऐप सेटिंग्स में जाकर अनुमति दें ताकि आप यह सुविधा इस्तेमाल कर सकें।',
+              hinglish:
+                  'Microphone ki permission deny ho gayi hai. Kripya app settings mein jaakar permission allow karein taaki yeh feature use kar saken',
+            ),
+          ),
       permission: Permission.microphone,
     );
   }
 
-  Future<void> startListening(BuildContext context) async {
+  Future<void> startListening(BuildContext context, WidgetRef ref) async {
     bool available = await _speech.initialize(
       onStatus: onStatusChange,
       onError: (error) => {if (onError != null) onError!(error.errorMsg)},
     );
 
     if (!available && context.mounted) {
-      _showMicPermissionDeniedDialog(context);
+      _showMicPermissionDeniedDialog(context, ref);
       return;
     }
 

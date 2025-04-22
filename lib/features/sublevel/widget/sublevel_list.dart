@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/services/sublevel_service.dart';
 import 'package:myapp/core/console.dart';
 import 'package:myapp/core/error/failure.dart';
@@ -121,7 +122,9 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
             return ErrorPage(
               onRefresh: () => widget.onVideoChange?.call(index, _pageController),
               text: error,
-              buttonText: 'Retry',
+              buttonText: ref
+                  .read(langProvider.notifier)
+                  .prefLangText(const PrefLangText(hindi: 'पुनः प्रयास करें', hinglish: 'Retry')),
             );
           }
 
@@ -138,7 +141,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
                   .map(
                     (url) => ref
                         .read(subLevelServiceProvider)
-                        .getVideoUrl(sublevel.levelId, sublevel.videoFilename),
+                        .getVideoUrl(sublevel.levelId, sublevel.videoFilename, url),
                   )
                   .toList();
 

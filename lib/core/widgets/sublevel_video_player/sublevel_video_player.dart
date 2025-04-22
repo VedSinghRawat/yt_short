@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'package:myapp/features/sublevel/widget/error_page.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
@@ -106,8 +107,9 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
       developer.log('error in video player ${value.errorDescription}');
       if (mounted) {
         ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
+
         setState(() {
-          error = 'Playback failed: ${value.errorDescription ?? "Unknown error"}';
+          error = '$errorText: ${value.errorDescription ?? "Unknown error"}';
           _isInitialized = false;
         });
       }
@@ -234,7 +236,16 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
       final file = widget.videoLocalPath != null ? File(widget.videoLocalPath!) : null;
 
       if (file != null && !await file.exists()) {
-        throw Exception("Video file not found at ${widget.videoLocalPath}");
+        throw Exception(
+          ref
+              .read(langProvider.notifier)
+              .prefLangText(
+                const PrefLangText(
+                  hindi: 'वीडियो फ़ाइल नहीं मिली',
+                  hinglish: 'Video file nahin mili',
+                ),
+              ),
+        );
       }
 
       if (file != null) {
@@ -272,13 +283,22 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
       _controller?.removeListener(_listener);
       if (mounted) {
         setState(() {
-          error = "Error initializing video: ${e.toString()}";
+          error = '$errorText: ${e.toString()}';
           _isInitialized = false;
         });
         ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
       }
     }
   }
+
+  String get errorText => ref
+      .read(langProvider.notifier)
+      .prefLangText(
+        const PrefLangText(
+          hindi: 'वीडियो शुरू नहीं हो पाया, कृपया थोड़ी देर बाद फिर से कोशिश करें।',
+          hinglish: 'Video start nahi ho paya, kripya thodi der baad try karein.',
+        ),
+      );
 
   void _updateDisplayableDialogues(Duration currentPosition) {
     if (!mounted) return;
@@ -415,10 +435,16 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
                                 ),
                               ],
                             )
-                            : const Center(
+                            : Center(
                               child: Text(
-                                "No dialogue to show yet.",
-                                style: TextStyle(color: Colors.white70, fontSize: 14),
+                                ref
+                                    .read(langProvider.notifier)
+                                    .prefLangText(
+                                      const PrefLangText(
+                                        hindi: 'अभी कोई डायलॉग दिखाने के लिए नहीं है।',
+                                        hinglish: 'Abhi tak koi dialogue dikhane ke liye nahi hai',
+                                      ),
+                                    ),
                               ),
                             ),
                   ),

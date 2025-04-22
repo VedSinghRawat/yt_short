@@ -76,7 +76,7 @@ class AuthController extends _$AuthController {
               content: const Text('Select your preferred language for dialogue translations.'),
               actions: <Widget>[
                 TextButton(
-                  child: const Text('Hindi'),
+                  child: const Text('हिन्दी'),
                   onPressed: () => Navigator.of(dialogContext).pop(PrefLang.hindi),
                 ),
                 TextButton(
@@ -103,7 +103,7 @@ class AuthController extends _$AuthController {
 
       if (context.mounted &&
           (user.maxLevel > level || (user.maxLevel == level && user.maxSubLevel > subLevel))) {
-        await showLevelChangeConfirmationDialog(context, user);
+        await showLevelChangeConfirmationDialog(context, user, ref);
       } else {
         SharedPref.store(PrefKey.currProgress(userEmail: user.email), progress);
       }

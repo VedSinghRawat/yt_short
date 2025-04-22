@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:myapp/apis/user_api.dart';
+import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/features/sublevel/level_controller.dart';
@@ -54,6 +55,8 @@ class UserController extends _$UserController {
     final userLevel = levelIndex != -1 ? levelIndex + 1 : 1;
 
     final user = UserModel.fromUserDTO(userDTO, userLevel, userMaxLevel);
+
+    ref.read(langProvider.notifier).changeLanguage(user.prefLang);
 
     state = state.copyWith(currentUser: user);
 

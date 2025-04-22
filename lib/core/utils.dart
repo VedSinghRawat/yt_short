@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/error/failure.dart';
+import 'package:myapp/core/shared_pref.dart';
+import 'package:myapp/models/user/user.dart';
 
 void showErrorSnackBar(BuildContext context, String message) {
   if (!context.mounted) return;
@@ -87,4 +89,10 @@ String formatDurationMMSS(double seconds) {
   final minutes = twoDigits(duration.inMinutes.remainder(60));
   final secs = twoDigits(duration.inSeconds.remainder(60));
   return '$minutes:$secs';
+}
+
+String prefText(Map<PrefLang, String> map) {
+  final prefLang = SharedPref.get(PrefKey.user)?.prefLang;
+
+  return map[prefLang] ?? map[PrefLang.hinglish]!;
 }
