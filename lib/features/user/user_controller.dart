@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:myapp/apis/user_api.dart';
+import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/features/sublevel/level_controller.dart';
@@ -55,6 +56,8 @@ class UserController extends _$UserController {
 
     final user = UserModel.fromUserDTO(userDTO, userLevel, userMaxLevel);
 
+    ref.read(langProvider.notifier).changeLanguage(user.prefLang);
+
     state = state.copyWith(currentUser: user);
 
     return user;
@@ -63,7 +66,7 @@ class UserController extends _$UserController {
   void removeCurrentUser() {
     state = state.copyWith(currentUser: null);
 
-    SharedPref.removeValue(PrefKey.lastLoggedInEmail);
+    SharedPref.removeValue(PrefKey.user);
   }
 
   Future<bool> sync(String levelId, int subLevel) async {

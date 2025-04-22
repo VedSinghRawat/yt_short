@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/widgets/loader.dart';
 import 'package:myapp/features/auth/auth_controller.dart';
@@ -31,7 +31,16 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
     final authState = ref.watch(authControllerProvider);
 
     if (authState.loading) {
-      return const Scaffold(body: Center(child: Loader(text: 'Linking your account...')));
+      final text = ref
+          .read(langProvider.notifier)
+          .prefLangText(
+            const PrefLangText(
+              hindi: 'आपका खाता लिंक हो रहा है...',
+              hinglish: 'Linking your account...',
+            ),
+          );
+
+      return Scaffold(body: Center(child: Loader(text: text)));
     }
 
     return Scaffold(
@@ -54,12 +63,16 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
   }
 
   Widget _buildErrorUI(BuildContext context, String error) {
+    final headingText = ref
+        .watch(langProvider.notifier)
+        .prefLangText(const PrefLangText(hindi: 'सिंक फेल हो गया', hinglish: 'Sync failed'));
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         const Text('❌', style: TextStyle(fontSize: 48)),
         const SizedBox(height: 12),
-        const Text("Sync Failed", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        Text(headingText, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
         Text(
           error,
@@ -97,12 +110,20 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
   }
 
   Widget _buildSuccessUI(BuildContext context) {
+    final headingText = ref
+        .watch(langProvider.notifier)
+        .prefLangText(const PrefLangText(hindi: 'सिंक सफल हो गया', hinglish: 'You\'re all set!'));
+
+    final buttonText = ref
+        .watch(langProvider.notifier)
+        .prefLangText(const PrefLangText(hindi: 'आगे बढ़ें ', hinglish: 'Continue'));
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         const Text('🎉', style: TextStyle(fontSize: 48)),
         const SizedBox(height: 12),
-        const Text("You're all set!", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        Text(headingText, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
         const SizedBox(height: 24),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
@@ -116,18 +137,7 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
               context.goNamed(Routes.home);
             }
           },
-          child: const Text('Continue'),
-        ),
-        const SizedBox(height: 12),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            minimumSize: const Size(double.infinity, 48),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            backgroundColor: Colors.red[100],
-            foregroundColor: Colors.red[800],
-          ),
-          onPressed: SystemNavigator.pop,
-          child: const Text('Close App'),
+          child: Text(buttonText),
         ),
       ],
     );

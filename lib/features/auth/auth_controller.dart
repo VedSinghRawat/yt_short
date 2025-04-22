@@ -76,7 +76,7 @@ class AuthController extends _$AuthController {
               content: const Text('Select your preferred language you are most comfortable with.'),
               actions: <Widget>[
                 TextButton(
-                  child: const Text('Hindi'),
+                  child: const Text('हिन्दी'),
                   onPressed: () => Navigator.of(dialogContext).pop(PrefLang.hindi),
                 ),
                 TextButton(
@@ -96,14 +96,14 @@ class AuthController extends _$AuthController {
 
       // Continue with existing logic (progress check, etc.)
       final progress = SharedPref.get(PrefKey.currProgress());
-      await SharedPref.store(PrefKey.lastLoggedInEmail, user.email);
+      await SharedPref.store(PrefKey.user, user);
 
       final level = progress?.maxLevel ?? 1;
       final subLevel = progress?.maxSubLevel ?? 1;
 
       if (context.mounted &&
           (user.maxLevel > level || (user.maxLevel == level && user.maxSubLevel > subLevel))) {
-        await showLevelChangeConfirmationDialog(context, user);
+        await showLevelChangeConfirmationDialog(context, user, ref);
       } else {
         SharedPref.store(PrefKey.currProgress(userEmail: user.email), progress);
       }
@@ -142,7 +142,7 @@ class AuthController extends _$AuthController {
 
       state = state.copyWith(error: null);
     } on DioException catch (e) {
-      state = state.copyWith(error: parseError(e.type));
+      state = state.copyWith(error: parseError(e.type, ref));
     } catch (e) {
       state = state.copyWith(error: e.toString());
     } finally {

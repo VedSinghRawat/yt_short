@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:myapp/apis/level_api.dart';
 import 'package:myapp/constants/constants.dart';
+import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/error/failure.dart';
 import 'package:myapp/core/services/path_service.dart';
 import 'package:myapp/core/shared_pref.dart';
@@ -44,7 +45,7 @@ class LevelService {
     return LevelDTO.fromJson(jsonMap);
   }
 
-  FutureEither<LevelDTO> getLevel(String id) async {
+  FutureEither<LevelDTO> getLevel(String id, Ref ref) async {
     try {
       final level = await levelApi.get(id);
 
@@ -59,7 +60,7 @@ class LevelService {
       if (localLevel == null) {
         return left(
           Failure(
-            message: AppConstants.connectionErrorMsg,
+            message: ref.read(langProvider.notifier).prefLangText(AppConstants.connectionError),
             trace: StackTrace.current,
             type: DioExceptionType.connectionError,
           ),

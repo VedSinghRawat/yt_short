@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:android_play_install_referrer/android_play_install_referrer.dart';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
@@ -92,7 +94,9 @@ class InitializeService {
 
     final appLinks = AppLinks();
 
-    appLinks.uriLinkStream.listen((uri) async {
+    StreamSubscription<Uri>? appLinkSubscription;
+
+    appLinkSubscription = appLinks.uriLinkStream.listen((uri) async {
       final pathSegments = uri.pathSegments;
 
       var cyId = pathSegments.length > 1 ? pathSegments[1] : pathSegments[0];
@@ -102,6 +106,7 @@ class InitializeService {
       final context = navigatorKey.currentContext;
 
       if (context != null && context.mounted) {
+        appLinkSubscription?.cancel();
         await GoRouter.of(context).push(Routes.deepLinking);
       }
     });
@@ -114,14 +119,16 @@ class InitializeService {
       final initialData = await initializeAPI.initialize(version);
 
       if (initialData.user != null) {
-        userController.updateCurrentUser(initialData.user!);
+        final u = userController.updateCurrentUser(initialData.user!);
         // Store doneToday from API user
         await SharedPref.store(PrefKey.doneToday, initialData.user!.doneToday);
+
         // Store last logged in email
-        await SharedPref.store(PrefKey.lastLoggedInEmail, initialData.user!.email);
+        await SharedPref.store(PrefKey.user, u);
+        return true;
       }
 
-      return true;
+      return false;
     } catch (e, stackTrace) {
       developer.log('Error during initialize', error: e.toString(), stackTrace: stackTrace);
       return false;

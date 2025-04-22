@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
+import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/screen/app_bar.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
@@ -56,7 +57,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     if (hasFinishedVideo) return false;
 
-    showSnackBar(context, 'Please complete the current sublevel before proceeding');
+    showSnackBar(
+      context,
+      ref
+          .read(langProvider.notifier)
+          .prefLangText(
+            const PrefLangText(
+              hindi: 'कृपया आगे बढ़ने से पहले वर्तमान वीडियो पूरा करें',
+              hinglish: 'Kripya aage badne se pehle current video ko complete karein',
+            ),
+          ),
+    );
 
     return true;
   }
@@ -72,9 +83,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     showSnackBar(
       context,
-      isDoneTodayNull
-          ? 'Connection failed please click on reload icon at the top right corner'
-          : 'You can only complete ${AppConstants.kMaxLevelCompletionsPerDay} levels per day',
+      ref
+          .read(langProvider.notifier)
+          .prefLangText(
+            PrefLangText(
+              hinglish:
+                  isDoneTodayNull
+                      ? 'Connection fail ho gaya hai, kripya upar right corner mein diye gaye reload icon par click karein.'
+                      : 'Aap har din sirf ${AppConstants.kMaxLevelCompletionsPerDay} levels complete kar sakte hain.',
+              hindi:
+                  isDoneTodayNull
+                      ? 'कनेक्शन नहीं हो पाया, ऊपर दाएँ कोने में रीलोड वाले आइकन पर क्लिक करें।'
+                      : 'आप हर दिन सिर्फ ${AppConstants.kMaxLevelCompletionsPerDay} लेवल पूरा कर सकते हैं।',
+            ),
+          ),
     );
 
     return true;
@@ -230,7 +252,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       userEmail,
     );
 
-    final lastLoggedInEmail = SharedPref.get(PrefKey.lastLoggedInEmail);
+    final lastLoggedInEmail = SharedPref.get(PrefKey.user)?.email;
 
     if (lastLoggedInEmail == null) return;
 

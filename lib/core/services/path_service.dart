@@ -24,11 +24,10 @@ class PathService {
   static String videoLocalPath(String levelId, String videoFilename) =>
       '${FileService.documentsDirectory.path}${videoPath(levelId, videoFilename)}';
 
-  static String get dialogueAudioDirPath => '/dialogue/audios';
+  static String get dialogueAudioDirPath =>
+      ' ${FileService.documentsDirectory.path}/dialogue/audios';
 
-  static String dialogueAudioPath(String fileName) =>
-      '${FileService.documentsDirectory.path}$dialogueAudioDirPath/$fileName';
+  static String dialogueAudioPath(String fileName) => '$dialogueAudioDirPath/$fileName';
 
-  static String dialogueTempZipPath(int zipNum) =>
-      '${FileService.cacheDirectory.path}$dialogueAudioDirPath/zips/$zipNum.zip';
+  static String dialogueTempZipPath(int zipNum) => '$dialogueAudioDirPath/zips/$zipNum.zip';
 }

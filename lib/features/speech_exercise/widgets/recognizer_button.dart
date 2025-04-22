@@ -1,11 +1,13 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
+import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/core/widgets/active_mic.dart';
 import 'package:myapp/features/speech_exercise/widgets/recognizer.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
-class RecognizerButton extends StatefulWidget {
+class RecognizerButton extends ConsumerStatefulWidget {
   final bool testCompleted;
   final bool passed;
   final bool failed;
@@ -24,10 +26,10 @@ class RecognizerButton extends StatefulWidget {
   });
 
   @override
-  State<RecognizerButton> createState() => _RecognizerButtonState();
+  ConsumerState<RecognizerButton> createState() => _RecognizerButtonState();
 }
 
-class _RecognizerButtonState extends State<RecognizerButton> {
+class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
   late SpeechRecognizer _recognizer;
   bool isListening = false;
 
@@ -69,20 +71,34 @@ class _RecognizerButtonState extends State<RecognizerButton> {
       }
     } catch (e) {
       if (mounted) {
-        showSnackBar(context, 'An error occurred while starting the recognizer');
+        _showRecognizerError();
       }
     }
   }
 
+  void _showRecognizerError() {
+    showSnackBar(
+      context,
+      ref
+          .read(langProvider.notifier)
+          .prefLangText(
+            const PrefLangText(
+              hindi: 'कुछ गलत हो गया, कृपया फिर से कोशिश करें',
+              hinglish: 'Kuchh galat ho gaya, kripya dobara kosis karein',
+            ),
+          ),
+    );
+  }
+
   Future<void> startListening() async {
     try {
-      await _recognizer.startListening(context);
+      await _recognizer.startListening(context, ref);
       setState(() {
         isListening = true;
       });
     } catch (e) {
       if (mounted) {
-        showSnackBar(context, 'An error occurred while starting the recognizer');
+        _showRecognizerError();
       }
     }
   }
@@ -132,7 +148,14 @@ class _RecognizerButtonState extends State<RecognizerButton> {
                 child:
                     widget.testCompleted
                         ? Text(
-                          widget.passed ? 'Continue' : 'Retry',
+                          ref
+                              .read(langProvider.notifier)
+                              .prefLangText(
+                                PrefLangText(
+                                  hindi: widget.passed ? 'आगे बढ़े' : 'पुनः प्रयास करें',
+                                  hinglish: widget.passed ? 'Aage badhe' : 'Dobara kosis karein',
+                                ),
+                              ),
                           style: TextStyle(
                             color: widget.passed ? Colors.green.shade700 : Colors.red.shade700,
                             fontSize: 18,
@@ -150,7 +173,16 @@ class _RecognizerButtonState extends State<RecognizerButton> {
           Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
-              isListening ? 'Listening...' : 'Tap to listen',
+              ref
+                  .read(langProvider.notifier)
+                  .prefLangText(
+                    isListening
+                        ? const PrefLangText(hindi: 'सुन रहे है...', hinglish: 'Listening...')
+                        : const PrefLangText(
+                          hindi: 'बोलने के लिए टैप करें',
+                          hinglish: 'Bolne ke liye tap karein',
+                        ),
+                  ),
               style: TextStyle(color: isListening ? Colors.green : Colors.blue, fontSize: 12),
             ),
           ),

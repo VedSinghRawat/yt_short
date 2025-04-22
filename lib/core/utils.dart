@@ -1,7 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:myapp/constants/constants.dart';
+import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/error/failure.dart';
 
 void showErrorSnackBar(BuildContext context, String message) {
@@ -57,19 +59,21 @@ typedef FutureVoid = FutureEither<void>;
 final dioConnectionErrors = {DioExceptionType.connectionError};
 
 /// Return user friendly error message based on dio exception type
-String parseError(DioExceptionType? type) {
-  if (type == null) return AppConstants.unknownErrorMsg;
+String parseError(DioExceptionType? type, Ref ref) {
+  if (type == null) return ref.read(langProvider.notifier).prefLangText(AppConstants.unknownError);
 
-  return switch (type) {
-    DioExceptionType.connectionError => AppConstants.connectionErrorMsg,
-    DioExceptionType.connectionTimeout => AppConstants.connectionTimeoutMsg,
-    DioExceptionType.receiveTimeout => AppConstants.receiveTimeoutMsg,
-    DioExceptionType.sendTimeout => AppConstants.sendTimeoutMsg,
-    DioExceptionType.badCertificate => AppConstants.badCertificateMsg,
-    DioExceptionType.cancel => AppConstants.cancelMsg,
-    DioExceptionType.badResponse => AppConstants.badResponseMsg,
-    DioExceptionType.unknown => AppConstants.unknownErrorMsg,
+  final e = switch (type) {
+    DioExceptionType.connectionError => AppConstants.connectionError,
+    DioExceptionType.connectionTimeout => AppConstants.connectionTimeout,
+    DioExceptionType.receiveTimeout => AppConstants.receiveTimeout,
+    DioExceptionType.sendTimeout => AppConstants.sendTimeout,
+    DioExceptionType.badCertificate => AppConstants.badCertificate,
+    DioExceptionType.cancel => AppConstants.cancel,
+    DioExceptionType.badResponse => AppConstants.badResponse,
+    DioExceptionType.unknown => AppConstants.unknownError,
   };
+
+  return ref.read(langProvider.notifier).prefLangText(e);
 }
 
 bool isPrimitive(dynamic value) {

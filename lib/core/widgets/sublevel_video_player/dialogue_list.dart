@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/services/path_service.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/features/user/user_controller.dart';
@@ -167,10 +168,17 @@ class _DialogueListState extends ConsumerState<DialogueList> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         widget.onHeightCalculated?.call(45.0);
       });
-      return const Center(
+      return Center(
         child: Text(
-          "No dialogue to show yet.",
-          style: TextStyle(color: Colors.white70, fontSize: 14),
+          ref
+              .read(langProvider.notifier)
+              .prefLangText(
+                const PrefLangText(
+                  hindi: 'अभी दिखाने के लिए कोई डायलॉग नहीं है',
+                  hinglish: 'Abhi dikhane ke liye koi dialogue nahi hai',
+                ),
+              ),
+          style: const TextStyle(color: Colors.white70, fontSize: 14),
         ),
       );
     }

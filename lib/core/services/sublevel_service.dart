@@ -75,8 +75,8 @@ class SubLevelService {
     );
   }
 
-  String getVideoUrl(String levelId, String videoFilename) {
-    return '${BaseUrl.cloudflare.url}${PathService.videoPath(levelId, videoFilename)}';
+  String getVideoUrl(String levelId, String videoFilename, BaseUrl baseUrl) {
+    return '${baseUrl.url}${PathService.videoPath(levelId, videoFilename)}';
   }
 }
 
