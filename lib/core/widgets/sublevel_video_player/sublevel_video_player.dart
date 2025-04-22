@@ -116,7 +116,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
 
     if (mounted && value.isPlaying != (_iconData == Icons.pause)) {
       setState(() {
-        _iconData = value.isPlaying ? Icons.play_arrow : Icons.pause;
+        _iconData = value.isPlaying ? Icons.pause : Icons.play_arrow;
       });
     }
   }
@@ -152,7 +152,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
       play();
     }
 
-    final targetIcon = !isPlaying && changeToPlay ? Icons.play_arrow : Icons.pause;
+    final targetIcon = isPlaying ? Icons.play_arrow : Icons.pause;
 
     setState(() {
       _iconData = targetIcon;
@@ -179,7 +179,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
 
     if (isVisible) {
       _controller!.addListener(_listener);
-      if (!_controller!.value.isPlaying && error == null) {
+      if (!_controller!.value.isPlaying && error == null && !widget.stayPause) {
         await play();
       }
     } else {
@@ -258,7 +258,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
       }
 
       // Auto-play if visible after initialization/resuming
-      if (_isVisible) {
+      if (_isVisible && !widget.stayPause) {
         await play();
       }
 
@@ -343,7 +343,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
                 visible: showDialogueArea,
                 child: Positioned.fill(
                   child: IgnorePointer(
-                    child: Container(color: Colors.black.withValues(alpha: 225 * 0.2)),
+                    child: Container(color: Colors.black.withAlpha((255 * 0.25).round())),
                   ),
                 ),
               ),
