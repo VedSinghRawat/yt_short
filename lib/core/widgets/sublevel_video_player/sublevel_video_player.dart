@@ -47,6 +47,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
   Timer? _iconTimer;
 
   List<Dialogue> _displayableDialogues = [];
+  double? _dialogueListHeight;
 
   @override
   void initState() {
@@ -298,9 +299,9 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
     final bool showDialogueArea = isPaused;
 
     final double screenHeight = MediaQuery.of(context).size.height;
-    final double standardDialogueHeight = screenHeight * 0.2;
-    final double itemHeight = standardDialogueHeight / 3.0;
-    const double emptyDialogueHeight = 65.0;
+    final double standardDialogueHeight = screenHeight * 0.3;
+
+    final double currentDialogueContainerHeight = _dialogueListHeight ?? standardDialogueHeight;
 
     return VisibilityDetector(
       key: Key(widget.uniqueId ?? widget.videoLocalPath ?? widget.videoUrls?.first ?? ''),
@@ -354,69 +355,21 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
                   left: 0,
                   right: 0,
                   child: Container(
-                    height:
-                        _displayableDialogues.isNotEmpty
-                            ? standardDialogueHeight
-                            : emptyDialogueHeight,
+                    height: currentDialogueContainerHeight,
                     decoration: const BoxDecoration(
                       color: Colors.black,
                       borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
                     ),
-                    child:
-                        _displayableDialogues.isNotEmpty
-                            ? Stack(
-                              children: [
-                                DialogueList(
-                                  dialogues: _displayableDialogues,
-                                  itemHeight: itemHeight,
-                                ),
-                                Positioned(
-                                  top: 0,
-                                  left: 0,
-                                  right: 0,
-                                  child: IgnorePointer(
-                                    child: Container(
-                                      height: standardDialogueHeight / 3.0,
-                                      decoration: BoxDecoration(
-                                        borderRadius: const BorderRadius.vertical(
-                                          top: Radius.circular(16.0),
-                                        ),
-                                        gradient: LinearGradient(
-                                          begin: Alignment.topCenter,
-                                          end: Alignment.bottomCenter,
-                                          colors: [Colors.black, Colors.black.withAlpha(0)],
-                                          stops: const [0.0, 0.9],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Positioned(
-                                  bottom: 0,
-                                  left: 0,
-                                  right: 0,
-                                  child: IgnorePointer(
-                                    child: Container(
-                                      height: standardDialogueHeight / 3.0,
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          begin: Alignment.bottomCenter,
-                                          end: Alignment.topCenter,
-                                          colors: [Colors.black, Colors.black.withAlpha(0)],
-                                          stops: const [0.0, 0.9],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            )
-                            : const Center(
-                              child: Text(
-                                "No dialogue to show yet.",
-                                style: TextStyle(color: Colors.white70, fontSize: 14),
-                              ),
-                            ),
+                    child: DialogueList(
+                      dialogues: _displayableDialogues,
+                      onHeightCalculated: (height) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (mounted && _dialogueListHeight != height) {
+                            setState(() => _dialogueListHeight = height * 3);
+                          }
+                        });
+                      },
+                    ),
                   ),
                 ),
               ),
