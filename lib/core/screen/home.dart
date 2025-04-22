@@ -11,7 +11,6 @@ import 'package:myapp/core/widgets/loader.dart';
 import 'package:myapp/features/activity_log/activity_log.controller.dart';
 import 'package:myapp/models/activity_log/activity_log.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
-import 'package:myapp/models/user/user.dart';
 import '../../features/sublevel/sublevel_controller.dart';
 import '../../features/sublevel/widget/sublevel_list.dart';
 import '../../features/user/user_controller.dart';
