@@ -24,7 +24,7 @@ class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
   @override
   Widget build(BuildContext context) {
     final currentUser = ref.watch(userControllerProvider.select((state) => state.currentUser));
-    final isLoggedIn = SharedPref.get(PrefKey.lastLoggedInEmail) != null;
+    final isLoggedIn = SharedPref.get(PrefKey.user) != null;
 
     final needsReload = currentUser?.email.isEmpty ?? true && isLoggedIn;
 

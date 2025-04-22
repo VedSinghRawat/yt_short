@@ -230,7 +230,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       userEmail,
     );
 
-    final lastLoggedInEmail = SharedPref.get(PrefKey.lastLoggedInEmail);
+    final lastLoggedInEmail = SharedPref.get(PrefKey.user)?.email;
 
     if (lastLoggedInEmail == null) return;
 

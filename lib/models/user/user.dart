@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:flutter/foundation.dart';
+import 'package:myapp/core/shared_pref.dart';
 
 part 'user.freezed.dart';
 part 'user.g.dart';
@@ -7,7 +8,7 @@ part 'user.g.dart';
 enum PrefLang { hindi, hinglish }
 
 @freezed
-class UserModel with _$UserModel {
+class UserModel with _$UserModel implements SharedPrefClass {
   const UserModel._();
 
   const factory UserModel({

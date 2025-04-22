@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:android_play_install_referrer/android_play_install_referrer.dart';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +12,7 @@ import 'package:myapp/core/services/file_service.dart';
 import 'package:myapp/core/services/info_service.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
+import 'package:myapp/core/utils.dart';
 import 'package:myapp/features/sublevel/level_controller.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'dart:developer' as developer;
@@ -92,7 +95,9 @@ class InitializeService {
 
     final appLinks = AppLinks();
 
-    appLinks.uriLinkStream.listen((uri) async {
+    StreamSubscription<Uri>? appLinkSubscription;
+
+    appLinkSubscription = appLinks.uriLinkStream.listen((uri) async {
       final pathSegments = uri.pathSegments;
 
       var cyId = pathSegments.length > 1 ? pathSegments[1] : pathSegments[0];
@@ -102,6 +107,7 @@ class InitializeService {
       final context = navigatorKey.currentContext;
 
       if (context != null && context.mounted) {
+        appLinkSubscription?.cancel();
         await GoRouter.of(context).push(Routes.deepLinking);
       }
     });
@@ -114,11 +120,12 @@ class InitializeService {
       final initialData = await initializeAPI.initialize(version);
 
       if (initialData.user != null) {
-        userController.updateCurrentUser(initialData.user!);
+        final u = userController.updateCurrentUser(initialData.user!);
         // Store doneToday from API user
         await SharedPref.store(PrefKey.doneToday, initialData.user!.doneToday);
         // Store last logged in email
-        await SharedPref.store(PrefKey.lastLoggedInEmail, initialData.user!.email);
+        await SharedPref.store(PrefKey.user, u);
+        return false;
       }
 
       return true;

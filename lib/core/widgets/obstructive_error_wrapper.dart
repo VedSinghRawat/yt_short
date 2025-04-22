@@ -36,20 +36,22 @@ class _ObstructiveErrorWrapperState extends ConsumerState<ObstructiveErrorWrappe
     final content = obstructiveError.content;
     final closable = obstructiveError.closable;
 
-    if (content == null) {
-      return widget.child;
-    }
-
-    return Scaffold(
-      appBar:
-          closable
-              ? AppBar(
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                actions: [IconButton(icon: const Icon(Icons.close), onPressed: dismiss)],
-              )
-              : null,
-      body: SafeArea(child: Center(child: HtmlWidget(content, onTapUrl: _handleOnTapUrl))),
+    return Stack(
+      children: [
+        Offstage(offstage: content != null, child: widget.child),
+        if (content != null)
+          Scaffold(
+            appBar:
+                closable
+                    ? AppBar(
+                      backgroundColor: Colors.transparent,
+                      elevation: 0,
+                      actions: [IconButton(icon: const Icon(Icons.close), onPressed: dismiss)],
+                    )
+                    : null,
+            body: SafeArea(child: Center(child: HtmlWidget(content, onTapUrl: _handleOnTapUrl))),
+          ),
+      ],
     );
   }
 }

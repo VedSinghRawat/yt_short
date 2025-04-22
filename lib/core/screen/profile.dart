@@ -130,7 +130,7 @@ class ProfileScreen extends ConsumerWidget {
                     ],
                   ),
                 const SizedBox(height: 20),
-                if (progress != null)
+                if (progress != null && progress.level != null)
                   _buildInfoCard(
                     context,
                     title: 'Progress Overview',

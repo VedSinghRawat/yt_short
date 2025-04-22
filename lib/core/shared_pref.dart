@@ -6,6 +6,7 @@ import 'package:myapp/core/error/failure.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/activity_log/activity_log.dart';
+import 'package:myapp/models/user/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 abstract class SharedPrefClass {
@@ -23,7 +24,7 @@ class PrefKey<ST, LT> {
   static const isFirstLaunch = PrefKey<bool, Unit>(name: 'isFirstLaunch');
   static const orderedIds = PrefKey<List<String>, String>(name: 'orderedIds');
   static const doneToday = PrefKey<int, Unit>(name: 'doneToday');
-  static const lastLoggedInEmail = PrefKey<String, Unit>(name: 'lastLoggedInEmail');
+  static const user = PrefKey<UserModel, Unit>(name: 'user');
 
   static const activityLogs = PrefKey<List<ActivityLog>, ActivityLog>(
     fromJson: ActivityLog.fromJson,
@@ -32,7 +33,7 @@ class PrefKey<ST, LT> {
 
   /// [userEmail] is optional because it is not always available if the user is not logged in
   static PrefKey<Progress, Unit> currProgress({String? userEmail}) {
-    final lastLoggedInEmail = SharedPref.get(PrefKey.lastLoggedInEmail);
+    final lastLoggedInEmail = SharedPref.get(PrefKey.user)?.email;
 
     return PrefKey<Progress, Unit>(
       fromJson: Progress.fromJson,

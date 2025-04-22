@@ -118,17 +118,6 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
           },
           child: const Text('Continue'),
         ),
-        const SizedBox(height: 12),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            minimumSize: const Size(double.infinity, 48),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            backgroundColor: Colors.red[100],
-            foregroundColor: Colors.red[800],
-          ),
-          onPressed: SystemNavigator.pop,
-          child: const Text('Close App'),
-        ),
       ],
     );
   }

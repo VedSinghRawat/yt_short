@@ -63,7 +63,7 @@ class UserController extends _$UserController {
   void removeCurrentUser() {
     state = state.copyWith(currentUser: null);
 
-    SharedPref.removeValue(PrefKey.lastLoggedInEmail);
+    SharedPref.removeValue(PrefKey.user);
   }
 
   Future<bool> sync(String levelId, int subLevel) async {

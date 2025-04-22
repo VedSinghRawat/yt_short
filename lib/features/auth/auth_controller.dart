@@ -96,7 +96,7 @@ class AuthController extends _$AuthController {
 
       // Continue with existing logic (progress check, etc.)
       final progress = SharedPref.get(PrefKey.currProgress());
-      await SharedPref.store(PrefKey.lastLoggedInEmail, user.email);
+      await SharedPref.store(PrefKey.user, user);
 
       final level = progress?.maxLevel ?? 1;
       final subLevel = progress?.maxSubLevel ?? 1;
