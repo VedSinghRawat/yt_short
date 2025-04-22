@@ -48,6 +48,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
   Timer? _iconTimer;
 
   List<Dialogue> _displayableDialogues = [];
+  double? _dialogueListHeight;
 
   @override
   void initState() {
@@ -86,7 +87,6 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
         });
       }
     } else if (state == AppLifecycleState.resumed) {
-      developer.log("App resumed, initializing video controller.");
       // Only initialize if controller is null (disposed)
       if (_controller == null) {
         _initializeVideoPlayerController();
@@ -119,7 +119,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
 
     if (mounted && value.isPlaying != (_iconData == Icons.pause)) {
       setState(() {
-        _iconData = value.isPlaying ? Icons.play_arrow : Icons.pause;
+        _iconData = value.isPlaying ? Icons.pause : Icons.play_arrow;
       });
     }
   }
@@ -155,7 +155,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
       play();
     }
 
-    final targetIcon = !isPlaying && changeToPlay ? Icons.play_arrow : Icons.pause;
+    final targetIcon = isPlaying ? Icons.play_arrow : Icons.pause;
 
     setState(() {
       _iconData = targetIcon;
@@ -182,7 +182,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
 
     if (isVisible) {
       _controller!.addListener(_listener);
-      if (!_controller!.value.isPlaying && error == null) {
+      if (!_controller!.value.isPlaying && error == null && !widget.stayPause) {
         await play();
       }
     } else {
@@ -193,10 +193,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
 
   void _onVisibilityChanged(VisibilityInfo info) {
     if (_controller == null) {
-      // Handle case where controller is disposed (e.g., app paused) while visibility changes
-      developer.log("Visibility changed but controller is null.");
       if (mounted && _isVisible) {
-        // If it was visible, update state
         setState(() {
           _isVisible = false;
         });
@@ -273,7 +270,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
       }
 
       // Auto-play if visible after initialization/resuming
-      if (_isVisible) {
+      if (_isVisible && !widget.stayPause) {
         await play();
       }
 
@@ -322,9 +319,9 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
     final bool showDialogueArea = isPaused;
 
     final double screenHeight = MediaQuery.of(context).size.height;
-    final double standardDialogueHeight = screenHeight * 0.2;
-    final double itemHeight = standardDialogueHeight / 3.0;
-    const double emptyDialogueHeight = 65.0;
+    final double standardDialogueHeight = screenHeight * 0.3;
+
+    final double currentDialogueContainerHeight = _dialogueListHeight ?? standardDialogueHeight;
 
     return VisibilityDetector(
       key: Key(widget.uniqueId ?? widget.videoLocalPath ?? widget.videoUrls?.first ?? ''),
@@ -367,7 +364,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
                 visible: showDialogueArea,
                 child: Positioned.fill(
                   child: IgnorePointer(
-                    child: Container(color: Colors.black.withValues(alpha: 225 * 0.2)),
+                    child: Container(color: Colors.black.withAlpha((255 * 0.25).round())),
                   ),
                 ),
               ),
@@ -378,75 +375,21 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
                   left: 0,
                   right: 0,
                   child: Container(
-                    height:
-                        _displayableDialogues.isNotEmpty
-                            ? standardDialogueHeight
-                            : emptyDialogueHeight,
+                    height: currentDialogueContainerHeight,
                     decoration: const BoxDecoration(
                       color: Colors.black,
                       borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
                     ),
-                    child:
-                        _displayableDialogues.isNotEmpty
-                            ? Stack(
-                              children: [
-                                DialogueList(
-                                  dialogues: _displayableDialogues,
-                                  itemHeight: itemHeight,
-                                ),
-                                Positioned(
-                                  top: 0,
-                                  left: 0,
-                                  right: 0,
-                                  child: IgnorePointer(
-                                    child: Container(
-                                      height: standardDialogueHeight / 3.0,
-                                      decoration: BoxDecoration(
-                                        borderRadius: const BorderRadius.vertical(
-                                          top: Radius.circular(16.0),
-                                        ),
-                                        gradient: LinearGradient(
-                                          begin: Alignment.topCenter,
-                                          end: Alignment.bottomCenter,
-                                          colors: [Colors.black, Colors.black.withAlpha(0)],
-                                          stops: const [0.0, 0.9],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Positioned(
-                                  bottom: 0,
-                                  left: 0,
-                                  right: 0,
-                                  child: IgnorePointer(
-                                    child: Container(
-                                      height: standardDialogueHeight / 3.0,
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          begin: Alignment.bottomCenter,
-                                          end: Alignment.topCenter,
-                                          colors: [Colors.black, Colors.black.withAlpha(0)],
-                                          stops: const [0.0, 0.9],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            )
-                            : Center(
-                              child: Text(
-                                ref
-                                    .read(langProvider.notifier)
-                                    .prefLangText(
-                                      const PrefLangText(
-                                        hindi: 'अभी कोई डायलॉग दिखाने के लिए नहीं है।',
-                                        hinglish: 'Abhi tak koi dialogue dikhane ke liye nahi hai',
-                                      ),
-                                    ),
-                              ),
-                            ),
+                    child: DialogueList(
+                      dialogues: _displayableDialogues,
+                      onHeightCalculated: (height) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (mounted && _dialogueListHeight != height) {
+                            setState(() => _dialogueListHeight = height * 3);
+                          }
+                        });
+                      },
+                    ),
                   ),
                 ),
               ),

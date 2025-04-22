@@ -72,8 +72,8 @@ class AuthController extends _$AuthController {
           barrierDismissible: false, // User must choose
           builder: (BuildContext dialogContext) {
             return AlertDialog(
-              title: const Text('Choose Dialogue Language'),
-              content: const Text('Select your preferred language for dialogue translations.'),
+              title: const Text('What is your preferred language?'),
+              content: const Text('Select your preferred language you are most comfortable with.'),
               actions: <Widget>[
                 TextButton(
                   child: const Text('हिन्दी'),

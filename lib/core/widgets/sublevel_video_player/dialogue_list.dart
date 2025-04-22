@@ -1,4 +1,6 @@
 import 'dart:developer' as developer;
+import 'dart:math'; // Import for max function
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
@@ -10,9 +12,9 @@ import 'package:myapp/models/user/user.dart';
 
 class DialogueList extends ConsumerStatefulWidget {
   final List<Dialogue> dialogues;
-  final double itemHeight;
+  final Function(double height)? onHeightCalculated;
 
-  const DialogueList({super.key, required this.dialogues, required this.itemHeight});
+  const DialogueList({super.key, required this.dialogues, this.onHeightCalculated});
 
   @override
   ConsumerState<DialogueList> createState() => _DialogueListState();
@@ -45,18 +47,16 @@ class _DialogueListState extends ConsumerState<DialogueList> {
     super.dispose();
   }
 
-  // Keep track of dialogues to reset scroll if they change significantly
   List<Dialogue> _previousDialogues = [];
 
   @override
   void didUpdateWidget(covariant DialogueList oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // If the list of dialogues changes (e.g., filtered), reset scroll position
     if (listEquals(widget.dialogues, _previousDialogues)) return;
-    _previousDialogues = List.from(widget.dialogues); // Update previous list
+    _previousDialogues = List.from(widget.dialogues);
 
-    if (!_scrollController.hasClients) return;
-    // Using a post-frame callback to ensure the scroll view has updated
+    if (!_scrollController.hasClients || widget.dialogues.isEmpty) return;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_scrollController.hasClients) return;
       _scrollController.animateToItem(
@@ -65,151 +65,281 @@ class _DialogueListState extends ConsumerState<DialogueList> {
         curve: Curves.easeInOut,
       );
 
-      // Update selected index immediately if needed
       if (_selectedDialogueIndex == 0) return;
       setState(() => _selectedDialogueIndex = 0);
     });
   }
 
-  // Move audio playback logic here
   Future<void> _playDialogueAudio(String audioFilename) async {
     try {
       await _audioPlayer.stop();
 
-      // Use ref to read the provider
       final filePath = PathService.dialogueAudioPath(audioFilename);
 
       await _audioPlayer.setFilePath(filePath);
       await _audioPlayer.play();
     } catch (e) {
       developer.log("Error playing dialogue audio: $e");
-      // Optionally show an error message to the user
     }
   }
 
+  // --- Function to Calculate Item Height ---
+  double _calculateItemHeight(
+    BoxConstraints constraints,
+    List<Dialogue> dialogues,
+    PrefLang prefLang,
+  ) {
+    double maxOverallItemHeight = 0;
+
+    final timePainter = TextPainter(
+      text: const TextSpan(text: "00:00", style: TextStyle(fontSize: timeFontSize)),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    final double maxTimeHeight = timePainter.height;
+
+    const double maxIconHeight = selectedIconSize + (iconPadding * 2) + (iconBorder * 2);
+    final double maxNonTextHeight = max(maxTimeHeight, maxIconHeight);
+
+    final double timeTextWidth = timePainter.width;
+    const double iconContainerWidth = selectedIconSize + (iconPadding * 2) + (iconBorder * 2);
+    const double fixedSpacing = 16.0 + 12.0;
+    final double availableWidthForFlexible =
+        constraints.maxWidth -
+        timeTextWidth -
+        iconContainerWidth -
+        fixedSpacing -
+        (horizontalPadding * 2);
+    final double textConstraintWidth = max(0, availableWidthForFlexible * textWidthPercentage);
+
+    const double selectedFontSize = 20;
+    const FontWeight selectedFontWeight = FontWeight.bold;
+    const double translationFontSize = selectedFontSize * 0.75;
+
+    const mainTextStyle = TextStyle(
+      fontSize: selectedFontSize,
+      color: Colors.white,
+      fontWeight: selectedFontWeight,
+    );
+    const translationTextStyle = TextStyle(
+      fontSize: translationFontSize,
+      color: Colors.white70,
+      fontWeight: FontWeight.normal,
+    );
+
+    for (final dialogue in dialogues) {
+      double currentTextColumnHeight = 0;
+
+      final textPainter = TextPainter(
+        text: TextSpan(text: dialogue.text, style: mainTextStyle),
+        textDirection: TextDirection.ltr,
+        textAlign: TextAlign.center,
+      )..layout(maxWidth: textConstraintWidth);
+      currentTextColumnHeight += textPainter.height;
+
+      if (dialogue.hindiText.isNotEmpty && dialogue.hinglishText.isNotEmpty) {
+        currentTextColumnHeight += betweenTextPadding;
+        final translationText =
+            prefLang == PrefLang.hindi ? dialogue.hindiText : dialogue.hinglishText;
+        final translationPainter = TextPainter(
+          text: TextSpan(text: translationText, style: translationTextStyle),
+          textDirection: TextDirection.ltr,
+          textAlign: TextAlign.center,
+        )..layout(maxWidth: textConstraintWidth);
+        currentTextColumnHeight += translationPainter.height;
+      }
+
+      final double currentItemHeight = max(currentTextColumnHeight, maxNonTextHeight);
+
+      if (currentItemHeight > maxOverallItemHeight) {
+        maxOverallItemHeight = currentItemHeight;
+      }
+    }
+
+    return (maxOverallItemHeight + overallVerticalPadding) * 1.1;
+  }
+  // --- End Function ---
+
   @override
   Widget build(BuildContext context) {
-    // Store the current dialogues when building
     _previousDialogues = List.from(widget.dialogues);
 
-    // Read user preference
+    if (widget.dialogues.isEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        widget.onHeightCalculated?.call(45.0);
+      });
+      return const Center(
+        child: Text(
+          "No dialogue to show yet.",
+          style: TextStyle(color: Colors.white70, fontSize: 14),
+        ),
+      );
+    }
+
     final prefLang = ref.watch(
       userControllerProvider.select((state) => state.currentUser?.prefLang ?? PrefLang.hinglish),
     );
 
-    return ListWheelScrollView.useDelegate(
-      // Use the state's scroll controller
-      controller: _scrollController,
-      itemExtent: widget.itemHeight,
-      diameterRatio: 2.3,
-      perspective: 0.004,
-      physics: const FixedExtentScrollPhysics(),
-      childDelegate: ListWheelChildListDelegate(
-        children: List<Widget>.generate(
-          // Use widget.dialogues
-          widget.dialogues.length,
-          (index) {
-            final dialogue = widget.dialogues[index];
-            final formattedTime = formatDurationMMSS(dialogue.time);
-            // Use the state's selected index
-            final bool isSelected = index == _selectedDialogueIndex;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Call the calculation function
+        final double calculatedItemHeight = _calculateItemHeight(
+          constraints,
+          widget.dialogues,
+          prefLang,
+        );
 
-            // Define styles based on selection state
-            final double textFontSize = isSelected ? 20 : 18;
-            final FontWeight textFontWeight = isSelected ? FontWeight.bold : FontWeight.w500;
-            final double iconSize = isSelected ? 20 : 18;
-            final Color timeColor = isSelected ? Colors.white : Colors.white70;
-            final Color iconColor = isSelected ? Colors.white : Colors.white70;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          widget.onHeightCalculated?.call(calculatedItemHeight);
+        });
 
-            // Wrap the Center and Row with GestureDetector
-            return GestureDetector(
-              onTap: () async {
-                // Call the local audio playback method
-                await _playDialogueAudio(dialogue.audioFilename);
-              },
-              // Use a Container with transparent color for hit testing
-              child: Container(
-                color: Colors.transparent, // Ensures the empty space is tappable
-                alignment: Alignment.center, // Center content within the tappable area
-                child: Row(
-                  // Restore Row layout
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center, // Center align the Row
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(formattedTime, style: TextStyle(fontSize: 12, color: timeColor)),
-                    const SizedBox(width: 16), // Restore original spacing
-                    // Wrap the Column with Padding for horizontal spacing
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16.0,
-                      ), // Add horizontal padding
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            dialogue.text,
-                            style: TextStyle(
-                              fontSize: textFontSize,
-                              color: Colors.white,
-                              fontWeight: textFontWeight,
-                            ),
-                            textAlign: TextAlign.center, // Center align primary text
-                          ),
-                          // Conditional translation text
-                          if (dialogue.hindiText.isNotEmpty && dialogue.hinglishText.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 2.0), // Smaller spacing
-                              child: Text(
-                                prefLang == PrefLang.hindi
-                                    ? dialogue.hindiText
-                                    : dialogue.hinglishText,
-                                style: TextStyle(
-                                  fontSize: textFontSize * 0.75, // Slightly smaller font size
-                                  color: Colors.white70,
-                                  fontWeight: FontWeight.normal,
+        return Stack(
+          children: [
+            ListWheelScrollView.useDelegate(
+              controller: _scrollController,
+              itemExtent: calculatedItemHeight,
+              diameterRatio: 2.3,
+              perspective: 0.004,
+              physics: const FixedExtentScrollPhysics(),
+              childDelegate: ListWheelChildListDelegate(
+                children: List<Widget>.generate(widget.dialogues.length, (index) {
+                  final dialogue = widget.dialogues[index];
+                  final formattedTime = formatDurationMMSS(dialogue.time);
+                  final bool isSelected = index == _selectedDialogueIndex;
+
+                  final double textFontSize = isSelected ? 20 : 18;
+                  final FontWeight textFontWeight = isSelected ? FontWeight.bold : FontWeight.w500;
+                  final double iconSize = isSelected ? 20 : 18;
+                  final Color timeColor = isSelected ? Colors.white : Colors.white70;
+                  final Color iconColor = isSelected ? Colors.white : Colors.white70;
+                  // Constants needed inside the loop, moved outside the height calculation function
+                  const double horizontalPadding = 16.0;
+                  const double textWidthPercentage = 0.7;
+                  const double betweenTextPadding = 2.0;
+
+                  return Container(
+                    color: Colors.transparent,
+                    alignment: Alignment.center,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(formattedTime, style: TextStyle(fontSize: 12, color: timeColor)),
+                        const SizedBox(width: 16),
+                        Flexible(
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              // Inner LayoutBuilder might still be needed if text width depends on Flexible allocation
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: horizontalPadding),
+                                child: SizedBox(
+                                  width: constraints.maxWidth * textWidthPercentage,
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        dialogue.text,
+                                        style: TextStyle(
+                                          fontSize: textFontSize,
+                                          color: Colors.white,
+                                          fontWeight: textFontWeight,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      if (dialogue.hindiText.isNotEmpty &&
+                                          dialogue.hinglishText.isNotEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: betweenTextPadding),
+                                          child: Text(
+                                            prefLang == PrefLang.hindi
+                                                ? dialogue.hindiText
+                                                : dialogue.hinglishText,
+                                            style: TextStyle(
+                                              fontSize: textFontSize * 0.75,
+                                              color: Colors.white70,
+                                              fontWeight: FontWeight.normal,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
                                 ),
-                                textAlign: TextAlign.center, // Center align translation text
-                              ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        GestureDetector(
+                          onTap: () async {
+                            await _playDialogueAudio(dialogue.audioFilename);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(4.0),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withAlpha((255 * 0.2).round()),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white70, width: 1),
                             ),
-                        ],
-                      ),
+                            child: Icon(Icons.volume_up, color: iconColor, size: iconSize),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 12), // Restore original spacing
-                    // Keep the visual part
-                    Container(
-                      padding: const EdgeInsets.all(4.0),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 225 * 0.2),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white70, width: 1),
-                      ),
-                      child: Icon(
-                        // Apply conditional size/color
-                        Icons.volume_up,
-                        color: iconColor,
-                        size: iconSize,
-                      ),
+                  );
+                }),
+              ),
+            ),
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: IgnorePointer(
+                child: Container(
+                  height: calculatedItemHeight,
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16.0)),
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.black, Colors.black.withAlpha(0)],
+                      stops: const [0.0, 0.9],
                     ),
-                  ],
+                  ),
                 ),
               ),
-            );
-          },
-        ),
-      ),
+            ),
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: IgnorePointer(
+                child: Container(
+                  height: calculatedItemHeight,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [Colors.black, Colors.black.withAlpha(0)],
+                      stops: const [0.0, 0.9],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
-
-  // Helper function to compare lists (requires flutter/foundation.dart)
-  bool listEquals<T>(List<T>? a, List<T>? b) {
-    if (a == null) return b == null;
-    if (b == null || a.length != b.length) return false;
-    if (identical(a, b)) return true;
-    for (int index = 0; index < a.length; index += 1) {
-      if (a[index] != b[index]) return false;
-    }
-    return true;
-  }
 }
+
+const double horizontalPadding = 16.0;
+const double textWidthPercentage = 0.7;
+const double betweenTextPadding = 2.0;
+const double overallVerticalPadding = 16.0;
+const double timeFontSize = 12.0;
+const double selectedIconSize = 20.0;
+const double iconPadding = 4.0;
+const double iconBorder = 1.0;
