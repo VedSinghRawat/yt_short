@@ -125,10 +125,10 @@ class InitializeService {
 
         // Store last logged in email
         await SharedPref.store(PrefKey.user, u);
-        return false;
+        return true;
       }
 
-      return true;
+      return false;
     } catch (e, stackTrace) {
       developer.log('Error during initialize', error: e.toString(), stackTrace: stackTrace);
       return false;

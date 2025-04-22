@@ -33,7 +33,7 @@ class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
       title: Text(
         ref
             .read(langProvider.notifier)
-            .prefLangText(const PrefLangText(hindi: 'अंग्रेजी सीखें', hinglish: 'English Sikho')),
+            .prefLangText(const PrefLangText(hindi: 'अंग्रेजी सीखें', hinglish: 'English Sikhe')),
       ),
       actions: [
         if (needsReload)

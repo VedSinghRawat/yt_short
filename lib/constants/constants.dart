@@ -61,6 +61,9 @@ class AppConstants {
     hindi: 'कुछ गलत हो गया। कृपया बाद में दोबारा कोशिश करें।',
     hinglish: 'Kuch galat ho gaya. Kripya thodi der baad try karein.',
   );
+
+  static const obstructiveErrorStatus = 599;
+
   // UI constants
   static const String kViewCloseActionName = 'closeAction';
 }

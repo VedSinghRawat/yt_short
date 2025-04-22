@@ -21,4 +21,8 @@ class ObstructiveErrorController extends _$ObstructiveErrorController {
   void dismissObstructiveError() {
     state = state.copyWith(content: null);
   }
+
+  void showObstructiveError(String? content) {
+    state = state.copyWith(content: content);
+  }
 }

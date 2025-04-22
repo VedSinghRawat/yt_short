@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:myapp/constants/constants.dart';
+import 'package:myapp/core/controllers/ObstructiveError/obstructive_error_controller.dart';
 import 'package:myapp/core/services/google_sign_in.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,7 +15,10 @@ part 'api_service.freezed.dart';
 enum ApiMethod { get, post, put, delete, patch }
 
 final apiServiceProvider = Provider<ApiService>((ref) {
-  return ApiService(googleSignIn: ref.read(googleSignInProvider));
+  return ApiService(
+    googleSignIn: ref.read(googleSignInProvider),
+    obstructiveErrorController: ref.read(obstructiveErrorControllerProvider.notifier),
+  );
 });
 
 @freezed
@@ -51,8 +56,13 @@ class BaseUrl {
 class ApiService {
   final Dio _dio = Dio();
   final GoogleSignIn _googleSignIn;
+  final ObstructiveErrorController _obstructiveErrorController;
 
-  ApiService({required GoogleSignIn googleSignIn}) : _googleSignIn = googleSignIn;
+  ApiService({
+    required GoogleSignIn googleSignIn,
+    required ObstructiveErrorController obstructiveErrorController,
+  }) : _googleSignIn = googleSignIn,
+       _obstructiveErrorController = obstructiveErrorController;
 
   Future<void> setToken(String token) async {
     await SharedPref.store(PrefKey.googleIdToken, token);
@@ -84,6 +94,12 @@ class ApiService {
       );
       return await _dio.request(baseUrl, data: params.body, options: options);
     } on DioException catch (e) {
+      if (e.response?.statusCode == AppConstants.obstructiveErrorStatus) {
+        _obstructiveErrorController.showObstructiveError(e.response?.data['content']);
+
+        return e.response as Response<T>;
+      }
+
       if ((e.response?.statusCode ?? 0) != 304) {
         developer.log('ApiError on uri $baseUrl :  $e ');
       }
@@ -161,6 +177,10 @@ class ApiService {
 
     try {
       final response = await call<T>(params: mergedParams);
+
+      if (response == null) {
+        return null;
+      }
 
       final newETag = response.headers.value(HttpHeaders.etagHeader);
 
