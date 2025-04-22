@@ -50,7 +50,7 @@ class SpeechRecognizer {
 
     if (!available && context.mounted) {
       _showMicPermissionDeniedDialog(context, ref);
-      return;
+      throw Exception('Microphone permission denied');
     }
 
     _speech.listen(

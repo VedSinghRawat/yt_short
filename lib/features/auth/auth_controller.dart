@@ -142,7 +142,7 @@ class AuthController extends _$AuthController {
 
       state = state.copyWith(error: null);
     } on DioException catch (e) {
-      state = state.copyWith(error: parseError(e.type));
+      state = state.copyWith(error: parseError(e.type, ref));
     } catch (e) {
       state = state.copyWith(error: e.toString());
     } finally {

@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/error/failure.dart';
 import 'package:myapp/core/services/api_service.dart';
 import 'package:myapp/core/services/path_service.dart';
@@ -50,10 +49,7 @@ class LevelApi implements ILevelApi {
 
       return List<String>.from(ids);
     } on DioException catch (e) {
-      throw Failure(
-        message: e.response?.data.toString() ?? AppConstants.unknownErrorMsg,
-        type: e.type,
-      );
+      throw Failure(message: e.response?.data.toString() ?? '', type: e.type);
     } catch (e) {
       throw Failure(message: e.toString());
     }

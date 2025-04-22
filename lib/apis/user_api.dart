@@ -1,9 +1,7 @@
 import 'dart:developer' as developer;
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:myapp/core/error/failure.dart';
 import 'package:myapp/core/services/api_service.dart';
-import 'package:myapp/core/utils.dart';
 import '../models/models.dart';
 
 abstract class IUserAPI {
@@ -34,7 +32,7 @@ class UserAPI implements IUserAPI {
     } on DioException catch (e, stackTrace) {
       developer.log('Error syncing user progress', error: e.toString(), stackTrace: stackTrace);
 
-      throw Failure(message: parseError(e.type));
+      rethrow;
     }
   }
 
@@ -54,12 +52,9 @@ class UserAPI implements IUserAPI {
       }
 
       return UserDTO.fromJson(response.data?['user']);
-    } on DioException catch (e, stackTrace) {
-      developer.log('Error updating user profile', error: e.toString(), stackTrace: stackTrace);
-      throw Failure(message: parseError(e.type));
     } catch (e, stackTrace) {
       developer.log('Error updating user profile', error: e.toString(), stackTrace: stackTrace);
-      throw Failure(message: e.toString());
+      rethrow;
     }
   }
 }

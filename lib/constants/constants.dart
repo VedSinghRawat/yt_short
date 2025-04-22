@@ -1,3 +1,5 @@
+import 'package:myapp/core/controllers/lang_notifier.dart';
+
 class AppConstants {
   // Auth and sync constants
   static const int kAuthRequiredLevel = 1;
@@ -20,17 +22,45 @@ class AppConstants {
   static const String kDefaultReferrer = "utm_source=google-play&utm_medium=organic";
 
   // Error messages
-  static const String connectionErrorMsg = 'Internet not working. Please check your connection.';
-  static const String connectionTimeoutMsg = 'Taking too long to connect. Please try again.';
-  static const String receiveTimeoutMsg = 'Taking too long to respond. Please try again.';
-  static const String sendTimeoutMsg = 'Taking too long to send request. Please try again.';
-  static const String badCertificateMsg = 'Could not verify server. Please try again later.';
-  static const String cancelMsg = 'Request cancelled. Please try again.';
-  static const String badResponseMsg = 'Server problem. Please try again after some time.';
-  static const String unknownErrorMsg = 'Something went wrong. Please try again later.';
-  static const String videoPlayerError =
-      'There was some problem while playing this video, you can skip it now.';
+  static const connectionError = PrefLangText(
+    hindi: 'इंटरनेट काम नहीं कर रहा है। कृपया अपना कनेक्शन जांचें।',
+    hinglish: 'Internet kaam nahi kar raha hai. Kripya apna connection check karein.',
+  );
 
+  static const connectionTimeout = PrefLangText(
+    hindi: 'कनेक्शन में बहुत समय लग रहा है। कृपया दोबारा कोशिश करें।',
+    hinglish: 'Connection mein bahut samay lag raha hai. Kripya dobara try karein.',
+  );
+
+  static const receiveTimeout = PrefLangText(
+    hindi: 'कनेक्ट करने में बहुत समय लग रहा है। कृपया दोबारा प्रयास करें।',
+    hinglish: 'Connection mein bahut samay lag raha hai. Kripya dobara try karein.',
+  );
+
+  static const sendTimeout = PrefLangText(
+    hindi: 'टाइमाउट हो गया। कृपया दोबारा प्रयास करें।',
+    hinglish: 'Timeout ho gaya. Kripya dobara try karein.',
+  );
+
+  static const badCertificate = PrefLangText(
+    hindi: 'सर्वर की पुष्टि नहीं हो सकी। कृपया बाद में फिर से प्रयास करें।',
+    hinglish: 'Server verification nahi hua. Kripya thodi der baad try karein.',
+  );
+
+  static const cancel = PrefLangText(
+    hindi: 'रिक्वेस्ट रद्द कर दी गई। कृपया फिर से कोशिश करें।',
+    hinglish: 'Request cancel kar di gayi. Kripya dobara try karein.',
+  );
+
+  static const badResponse = PrefLangText(
+    hindi: 'सर्वर में कुछ समस्या है। कृपया कुछ समय बाद फिर कोशिश करें।',
+    hinglish: 'Server mein problem hai. Kripya kuch samay baad dobara try karein.',
+  );
+
+  static const unknownError = PrefLangText(
+    hindi: 'कुछ गलत हो गया। कृपया बाद में दोबारा कोशिश करें।',
+    hinglish: 'Kuch galat ho gaya. Kripya thodi der baad try karein.',
+  );
   // UI constants
   static const String kViewCloseActionName = 'closeAction';
 }

@@ -5,6 +5,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:myapp/apis/level_api.dart';
 import 'package:myapp/constants/constants.dart';
+import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/services/cleanup_service.dart';
 import 'package:myapp/core/services/file_service.dart';
 import 'package:myapp/core/services/level_service.dart';
@@ -52,13 +53,13 @@ class SublevelController extends _$SublevelController {
     state = state.copyWith(loadingLevelIds: {...state.loadingLevelIds, levelId});
 
     try {
-      final levelDTOEither = await ref.read(levelServiceProvider).getLevel(levelId);
+      final levelDTOEither = await ref.read(levelServiceProvider).getLevel(levelId, ref);
 
       final levelDTO = switch (levelDTOEither) {
         Right(value: final r) => r,
         Left(value: final l) =>
           (() {
-            state = state.copyWith(error: parseError(l.type));
+            state = state.copyWith(error: parseError(l.type, ref));
             return null;
           })(),
       };
@@ -97,7 +98,9 @@ class SublevelController extends _$SublevelController {
         error: e.toString(),
         stackTrace: stackTrace,
       );
-      state = state.copyWith(error: AppConstants.unknownErrorMsg);
+      state = state.copyWith(
+        error: ref.read(langProvider.notifier).prefLangText(AppConstants.unknownError),
+      );
       return null;
     } finally {
       state = state.copyWith(loadingLevelIds: {...state.loadingLevelIds}..remove(levelId));
@@ -143,7 +146,9 @@ class SublevelController extends _$SublevelController {
       final orderedIds = asyncOrderIds.value;
 
       if (orderedIds == null) {
-        state = state.copyWith(error: AppConstants.unknownErrorMsg);
+        state = state.copyWith(
+          error: ref.read(langProvider.notifier).prefLangText(AppConstants.unknownError),
+        );
         return;
       }
 
@@ -168,9 +173,18 @@ class SublevelController extends _$SublevelController {
       await Future.wait(fetchTasks);
 
       if (currLevelIndex < 0 || currUserLevel >= orderedIds.length) {
-        state = state.copyWith(
-          error: 'These are all the lessons for now, Check in after sometime for new content',
-        );
+        final message = ref
+            .read(langProvider.notifier)
+            .prefLangText(
+              const PrefLangText(
+                hindi:
+                    'फिलहाल के लिए इतने ही लेसन हैं। नए लेसन के लिए कुछ समय बाद फिर से चेक करें!',
+                hinglish:
+                    'Filhal ke liye itne hi lessons hain. Naye lessons ke liye kuchh samay baad dobara check karein!',
+              ),
+            );
+
+        state = state.copyWith(error: message);
       }
 
       if (isFirstFetch) await _cleanOldLevels(orderedIds, currLevelId);

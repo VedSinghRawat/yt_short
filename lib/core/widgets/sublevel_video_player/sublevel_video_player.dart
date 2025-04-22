@@ -276,7 +276,10 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
 
       widget.onControllerInitialized?.call(_controller!);
     } catch (e) {
-      developer.log('Error initializing video player', error: e.toString());
+      developer.log(
+        'Error initializing video player ${widget.videoLocalPath}',
+        error: e.toString(),
+      );
       _controller?.removeListener(_listener);
       if (mounted) {
         setState(() {
@@ -316,7 +319,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
     final bool isPlayerReady =
         _isInitialized && _controller != null && _controller!.value.isInitialized;
     final bool isPaused = isPlayerReady && !_controller!.value.isPlaying;
-    final bool showDialogueArea = isPaused;
+    final bool showDialogueArea = isPaused && _isVisible;
 
     final double screenHeight = MediaQuery.of(context).size.height;
     final double standardDialogueHeight = screenHeight * 0.3;
