@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
@@ -37,7 +36,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   bool cancelVideoChange(
-    int index,
     int maxLevel,
     int maxSubLevel,
     int level,
@@ -191,17 +189,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     String? userEmail,
   ) async {
     final isCurrLevelAfter = isLevelAfter(level, sublevelIndex, localMaxLevel, localMaxSubLevel);
-    final a = Progress(
-      level: level,
-      subLevel: sublevelIndex,
-      levelId: levelId,
-      maxLevel: isCurrLevelAfter ? level : localMaxLevel,
-      maxSubLevel: isCurrLevelAfter ? sublevelIndex : localMaxSubLevel,
-    );
-    Console.log('a: ${a.toJson()}');
 
     // Update the user's current progress in shared preferences
-    await SharedPref.copyWith(PrefKey.currProgress(userEmail: userEmail), a);
+    await SharedPref.copyWith(
+      PrefKey.currProgress(userEmail: userEmail),
+      Progress(
+        level: level,
+        subLevel: sublevelIndex,
+        levelId: levelId,
+        maxLevel: isCurrLevelAfter ? level : localMaxLevel,
+        maxSubLevel: isCurrLevelAfter ? sublevelIndex : localMaxSubLevel,
+      ),
+    );
   }
 
   Future<void> onVideoChange(int index, PageController controller) async {
@@ -225,7 +224,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final localMaxLevel = localProgress?.maxLevel ?? 0;
     final localMaxSubLevel = localProgress?.maxSubLevel ?? 0;
 
-    final isBackendLevelAfter = isLevelAfter(
+    final isLocalLevelAfter = isLevelAfter(
       level,
       sublevelIndex,
       user?.maxLevel ?? 0,
@@ -234,9 +233,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     // Check if video change should be cancelled
     if (cancelVideoChange(
-      index,
-      isBackendLevelAfter ? user?.maxLevel ?? 0 : localMaxLevel,
-      isBackendLevelAfter ? user?.maxSubLevel ?? 0 : localMaxSubLevel,
+      isLocalLevelAfter ? localMaxLevel : user?.maxLevel ?? 0,
+      isLocalLevelAfter ? localMaxSubLevel : user?.maxSubLevel ?? 0,
       level,
       sublevelIndex,
       localProgress != null,
