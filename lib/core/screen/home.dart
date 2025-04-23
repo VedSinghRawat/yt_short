@@ -143,7 +143,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   bool isLevelChanged(int index, List<SubLevel> sublevels) {
-    if (index <= 0) return false;
+    if (index <= 0 || index >= sublevels.length) return false;
 
     final previousSubLevel = sublevels[index - 1];
     final currSubLevel = sublevels[index];

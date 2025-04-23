@@ -136,6 +136,12 @@ class SublevelController extends _$SublevelController {
       final asyncOrderIds = ref.read(levelControllerProvider);
       final isFirstFetch = state.isFirstFetch;
 
+      if (state.error == AppConstants.allLevelsCompleted.hindi ||
+          state.error == AppConstants.allLevelsCompleted.hinglish) {
+        state = state.copyWith(error: null);
+        await ref.read(levelControllerProvider.notifier).getOrderedIds();
+      }
+
       if (asyncOrderIds.hasError) {
         state = state.copyWith(error: asyncOrderIds.error.toString());
         return;
@@ -175,14 +181,7 @@ class SublevelController extends _$SublevelController {
       if (currLevelIndex < 0 || currUserLevel >= orderedIds.length) {
         final message = ref
             .read(langProvider.notifier)
-            .prefLangText(
-              const PrefLangText(
-                hindi:
-                    'फिलहाल के लिए इतने ही लेसन हैं। नए लेसन के लिए कुछ समय बाद फिर से चेक करें!',
-                hinglish:
-                    'Filhal ke liye itne hi lessons hain. Naye lessons ke liye kuchh samay baad dobara check karein!',
-              ),
-            );
+            .prefLangText(AppConstants.allLevelsCompleted);
 
         state = state.copyWith(error: message);
       }

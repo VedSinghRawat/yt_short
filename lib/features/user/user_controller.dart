@@ -15,8 +15,11 @@ part 'user_controller.g.dart';
 
 @freezed
 class UserControllerState with _$UserControllerState {
-  const factory UserControllerState({@Default(false) bool loading, UserModel? currentUser}) =
-      _UserControllerState;
+  const factory UserControllerState({
+    @Default(false) bool loading,
+    UserModel? currentUser,
+    @Default(false) bool syncFailed,
+  }) = _UserControllerState;
 
   const UserControllerState._();
 
@@ -74,9 +77,11 @@ class UserController extends _$UserController {
       final user = await _userAPI.sync(levelId, subLevel);
 
       updateCurrentUser(user);
+      state = state.copyWith(syncFailed: false);
       return true;
     } catch (e, stack) {
       developer.log('Error in sync', error: e, stackTrace: stack);
+      state = state.copyWith(syncFailed: true);
       return false;
     }
   }
