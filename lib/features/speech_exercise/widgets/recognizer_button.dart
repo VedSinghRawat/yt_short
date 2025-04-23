@@ -153,7 +153,7 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
                               .prefLangText(
                                 PrefLangText(
                                   hindi: widget.passed ? 'आगे बढ़े' : 'पुनः प्रयास करें',
-                                  hinglish: widget.passed ? 'Aage badhe' : 'Dobara kosis karein',
+                                  hinglish: widget.passed ? 'Aage badhe' : 'Dobara kare',
                                 ),
                               ),
                           style: TextStyle(

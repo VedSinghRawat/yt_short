@@ -15,13 +15,15 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userState = ref.watch(userControllerProvider);
-    final user = userState.currentUser;
+    final localUser = SharedPref.get(PrefKey.user);
+
+    final user = userState.currentUser ?? localUser;
+
     final userLoading = userState.loading;
     final progress = SharedPref.get(PrefKey.currProgress(userEmail: user?.email));
     final authController = ref.read(authControllerProvider.notifier);
     final authLoading = ref.watch(authControllerProvider).loading;
     final userController = ref.read(userControllerProvider.notifier);
-
     // Combine loading states
     final isLoading = authLoading || userLoading;
 
@@ -164,16 +166,14 @@ class ProfileScreen extends ConsumerWidget {
                       _buildInfoRow(
                         ref
                             .read(langProvider.notifier)
-                            .prefLangText(
-                              const PrefLangText(hindi: 'लेवल', hinglish: 'Current Level'),
-                            ),
+                            .prefLangText(const PrefLangText(hindi: 'लेवल', hinglish: 'Level')),
                         '${progress.level}',
                       ),
                       _buildInfoRow(
                         ref
                             .read(langProvider.notifier)
                             .prefLangText(
-                              const PrefLangText(hindi: 'सबलेवल', hinglish: 'Current Sublevel'),
+                              const PrefLangText(hindi: 'सबलेवल', hinglish: ' Sublevel'),
                             ),
                         '${progress.subLevel}',
                       ),

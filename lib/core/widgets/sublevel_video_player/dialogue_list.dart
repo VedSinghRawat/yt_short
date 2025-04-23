@@ -1,4 +1,5 @@
 import 'dart:developer' as developer;
+import 'dart:io';
 import 'dart:math'; // Import for max function
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -75,7 +76,14 @@ class _DialogueListState extends ConsumerState<DialogueList> {
     try {
       await _audioPlayer.stop();
 
-      final filePath = PathService.dialogueAudioPath(audioFilename);
+      final filePath = PathService.dialogueAudioPath('$audioFilename.mp3');
+
+      // Check if file exists before attempting to play
+      final file = File(filePath);
+      if (!await file.exists()) {
+        developer.log("Audio file not found: $filePath");
+        return;
+      }
 
       await _audioPlayer.setFilePath(filePath);
       await _audioPlayer.play();

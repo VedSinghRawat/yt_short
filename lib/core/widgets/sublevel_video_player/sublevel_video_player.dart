@@ -116,12 +116,6 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
     }
 
     _listenerVideoFinished();
-
-    if (mounted && value.isPlaying != (_iconData == Icons.pause)) {
-      setState(() {
-        _iconData = value.isPlaying ? Icons.pause : Icons.play_arrow;
-      });
-    }
   }
 
   void _listenerVideoFinished() {
@@ -142,9 +136,9 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
   void _changePlayingState({bool changeToPlay = true}) async {
     if (_controller == null || !_isInitialized) return;
 
-    final isPlaying = _controller!.value.isPlaying;
+    final wasPlaying = _controller!.value.isPlaying;
 
-    if (isPlaying || !changeToPlay) {
+    if (wasPlaying || !changeToPlay) {
       await _controller!.pause();
       // Explicitly update dialogues state after pausing
       _updateDisplayableDialogues(_controller!.value.position);
@@ -155,15 +149,15 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
       play();
     }
 
-    final targetIcon = isPlaying ? Icons.play_arrow : Icons.pause;
+    final newIcon = wasPlaying ? Icons.pause : Icons.play_arrow;
 
     setState(() {
-      _iconData = targetIcon;
+      _iconData = newIcon;
       _showPlayPauseIcon = true;
     });
 
     _iconTimer?.cancel();
-    _iconTimer = Timer(Duration(milliseconds: targetIcon == Icons.play_arrow ? 500 : 800), () {
+    _iconTimer = Timer(Duration(milliseconds: newIcon == Icons.pause ? 800 : 500), () {
       if (mounted) {
         setState(() {
           _showPlayPauseIcon = false;
