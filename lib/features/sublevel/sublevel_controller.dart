@@ -5,7 +5,6 @@ import 'package:fpdart/fpdart.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:myapp/apis/level_api.dart';
 import 'package:myapp/constants/constants.dart';
-import 'package:myapp/core/console.dart';
 import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/services/cleanup_service.dart';
 import 'package:myapp/core/services/file_service.dart';
@@ -56,8 +55,6 @@ class SublevelController extends _$SublevelController {
     try {
       final levelDTOEither = await ref.read(levelServiceProvider).getLevel(levelId, ref);
 
-      Console.log('levelDTOEither: $levelDTOEither');
-
       final levelDTO = switch (levelDTOEither) {
         Right(value: final r) => r,
         Left(value: final l) =>
@@ -73,8 +70,6 @@ class SublevelController extends _$SublevelController {
         // add curr sub level entry so first video can be played immediately
 
         final userSublevelNum = ref.read(userControllerProvider).subLevel;
-
-        Console.log('userSublevelNum: $userSublevelNum');
 
         final currSublevel = SubLevel.fromSubLevelDTO(
           levelDTO.sub_levels[userSublevelNum - 1],

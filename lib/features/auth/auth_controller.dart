@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:myapp/core/console.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/features/auth/screens/sign_in_screen.dart';
@@ -48,8 +47,6 @@ class AuthController extends _$AuthController {
       if (userDTO == null) {
         return;
       }
-
-      Console.log('userDTO: ${userDTO.toString()}');
 
       bool needsLanguagePrompt = userDTO.prefLang == null; // Example check
 
