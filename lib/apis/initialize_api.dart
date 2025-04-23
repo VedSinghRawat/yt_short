@@ -34,7 +34,7 @@ class InitializeAPI implements IInitializeAPI {
 
       return InitializeResponse.fromJson(response.data!);
     } on DioException catch (e) {
-      throw Failure(message: e.response?.data ?? 'Failed to initialize');
+      throw Failure(message: e.response?.data.toString() ?? 'Failed to initialize');
     }
   }
 }

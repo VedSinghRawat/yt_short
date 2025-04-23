@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
+import 'package:myapp/core/console.dart';
 import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/screen/app_bar.dart';
 import 'package:myapp/core/shared_pref.dart';
@@ -46,6 +47,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     int? doneToday,
   ) {
     if (isAdmin) return false;
+
+    Console.log(
+      'level: $level, subLevel: $subLevel, maxLevel: $maxLevel, maxSubLevel: $maxSubLevel',
+    );
 
     final levelAfter = !hasLocalProgress || isLevelAfter(level, subLevel, maxLevel, maxSubLevel);
 
@@ -186,18 +191,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     String? userEmail,
   ) async {
     final isCurrLevelAfter = isLevelAfter(level, sublevelIndex, localMaxLevel, localMaxSubLevel);
+    final a = Progress(
+      level: level,
+      subLevel: sublevelIndex,
+      levelId: levelId,
+      maxLevel: isCurrLevelAfter ? level : localMaxLevel,
+      maxSubLevel: isCurrLevelAfter ? sublevelIndex : localMaxSubLevel,
+    );
+    Console.log('a: ${a.toJson()}');
 
     // Update the user's current progress in shared preferences
-    await SharedPref.copyWith(
-      PrefKey.currProgress(userEmail: userEmail),
-      Progress(
-        level: level,
-        subLevel: sublevelIndex,
-        levelId: levelId,
-        maxLevel: isCurrLevelAfter ? level : localMaxLevel,
-        maxSubLevel: isCurrLevelAfter ? sublevelIndex : localMaxSubLevel,
-      ),
-    );
+    await SharedPref.copyWith(PrefKey.currProgress(userEmail: userEmail), a);
   }
 
   Future<void> onVideoChange(int index, PageController controller) async {
@@ -221,11 +225,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final localMaxLevel = localProgress?.maxLevel ?? 0;
     final localMaxSubLevel = localProgress?.maxSubLevel ?? 0;
 
+    final isBackendLevelAfter = isLevelAfter(
+      level,
+      sublevelIndex,
+      user?.maxLevel ?? 0,
+      user?.maxSubLevel ?? 0,
+    );
+
     // Check if video change should be cancelled
     if (cancelVideoChange(
       index,
-      max(user?.maxLevel ?? 0, localMaxLevel),
-      max(user?.maxSubLevel ?? 0, localMaxSubLevel),
+      isBackendLevelAfter ? user?.maxLevel ?? 0 : localMaxLevel,
+      isBackendLevelAfter ? user?.maxSubLevel ?? 0 : localMaxSubLevel,
       level,
       sublevelIndex,
       localProgress != null,
