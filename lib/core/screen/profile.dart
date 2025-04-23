@@ -173,7 +173,7 @@ class ProfileScreen extends ConsumerWidget {
                         ref
                             .read(langProvider.notifier)
                             .prefLangText(
-                              const PrefLangText(hindi: 'सबलेवल', hinglish: ' Sublevel'),
+                              const PrefLangText(hindi: 'सबलेवल', hinglish: 'Sublevel'),
                             ),
                         '${progress.subLevel}',
                       ),

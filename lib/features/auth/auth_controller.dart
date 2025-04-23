@@ -4,7 +4,6 @@ import 'package:myapp/core/console.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/features/auth/screens/sign_in_screen.dart';
-import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'dart:developer' as developer;
 import '../../apis/auth_api.dart';
 import '../../core/utils.dart';
@@ -43,13 +42,10 @@ class AuthController extends _$AuthController {
     try {
       final authAPI = ref.read(authAPIProvider);
       final userController = ref.read(userControllerProvider.notifier);
-      final sublevelController = ref.read(sublevelControllerProvider.notifier);
 
       final userDTO = await authAPI.signInWithGoogle();
+
       if (userDTO == null) {
-        // Handle case where sign in might be cancelled or fail before getting DTO
-        _isProcessing = false;
-        state = state.copyWith(loading: false);
         return;
       }
 
