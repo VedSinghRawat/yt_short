@@ -25,7 +25,7 @@ class PathService {
       '${FileService.documentsDirectory.path}${videoPath(levelId, videoFilename)}';
 
   static String get dialogueAudioDirPath =>
-      ' ${FileService.documentsDirectory.path}/dialogue/audios';
+      '${FileService.documentsDirectory.path}/dialogue/audios';
 
   static String dialogueAudioPath(String fileName) => '$dialogueAudioDirPath/$fileName';
 
