@@ -243,12 +243,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       user?.isAdmin == true,
       user?.doneToday,
     )) {
-      // controller.animateToPage(
-      //   index - 1,
-      //   duration: const Duration(milliseconds: 300),
-      //   curve: Curves.easeOut,
-      // );
-      // return;
+      controller.animateToPage(
+        index - 1,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+      return;
     }
 
     ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(false);
