@@ -49,6 +49,12 @@ class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
 
               final isSuccess = await initializeService.initialApiCall();
 
+              if (syncFailed) {
+                await ref
+                    .read(userControllerProvider.notifier)
+                    .sync(currentUser?.levelId ?? '', currentUser?.subLevel ?? 0);
+              }
+
               final progress = SharedPref.get(PrefKey.currProgress(userEmail: currentUser?.email));
 
               if (progress != null && progress.levelId != null && progress.subLevel != null) {
