@@ -105,10 +105,10 @@ class AuthController extends _$AuthController {
           (user.maxLevel > level || (user.maxLevel == level && user.maxSubLevel > subLevel))) {
         await showLevelChangeConfirmationDialog(context, user, ref);
       } else {
-        SharedPref.store(PrefKey.currProgress(userEmail: user.email), progress);
+        if (progress != null) {
+          SharedPref.store(PrefKey.currProgress(userEmail: user.email), progress);
+        }
       }
-
-      await sublevelController.fetchSublevels();
     } catch (e, stackTrace) {
       developer.log(
         'Error in AuthController.signInWithGoogle',
