@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:myapp/core/console.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/features/auth/screens/sign_in_screen.dart';
@@ -52,10 +53,9 @@ class AuthController extends _$AuthController {
         return;
       }
 
-      // Check if language preference needs to be set
-      // Assuming PrefLang.hinglish is the default and needs confirmation
-      // Or if backend sends null initially, adjust the check accordingly
-      bool needsLanguagePrompt = userDTO.prefLang == PrefLang.hinglish; // Example check
+      Console.log('userDTO: ${userDTO.toString()}');
+
+      bool needsLanguagePrompt = userDTO.prefLang == null; // Example check
 
       // Update user model *before* potentially showing dialog
       final user = userController.updateCurrentUser(userDTO);
@@ -72,8 +72,10 @@ class AuthController extends _$AuthController {
           barrierDismissible: false, // User must choose
           builder: (BuildContext dialogContext) {
             return AlertDialog(
-              title: const Text('What is your preferred language?'),
-              content: const Text('Select your preferred language you are most comfortable with.'),
+              title: const Text('आपकी पसंदीदा भाषा क्या है? / Aapki pasandida bhasha kya hai?'),
+              content: const Text(
+                'वह भाषा चुनें जिसमें आप सबसे अधिक सहज हैं। / Vo bhasha chunen jis mein aap sabse adhik sahaj hain.',
+              ),
               actions: <Widget>[
                 TextButton(
                   child: const Text('हिन्दी'),
@@ -104,10 +106,8 @@ class AuthController extends _$AuthController {
       if (context.mounted &&
           (user.maxLevel > level || (user.maxLevel == level && user.maxSubLevel > subLevel))) {
         await showLevelChangeConfirmationDialog(context, user, ref);
-      } else {
-        if (progress != null) {
-          SharedPref.store(PrefKey.currProgress(userEmail: user.email), progress);
-        }
+      } else if (progress != null) {
+        SharedPref.store(PrefKey.currProgress(userEmail: user.email), progress);
       }
     } catch (e, stackTrace) {
       developer.log(

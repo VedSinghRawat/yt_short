@@ -25,7 +25,7 @@ class UserModel with _$UserModel implements SharedPrefClass {
     required int doneToday,
     required int level,
     required int maxLevel,
-    @Default(PrefLang.hinglish) PrefLang prefLang,
+    required PrefLang? prefLang,
   }) = _UserModel;
 
   factory UserModel.fromJson(Map<String, dynamic> json) => _$UserModelFromJson(json);
@@ -57,7 +57,7 @@ class UserDTO with _$UserDTO {
     required int lastProgress,
     required UserRole role,
     required int doneToday,
-    required PrefLang prefLang,
+    required PrefLang? prefLang,
   }) = _UserDTO;
 
   factory UserDTO.fromJson(Map<String, dynamic> json) => _$UserDTOFromJson(json);
