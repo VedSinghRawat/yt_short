@@ -108,11 +108,9 @@ showLevelChangeConfirmationDialog(BuildContext context, UserModel user, Ref ref)
           ),
         ),
     onResult: (result) async {
-      final guestProgress = SharedPref.get(PrefKey.currProgress(userEmail: null)) ?? Progress();
-
       await SharedPref.store(
         PrefKey.currProgress(userEmail: user.email),
-        guestProgress.copyWith(
+        Progress(
           level: result ? user.maxLevel : null,
           subLevel: result ? user.maxSubLevel : null,
           maxLevel: user.maxLevel,
@@ -123,6 +121,7 @@ showLevelChangeConfirmationDialog(BuildContext context, UserModel user, Ref ref)
     },
     yesButtonStyle: ElevatedButton.styleFrom(
       backgroundColor: Colors.blue,
+      foregroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
   );

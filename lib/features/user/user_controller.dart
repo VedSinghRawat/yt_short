@@ -56,7 +56,9 @@ class UserController extends _$UserController {
 
     final user = UserModel.fromUserDTO(userDTO, userLevel, userMaxLevel);
 
-    ref.read(langProvider.notifier).changeLanguage(user.prefLang);
+    if (user.prefLang != null) {
+      ref.read(langProvider.notifier).changeLanguage(user.prefLang!);
+    }
 
     state = state.copyWith(currentUser: user);
 
