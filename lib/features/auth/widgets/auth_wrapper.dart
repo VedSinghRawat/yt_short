@@ -13,7 +13,9 @@ class AuthWrapper extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final loading = ref.watch(userControllerProvider.select((state) => state.loading));
-    final user = SharedPref.get(PrefKey.user);
+    final user =
+        ref.watch(userControllerProvider.select((state) => state.currentUser)) ??
+        SharedPref.get(PrefKey.user);
 
     if (loading) {
       return const Loader();
