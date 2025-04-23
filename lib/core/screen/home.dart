@@ -259,7 +259,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // If the user is logged in, add an activity log entry
     await SharedPref.pushValue(
       PrefKey.activityLogs,
-      ActivityLog(subLevel: sublevelIndex, level: level, userEmail: userEmail ?? lastLoggedInEmail),
+      ActivityLog(
+        subLevel: sublevelIndex,
+        levelId: sublevel.levelId,
+        userEmail: userEmail ?? lastLoggedInEmail,
+      ),
     );
 
     // Sync the progress with db if the user moves to a new level

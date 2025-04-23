@@ -6,13 +6,13 @@ part 'activity_log.g.dart';
 @JsonSerializable()
 class ActivityLog implements SharedPrefClass {
   final int subLevel;
-  final int level;
+  final String levelId;
   final String userEmail;
   final int timestamp;
 
   ActivityLog({
     required this.subLevel,
-    required this.level,
+    required this.levelId,
     required this.userEmail,
     int? timestamp,
   }) : timestamp = timestamp ?? DateTime.now().millisecondsSinceEpoch;
