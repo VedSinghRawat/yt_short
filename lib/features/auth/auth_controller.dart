@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:myapp/features/activity_log/activity_log.controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/features/auth/screens/sign_in_screen.dart';
@@ -150,13 +151,18 @@ class AuthController extends _$AuthController {
 
     try {
       final userController = ref.read(userControllerProvider.notifier);
+      final activityLogController = ref.read(activityLogControllerProvider.notifier);
 
       final authAPI = ref.read(authAPIProvider);
 
       final user = ref.read(userControllerProvider).currentUser;
 
       if (user != null) {
-        await userController.sync(user.levelId, user.subLevel);
+        final activityLogs = SharedPref.get(PrefKey.activityLogs);
+        if (activityLogs != null) {
+          await activityLogController.syncActivityLogs(activityLogs);
+          await SharedPref.removeValue(PrefKey.activityLogs);
+        }
         await authAPI.signOut();
         userController.removeCurrentUser();
         await Future.delayed(Duration.zero); // Allow UI to update
