@@ -76,7 +76,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
     try {
       await _audioPlayer.stop();
 
-      final filePath = PathService.dialogueAudioPath('$audioFilename.mp3');
+      final filePath = PathService.dialogueAudio(audioFilename);
 
       // Check if file exists before attempting to play
       final file = File(filePath);

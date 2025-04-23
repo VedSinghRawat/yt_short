@@ -19,9 +19,7 @@ class LevelApi implements ILevelApi {
   @override
   Future<LevelDTO?> get(String id) async {
     try {
-      final response = await apiService.getCloudStorageData(
-        endpoint: PathService.levelJsonPath(id),
-      );
+      final response = await apiService.getCloudStorageData(endpoint: PathService.levelJson(id));
 
       if (response == null) return null;
 
@@ -41,7 +39,7 @@ class LevelApi implements ILevelApi {
   Future<List<String>?> getOrderedIds() async {
     try {
       final response = await apiService.getCloudStorageData<Map<String, dynamic>?>(
-        endpoint: PathService.orderedIdsPath(),
+        endpoint: PathService.orderedIds(),
       );
 
       final ids = response?.data?['orderedIds'];

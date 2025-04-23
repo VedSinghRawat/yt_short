@@ -111,7 +111,7 @@ class SublevelController extends _$SublevelController {
 
   Future<void> _addExistVideoSublevelEntries(LevelDTO levelDTO, int level, String levelId) async {
     final entries = await FileService.listEntities(
-      Directory(PathService.levelVideosDirLocalPath(levelId)),
+      Directory(PathService.levelVideosDirLocal(levelId)),
     );
 
     final videoFiles = entries.toSet();
@@ -197,7 +197,7 @@ class SublevelController extends _$SublevelController {
   Future<void> _cleanOldLevels(List<String> orderedIds, String currLevelId) async {
     try {
       final cachedIds = await FileService.listEntities(
-        Directory(PathService.levelsDocDirPath),
+        Directory(PathService.levelsDocDir),
         type: EntitiesType.folders,
       );
 

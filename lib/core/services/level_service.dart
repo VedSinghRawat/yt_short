@@ -21,12 +21,12 @@ class LevelService {
   LevelService(this.levelApi);
 
   Future<bool> videoExists(String levelId, String videoFilename) async {
-    final file = File(PathService.videoLocalPath(levelId, videoFilename));
+    final file = File(PathService.videoLocal(levelId, videoFilename));
     return file.exists();
   }
 
   Future<void> _saveLevel(LevelDTO level) async {
-    final file = File(PathService.levelJsonFullPath(level.id));
+    final file = File(PathService.levelJsonFull(level.id));
 
     await file.parent.create(recursive: true);
 
@@ -34,7 +34,7 @@ class LevelService {
   }
 
   Future<LevelDTO?> getLocalLevel(String levelId) async {
-    final file = File(PathService.levelJsonFullPath(levelId));
+    final file = File(PathService.levelJsonFull(levelId));
 
     if (!await file.exists()) return null;
 
@@ -70,7 +70,7 @@ class LevelService {
       return right(localLevel);
     } catch (e, st) {
       //remove eTag from shared pref
-      await SharedPref.removeValue(PrefKey.eTag(PathService.levelJsonPath(id)));
+      await SharedPref.removeValue(PrefKey.eTag(PathService.levelJson(id)));
 
       return left(Failure(message: e.toString(), trace: st));
     }

@@ -25,7 +25,7 @@ class SubLevelService {
         if (videoData == null) return;
 
         try {
-          final videoPath = PathService.videoLocalPath(levelDTO.id, subLevelDTO.videoFilename);
+          final videoPath = PathService.videoLocal(levelDTO.id, subLevelDTO.videoFilename);
           final videoFile = File(videoPath);
           await videoFile.parent.create(recursive: true); // Ensure directory exists
           await videoFile.writeAsBytes(videoData);
@@ -46,7 +46,7 @@ class SubLevelService {
 
     await Future.wait(
       uniqueZipNums.map((zipNum) async {
-        final destinationDir = Directory(PathService.dialogueAudioDirPath);
+        final destinationDir = Directory(PathService.dialogueAudioDir);
 
         final zipData = await subLevelAPI.getDialogueZip(zipNum);
 
@@ -54,7 +54,7 @@ class SubLevelService {
 
         File? tempZipFile;
         try {
-          final tempZipPath = PathService.dialogueTempZipPath(zipNum);
+          final tempZipPath = PathService.dialogueTempZip(zipNum);
           tempZipFile = File(tempZipPath);
           await tempZipFile.parent.create(recursive: true);
           await tempZipFile.writeAsBytes(zipData);

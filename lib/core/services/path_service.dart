@@ -1,33 +1,33 @@
 import 'package:myapp/core/services/file_service.dart';
 
 class PathService {
-  static String get levelsDocDirPath => '${FileService.documentsDirectory.path}/levels';
-  static String get levelsCacheDirPath => '${FileService.cacheDirectory.path}/levels';
+  static String get levelsDocDir => '${FileService.documentsDirectory.path}/levels';
+  static String get levelsCacheDir => '${FileService.cacheDirectory.path}/levels';
 
-  static String levelPath(String levelId) => '$levelsDocDirPath/$levelId';
+  static String level(String levelId) => '$levelsDocDir/$levelId';
 
-  static String levelJsonFullPath(String levelId) =>
-      '${FileService.documentsDirectory.path}${levelJsonPath(levelId)}';
+  static String levelJsonFull(String levelId) =>
+      '${FileService.documentsDirectory.path}${levelJson(levelId)}';
 
-  static String orderedIdsPath() => '/levels/ordered_ids.json';
+  static String orderedIds() => '/levels/ordered_ids.json';
 
-  static String levelJsonPath(String levelId) => '/levels/$levelId/data.json';
+  static String levelJson(String levelId) => '/levels/$levelId/data.json';
 
-  static String levelVideosDirPath(String levelId) => '/levels/$levelId/videos';
+  static String levelVideosDir(String levelId) => '/levels/$levelId/videos';
 
   static String videoPath(String levelId, String videoFilename) =>
-      '${levelVideosDirPath(levelId)}/$videoFilename.mp4';
+      '${levelVideosDir(levelId)}/$videoFilename.mp4';
 
-  static String levelVideosDirLocalPath(String levelId) =>
-      '${FileService.documentsDirectory.path}${levelVideosDirPath(levelId)}';
+  static String levelVideosDirLocal(String levelId) =>
+      '${FileService.documentsDirectory.path}${levelVideosDir(levelId)}';
 
-  static String videoLocalPath(String levelId, String videoFilename) =>
+  static String videoLocal(String levelId, String videoFilename) =>
       '${FileService.documentsDirectory.path}${videoPath(levelId, videoFilename)}';
 
-  static String get dialogueAudioDirPath =>
-      '${FileService.documentsDirectory.path}/dialogue/audios';
+  static String get dialogueAudioDir => '${FileService.documentsDirectory.path}/dialogues/audios';
+  static String get dialogueDataDir => '${FileService.documentsDirectory.path}/dialogues/data';
 
-  static String dialogueAudioPath(String fileName) => '$dialogueAudioDirPath/$fileName';
+  static String dialogueAudio(String fileName) => '$dialogueAudioDir/$fileName.mp3';
 
-  static String dialogueTempZipPath(int zipNum) => '$dialogueAudioDirPath/zips/$zipNum.zip';
+  static String dialogueTempZip(int zipNum) => '$dialogueAudioDir/zips/$zipNum.zip';
 }

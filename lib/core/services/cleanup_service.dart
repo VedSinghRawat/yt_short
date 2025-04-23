@@ -16,7 +16,7 @@ class StorageCleanupService {
   /// Main cleanup logic — removes folders from cache if total size exceeds threshold
   Future<void> cleanLevels(List<String> orderedIds) async {
     try {
-      Directory targetDir = Directory(PathService.levelsDocDirPath);
+      Directory targetDir = Directory(PathService.levelsDocDir);
 
       // Ensure directory exists and input is valid
       if (!await targetDir.exists() ||
@@ -40,7 +40,7 @@ class StorageCleanupService {
       // Start deleting until space is freed
       while (i < orderedIds.length - AppConstants.kProtectedIdsLength) {
         final id = orderedIds[i];
-        final folderPath = PathService.levelPath(id);
+        final folderPath = PathService.level(id);
         final folder = Directory(folderPath);
 
         if (!await folder.exists()) continue;
@@ -50,7 +50,7 @@ class StorageCleanupService {
 
         // Delete videos one by one and update size
         for (var (index, sub) in level.sub_levels.indexed) {
-          final videoPath = PathService.videoLocalPath(id, sub.videoFilename);
+          final videoPath = PathService.videoLocal(id, sub.videoFilename);
 
           final videoFile = File(videoPath);
 
@@ -66,7 +66,7 @@ class StorageCleanupService {
           if (index == level.sub_levels.length - 1) {
             await compute(_deleteFolderRecursively, folderPath);
 
-            await SharedPref.removeValue(PrefKey.eTag(PathService.levelJsonPath(id)));
+            await SharedPref.removeValue(PrefKey.eTag(PathService.levelJson(id)));
           }
 
           if (totalSize < AppConstants.kDeleteCacheThreshold) {
