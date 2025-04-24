@@ -1,9 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:myapp/features/activity_log/activity_log.controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/features/auth/screens/sign_in_screen.dart';
-import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'dart:developer' as developer;
 import '../../apis/auth_api.dart';
 import '../../core/utils.dart';
@@ -42,20 +42,14 @@ class AuthController extends _$AuthController {
     try {
       final authAPI = ref.read(authAPIProvider);
       final userController = ref.read(userControllerProvider.notifier);
-      final sublevelController = ref.read(sublevelControllerProvider.notifier);
 
       final userDTO = await authAPI.signInWithGoogle();
+
       if (userDTO == null) {
-        // Handle case where sign in might be cancelled or fail before getting DTO
-        _isProcessing = false;
-        state = state.copyWith(loading: false);
         return;
       }
 
-      // Check if language preference needs to be set
-      // Assuming PrefLang.hinglish is the default and needs confirmation
-      // Or if backend sends null initially, adjust the check accordingly
-      bool needsLanguagePrompt = userDTO.prefLang == PrefLang.hinglish; // Example check
+      bool needsLanguagePrompt = userDTO.prefLang == null; // Example check
 
       // Update user model *before* potentially showing dialog
       final user = userController.updateCurrentUser(userDTO);
@@ -72,8 +66,10 @@ class AuthController extends _$AuthController {
           barrierDismissible: false, // User must choose
           builder: (BuildContext dialogContext) {
             return AlertDialog(
-              title: const Text('What is your preferred language?'),
-              content: const Text('Select your preferred language you are most comfortable with.'),
+              title: const Text('आपकी पसंदीदा भाषा क्या है? / Aapki pasandida bhasha kya hai?'),
+              content: const Text(
+                'वह भाषा चुनें जिसमें आप सबसे अधिक सहज हैं। / Vo bhasha chunen jis mein aap sabse adhik sahaj hain.',
+              ),
               actions: <Widget>[
                 TextButton(
                   child: const Text('हिन्दी'),
@@ -104,11 +100,9 @@ class AuthController extends _$AuthController {
       if (context.mounted &&
           (user.maxLevel > level || (user.maxLevel == level && user.maxSubLevel > subLevel))) {
         await showLevelChangeConfirmationDialog(context, user, ref);
-      } else {
+      } else if (progress != null) {
         SharedPref.store(PrefKey.currProgress(userEmail: user.email), progress);
       }
-
-      await sublevelController.fetchSublevels();
     } catch (e, stackTrace) {
       developer.log(
         'Error in AuthController.signInWithGoogle',
@@ -157,13 +151,18 @@ class AuthController extends _$AuthController {
 
     try {
       final userController = ref.read(userControllerProvider.notifier);
+      final activityLogController = ref.read(activityLogControllerProvider.notifier);
 
       final authAPI = ref.read(authAPIProvider);
 
       final user = ref.read(userControllerProvider).currentUser;
 
       if (user != null) {
-        await userController.sync(user.levelId, user.subLevel);
+        final activityLogs = SharedPref.get(PrefKey.activityLogs);
+        if (activityLogs != null) {
+          await activityLogController.syncActivityLogs(activityLogs);
+          await SharedPref.removeValue(PrefKey.activityLogs);
+        }
         await authAPI.signOut();
         userController.removeCurrentUser();
         await Future.delayed(Duration.zero); // Allow UI to update

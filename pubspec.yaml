@@ -1,8 +1,8 @@
 name: myapp
-description: "A new Flutter project."
-publish_to: "none"
+description: 'A new Flutter project.'
+publish_to: 'none'
 
-version: 1.1.8+1
+version: 0.0.1
 
 environment:
   sdk: ^3.7.2
@@ -51,6 +51,7 @@ flutter:
   assets:
     - assets/sounds/
     - .env
+    - .env.prod
 
 executables:
   setup: tools/setup.dart

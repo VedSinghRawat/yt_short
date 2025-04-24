@@ -1,7 +1,7 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
+import 'package:myapp/core/console.dart';
 import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/screen/app_bar.dart';
 import 'package:myapp/core/shared_pref.dart';
@@ -36,7 +36,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   bool cancelVideoChange(
-    int index,
     int maxLevel,
     int maxSubLevel,
     int level,
@@ -46,6 +45,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     int? doneToday,
   ) {
     if (isAdmin) return false;
+
+    Console.log(
+      'level: $level, subLevel: $subLevel, maxLevel: $maxLevel, maxSubLevel: $maxSubLevel',
+    );
 
     final levelAfter = !hasLocalProgress || isLevelAfter(level, subLevel, maxLevel, maxSubLevel);
 
@@ -143,7 +146,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   bool isLevelChanged(int index, List<SubLevel> sublevels) {
-    if (index <= 0) return false;
+    if (index <= 0 || index >= sublevels.length) return false;
 
     final previousSubLevel = sublevels[index - 1];
     final currSubLevel = sublevels[index];
@@ -221,11 +224,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final localMaxLevel = localProgress?.maxLevel ?? 0;
     final localMaxSubLevel = localProgress?.maxSubLevel ?? 0;
 
+    final isLocalLevelAfter = isLevelAfter(
+      level,
+      sublevelIndex,
+      user?.maxLevel ?? 0,
+      user?.maxSubLevel ?? 0,
+    );
+
     // Check if video change should be cancelled
     if (cancelVideoChange(
-      index,
-      max(user?.maxLevel ?? 0, localMaxLevel),
-      max(user?.maxSubLevel ?? 0, localMaxSubLevel),
+      isLocalLevelAfter ? localMaxLevel : user?.maxLevel ?? 0,
+      isLocalLevelAfter ? localMaxSubLevel : user?.maxSubLevel ?? 0,
       level,
       sublevelIndex,
       localProgress != null,
@@ -259,7 +268,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // If the user is logged in, add an activity log entry
     await SharedPref.pushValue(
       PrefKey.activityLogs,
-      ActivityLog(subLevel: sublevelIndex, level: level, userEmail: userEmail ?? lastLoggedInEmail),
+      ActivityLog(
+        subLevel: sublevelIndex,
+        levelId: sublevel.levelId,
+        userEmail: userEmail ?? lastLoggedInEmail,
+      ),
     );
 
     // Sync the progress with db if the user moves to a new level

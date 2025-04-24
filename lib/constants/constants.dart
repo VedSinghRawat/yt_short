@@ -62,6 +62,12 @@ class AppConstants {
     hinglish: 'Kuch galat ho gaya. Kripya thodi der baad try karein.',
   );
 
+  static const allLevelsCompleted = PrefLangText(
+    hindi: 'फिलहाल के लिए इतने ही लेसन हैं। नए लेसन के लिए कुछ समय बाद फिर से चेक करें!',
+    hinglish:
+        'Filhal ke liye itne hi lessons hain. Naye lessons ke liye kuchh samay baad dobara check karein!',
+  );
+
   static const obstructiveErrorStatus = 599;
 
   // UI constants

@@ -129,7 +129,6 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
           }
 
           if (sublevel == null) {
-            Console.error(Failure(message: 'sublevel is null$index '), StackTrace.current);
             return const Loader();
           }
           final positionText = '${sublevel.level}-${sublevel.index}';

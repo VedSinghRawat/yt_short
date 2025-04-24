@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/core/services/api_service.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/models/activity_log/activity_log.dart';
-import 'dart:developer' as developer;
 
 abstract class IActivityLogAPI {
   Future<void> syncActivityLogs(List<ActivityLog> activityLogs);
@@ -15,21 +14,17 @@ class ActivityLogAPI implements IActivityLogAPI {
 
   @override
   Future<void> syncActivityLogs(List<ActivityLog> activityLogs) async {
-    try {
-      final googleIdToken = SharedPref.get(PrefKey.googleIdToken);
+    final googleIdToken = SharedPref.get(PrefKey.googleIdToken);
 
-      if (googleIdToken == null) return;
+    if (googleIdToken == null) return;
 
-      await _apiService.call(
-        params: ApiParams(
-          body: {'activityLogs': activityLogs},
-          method: ApiMethod.post,
-          endpoint: '/activity-log/sync',
-        ),
-      );
-    } catch (e, stackTrace) {
-      developer.log('activity_log_api:', error: e.toString(), stackTrace: stackTrace);
-    }
+    await _apiService.call(
+      params: ApiParams(
+        body: {'activityLogs': activityLogs},
+        method: ApiMethod.post,
+        endpoint: '/activity-log/sync',
+      ),
+    );
   }
 }
 

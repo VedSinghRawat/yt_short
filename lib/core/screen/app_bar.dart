@@ -25,6 +25,7 @@ class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
   @override
   Widget build(BuildContext context) {
     final currentUser = ref.watch(userControllerProvider.select((state) => state.currentUser));
+    final syncFailed = ref.watch(userControllerProvider.select((state) => state.syncFailed));
     final isLoggedIn = SharedPref.get(PrefKey.user) != null;
 
     final needsReload = currentUser?.email.isEmpty ?? true && isLoggedIn;
@@ -36,7 +37,7 @@ class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
             .prefLangText(const PrefLangText(hindi: 'अंग्रेजी सीखें', hinglish: 'English Sikhe')),
       ),
       actions: [
-        if (needsReload)
+        if (needsReload || syncFailed)
           LoadingRefreshIcon(
             isLoading: _isLoading,
             onTap: () async {
@@ -47,6 +48,12 @@ class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
               final initializeService = await ref.read(initializeServiceProvider.future);
 
               final isSuccess = await initializeService.initialApiCall();
+
+              if (syncFailed) {
+                await ref
+                    .read(userControllerProvider.notifier)
+                    .sync(currentUser?.levelId ?? '', currentUser?.subLevel ?? 0);
+              }
 
               final progress = SharedPref.get(PrefKey.currProgress(userEmail: currentUser?.email));
 

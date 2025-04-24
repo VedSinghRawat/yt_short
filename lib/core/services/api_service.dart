@@ -101,7 +101,7 @@ class ApiService {
       }
 
       if ((e.response?.statusCode ?? 0) != 304) {
-        developer.log('ApiError on uri $baseUrl :  $e ');
+        developer.log('ApiError on uri $baseUrl: ${e.response?.data}');
       }
 
       if (e.response?.data == null ||
@@ -177,10 +177,6 @@ class ApiService {
 
     try {
       final response = await call<T>(params: mergedParams);
-
-      if (response == null) {
-        return null;
-      }
 
       final newETag = response.headers.value(HttpHeaders.etagHeader);
 
