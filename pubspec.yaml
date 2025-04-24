@@ -51,6 +51,7 @@ flutter:
   assets:
     - assets/sounds/
     - .env
+    - .env.prod
 
 executables:
   setup: tools/setup.dart
