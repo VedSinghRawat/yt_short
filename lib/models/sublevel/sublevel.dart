@@ -45,6 +45,7 @@ class SubLevel with _$SubLevel {
               pauseAt: dto.pauseAt,
               videoFilename: dto.videoFilename,
               dialogues: dto.dialogues,
+              audioFilename: dto.audioFilename,
             ),
           ),
       video:
@@ -100,6 +101,8 @@ class SubLevelDTO with _$SubLevelDTO {
     };
   }
 
+  bool get isSpeechExercise => this is _SpeechExerciseDTO;
+
   Map<String, dynamic> toJson() {
     return when(
       speechExercise: (speechExercise) => speechExercise.toJson(),
@@ -110,6 +113,11 @@ class SubLevelDTO with _$SubLevelDTO {
   String get videoFilename => when(
     speechExercise: (speechExercise) => speechExercise.videoFilename,
     video: (video) => video.videoFilename,
+  );
+
+  String? get audioFilename => when(
+    speechExercise: (speechExercise) => speechExercise.audioFilename,
+    video: (video) => null,
   );
 
   List<Dialogue> get dialogues => when(

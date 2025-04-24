@@ -3,72 +3,39 @@ import 'package:flutter/material.dart';
 import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/core/widgets/active_mic.dart';
-import 'package:myapp/features/speech_exercise/widgets/recognizer.dart';
-import 'package:speech_to_text/speech_recognition_result.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:myapp/features/speech_exercise/providers/speech_provider.dart';
 
 class RecognizerButton extends ConsumerStatefulWidget {
-  final bool testCompleted;
-  final bool passed;
-  final bool failed;
   final VoidCallback onContinue;
-  final Function(SpeechRecognitionResult) onResult;
-  final VoidCallback onStopListening;
-
-  const RecognizerButton({
-    super.key,
-    required this.testCompleted,
-    required this.passed,
-    required this.failed,
-    required this.onContinue,
-    required this.onResult,
-    required this.onStopListening,
-  });
+  const RecognizerButton({super.key, required this.onContinue});
 
   @override
   ConsumerState<RecognizerButton> createState() => _RecognizerButtonState();
 }
 
 class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
-  late SpeechRecognizer _recognizer;
-  bool isListening = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _recognizer = SpeechRecognizer(
-      onResult: widget.onResult,
-      onStopListening: widget.onStopListening,
-      onStatusChange: (status) {
-        if (status == stt.SpeechToText.doneStatus && isListening) {
-          setState(() {
-            isListening = false;
-          });
-        }
-      },
-    );
-  }
-
-  Future<void> stopListening() async {
-    await _recognizer.stopListening();
-
-    setState(() {
-      isListening = false;
-    });
-  }
-
   Future<void> _handleButtonPress() async {
+    final speechNotifier = ref.read(speechProvider.notifier);
     try {
-      if (widget.passed) {
-        await stopListening();
+      if (speechNotifier.isPassed) {
+        await speechNotifier.stopListening();
+        speechNotifier.reset();
         widget.onContinue();
-      } else {
-        if (isListening || widget.testCompleted) {
-          await stopListening();
-        } else {
-          await startListening();
-        }
+        return;
       }
+
+      if (speechNotifier.isFailed) {
+        speechNotifier.reset();
+        return;
+      }
+
+      final speechState = ref.read(speechProvider);
+      if (speechState.isListening || speechNotifier.isTestCompleted) {
+        await speechNotifier.stopListening();
+        return;
+      }
+
+      await speechNotifier.startListening(context);
     } catch (e) {
       if (mounted) {
         _showRecognizerError();
@@ -90,39 +57,29 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
     );
   }
 
-  Future<void> startListening() async {
-    try {
-      await _recognizer.startListening(context, ref);
-      setState(() {
-        isListening = true;
-      });
-    } catch (e) {
-      if (mounted) {
-        _showRecognizerError();
-      }
-    }
-  }
-
   @override
   void dispose() {
-    _recognizer.stopListening();
+    ref.read(speechProvider.notifier).cancelListening();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final speechState = ref.watch(speechProvider);
+    final speechNotifier = ref.read(speechProvider.notifier);
+
     return Column(
       children: [
         Container(
-          width: widget.testCompleted ? 160 : 80,
-          height: widget.testCompleted ? 60 : 80,
+          width: speechNotifier.isTestCompleted ? 160 : 80,
+          height: speechNotifier.isTestCompleted ? 60 : 80,
           decoration: BoxDecoration(
-            shape: widget.testCompleted ? BoxShape.rectangle : BoxShape.circle,
-            borderRadius: widget.testCompleted ? BorderRadius.circular(40) : null,
+            shape: speechNotifier.isTestCompleted ? BoxShape.rectangle : BoxShape.circle,
+            borderRadius: speechNotifier.isTestCompleted ? BorderRadius.circular(40) : null,
             color:
-                widget.failed
+                speechNotifier.isFailed
                     ? Colors.red.shade100
-                    : isListening | widget.passed
+                    : speechState.isListening | speechNotifier.isPassed
                     ? Colors.green.shade100
                     : Colors.blue.shade100,
             boxShadow: const [
@@ -136,54 +93,60 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
           ),
           child: InkWell(
             onTap: _handleButtonPress,
-            customBorder: widget.passed ? null : const CircleBorder(),
+            customBorder: speechNotifier.isPassed ? null : const CircleBorder(),
             child: Container(
-              width: widget.passed ? 160 : 80,
+              width: speechNotifier.isPassed ? 160 : 80,
               height: 80,
               decoration: BoxDecoration(
-                shape: widget.passed ? BoxShape.rectangle : BoxShape.circle,
-                borderRadius: widget.passed ? BorderRadius.circular(40) : null,
+                shape: speechNotifier.isPassed ? BoxShape.rectangle : BoxShape.circle,
+                borderRadius: speechNotifier.isPassed ? BorderRadius.circular(40) : null,
               ),
               child: Center(
                 child:
-                    widget.testCompleted
+                    speechNotifier.isTestCompleted
                         ? Text(
                           ref
                               .read(langProvider.notifier)
                               .prefLangText(
                                 PrefLangText(
-                                  hindi: widget.passed ? 'आगे बढ़े' : 'पुनः प्रयास करें',
-                                  hinglish: widget.passed ? 'Aage badhe' : 'Dobara kare',
+                                  hindi: speechNotifier.isPassed ? 'आगे बढ़े' : 'पुनः प्रयास करें',
+                                  hinglish: speechNotifier.isPassed ? 'Aage badhe' : 'Dobara kare',
                                 ),
                               ),
                           style: TextStyle(
-                            color: widget.passed ? Colors.green.shade700 : Colors.red.shade700,
-                            fontSize: 18,
+                            color:
+                                speechNotifier.isPassed
+                                    ? Colors.green.shade700
+                                    : Colors.red.shade700,
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
                         )
-                        : isListening
+                        : speechState.isListening
                         ? const ActiveMic()
                         : const Icon(Icons.mic_none, color: Colors.blue, size: 32),
               ),
             ),
           ),
         ),
-        if (!widget.testCompleted)
+        if (!speechNotifier.isTestCompleted)
           Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
               ref
                   .read(langProvider.notifier)
                   .prefLangText(
-                    isListening
+                    speechState.isListening
                         ? const PrefLangText(hindi: 'सुन रहे है...', hinglish: 'Listening...')
                         : const PrefLangText(
                           hindi: 'बोलने के लिए टैप करें',
                           hinglish: 'Bolne ke liye tap karein',
                         ),
                   ),
-              style: TextStyle(color: isListening ? Colors.green : Colors.blue, fontSize: 12),
+              style: TextStyle(
+                color: speechState.isListening ? Colors.green : Colors.blue,
+                fontSize: 12,
+              ),
             ),
           ),
       ],

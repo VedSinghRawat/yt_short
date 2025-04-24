@@ -6,29 +6,52 @@ import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/error/failure.dart';
 
-void showErrorSnackBar(BuildContext context, String message) {
+void _showCustomSnackBar(
+  BuildContext context, {
+  required String message,
+  Color? backgroundColor,
+  Duration duration = const Duration(seconds: 3),
+  IconData? icon,
+}) {
   if (!context.mounted) return;
 
-  // Remove mounted check since ScaffoldMessenger handles this internally
   final messenger = ScaffoldMessenger.of(context);
   messenger.clearSnackBars();
   messenger.showSnackBar(
     SnackBar(
-      content: Text(message),
-      backgroundColor: Theme.of(context).colorScheme.error,
+      content: Row(
+        children: [
+          if (icon != null) ...[Icon(icon, color: Colors.white), const SizedBox(width: 12)],
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: backgroundColor ?? Colors.grey[800],
       behavior: SnackBarBehavior.floating,
-      duration: const Duration(seconds: 3),
-      margin: const EdgeInsets.all(8),
+      duration: duration,
+      margin: const EdgeInsets.all(16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     ),
   );
 }
 
-void showSnackBar(BuildContext context, String text) {
-  if (!context.mounted) return;
+void showErrorSnackBar(BuildContext context, String message) {
+  _showCustomSnackBar(
+    context,
+    message: message,
+    backgroundColor: Colors.grey[850],
+    duration: const Duration(seconds: 4),
+    icon: Icons.error_outline,
+  );
+}
 
-  ScaffoldMessenger.of(context)
-    ..removeCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(text)));
+void showSnackBar(BuildContext context, String text) {
+  _showCustomSnackBar(context, message: text);
 }
 
 bool isLevelAfter(int levelA, int subLevelA, int levelB, int subLevelB) {

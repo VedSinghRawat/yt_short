@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
-import 'package:myapp/core/console.dart';
 import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/screen/app_bar.dart';
 import 'package:myapp/core/shared_pref.dart';
@@ -45,10 +44,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     int? doneToday,
   ) {
     if (isAdmin) return false;
-
-    Console.log(
-      'level: $level, subLevel: $subLevel, maxLevel: $maxLevel, maxSubLevel: $maxSubLevel',
-    );
 
     final levelAfter = !hasLocalProgress || isLevelAfter(level, subLevel, maxLevel, maxSubLevel);
 

@@ -1,14 +1,22 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:myapp/core/controllers/lang_notifier.dart';
+import 'package:myapp/features/speech_exercise/providers/speech_provider.dart';
 import 'package:myapp/features/speech_exercise/widgets/recognizer_button.dart';
-import 'package:speech_to_text/speech_recognition_result.dart';
 
 class SpeechExerciseCard extends ConsumerStatefulWidget {
   final String text;
   final VoidCallback onContinue;
+  final String levelId;
+  final String audioFilename;
 
-  const SpeechExerciseCard({super.key, required this.text, required this.onContinue});
+  const SpeechExerciseCard({
+    super.key,
+    required this.text,
+    required this.onContinue,
+    required this.levelId,
+    required this.audioFilename,
+  });
 
   @override
   ConsumerState<SpeechExerciseCard> createState() => _SpeechExerciseCardState();
@@ -16,22 +24,13 @@ class SpeechExerciseCard extends ConsumerStatefulWidget {
 
 class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
   late List<List<String>> _words;
-  late List<bool?> _wordMarking;
-  int _offset = 0;
-  late List<String> _recognizedWords;
-  late int _totalWordCount;
-
-  bool get passed => _wordMarking.every((mark) => mark == true);
-  bool get failed =>
-      _recognizedWords.where((word) => word.isNotEmpty).toList().length == _totalWordCount &&
-      !passed;
-  bool get testCompleted => passed || failed;
+  late List<String> _flatWords;
 
   @override
   void initState() {
     super.initState();
     _words = [];
-    _totalWordCount = 0;
+    _flatWords = [];
 
     // Split text by new lines to maintain line structure
     final lines = widget.text.split('\n');
@@ -41,7 +40,7 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
         word = word.trim();
         if (word.isNotEmpty) {
           lineWords.add(word);
-          _totalWordCount++;
+          _flatWords.add(word);
         }
       }
       if (lineWords.isNotEmpty) {
@@ -49,62 +48,17 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
       }
     }
 
-    _wordMarking = List.generate(_totalWordCount, (index) => null);
-    _recognizedWords = List.filled(_totalWordCount, '');
-  }
-
-  void _onStopListening() {
-    if (!context.mounted) return;
-
-    setState(() {
-      _wordMarking = List.generate(_totalWordCount, (index) => null);
-      _recognizedWords = List.filled(_totalWordCount, '');
+    // Initialize the speech provider with target words
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      ref.read(speechProvider.notifier).setTargetWords(_flatWords);
     });
-  }
-
-  void _onSpeechResult(SpeechRecognitionResult result) {
-    List<String> currRecognizedWords =
-        result.recognizedWords.split(' ').where((word) => word.isNotEmpty).toList();
-
-    setState(() {
-      if (currRecognizedWords.isEmpty) {
-        _offset = _recognizedWords.where((word) => word.isNotEmpty).length;
-        return;
-      }
-
-      for (var i = 0; i < currRecognizedWords.length; i++) {
-        _recognizedWords[i + _offset] = currRecognizedWords[i];
-      }
-
-      for (int i = 0; i < _recognizedWords.where((word) => word.isNotEmpty).length; i++) {
-        // Get the actual word from the nested structure
-        String targetWord = _getWordAtIndex(i);
-        String formatedTargetWord = formatWord(targetWord);
-        String formatedRecognizedWord = formatWord(_recognizedWords[i]);
-
-        _wordMarking[i] = formatedTargetWord == formatedRecognizedWord;
-      }
-    });
-  }
-
-  // Helper method to get word at a flat index from the nested structure
-  String _getWordAtIndex(int flatIndex) {
-    int wordsSoFar = 0;
-    for (var line in _words) {
-      if (flatIndex < wordsSoFar + line.length) {
-        return line[flatIndex - wordsSoFar];
-      }
-      wordsSoFar += line.length;
-    }
-    return ''; // Should not reach here if index is valid
-  }
-
-  String formatWord(String word) {
-    return word.replaceAll(RegExp(r'[^\w\s]'), '').toLowerCase();
   }
 
   @override
   Widget build(BuildContext context) {
+    final speechState = ref.watch(speechProvider);
+    final speechNotifier = ref.read(speechProvider.notifier);
+
     // Match font sizes and line heights to keep total vertical space in sync
     const double recognizedWordFontSize = 24;
     const double recognizedWordLineHeight = 1.4; // Adjust if needed
@@ -115,9 +69,6 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
       fontWeight: FontWeight.w300,
       height: recognizedWordLineHeight,
     );
-
-    const recognizedWordHeight = recognizedWordFontSize * recognizedWordLineHeight;
-
     return Container(
       padding: const EdgeInsets.all(16.0),
       color: Theme.of(context).scaffoldBackgroundColor,
@@ -152,83 +103,90 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                         for (int lineIndex = 0; lineIndex < _words.length; lineIndex++)
                           Padding(
                             padding: const EdgeInsets.only(bottom: 16.0),
-                            child: Wrap(
-                              spacing: 8,
-                              runSpacing: 16,
-                              alignment: WrapAlignment.center,
-                              crossAxisAlignment: WrapCrossAlignment.center,
+                            child: Column(
                               children: [
-                                for (
-                                  int wordIndex = 0;
-                                  wordIndex < _words[lineIndex].length;
-                                  wordIndex++
-                                )
-                                  Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      // Calculate the flat index for this word
-                                      Builder(
-                                        builder: (context) {
-                                          int flatIndex = 0;
-                                          for (int i = 0; i < lineIndex; i++) {
-                                            flatIndex += _words[i].length;
-                                          }
-                                          flatIndex += wordIndex;
+                                Center(
+                                  child: IconButton(
+                                    onPressed: () {
+                                      ref
+                                          .read(speechProvider.notifier)
+                                          .playAudio(widget.levelId, widget.audioFilename);
+                                    },
+                                    icon: const Icon(Icons.hearing_sharp),
+                                    color: Colors.blue,
+                                    iconSize: 30,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 2,
+                                  alignment: WrapAlignment.center,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  children: [
+                                    for (
+                                      int wordIndex = 0;
+                                      wordIndex < _words[lineIndex].length;
+                                      wordIndex++
+                                    )
+                                      Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          // Calculate the flat index for this word
+                                          Builder(
+                                            builder: (context) {
+                                              int flatIndex = 0;
+                                              for (int i = 0; i < lineIndex; i++) {
+                                                flatIndex += _words[i].length;
+                                              }
+                                              flatIndex += wordIndex;
 
-                                          // Recognized word
-                                          return Column(
-                                            children: [
-                                              _recognizedWords[flatIndex].isNotEmpty
-                                                  ? Text(
-                                                    _recognizedWords[flatIndex],
-                                                    style: recognizedWordStyle.copyWith(
-                                                      textBaseline: TextBaseline.alphabetic,
-                                                    ),
-                                                  )
-                                                  : const SizedBox(height: recognizedWordHeight),
-
-                                              // Target word
-                                              Text(
+                                              // Target word - Now directly returned by Builder
+                                              return Text(
                                                 _words[lineIndex][wordIndex],
                                                 style: TextStyle(
                                                   color:
-                                                      _wordMarking[flatIndex] == null
+                                                      speechState.wordMarking[flatIndex] == null
                                                           ? Colors.white60
-                                                          : _wordMarking[flatIndex] == true
+                                                          : speechState.wordMarking[flatIndex] ==
+                                                              true
                                                           ? Colors.lightBlue[200]
-                                                          : _wordMarking[flatIndex] == false
+                                                          : speechState.wordMarking[flatIndex] ==
+                                                              false
                                                           ? Colors.red
                                                           : Colors.white,
                                                   fontSize: 24,
                                                   fontWeight:
-                                                      _wordMarking[flatIndex] != null
+                                                      speechState.wordMarking[flatIndex] != null
                                                           ? FontWeight.bold
                                                           : FontWeight.normal,
                                                   height: 1.4,
                                                   textBaseline: TextBaseline.alphabetic,
                                                 ),
-                                              ),
-                                            ],
-                                          );
-                                        },
+                                              );
+                                            },
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
+                                  ],
+                                ),
                               ],
                             ),
                           ),
                       ],
                     ),
-                    if (testCompleted)
+                    if (speechNotifier.isTestCompleted)
                       Container(
                         padding: const EdgeInsets.all(8.0),
                         decoration: BoxDecoration(
-                          color: passed ? Colors.green[300] : Colors.red[300],
+                          color: speechNotifier.isPassed ? Colors.green[300] : Colors.red[300],
                           shape: BoxShape.circle,
                         ),
                         child: Center(
                           child: Icon(
-                            passed ? Icons.download_done_rounded : Icons.error_rounded,
+                            speechNotifier.isPassed
+                                ? Icons.download_done_rounded
+                                : Icons.error_rounded,
                             color: Colors.white,
                             size: 30,
                           ),
@@ -239,17 +197,19 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
               ],
             ),
           ),
+          // Display recognized words at the bottom
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+            child: Text(
+              speechState.recognizedWords.where((w) => w.isNotEmpty).join(' '),
+              style: recognizedWordStyle,
+              textAlign: TextAlign.center,
+            ),
+          ),
           const Spacer(),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-            child: RecognizerButton(
-              testCompleted: testCompleted,
-              passed: passed,
-              failed: failed,
-              onContinue: widget.onContinue,
-              onResult: _onSpeechResult,
-              onStopListening: _onStopListening,
-            ),
+            child: RecognizerButton(onContinue: widget.onContinue),
           ),
         ],
       ),
