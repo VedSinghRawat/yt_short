@@ -35,7 +35,7 @@ class StorageCleanupService {
 
       int i = 0;
 
-      final toBeDeletedVideoPaths = List<String>.empty();
+      final toBeDeletedPaths = List<String>.empty();
 
       // Start deleting until space is freed
       while (i < orderedIds.length - AppConstants.kProtectedIdsLength) {
@@ -51,16 +51,20 @@ class StorageCleanupService {
         // Delete videos one by one and update size
         for (var (index, sub) in level.sub_levels.indexed) {
           final videoPath = PathService.videoLocalPath(id, sub.videoFilename);
+          final audioPath = PathService.audioLocalPath(id, sub.audioFilename!);
 
           final videoFile = File(videoPath);
+          final audioFile = File(audioPath);
 
           if (!await videoFile.exists()) continue;
 
           final videoSize = await videoFile.length();
+          final audioSize = await audioFile.length();
 
-          toBeDeletedVideoPaths.add(videoPath);
+          toBeDeletedPaths.add(videoPath);
+          toBeDeletedPaths.add(audioPath);
 
-          totalSize -= videoSize;
+          totalSize -= videoSize + audioSize;
 
           // delete full folder if there are no videos left
           if (index == level.sub_levels.length - 1) {
@@ -71,11 +75,11 @@ class StorageCleanupService {
 
           if (totalSize < AppConstants.kDeleteCacheThreshold) {
             if (index != level.sub_levels.length - 1) {
-              await compute(_deleteVideos, toBeDeletedVideoPaths);
+              await compute(_deleteVideos, toBeDeletedPaths);
             }
 
             await Future.wait(
-              toBeDeletedVideoPaths.map(
+              toBeDeletedPaths.map(
                 (videoPath) => SharedPref.removeValue(
                   PrefKey.eTag(
                     PathService.videoPath(id, videoPath.split('/').last.replaceAll('.mp4', '')),

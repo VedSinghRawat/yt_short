@@ -14,6 +14,7 @@ class PathService {
   static String levelJsonPath(String levelId) => '/levels/$levelId/data.json';
 
   static String levelVideosDirPath(String levelId) => '/levels/$levelId/videos';
+  static String levelAudiosDirPath(String levelId) => '/levels/$levelId/audios';
 
   static String videoPath(String levelId, String videoFilename) =>
       '${levelVideosDirPath(levelId)}/$videoFilename.mp4';
@@ -30,4 +31,10 @@ class PathService {
   static String dialogueAudioPath(String fileName) => '$dialogueAudioDirPath/$fileName';
 
   static String dialogueTempZipPath(int zipNum) => '$dialogueAudioDirPath/zips/$zipNum.zip';
+
+  static String audioPath(String levelId, String audioFilename) =>
+      '${levelAudiosDirPath(levelId)}/$audioFilename.mp3';
+
+  static String audioLocalPath(String levelId, String audioFilename) =>
+      '${FileService.documentsDirectory.path}${audioPath(levelId, audioFilename)}';
 }

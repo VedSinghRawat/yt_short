@@ -83,7 +83,7 @@ class SublevelController extends _$SublevelController {
         );
       }
 
-      await subLevelService.getVideoFiles(levelDTO);
+      await subLevelService.getFiles(levelDTO);
 
       // Fetch and extract dialogue audio files after getting videos
       await subLevelService.getDialogueAudioFiles(levelDTO);

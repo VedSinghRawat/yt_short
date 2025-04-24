@@ -78,7 +78,7 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
 
     showDialog(
       context: context,
-      barrierDismissible: isAdmin || kDebugMode,
+      barrierDismissible: true,
       barrierColor: const Color.fromRGBO(0, 0, 0, 0.9),
       builder:
           (context) => PopScope(
@@ -104,6 +104,8 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
                   ],
                 ),
                 child: SpeechExerciseCard(
+                  levelId: widget.exercise.levelId,
+                  audioFilename: widget.exercise.audioFilename,
                   text: widget.exercise.text,
                   onContinue: () {
                     if (mounted) {
@@ -115,9 +117,7 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
               ),
             ),
           ),
-    ).then((_) {
-      if (mounted) {}
-    });
+    );
   }
 
   @override

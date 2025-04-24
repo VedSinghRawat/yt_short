@@ -9,6 +9,7 @@ import 'package:myapp/core/services/path_service.dart';
 abstract class ISubLevelAPI {
   Future<Uint8List?> getDialogueZip(int zipNum);
   Future<Uint8List?> getVideo(String levelId, String videoFilename);
+  Future<Uint8List?> getAudio(String levelId, String audioFilename);
 }
 
 class SubLevelAPI implements ISubLevelAPI {
@@ -43,6 +44,22 @@ class SubLevelAPI implements ISubLevelAPI {
     } on DioException catch (e) {
       developer.log('Error in SubLevelAPI.getDialogueZip for zipNum $zipNum: $e');
       throw Failure(message: e.toString());
+    }
+  }
+
+  @override
+  Future<Uint8List?> getAudio(String levelId, String audioFilename) async {
+    try {
+      final response = await apiService.getCloudStorageData(
+        endpoint: PathService.audioPath(levelId, audioFilename),
+        responseType: ResponseType.bytes,
+      );
+
+      return response?.data;
+    } on DioException catch (e) {
+      developer.log('Error in SubLevelAPI.getAudio: $e');
+      // throw Failure(message: e.toString()); //TODO: temporary
+      return null;
     }
   }
 }
