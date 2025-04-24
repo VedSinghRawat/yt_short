@@ -1,7 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:myapp/constants/constants.dart';
+import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/error/failure.dart';
 
 void showErrorSnackBar(BuildContext context, String message) {
@@ -57,19 +59,21 @@ typedef FutureVoid = FutureEither<void>;
 final dioConnectionErrors = {DioExceptionType.connectionError};
 
 /// Return user friendly error message based on dio exception type
-String parseError(DioExceptionType? type) {
-  if (type == null) return unknownErrorMsg;
+String parseError(DioExceptionType? type, Ref ref) {
+  if (type == null) return ref.read(langProvider.notifier).prefLangText(AppConstants.unknownError);
 
-  return switch (type) {
-    DioExceptionType.connectionError => connectionErrorMsg,
-    DioExceptionType.connectionTimeout => connectionTimeoutMsg,
-    DioExceptionType.receiveTimeout => receiveTimeoutMsg,
-    DioExceptionType.sendTimeout => sendTimeoutMsg,
-    DioExceptionType.badCertificate => badCertificateMsg,
-    DioExceptionType.cancel => cancelMsg,
-    DioExceptionType.badResponse => badResponseMsg,
-    DioExceptionType.unknown => unknownErrorMsg,
+  final e = switch (type) {
+    DioExceptionType.connectionError => AppConstants.connectionError,
+    DioExceptionType.connectionTimeout => AppConstants.connectionTimeout,
+    DioExceptionType.receiveTimeout => AppConstants.receiveTimeout,
+    DioExceptionType.sendTimeout => AppConstants.sendTimeout,
+    DioExceptionType.badCertificate => AppConstants.badCertificate,
+    DioExceptionType.cancel => AppConstants.cancel,
+    DioExceptionType.badResponse => AppConstants.badResponse,
+    DioExceptionType.unknown => AppConstants.unknownError,
   };
+
+  return ref.read(langProvider.notifier).prefLangText(e);
 }
 
 bool isPrimitive(dynamic value) {
@@ -78,4 +82,13 @@ bool isPrimitive(dynamic value) {
 
 bool isListOfPrimitives(dynamic value) {
   return value is List && value.every(isPrimitive);
+}
+
+/// Formats a duration in seconds into MM:SS string format.
+String formatDurationMMSS(double seconds) {
+  final duration = Duration(seconds: seconds.toInt());
+  String twoDigits(int n) => n.toString().padLeft(2, '0');
+  final minutes = twoDigits(duration.inMinutes.remainder(60));
+  final secs = twoDigits(duration.inSeconds.remainder(60));
+  return '$minutes:$secs';
 }

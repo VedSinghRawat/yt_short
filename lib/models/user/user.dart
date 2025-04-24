@@ -1,11 +1,14 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:flutter/foundation.dart';
+import 'package:myapp/core/shared_pref.dart';
 
 part 'user.freezed.dart';
 part 'user.g.dart';
 
+enum PrefLang { hindi, hinglish }
+
 @freezed
-class UserModel with _$UserModel {
+class UserModel with _$UserModel implements SharedPrefClass {
   const UserModel._();
 
   const factory UserModel({
@@ -22,6 +25,7 @@ class UserModel with _$UserModel {
     required int doneToday,
     required int level,
     required int maxLevel,
+    required PrefLang? prefLang,
   }) = _UserModel;
 
   factory UserModel.fromJson(Map<String, dynamic> json) => _$UserModelFromJson(json);
@@ -34,7 +38,7 @@ class UserModel with _$UserModel {
     return UserModel.fromJson(jsonDTO);
   }
 
-  bool get isAdmin => role == UserRole.admin;
+  bool get isAdmin => false;
 }
 
 @freezed
@@ -53,6 +57,7 @@ class UserDTO with _$UserDTO {
     required int lastProgress,
     required UserRole role,
     required int doneToday,
+    required PrefLang? prefLang,
   }) = _UserDTO;
 
   factory UserDTO.fromJson(Map<String, dynamic> json) => _$UserDTOFromJson(json);

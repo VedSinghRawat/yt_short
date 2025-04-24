@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:myapp/core/widgets/video_player.dart';
+import 'package:myapp/core/widgets/sublevel_video_player/sublevel_video_player.dart';
 import 'package:myapp/features/speech_exercise/widgets/exercise_sentence_card.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'package:myapp/models/speech_exercise/speech_exercise.dart';
@@ -122,12 +122,13 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Player(
-      key: Key(widget.uniqueId ?? widget.videoLocalPath ?? widget.videoUrls?.first ?? ''),
+    return SublevelVideoPlayer(
+      key: Key(widget.uniqueId ?? widget.videoLocalPath ?? widget.exercise.videoFilename),
       videoLocalPath: widget.videoLocalPath,
       videoUrls: widget.videoUrls,
       uniqueId: widget.uniqueId,
       onControllerInitialized: _onControllerInitialized,
+      dialogues: widget.exercise.dialogues,
       stayPause: _isDialogOpen,
     );
   }

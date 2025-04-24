@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:myapp/constants/constants.dart';
+import 'package:go_router/go_router.dart';
+import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/widgets/loader.dart';
-import 'package:myapp/features/auth/screens/sign_in_screen.dart';
 import 'package:myapp/features/user/user_controller.dart';
 
 class AuthWrapper extends ConsumerWidget {
@@ -13,19 +13,15 @@ class AuthWrapper extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentUser = ref.watch(userControllerProvider.select((state) => state.currentUser));
-    final loading = ref.watch(userControllerProvider.select((state) => state.loading));
-    final userEmail = currentUser?.email;
-    final progress = SharedPref.get(PrefKey.currProgress(userEmail: userEmail));
-    final lastLoggedInEmail = SharedPref.get(PrefKey.lastLoggedInEmail);
+    final user =
+        ref.watch(userControllerProvider.select((state) => state.currentUser)) ??
+        SharedPref.get(PrefKey.user);
 
-    if (progress?.level != null &&
-        progress!.level! > kAuthRequiredLevel &&
-        lastLoggedInEmail == null) {
-      return const SignInScreen();
-    }
+    if (user == null) {
+      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+        context.go(Routes.signIn);
+      });
 
-    if (currentUser == null && loading) {
       return const Loader();
     }
 

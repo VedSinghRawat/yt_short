@@ -75,3 +75,7 @@ android/app/.cxx/
 # Freezed and generated files
 *.g.dart
 *.freezed.dart
+
+# Environment files
+.env.prod
+.env

@@ -1,0 +1,438 @@
+import 'dart:async';
+import 'dart:developer' as developer;
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:myapp/core/controllers/lang_notifier.dart';
+import 'package:myapp/features/sublevel/sublevel_controller.dart';
+import 'package:myapp/features/sublevel/widget/error_page.dart';
+import 'package:myapp/models/sublevel/sublevel.dart';
+import 'package:video_player/video_player.dart';
+import 'package:visibility_detector/visibility_detector.dart';
+import 'package:flutter/foundation.dart'; // Import for listEquals
+import 'dialogue_list.dart'; // Import the new dialogue list widget
+import 'video_progress_bar.dart'; // Import the extracted progress bar
+
+class SublevelVideoPlayer extends ConsumerStatefulWidget {
+  final String? videoLocalPath;
+  final String? uniqueId;
+  final List<String>? videoUrls;
+  final Function(VideoPlayerController controller)? onControllerInitialized;
+  final List<Dialogue> dialogues;
+  final bool stayPause;
+
+  const SublevelVideoPlayer({
+    super.key,
+    required this.videoLocalPath,
+    this.uniqueId,
+    this.onControllerInitialized,
+    this.videoUrls,
+    required this.dialogues,
+    this.stayPause = false,
+  });
+
+  @override
+  ConsumerState<SublevelVideoPlayer> createState() => _SublevelVideoPlayerState();
+}
+
+class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
+    with WidgetsBindingObserver {
+  VideoPlayerController? _controller;
+  Duration? _lastPosition;
+  bool _isInitialized = false;
+  String? error;
+  bool _isVisible = false;
+
+  bool _showPlayPauseIcon = false;
+  IconData _iconData = Icons.play_arrow;
+  Timer? _iconTimer;
+
+  List<Dialogue> _displayableDialogues = [];
+  double? _dialogueListHeight;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _updateDisplayableDialogues(Duration.zero);
+    _initializeVideoPlayerController();
+
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _iconTimer?.cancel();
+    _controller?.removeListener(_listener);
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.paused) {
+      // Store position before pausing/disposing
+      _controller?.removeListener(_listener);
+      _controller?.pause();
+      _lastPosition = _controller?.value.position;
+      _controller?.dispose();
+      _controller = null;
+      if (mounted) {
+        setState(() {
+          _isInitialized = false;
+          _showPlayPauseIcon = false;
+        });
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      // Only initialize if controller is null (disposed)
+      if (_controller == null) {
+        _initializeVideoPlayerController();
+      }
+    }
+  }
+
+  void _listener() {
+    if (!mounted || _controller == null) return;
+
+    final value = _controller!.value;
+    if (!value.isInitialized) return;
+
+    // Always update displayable dialogues based on source list and current time
+    _updateDisplayableDialogues(value.position);
+
+    if (value.hasError && error == null) {
+      developer.log('error in video player ${value.errorDescription}');
+      if (mounted) {
+        ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
+
+        setState(() {
+          error = '$errorText: ${value.errorDescription ?? "Unknown error"}';
+          _isInitialized = false;
+        });
+      }
+    }
+
+    _listenerVideoFinished();
+  }
+
+  void _listenerVideoFinished() {
+    if (_controller == null || !_controller!.value.isInitialized) return;
+
+    final position = _controller!.value.position;
+    final duration = _controller!.value.duration;
+
+    if (duration > Duration.zero) {
+      final bool isNearEnd = (duration - position).inSeconds <= 1;
+      if (isNearEnd && !ref.read(sublevelControllerProvider).hasFinishedVideo) {
+        ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
+        _controller?.removeListener(_listener);
+      }
+    }
+  }
+
+  void _changePlayingState({bool changeToPlay = true}) async {
+    if (_controller == null || !_isInitialized) return;
+
+    final wasPlaying = _controller!.value.isPlaying;
+
+    if (wasPlaying || !changeToPlay) {
+      await _controller!.pause();
+      // Explicitly update dialogues state after pausing
+      _updateDisplayableDialogues(_controller!.value.position);
+    } else {
+      if (_controller!.value.position >= _controller!.value.duration) {
+        await _controller!.seekTo(Duration.zero);
+      }
+      play();
+    }
+
+    final newIcon = wasPlaying ? Icons.pause : Icons.play_arrow;
+
+    setState(() {
+      _iconData = newIcon;
+      _showPlayPauseIcon = true;
+    });
+
+    _iconTimer?.cancel();
+    _iconTimer = Timer(Duration(milliseconds: newIcon == Icons.pause ? 800 : 500), () {
+      if (mounted) {
+        setState(() {
+          _showPlayPauseIcon = false;
+        });
+      }
+    });
+  }
+
+  Future<void> play() async {
+    if (_controller == null || !_isInitialized) return;
+    await _controller!.play();
+  }
+
+  Future<void> _handleVisibility(bool isVisible) async {
+    if (_controller == null || !_isInitialized) return;
+
+    if (isVisible) {
+      _controller!.addListener(_listener);
+      if (!_controller!.value.isPlaying && error == null && !widget.stayPause) {
+        await play();
+      }
+    } else {
+      await _controller!.pause();
+      _controller!.removeListener(_listener);
+    }
+  }
+
+  void _onVisibilityChanged(VisibilityInfo info) {
+    if (_controller == null) {
+      if (mounted && _isVisible) {
+        setState(() {
+          _isVisible = false;
+        });
+      }
+      return;
+    }
+
+    if (!mounted) return;
+
+    final isNowVisible = info.visibleFraction > 0.8;
+
+    if (_isVisible == isNowVisible) return;
+
+    setState(() {
+      _isVisible = isNowVisible;
+    });
+
+    try {
+      if (_isVisible && error != null) {
+        ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
+      }
+      _handleVisibility(_isVisible);
+    } catch (e) {
+      developer.log('Error in Player._onVisibilityChanged', error: e.toString());
+      if (mounted && error == null) {
+        setState(() {
+          error = 'Error handling visibility: $e';
+        });
+      }
+    }
+  }
+
+  Future<void> _initializeVideoPlayerController() async {
+    if (!mounted) return;
+
+    try {
+      final file = widget.videoLocalPath != null ? File(widget.videoLocalPath!) : null;
+
+      if (file != null && !await file.exists()) {
+        throw Exception(
+          ref
+              .read(langProvider.notifier)
+              .prefLangText(
+                const PrefLangText(
+                  hindi: 'वीडियो फ़ाइल नहीं मिली',
+                  hinglish: 'Video file nahin mili',
+                ),
+              ),
+        );
+      }
+
+      if (file != null) {
+        _controller = VideoPlayerController.file(file);
+      } else {
+        try {
+          _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrls![0]));
+        } catch (e) {
+          _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrls![1]));
+        }
+      }
+
+      _controller!.addListener(_listener);
+      await _controller!.setLooping(true);
+      await _controller!.initialize();
+
+      setState(() {
+        _isInitialized = true;
+        error = null;
+      });
+
+      if (_lastPosition != null) {
+        await _controller!.seekTo(_lastPosition!);
+        _lastPosition = null;
+      }
+
+      // Auto-play if visible after initialization/resuming
+      if (_isVisible && !widget.stayPause) {
+        await play();
+      }
+
+      widget.onControllerInitialized?.call(_controller!);
+    } catch (e) {
+      developer.log(
+        'Error initializing video player ${widget.videoLocalPath}',
+        error: e.toString(),
+      );
+      _controller?.removeListener(_listener);
+      if (mounted) {
+        setState(() {
+          error = '$errorText: ${e.toString()}';
+          _isInitialized = false;
+        });
+        ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
+      }
+    }
+  }
+
+  String get errorText => ref
+      .read(langProvider.notifier)
+      .prefLangText(
+        const PrefLangText(
+          hindi: 'वीडियो शुरू नहीं हो पाया, कृपया थोड़ी देर बाद फिर से कोशिश करें।',
+          hinglish: 'Video start nahi ho paya, kripya thodi der baad try karein.',
+        ),
+      );
+
+  void _updateDisplayableDialogues(Duration currentPosition) {
+    if (!mounted) return;
+    final currentSeconds = currentPosition.inSeconds.toDouble();
+
+    final newDialogues = widget.dialogues.where((d) => d.time <= currentSeconds).toList();
+    newDialogues.sort((a, b) => b.time.compareTo(a.time));
+
+    if (listEquals(_displayableDialogues, newDialogues)) return;
+
+    setState(() {
+      _displayableDialogues = newDialogues;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isPlayerReady =
+        _isInitialized && _controller != null && _controller!.value.isInitialized;
+    final bool isPaused = isPlayerReady && !_controller!.value.isPlaying;
+    final bool showDialogueArea = isPaused && _isVisible;
+
+    final double screenHeight = MediaQuery.of(context).size.height;
+    final double standardDialogueHeight = screenHeight * 0.3;
+
+    final double currentDialogueContainerHeight = _dialogueListHeight ?? standardDialogueHeight;
+
+    return VisibilityDetector(
+      key: Key(widget.uniqueId ?? widget.videoLocalPath ?? widget.videoUrls?.first ?? ''),
+      onVisibilityChanged: _onVisibilityChanged,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              GestureDetector(
+                onTap: _changePlayingState,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    if (error != null)
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: ErrorPage(text: error!),
+                        ),
+                      )
+                    else if (isPlayerReady)
+                      Center(
+                        child: AspectRatio(
+                          aspectRatio: _controller!.value.aspectRatio,
+                          child: VideoPlayer(_controller!),
+                        ),
+                      )
+                    else
+                      const AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    PlayPauseButton(showPlayPauseIcon: _showPlayPauseIcon, iconData: _iconData),
+                  ],
+                ),
+              ),
+              Visibility(
+                visible: showDialogueArea,
+                child: Positioned.fill(
+                  child: IgnorePointer(
+                    child: Container(color: Colors.black.withAlpha((255 * 0.25).round())),
+                  ),
+                ),
+              ),
+              Visibility(
+                visible: showDialogueArea,
+                child: Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    height: currentDialogueContainerHeight,
+                    decoration: const BoxDecoration(
+                      color: Colors.black,
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
+                    ),
+                    child: DialogueList(
+                      dialogues: _displayableDialogues,
+                      onHeightCalculated: (height) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (mounted && _dialogueListHeight != height) {
+                            setState(() => _dialogueListHeight = height * 3);
+                          }
+                        });
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (isPlayerReady)
+            ValueListenableBuilder<VideoPlayerValue>(
+              valueListenable: _controller!,
+              builder: (context, value, child) {
+                if (value.duration > Duration.zero) {
+                  return VideoProgressBar(
+                    durationMs: value.duration.inMilliseconds,
+                    currentPositionMs: value.position.inMilliseconds,
+                    isPlaying: value.isPlaying,
+                  );
+                } else {
+                  return const SizedBox(height: 10);
+                }
+              },
+            )
+          else
+            const SizedBox(height: 10),
+        ],
+      ),
+    );
+  }
+}
+
+class PlayPauseButton extends StatelessWidget {
+  const PlayPauseButton({super.key, required bool showPlayPauseIcon, required IconData iconData})
+    : _showPlayPauseIcon = showPlayPauseIcon,
+      _iconData = iconData;
+
+  final bool _showPlayPauseIcon;
+  final IconData _iconData;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedOpacity(
+      opacity: _showPlayPauseIcon ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 400),
+      child: Container(
+        decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+        padding: const EdgeInsets.all(20),
+        child: Icon(_iconData, size: MediaQuery.of(context).size.width * 0.12, color: Colors.white),
+      ),
+    );
+  }
+}

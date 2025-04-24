@@ -3,16 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:myapp/core/error/failure.dart';
 import 'package:myapp/core/services/api_service.dart';
-import 'package:myapp/core/services/info_service.dart';
 import 'package:myapp/models/user/user.dart';
 
 part 'initialize_api.freezed.dart';
 part 'initialize_api.g.dart';
 
 @freezed
-class InitializeResponse with _$InitializeResponse implements VersionData {
-  const factory InitializeResponse({required bool closable, String? content, UserDTO? user}) =
-      _InitializeResponse;
+class InitializeResponse with _$InitializeResponse {
+  const factory InitializeResponse({UserDTO? user}) = _InitializeResponse;
 
   factory InitializeResponse.fromJson(Map<String, dynamic> json) =>
       _$InitializeResponseFromJson(json);
@@ -36,7 +34,7 @@ class InitializeAPI implements IInitializeAPI {
 
       return InitializeResponse.fromJson(response.data!);
     } on DioException catch (e) {
-      throw Failure(message: e.response?.data ?? 'Failed to initialize');
+      throw Failure(message: e.response?.data.toString() ?? 'Failed to initialize');
     }
   }
 }

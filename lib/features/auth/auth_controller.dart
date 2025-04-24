@@ -1,14 +1,14 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:myapp/features/activity_log/activity_log.controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/features/auth/screens/sign_in_screen.dart';
-import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'dart:developer' as developer;
 import '../../apis/auth_api.dart';
 import '../../core/utils.dart';
 import '../user/user_controller.dart';
+import 'package:myapp/models/user/user.dart'; // Import User model for PrefLang
 import 'dart:async';
 
 part 'auth_controller.g.dart';
@@ -40,43 +40,69 @@ class AuthController extends _$AuthController {
     state = state.copyWith(loading: true);
 
     try {
-      // Access dependencies via ref.
       final authAPI = ref.read(authAPIProvider);
       final userController = ref.read(userControllerProvider.notifier);
-      final sublevelController = ref.read(sublevelControllerProvider.notifier);
 
       final userDTO = await authAPI.signInWithGoogle();
-      if (userDTO == null) return;
 
+      if (userDTO == null) {
+        return;
+      }
+
+      bool needsLanguagePrompt = userDTO.prefLang == null; // Example check
+
+      // Update user model *before* potentially showing dialog
       final user = userController.updateCurrentUser(userDTO);
 
       await SharedPref.store(PrefKey.doneToday, user.doneToday);
-
       await authAPI.syncCyId();
 
       await Future.delayed(Duration.zero); // Yield control to UI
 
-      // first get the guest progress
-      final progress = SharedPref.get(
-        PrefKey.currProgress(),
-      ); // null because user is not logged in before sign in
+      // Ask for language preference if needed
+      if (needsLanguagePrompt && context.mounted) {
+        final chosenLang = await showDialog<PrefLang>(
+          context: context,
+          barrierDismissible: false, // User must choose
+          builder: (BuildContext dialogContext) {
+            return AlertDialog(
+              title: const Text('आपकी पसंदीदा भाषा क्या है? / Aapki pasandida bhasha kya hai?'),
+              content: const Text(
+                'वह भाषा चुनें जिसमें आप सबसे अधिक सहज हैं। / Vo bhasha chunen jis mein aap sabse adhik sahaj hain.',
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('हिन्दी'),
+                  onPressed: () => Navigator.of(dialogContext).pop(PrefLang.hindi),
+                ),
+                TextButton(
+                  child: const Text('Hinglish'),
+                  onPressed: () => Navigator.of(dialogContext).pop(PrefLang.hinglish),
+                ),
+              ],
+            );
+          },
+        );
 
-      // then update the last logged in email to the user's email
-      await SharedPref.store(PrefKey.lastLoggedInEmail, user.email);
+        // If user somehow dismissed dialog without choosing (though barrierDismissible=false)
+        // or if dialog returns null, default to hinglish and save it.
+        final finalLang = chosenLang ?? PrefLang.hinglish;
+        await userController.updatePrefLang(finalLang);
+      }
 
-      final level = progress?.maxLevel ?? kAuthRequiredLevel;
+      // Continue with existing logic (progress check, etc.)
+      final progress = SharedPref.get(PrefKey.currProgress());
+      await SharedPref.store(PrefKey.user, user);
+
+      final level = progress?.maxLevel ?? 1;
       final subLevel = progress?.maxSubLevel ?? 1;
 
       if (context.mounted &&
-          (user.maxLevel > level || (user.maxLevel == level && userDTO.maxSubLevel > subLevel))) {
-        await showLevelChangeConfirmationDialog(context, user);
-      } else {
-        // Store the progress to the shared preferences by user email
-
+          (user.maxLevel > level || (user.maxLevel == level && user.maxSubLevel > subLevel))) {
+        await showLevelChangeConfirmationDialog(context, user, ref);
+      } else if (progress != null) {
         SharedPref.store(PrefKey.currProgress(userEmail: user.email), progress);
       }
-
-      await sublevelController.handleFetchSublevels();
     } catch (e, stackTrace) {
       developer.log(
         'Error in AuthController.signInWithGoogle',
@@ -110,7 +136,7 @@ class AuthController extends _$AuthController {
 
       state = state.copyWith(error: null);
     } on DioException catch (e) {
-      state = state.copyWith(error: parseError(e.type));
+      state = state.copyWith(error: parseError(e.type, ref));
     } catch (e) {
       state = state.copyWith(error: e.toString());
     } finally {
@@ -125,13 +151,18 @@ class AuthController extends _$AuthController {
 
     try {
       final userController = ref.read(userControllerProvider.notifier);
+      final activityLogController = ref.read(activityLogControllerProvider.notifier);
 
       final authAPI = ref.read(authAPIProvider);
 
       final user = ref.read(userControllerProvider).currentUser;
 
       if (user != null) {
-        await userController.sync(user.levelId, user.subLevel);
+        final activityLogs = SharedPref.get(PrefKey.activityLogs);
+        if (activityLogs != null) {
+          await activityLogController.syncActivityLogs(activityLogs);
+          await SharedPref.removeValue(PrefKey.activityLogs);
+        }
         await authAPI.signOut();
         userController.removeCurrentUser();
         await Future.delayed(Duration.zero); // Allow UI to update

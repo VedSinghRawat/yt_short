@@ -3,15 +3,16 @@ import 'dart:io';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:myapp/core/controllers/lang_notifier.dart';
+import 'package:myapp/core/services/sublevel_service.dart';
 import 'package:myapp/core/console.dart';
 import 'package:myapp/core/error/failure.dart';
 import 'package:myapp/core/services/api_service.dart';
 import 'package:myapp/core/services/path_service.dart';
-import 'package:myapp/core/services/sub_level_service.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/widgets/loader.dart';
-import 'package:myapp/core/widgets/video_player.dart';
+import 'package:myapp/core/widgets/sublevel_video_player/sublevel_video_player.dart';
 import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'package:myapp/features/sublevel/widget/error_page.dart';
 import 'package:myapp/features/speech_exercise/screen/speech_exercise_screen.dart';
@@ -121,19 +122,18 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
             return ErrorPage(
               onRefresh: () => widget.onVideoChange?.call(index, _pageController),
               text: error,
-              buttonText: 'Retry',
+              buttonText: ref
+                  .read(langProvider.notifier)
+                  .prefLangText(const PrefLangText(hindi: 'पुनः प्रयास करें', hinglish: 'Retry')),
             );
           }
 
           if (sublevel == null) {
-            Console.error(Failure(message: 'sublevel is null$index '), StackTrace.current);
             return const Loader();
           }
           final positionText = '${sublevel.level}-${sublevel.index}';
 
-          String? localPath = ref
-              .read(pathServiceProvider)
-              .fullVideoLocalPath(sublevel.levelId, sublevel.videoFilename);
+          String? localPath = PathService.videoLocalPath(sublevel.levelId, sublevel.videoFilename);
 
           final urls =
               [BaseUrl.cloudflare, BaseUrl.s3]
@@ -153,11 +153,12 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
               Center(
                 child: sublevel.when(
                   video:
-                      (video) => Player(
+                      (video) => SublevelVideoPlayer(
                         key: Key(positionText),
                         uniqueId: positionText,
                         videoLocalPath: localPath,
                         videoUrls: urls,
+                        dialogues: sublevel.dialogues,
                       ),
                   speechExercise:
                       (speechExercise) => SpeechExerciseScreen(

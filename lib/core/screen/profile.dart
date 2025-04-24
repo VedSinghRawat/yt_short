@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/widgets/loader.dart';
@@ -13,16 +14,28 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(userControllerProvider).currentUser;
+    final userState = ref.watch(userControllerProvider);
+    final localUser = SharedPref.get(PrefKey.user);
+
+    final user = userState.currentUser ?? localUser;
+
+    final userLoading = userState.loading;
     final progress = SharedPref.get(PrefKey.currProgress(userEmail: user?.email));
     final authController = ref.read(authControllerProvider.notifier);
-    final isLoading = ref.watch(authControllerProvider).loading;
+    final authLoading = ref.watch(authControllerProvider).loading;
+    final userController = ref.read(userControllerProvider.notifier);
+    // Combine loading states
+    final isLoading = authLoading || userLoading;
 
     return Stack(
       children: [
         Scaffold(
           appBar: AppBar(
-            title: const Text('Profile'),
+            title: Text(
+              ref
+                  .read(langProvider.notifier)
+                  .prefLangText(const PrefLangText(hindi: 'प्रोफाइल', hinglish: 'Profile')),
+            ),
             elevation: 0,
             actions: [
               if (user != null)
@@ -70,25 +83,122 @@ class ProfileScreen extends ConsumerWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 5),
-                      Text(
-                        user?.role == UserRole.admin ? 'Admin' : 'Student',
-                        style: const TextStyle(color: Colors.white70, fontSize: 16),
-                      ),
+
                       const SizedBox(height: 20),
                     ],
                   ),
                 ),
                 const SizedBox(height: 20),
-                if (progress != null)
+                // Language Preference Card
+                if (user != null)
                   _buildInfoCard(
                     context,
-                    title: 'Progress Overview',
+                    title: ref
+                        .read(langProvider.notifier)
+                        .prefLangText(
+                          const PrefLangText(
+                            hindi: 'अपनी भाषा चुनें',
+                            hinglish: 'Language Preference',
+                          ),
+                        ),
                     children: [
-                      _buildInfoRow('Current Level', '${progress.level}'),
-                      _buildInfoRow('Current Sublevel', '${progress.subLevel}'),
-                      _buildInfoRow('Max Level Reached', '${progress.maxLevel}'),
-                      _buildInfoRow('Max Sublevel Reached', '${progress.maxSubLevel}'),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            ref
+                                .read(langProvider.notifier)
+                                .prefLangText(
+                                  const PrefLangText(hindi: 'भाषा', hinglish: 'Language'),
+                                ),
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                          DropdownButton<PrefLang>(
+                            value: user.prefLang,
+                            items:
+                                PrefLang.values.map((PrefLang lang) {
+                                  return DropdownMenuItem<PrefLang>(
+                                    value: lang,
+                                    child: Text(lang.name == 'hindi' ? 'हिंदी' : 'Hinglish'),
+                                  );
+                                }).toList(),
+                            onChanged:
+                                userLoading // Disable dropdown while loading
+                                    ? null
+                                    : (PrefLang? newValue) {
+                                      if (newValue != null && newValue != user.prefLang) {
+                                        userController.updatePrefLang(newValue).then((success) {
+                                          if (!success && context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  ref
+                                                      .read(langProvider.notifier)
+                                                      .prefLangText(
+                                                        const PrefLangText(
+                                                          hindi: 'भाषा नहीं बदल सके',
+                                                          hinglish: 'Bhasa nahin badal sake',
+                                                        ),
+                                                      ),
+                                                ),
+                                                backgroundColor: Colors.red,
+                                              ),
+                                            );
+                                          }
+                                        });
+                                      }
+                                    },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                const SizedBox(height: 20),
+                if (progress != null && progress.level != null)
+                  _buildInfoCard(
+                    context,
+                    title: ref
+                        .read(langProvider.notifier)
+                        .prefLangText(
+                          const PrefLangText(hindi: 'प्रगति विवरण', hinglish: 'Progress Overview'),
+                        ),
+                    children: [
+                      _buildInfoRow(
+                        ref
+                            .read(langProvider.notifier)
+                            .prefLangText(const PrefLangText(hindi: 'लेवल', hinglish: 'Level')),
+                        '${progress.level}',
+                      ),
+                      _buildInfoRow(
+                        ref
+                            .read(langProvider.notifier)
+                            .prefLangText(
+                              const PrefLangText(hindi: 'सबलेवल', hinglish: 'Sublevel'),
+                            ),
+                        '${progress.subLevel}',
+                      ),
+                      _buildInfoRow(
+                        ref
+                            .read(langProvider.notifier)
+                            .prefLangText(
+                              const PrefLangText(
+                                hindi: 'अधिकतम लेवल',
+                                hinglish: 'Max Level Reached',
+                              ),
+                            ),
+                        '${progress.maxLevel}',
+                      ),
+                      _buildInfoRow(
+                        ref
+                            .read(langProvider.notifier)
+                            .prefLangText(
+                              const PrefLangText(
+                                hindi: 'अधिकतम सबलेवल',
+                                hinglish: 'Max Sublevel Reached',
+                              ),
+                            ),
+                        '${progress.maxSubLevel}',
+                      ),
                     ],
                   ),
               ],

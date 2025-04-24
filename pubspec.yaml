@@ -33,6 +33,9 @@ dependencies:
   android_play_install_referrer: ^0.4.0
   app_links: ^6.4.0
   video_player: ^2.8.6
+  flutter_archive: ^6.0.3
+  just_audio: ^0.9.46
+  chewie: ^1.11.1
 
 dev_dependencies:
   flutter_test:

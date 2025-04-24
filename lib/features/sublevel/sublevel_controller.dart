@@ -5,16 +5,17 @@ import 'package:fpdart/fpdart.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:myapp/apis/level_api.dart';
 import 'package:myapp/constants/constants.dart';
+import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/services/cleanup_service.dart';
 import 'package:myapp/core/services/file_service.dart';
 import 'package:myapp/core/services/level_service.dart';
+import 'package:myapp/core/services/sublevel_service.dart';
 import 'package:myapp/core/services/path_service.dart';
-import 'package:myapp/core/services/sub_level_service.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/features/sublevel/level_controller.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'package:myapp/models/level/level.dart';
-import '../../apis/sub_level_api.dart';
+import '../../apis/sublevel_api.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -26,14 +27,14 @@ class SublevelControllerState with _$SublevelControllerState {
   const SublevelControllerState._();
 
   const factory SublevelControllerState({
-    @Default({}) Set<SubLevel> sublevels,
+    Set<SubLevel>? sublevels,
     @Default(false) bool hasFinishedVideo,
     @Default({}) Set<String> loadedLevelIds,
     @Default({}) Set<String> loadingLevelIds,
     String? error,
   }) = _SublevelControllerState;
 
-  bool get isFirstFetch => sublevels.isEmpty;
+  bool get isFirstFetch => sublevels?.isEmpty ?? true;
 }
 
 @Riverpod(keepAlive: true)
@@ -44,7 +45,6 @@ class SublevelController extends _$SublevelController {
   late final ISubLevelAPI subLevelAPI = ref.read(subLevelAPIProvider);
   late final ILevelApi levelApi = ref.read(levelApiProvider);
   late final SubLevelService subLevelService = ref.read(subLevelServiceProvider);
-  late final FileService fileService = ref.read(fileServiceProvider);
   late final LevelController levelController = ref.read(levelControllerProvider.notifier);
   late final StorageCleanupService storageCleanupService = ref.read(storageCleanupServiceProvider);
   late final LevelService levelService = ref.read(levelServiceProvider);
@@ -53,13 +53,13 @@ class SublevelController extends _$SublevelController {
     state = state.copyWith(loadingLevelIds: {...state.loadingLevelIds, levelId});
 
     try {
-      final levelDTOEither = await ref.read(levelServiceProvider).getLevel(levelId);
+      final levelDTOEither = await ref.read(levelServiceProvider).getLevel(levelId, ref);
 
       final levelDTO = switch (levelDTOEither) {
         Right(value: final r) => r,
         Left(value: final l) =>
           (() {
-            state = state.copyWith(error: parseError(l.type));
+            state = state.copyWith(error: parseError(l.type, ref));
             return null;
           })(),
       };
@@ -78,10 +78,15 @@ class SublevelController extends _$SublevelController {
           levelId,
         );
 
-        state = state.copyWith(sublevels: {...state.sublevels, currSublevel});
+        state = state.copyWith(
+          sublevels: state.sublevels == null ? {currSublevel} : {...state.sublevels!, currSublevel},
+        );
       }
 
       await subLevelService.getVideoFiles(levelDTO);
+
+      // Fetch and extract dialogue audio files after getting videos
+      await subLevelService.getDialogueAudioFiles(levelDTO);
 
       await _addExistVideoSublevelEntries(levelDTO, level, levelId);
 
@@ -93,7 +98,9 @@ class SublevelController extends _$SublevelController {
         error: e.toString(),
         stackTrace: stackTrace,
       );
-      state = state.copyWith(error: unknownErrorMsg);
+      state = state.copyWith(
+        error: ref.read(langProvider.notifier).prefLangText(AppConstants.unknownError),
+      );
       return null;
     } finally {
       state = state.copyWith(loadingLevelIds: {...state.loadingLevelIds}..remove(levelId));
@@ -104,7 +111,7 @@ class SublevelController extends _$SublevelController {
 
   Future<void> _addExistVideoSublevelEntries(LevelDTO levelDTO, int level, String levelId) async {
     final entries = await FileService.listEntities(
-      Directory(ref.read(pathServiceProvider).videoDirLocalPath(levelId)),
+      Directory(PathService.levelVideosDirLocalPath(levelId)),
     );
 
     final videoFiles = entries.toSet();
@@ -117,15 +124,23 @@ class SublevelController extends _$SublevelController {
           return SubLevel.fromSubLevelDTO(dto, level, index, levelId);
         }).toSet();
 
-    state = state.copyWith(sublevels: {...state.sublevels, ...sublevels});
+    state = state.copyWith(
+      sublevels: state.sublevels == null ? sublevels : {...state.sublevels!, ...sublevels},
+    );
   }
 
   void setHasFinishedVideo(bool to) => state = state.copyWith(hasFinishedVideo: to);
 
-  Future<void> handleFetchSublevels() async {
+  Future<void> fetchSublevels() async {
     try {
       final asyncOrderIds = ref.read(levelControllerProvider);
       final isFirstFetch = state.isFirstFetch;
+
+      if (state.error == AppConstants.allLevelsCompleted.hindi ||
+          state.error == AppConstants.allLevelsCompleted.hinglish) {
+        state = state.copyWith(error: null);
+        await ref.read(levelControllerProvider.notifier).getOrderedIds();
+      }
 
       if (asyncOrderIds.hasError) {
         state = state.copyWith(error: asyncOrderIds.error.toString());
@@ -137,11 +152,39 @@ class SublevelController extends _$SublevelController {
       final orderedIds = asyncOrderIds.value;
 
       if (orderedIds == null) {
-        state = state.copyWith(error: unknownErrorMsg);
+        state = state.copyWith(
+          error: ref.read(langProvider.notifier).prefLangText(AppConstants.unknownError),
+        );
         return;
       }
 
-      String currLevelId = await fetchSublevels(orderedIds);
+      final currUserLevel = ref.read(userControllerProvider).level;
+
+      final currLevelIndex = currUserLevel - 1;
+
+      final currLevelId = orderedIds[currLevelIndex];
+
+      if (!_isLevelFetched(currLevelId)) {
+        await _listByLevel(currLevelId, currUserLevel);
+      }
+
+      final surroundingLevelIds = _getSurroundingLevelIds(currLevelIndex, orderedIds);
+
+      final fetchTasks =
+          surroundingLevelIds
+              .where((levelId) => levelId != null && !_isLevelFetched(levelId))
+              .map((levelId) => _listByLevel(levelId!, orderedIds.indexOf(levelId) + 1))
+              .toList();
+
+      await Future.wait(fetchTasks);
+
+      if (currLevelIndex < 0 || currUserLevel >= orderedIds.length) {
+        final message = ref
+            .read(langProvider.notifier)
+            .prefLangText(AppConstants.allLevelsCompleted);
+
+        state = state.copyWith(error: message);
+      }
 
       if (isFirstFetch) await _cleanOldLevels(orderedIds, currLevelId);
     } catch (e) {
@@ -150,40 +193,10 @@ class SublevelController extends _$SublevelController {
     }
   }
 
-  Future<String> fetchSublevels(List<String> orderedIds) async {
-    final currUserLevel = ref.read(userControllerProvider).level;
-
-    final currLevelIndex = currUserLevel - 1;
-
-    final currLevelId = orderedIds[currLevelIndex];
-
-    if (!_isLevelFetched(currLevelId)) {
-      await _listByLevel(currLevelId, currUserLevel);
-    }
-
-    final surroundingLevelIds = _getSurroundingLevelIds(currLevelIndex, orderedIds);
-
-    final fetchTasks =
-        surroundingLevelIds
-            .where((levelId) => levelId != null && !_isLevelFetched(levelId))
-            .map((levelId) => _listByLevel(levelId!, orderedIds.indexOf(levelId) + 1))
-            .toList();
-
-    await Future.wait(fetchTasks);
-
-    if (currLevelIndex < 0 || currUserLevel >= orderedIds.length) {
-      state = state.copyWith(
-        error: 'These are all the lessons for now, Check in after sometime for new content',
-      );
-    }
-
-    return currLevelId;
-  }
-
   Future<void> _cleanOldLevels(List<String> orderedIds, String currLevelId) async {
     try {
       final cachedIds = await FileService.listEntities(
-        Directory(ref.read(pathServiceProvider).levelsDocDirPath),
+        Directory(PathService.levelsDocDirPath),
         type: EntitiesType.folders,
       );
 

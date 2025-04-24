@@ -1,24 +1,20 @@
 import 'dart:developer' as developer;
 import 'dart:io';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_archive/flutter_archive.dart';
 import 'package:path_provider/path_provider.dart';
 
 class FileService {
-  static final FileService _instance = FileService._internal();
-
-  late Directory documentsDirectory;
-  late Directory cacheDirectory;
+  static late Directory documentsDirectory;
+  static late Directory cacheDirectory;
 
   FileService._internal();
 
-  Future<void> init() async {
+  static Future<void> init() async {
     documentsDirectory = await getApplicationDocumentsDirectory();
     cacheDirectory = await getApplicationCacheDirectory();
   }
 
-  static FileService get instance => _instance;
-
-  Future<void> deleteFile(String path) async {
+  static Future<void> deleteFile(String path) async {
     final file = File(path);
 
     await file.delete();
@@ -57,10 +53,15 @@ class FileService {
 
     return entities;
   }
-}
 
-final fileServiceProvider = Provider<FileService>((ref) {
-  return FileService.instance;
-});
+  static Future<Directory?> unzip(File zipFile, Directory destinationDir) async {
+    if (!zipFile.existsSync()) return null;
+
+    await destinationDir.create(recursive: true);
+
+    await ZipFile.extractToDirectory(zipFile: zipFile, destinationDir: destinationDir);
+    return destinationDir;
+  }
+}
 
 enum EntitiesType { folders, files }

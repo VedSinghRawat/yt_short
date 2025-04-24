@@ -1,4 +1,5 @@
 import 'package:myapp/constants/constants.dart';
+import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/error/failure.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -36,7 +37,7 @@ class LevelController extends _$LevelController {
     }
 
     return AsyncValue.error(
-      Failure(message: parseError(error.type!), type: error.type),
+      Failure(message: parseError(error.type!, ref), type: error.type),
       StackTrace.current,
     );
   }
@@ -57,6 +58,9 @@ class LevelController extends _$LevelController {
 
     await SharedPref.removeValue(PrefKey.orderedIds);
 
-    return AsyncValue.error(Failure(message: unknownErrorMsg), StackTrace.current);
+    return AsyncValue.error(
+      Failure(message: ref.read(langProvider.notifier).prefLangText(AppConstants.unknownError)),
+      StackTrace.current,
+    );
   }
 }

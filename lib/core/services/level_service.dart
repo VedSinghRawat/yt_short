@@ -5,8 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:myapp/apis/level_api.dart';
 import 'package:myapp/constants/constants.dart';
+import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/error/failure.dart';
-import 'package:myapp/core/services/file_service.dart';
 import 'package:myapp/core/services/path_service.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/utils.dart';
@@ -16,19 +16,17 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'level_service.g.dart';
 
 class LevelService {
-  final FileService fileService;
   final ILevelApi levelApi;
-  final PathService pathService;
 
-  LevelService(this.fileService, this.levelApi, this.pathService);
+  LevelService(this.levelApi);
 
   Future<bool> videoExists(String levelId, String videoFilename) async {
-    final file = File(pathService.fullVideoLocalPath(levelId, videoFilename));
+    final file = File(PathService.videoLocalPath(levelId, videoFilename));
     return file.exists();
   }
 
   Future<void> _saveLevel(LevelDTO level) async {
-    final file = File(pathService.levelJsonFullPath(level.id));
+    final file = File(PathService.levelJsonFullPath(level.id));
 
     await file.parent.create(recursive: true);
 
@@ -36,7 +34,7 @@ class LevelService {
   }
 
   Future<LevelDTO?> getLocalLevel(String levelId) async {
-    final file = File(pathService.levelJsonFullPath(levelId));
+    final file = File(PathService.levelJsonFullPath(levelId));
 
     if (!await file.exists()) return null;
 
@@ -47,7 +45,7 @@ class LevelService {
     return LevelDTO.fromJson(jsonMap);
   }
 
-  FutureEither<LevelDTO> getLevel(String id) async {
+  FutureEither<LevelDTO> getLevel(String id, Ref ref) async {
     try {
       final level = await levelApi.get(id);
 
@@ -62,7 +60,7 @@ class LevelService {
       if (localLevel == null) {
         return left(
           Failure(
-            message: connectionErrorMsg,
+            message: ref.read(langProvider.notifier).prefLangText(AppConstants.connectionError),
             trace: StackTrace.current,
             type: DioExceptionType.connectionError,
           ),
@@ -72,7 +70,7 @@ class LevelService {
       return right(localLevel);
     } catch (e, st) {
       //remove eTag from shared pref
-      await SharedPref.removeValue(PrefKey.eTag(pathService.levelJsonPath(id)));
+      await SharedPref.removeValue(PrefKey.eTag(PathService.levelJsonPath(id)));
 
       return left(Failure(message: e.toString(), trace: st));
     }
@@ -81,8 +79,6 @@ class LevelService {
 
 @riverpod
 LevelService levelService(Ref ref) {
-  final fileService = ref.read(fileServiceProvider);
   final levelApi = ref.read(levelApiProvider);
-  final pathService = ref.read(pathServiceProvider);
-  return LevelService(fileService, levelApi, pathService);
+  return LevelService(levelApi);
 }

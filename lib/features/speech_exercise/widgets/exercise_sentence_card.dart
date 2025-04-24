@@ -1,18 +1,20 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
+import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/features/speech_exercise/widgets/recognizer_button.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 
-class SpeechExerciseCard extends StatefulWidget {
+class SpeechExerciseCard extends ConsumerStatefulWidget {
   final String text;
   final VoidCallback onContinue;
 
   const SpeechExerciseCard({super.key, required this.text, required this.onContinue});
 
   @override
-  State<SpeechExerciseCard> createState() => _SpeechExerciseCardState();
+  ConsumerState<SpeechExerciseCard> createState() => _SpeechExerciseCardState();
 }
 
-class _SpeechExerciseCardState extends State<SpeechExerciseCard> {
+class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
   late List<List<String>> _words;
   late List<bool?> _wordMarking;
   int _offset = 0;
@@ -128,11 +130,18 @@ class _SpeechExerciseCardState extends State<SpeechExerciseCard> {
               children: [
                 Column(
                   children: [
-                    const Padding(
-                      padding: EdgeInsets.only(bottom: 24.0),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 24.0),
                       child: Text(
-                        "Please speak the sentence given below to continue",
-                        style: TextStyle(fontSize: 18, color: Colors.white70),
+                        ref
+                            .read(langProvider.notifier)
+                            .prefLangText(
+                              const PrefLangText(
+                                hindi: 'कृपया आगे बढ़ने के लिए नीचे दिया गया वाक्य बोलें।',
+                                hinglish:
+                                    'Kripya aage badhne ke liye neeche diya gaya sentence boliye',
+                              ),
+                            ),
                         textAlign: TextAlign.center,
                       ),
                     ),
