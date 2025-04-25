@@ -6,6 +6,8 @@ import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/error/failure.dart';
 
+/// Start of Selection
+
 void _showCustomSnackBar(
   BuildContext context, {
   required String message,
@@ -20,21 +22,29 @@ void _showCustomSnackBar(
   messenger.showSnackBar(
     SnackBar(
       content: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          if (icon != null) ...[Icon(icon, color: Colors.white), const SizedBox(width: 12)],
+          if (icon != null) ...[
+            Icon(icon, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+          ],
           Expanded(
             child: Text(
               message,
               style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.white),
             ),
           ),
+          GestureDetector(
+            onTap: () => messenger.hideCurrentSnackBar(),
+            child: const Icon(Icons.close, color: Colors.white, size: 20),
+          ),
         ],
       ),
       backgroundColor: backgroundColor ?? Colors.grey[800],
       behavior: SnackBarBehavior.floating,
       duration: duration,
-      margin: const EdgeInsets.all(16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     ),
   );
@@ -44,14 +54,28 @@ void showErrorSnackBar(BuildContext context, String message) {
   _showCustomSnackBar(
     context,
     message: message,
-    backgroundColor: Colors.grey[850],
+    backgroundColor: Colors.red,
     duration: const Duration(seconds: 4),
     icon: Icons.error_outline,
   );
 }
 
 void showSnackBar(BuildContext context, String text) {
-  _showCustomSnackBar(context, message: text);
+  _showCustomSnackBar(
+    context,
+    message: text,
+    backgroundColor: Colors.blue,
+    icon: Icons.info_outline,
+  );
+}
+
+void showSuccessSnackBar(BuildContext context, String message) {
+  _showCustomSnackBar(
+    context,
+    message: message,
+    backgroundColor: Colors.green,
+    icon: Icons.check_circle_outline,
+  );
 }
 
 // check if levelA is after levelB if levelA is after levelB then return true
