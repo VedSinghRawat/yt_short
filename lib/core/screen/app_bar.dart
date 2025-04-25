@@ -71,7 +71,8 @@ class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
 
               showSnackBar(
                 context,
-                ref
+                type: isSuccess ? SnackBarType.success : SnackBarType.error,
+                message: ref
                     .read(langProvider.notifier)
                     .prefLangText(
                       isSuccess

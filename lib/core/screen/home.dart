@@ -57,7 +57,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     showSnackBar(
       context,
-      ref
+      message: ref
           .read(langProvider.notifier)
           .prefLangText(
             const PrefLangText(
@@ -65,6 +65,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               hinglish: 'Kripya aage badne se pehle current video ko complete karein',
             ),
           ),
+      type: SnackBarType.error,
     );
 
     return true;
@@ -81,7 +82,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     showSnackBar(
       context,
-      ref
+      message: ref
           .read(langProvider.notifier)
           .prefLangText(
             PrefLangText(
@@ -95,6 +96,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       : 'आप हर दिन सिर्फ ${AppConstants.kMaxLevelCompletionsPerDay} लेवल पूरा कर सकते हैं।',
             ),
           ),
+      type: SnackBarType.error,
     );
 
     return true;

@@ -6,75 +6,57 @@ import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/error/failure.dart';
 
-/// Start of Selection
+enum SnackBarType { error, info, success }
 
-void _showCustomSnackBar(
+void showSnackBar(
   BuildContext context, {
   required String message,
-  Color? backgroundColor,
+  SnackBarType type = SnackBarType.info,
   Duration duration = const Duration(seconds: 3),
-  IconData? icon,
 }) {
   if (!context.mounted) return;
 
+  final (backgroundColor, icon) = switch (type) {
+    SnackBarType.error => (Colors.red, Icons.error_outline),
+    SnackBarType.info => (Colors.blue, Icons.info_outline),
+    SnackBarType.success => (Colors.green, Icons.check_circle_outline),
+  };
+
   final messenger = ScaffoldMessenger.of(context);
+  final deviceHeight = MediaQuery.of(context).size.height;
+
   messenger.clearSnackBars();
   messenger.showSnackBar(
     SnackBar(
-      content: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          if (icon != null) ...[
+      content: IntrinsicHeight(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
             Icon(icon, color: Colors.white, size: 20),
             const SizedBox(width: 8),
-          ],
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.white),
+            Expanded(
+              child: Text(
+                message,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.white),
+              ),
             ),
-          ),
-          GestureDetector(
-            onTap: () => messenger.hideCurrentSnackBar(),
-            child: const Icon(Icons.close, color: Colors.white, size: 20),
-          ),
-        ],
+            const VerticalDivider(color: Colors.white, thickness: 1),
+            IconButton(
+              onPressed: () => messenger.clearSnackBars(),
+              icon: const Icon(Icons.close, color: Colors.white),
+            ),
+          ],
+        ),
       ),
-      backgroundColor: backgroundColor ?? Colors.grey[800],
+      backgroundColor: backgroundColor,
       behavior: SnackBarBehavior.floating,
       duration: duration,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      margin: EdgeInsets.only(bottom: deviceHeight - 120, left: 16, right: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      padding: const EdgeInsets.only(left: 10, right: 0, top: 10, bottom: 10),
     ),
-  );
-}
-
-void showErrorSnackBar(BuildContext context, String message) {
-  _showCustomSnackBar(
-    context,
-    message: message,
-    backgroundColor: Colors.red,
-    duration: const Duration(seconds: 4),
-    icon: Icons.error_outline,
-  );
-}
-
-void showSnackBar(BuildContext context, String text) {
-  _showCustomSnackBar(
-    context,
-    message: text,
-    backgroundColor: Colors.blue,
-    icon: Icons.info_outline,
-  );
-}
-
-void showSuccessSnackBar(BuildContext context, String message) {
-  _showCustomSnackBar(
-    context,
-    message: message,
-    backgroundColor: Colors.green,
-    icon: Icons.check_circle_outline,
   );
 }
 

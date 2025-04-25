@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/shared_pref.dart';
+import 'package:myapp/core/utils.dart';
 import 'package:myapp/core/widgets/loader.dart';
 import 'package:myapp/features/auth/auth_controller.dart';
 import 'package:myapp/features/user/user_controller.dart';
@@ -129,20 +130,17 @@ class ProfileScreen extends ConsumerWidget {
                                       if (newValue != null && newValue != user.prefLang) {
                                         userController.updatePrefLang(newValue).then((success) {
                                           if (!success && context.mounted) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              SnackBar(
-                                                content: Text(
-                                                  ref
-                                                      .read(langProvider.notifier)
-                                                      .prefLangText(
-                                                        const PrefLangText(
-                                                          hindi: 'भाषा नहीं बदल सके',
-                                                          hinglish: 'Bhasa nahin badal sake',
-                                                        ),
-                                                      ),
-                                                ),
-                                                backgroundColor: Colors.red,
-                                              ),
+                                            showSnackBar(
+                                              context,
+                                              message: ref
+                                                  .read(langProvider.notifier)
+                                                  .prefLangText(
+                                                    const PrefLangText(
+                                                      hindi: 'भाषा नहीं बदल सके',
+                                                      hinglish: 'Bhasa nahin badal sake',
+                                                    ),
+                                                  ),
+                                              type: SnackBarType.error,
                                             );
                                           }
                                         });

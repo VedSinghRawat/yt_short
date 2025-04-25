@@ -46,7 +46,7 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
   void _showRecognizerError() {
     showSnackBar(
       context,
-      ref
+      message: ref
           .read(langProvider.notifier)
           .prefLangText(
             const PrefLangText(
@@ -54,6 +54,7 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
               hinglish: 'Kuchh galat ho gaya, kripya dobara kosis karein',
             ),
           ),
+      type: SnackBarType.error,
     );
   }
 

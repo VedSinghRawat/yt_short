@@ -62,12 +62,6 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
     }
   }
 
-  // @override
-  // void dispose() {
-  //   _exerciseController?.removeListener(_exerciseListener);
-  //   super.dispose();
-  // }
-
   void _onClose() {
     setState(() {
       _isDialogOpen = false;
