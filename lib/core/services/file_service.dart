@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:flutter_archive/flutter_archive.dart';
@@ -36,22 +37,32 @@ class FileService {
     return totalSize;
   }
 
-  static Future<List<String>> listEntities(Directory directory, {EntitiesType? type}) async {
-    if (!await directory.exists()) {
+  static Future<List<String>> listNames(Directory dir, {EntitiesType? type}) async {
+    if (!await dir.exists()) {
       throw Exception("Directory does not exist");
     }
 
     final List<String> entities = [];
+    final completer = Completer<List<String>>();
 
-    await for (var entity in directory.list()) {
-      if ((type == EntitiesType.folders && entity is Directory) ||
-          (type == EntitiesType.files && entity is File) ||
-          (type == null)) {
-        entities.add(entity.path.split(Platform.pathSeparator).last);
-      }
-    }
+    final stream = dir.list();
+    stream.listen(
+      (entity) {
+        if ((type == EntitiesType.folders && entity is Directory) ||
+            (type == EntitiesType.files && entity is File) ||
+            (type == null)) {
+          entities.add(entity.path.split(Platform.pathSeparator).last);
+        }
+      },
+      onDone: () {
+        completer.complete(entities);
+      },
+      onError: (e) {
+        completer.completeError(e);
+      },
+    );
 
-    return entities;
+    return completer.future;
   }
 
   static Future<Directory?> unzip(File zipFile, Directory destinationDir) async {

@@ -115,11 +115,6 @@ class SubLevelDTO with _$SubLevelDTO {
     video: (video) => video.videoFilename,
   );
 
-  String? get audioFilename => when(
-    speechExercise: (speechExercise) => speechExercise.audioFilename,
-    video: (video) => null,
-  );
-
   List<Dialogue> get dialogues => when(
     speechExercise: (speechExercise) => speechExercise.dialogues,
     video: (video) => video.dialogues,

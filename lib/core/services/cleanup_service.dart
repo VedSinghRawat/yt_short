@@ -7,100 +7,18 @@ import 'package:myapp/core/services/file_service.dart';
 import 'package:myapp/core/services/level_service.dart';
 import 'package:myapp/core/services/path_service.dart';
 import 'package:myapp/core/shared_pref.dart';
+import 'package:myapp/features/sublevel/level_controller.dart';
+import 'package:myapp/models/level/level.dart';
+import 'package:myapp/models/speech_exercise/speech_exercise.dart';
 
 class StorageCleanupService {
   final LevelService levelService;
+  final AsyncValue<List<String>> levelController;
 
-  StorageCleanupService(this.levelService);
+  StorageCleanupService(this.levelService, this.levelController);
 
-  /// Main cleanup logic — removes folders from cache if total size exceeds threshold
-  Future<void> cleanLevels(List<String> orderedIds) async {
-    try {
-      Directory targetDir = Directory(PathService.levelsDocDir);
-
-      // Ensure directory exists and input is valid
-      if (!await targetDir.exists() ||
-          orderedIds.isEmpty ||
-          orderedIds.length - AppConstants.kProtectedIdsLength == 0) {
-        return;
-      }
-
-      // Check total size of the cache folder
-      int totalSize = await compute(FileService.getDirectorySize, targetDir);
-
-      // No need to clean if under limit
-      if (totalSize < AppConstants.kMaxStorageSizeBytes) {
-        return;
-      }
-
-      int i = 0;
-
-      final toBeDeletedPaths = List<String>.empty();
-
-      // Start deleting until space is freed
-      while (i < orderedIds.length - AppConstants.kProtectedIdsLength) {
-        final id = orderedIds[i];
-        final folderPath = PathService.level(id);
-        final folder = Directory(folderPath);
-
-        if (!await folder.exists()) continue;
-
-        final level = await levelService.getLocalLevel(id);
-        if (level == null) continue;
-
-        // Delete videos one by one and update size
-        for (var (index, sub) in level.sub_levels.indexed) {
-          final videoPath = PathService.videoLocal(id, sub.videoFilename);
-          final audioPath = PathService.audioLocal(id, sub.audioFilename!);
-
-          final videoFile = File(videoPath);
-          final audioFile = File(audioPath);
-
-          if (!await videoFile.exists()) continue;
-
-          final videoSize = await videoFile.length();
-          final audioSize = await audioFile.length();
-
-          toBeDeletedPaths.add(videoPath);
-          toBeDeletedPaths.add(audioPath);
-
-          totalSize -= videoSize + audioSize;
-
-          // delete full folder if there are no videos left
-          if (index == level.sub_levels.length - 1) {
-            await compute(_deleteFolderRecursively, folderPath);
-
-            await SharedPref.removeValue(PrefKey.eTag(PathService.levelJson(id)));
-          }
-
-          if (totalSize < AppConstants.kDeleteCacheThreshold) {
-            if (index != level.sub_levels.length - 1) {
-              await compute(_deleteVideos, toBeDeletedPaths);
-            }
-
-            await Future.wait(
-              toBeDeletedPaths.map(
-                (videoPath) => SharedPref.removeValue(
-                  PrefKey.eTag(
-                    PathService.video(id, videoPath.split('/').last.replaceAll('.mp4', '')),
-                  ),
-                ),
-              ),
-            );
-
-            break;
-          }
-        }
-
-        i++;
-      }
-    } catch (e) {
-      developer.log("Error in cleanup process: $e");
-    }
-  }
-
-  static Future<void> _deleteVideos(List<String> videoPaths) async {
-    await Future.wait(videoPaths.map((videoPath) => File(videoPath).delete()));
+  static Future<void> _deleteFiles(List<String> filePaths) async {
+    await Future.wait(filePaths.map((filePath) => File(filePath).delete()));
   }
 
   static Future<void> _deleteFolderRecursively(String path) async {
@@ -111,18 +29,21 @@ class StorageCleanupService {
   }
 
   /// Removes least-important cached levels while protecting nearby levels
-  Future<void> removeFurthestCachedIds(
-    List<String> cachedIds,
-    List<String> orderedIds,
-    String currentId,
-  ) async {
+  Future<void> cleanLocalFiles(List<String> localLevelIds, String currentId) async {
+    final orderedIds = levelController.value;
+    if (orderedIds == null) return;
+
     final Map<String, int> idToIndexMap = {
       for (int i = 0; i < orderedIds.length; i++) orderedIds[i]: i,
     };
 
     final int currentIndex = idToIndexMap[currentId] ?? -1;
 
-    cachedIds.sort((idA, idB) {
+    // renaming the localLevelIds to deletableIds before sorting for semantics
+    final deletableLevelIds = localLevelIds;
+    // sorting the deletableIds based on the distance from the current level and moving the
+    // protected level to the end
+    deletableLevelIds.sort((idA, idB) {
       final int indexA = idToIndexMap[idA] ?? -1;
       final int indexB = idToIndexMap[idB] ?? -1;
 
@@ -136,7 +57,116 @@ class StorageCleanupService {
       return distanceA.abs().compareTo(distanceB.abs());
     });
 
-    await cleanLevels(cachedIds);
+    final sublevelIdsByDialogueFilename = <String, Set<String>>{};
+    final levelById = <String, LevelDTO>{};
+
+    await Future.wait(
+      deletableLevelIds.map((levelId) async {
+        final level = await levelService.getLocalLevel(levelId);
+        if (level == null) return null;
+
+        levelById[levelId] = level;
+
+        for (var sub in level.sub_levels) {
+          for (var dialogue in sub.dialogues) {
+            final filename = dialogue.audioFilename;
+
+            if (sublevelIdsByDialogueFilename[filename] == null) {
+              sublevelIdsByDialogueFilename[filename] = {};
+            }
+
+            sublevelIdsByDialogueFilename[filename]!.add(sub.videoFilename);
+          }
+        }
+      }),
+    );
+
+    try {
+      Directory levelsDir = Directory(PathService.levelsDocDir);
+
+      // Ensure directory exists and input is valid
+      if (!await levelsDir.exists() ||
+          deletableLevelIds.isEmpty ||
+          deletableLevelIds.length - AppConstants.kProtectedIdsLength == 0) {
+        return;
+      }
+
+      int totalSize = await compute(FileService.getDirectorySize, levelsDir);
+      if (totalSize < AppConstants.kMaxStorageSizeBytes) return;
+
+      int i = 0;
+
+      final toBeDeletedPaths = <String, Set<String>>{};
+      final foldersToDelete = <String>{};
+      final etagsToCleanByLevelId = <String>{};
+
+      // Start deleting until space is freed, also breaking the loop if the
+      //protected levels are reached
+      while (i < deletableLevelIds.length - AppConstants.kProtectedIdsLength) {
+        final levelId = deletableLevelIds[i];
+        final folderPath = PathService.level(levelId);
+
+        final level = levelById[levelId];
+        if (level == null) continue;
+
+        toBeDeletedPaths[levelId] = {};
+
+        // Delete videos one by one and update size
+        for (var (index, sub) in level.sub_levels.indexed) {
+          final videoPath = PathService.videoLocal(levelId, sub.videoFilename);
+          final videoFile = File(videoPath);
+          if (!await videoFile.exists()) continue;
+
+          final videoSize = await videoFile.length();
+
+          toBeDeletedPaths[levelId]!.add(videoPath);
+          etagsToCleanByLevelId.add(
+            PathService.video(levelId, videoPath.split('/').last.replaceAll('.mp4', '')),
+          );
+
+          totalSize -= videoSize;
+
+          if (sub.isSpeechExercise) {
+            final audioPath = PathService.audioLocal(
+              levelId,
+              (sub as SpeechExercise).audioFilename,
+            );
+            final audioFile = File(audioPath);
+            if (await audioFile.exists()) {
+              final audioSize = await audioFile.length();
+              toBeDeletedPaths[levelId]!.add(audioPath);
+
+              etagsToCleanByLevelId.add(
+                PathService.video(levelId, audioPath.split('/').last.replaceAll('.mp3', '')),
+              );
+
+              totalSize -= audioSize;
+            }
+          }
+
+          // delete full folder if there are no videos left
+          if (index == level.sub_levels.length - 1) {
+            foldersToDelete.add(folderPath);
+
+            etagsToCleanByLevelId.add(PathService.levelJson(levelId));
+            toBeDeletedPaths[levelId] = {};
+            continue;
+          }
+
+          if (totalSize < AppConstants.kDeleteCacheThreshold) {
+            break;
+          }
+        }
+
+        i++;
+      }
+
+      await Future.wait(
+        etagsToCleanByLevelId.map((videoPath) => SharedPref.removeValue(PrefKey.eTag())),
+      );
+    } catch (e) {
+      developer.log("Error in cleanup process: $e");
+    }
   }
 
   /// Prevents deletion of current, previous and next two levels
@@ -146,5 +176,5 @@ class StorageCleanupService {
 }
 
 final storageCleanupServiceProvider = Provider<StorageCleanupService>(
-  (ref) => StorageCleanupService(ref.read(levelServiceProvider)),
+  (ref) => StorageCleanupService(ref.read(levelServiceProvider), ref.read(levelControllerProvider)),
 );

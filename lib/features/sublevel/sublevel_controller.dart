@@ -110,7 +110,7 @@ class SublevelController extends _$SublevelController {
   void setVideoPlayingError(String e) => state = state.copyWith(error: e);
 
   Future<void> _addExistVideoSublevelEntries(LevelDTO levelDTO, int level, String levelId) async {
-    final entries = await FileService.listEntities(
+    final entries = await FileService.listNames(
       Directory(PathService.levelVideosDirLocal(levelId)),
     );
 
@@ -186,26 +186,24 @@ class SublevelController extends _$SublevelController {
         state = state.copyWith(error: message);
       }
 
-      if (isFirstFetch) await _cleanOldLevels(orderedIds, currLevelId);
+      if (isFirstFetch) {
+        try {
+          final localLevelIds = await FileService.listNames(
+            Directory(PathService.levelsDocDir),
+            type: EntitiesType.folders,
+          );
+
+          await storageCleanupService.cleanLocalFiles(localLevelIds, currLevelId);
+        } catch (e) {
+          developer.log(
+            'error in sublevel controller clean levels: $e',
+            stackTrace: StackTrace.current,
+          );
+        }
+      }
     } catch (e) {
       developer.log('error in sublevel controller: $e', stackTrace: StackTrace.current);
       state = state.copyWith(error: e.toString());
-    }
-  }
-
-  Future<void> _cleanOldLevels(List<String> orderedIds, String currLevelId) async {
-    try {
-      final cachedIds = await FileService.listEntities(
-        Directory(PathService.levelsDocDir),
-        type: EntitiesType.folders,
-      );
-
-      await storageCleanupService.removeFurthestCachedIds(cachedIds, orderedIds, currLevelId);
-    } catch (e) {
-      developer.log(
-        'error in sublevel controller clean levels: $e',
-        stackTrace: StackTrace.current,
-      );
     }
   }
 
@@ -213,11 +211,10 @@ class SublevelController extends _$SublevelController {
       state.loadedLevelIds.contains(levelId) || state.loadingLevelIds.contains(levelId);
 
   List<String?> _getSurroundingLevelIds(int currIndex, List<String?> orderedIds) {
-    final int maxIndex = orderedIds.length - 1;
     return [
-      currIndex + 1 <= maxIndex ? orderedIds[currIndex + 1] : null,
-      currIndex - 1 >= 0 ? orderedIds[currIndex - 1] : null,
-      currIndex + 2 <= maxIndex ? orderedIds[currIndex + 2] : null,
+      orderedIds.elementAtOrNull(currIndex - 1),
+      orderedIds.elementAtOrNull(currIndex + 1),
+      orderedIds.elementAtOrNull(currIndex + 2),
     ];
   }
 }
