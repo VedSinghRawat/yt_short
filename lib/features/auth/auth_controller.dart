@@ -112,7 +112,7 @@ class AuthController extends _$AuthController {
       final userController = ref.read(userControllerProvider.notifier);
       userController.removeCurrentUser();
       if (context.mounted) {
-        showErrorSnackBar(context, e.toString());
+        showSnackBar(context, message: e.toString(), type: SnackBarType.error);
       }
     } finally {
       _isProcessing = false;
@@ -170,7 +170,7 @@ class AuthController extends _$AuthController {
     } catch (e, stackTrace) {
       developer.log('Error in AuthController.signOut', error: e.toString(), stackTrace: stackTrace);
       if (context.mounted) {
-        showErrorSnackBar(context, e.toString());
+        showSnackBar(context, message: e.toString(), type: SnackBarType.error);
       }
     } finally {
       _isProcessing = false;
