@@ -54,6 +54,7 @@ void showSnackBar(BuildContext context, String text) {
   _showCustomSnackBar(context, message: text);
 }
 
+// check if levelA is after levelB if levelA is after levelB then return true
 bool isLevelAfter(int levelA, int subLevelA, int levelB, int subLevelB) {
   return levelA > levelB || (levelA == levelB && subLevelA > subLevelB);
 }

@@ -120,6 +120,10 @@ class Speech extends _$Speech {
       newWordMarking[i] = formatedTargetWord == formatedRecognizedWord;
     }
 
+    if (newWordMarking.contains(false)) {
+      stopListening();
+    }
+
     state = state.copyWith(recognizedWords: newRecognizedWords, wordMarking: newWordMarking);
   }
 
@@ -140,7 +144,7 @@ class Speech extends _$Speech {
   }
 
   Future<void> playAudio(String levelId, String audioFilename) async {
-    if (state.isPlayingAudio) {
+    if (audioPlayer.playing) {
       await audioPlayer.stop();
       state = state.copyWith(isPlayingAudio: false);
       return;
@@ -150,9 +154,13 @@ class Speech extends _$Speech {
 
     await audioPlayer.setFilePath(audioFile);
 
-    await audioPlayer.play();
-
     state = state.copyWith(isPlayingAudio: true);
+
+    await audioPlayer.play().then((_) async {
+      state = state.copyWith(isPlayingAudio: false);
+
+      await audioPlayer.stop();
+    });
   }
 
   void reset() {
