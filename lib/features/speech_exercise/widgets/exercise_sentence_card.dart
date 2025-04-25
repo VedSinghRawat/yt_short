@@ -153,7 +153,6 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                           ),
                         ),
 
-                        // Display each line in its own Wrap
                         Column(
                           children: [
                             for (int lineIndex = 0; lineIndex < _words.length; lineIndex++)
@@ -189,20 +188,26 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                                                     _words[lineIndex][wordIndex],
                                                     style: TextStyle(
                                                       color:
-                                                          speechState.wordMarking[flatIndex] == null
+                                                          speechState.wordMarking.elementAtOrNull(
+                                                                    flatIndex,
+                                                                  ) ==
+                                                                  null
                                                               ? Colors.white60
-                                                              : speechState
-                                                                      .wordMarking[flatIndex] ==
+                                                              : speechState.wordMarking
+                                                                      .elementAtOrNull(flatIndex) ==
                                                                   true
                                                               ? Colors.lightBlue[200]
-                                                              : speechState
-                                                                      .wordMarking[flatIndex] ==
+                                                              : speechState.wordMarking
+                                                                      .elementAtOrNull(flatIndex) ==
                                                                   false
                                                               ? Colors.red
                                                               : Colors.white,
                                                       fontSize: 24,
                                                       fontWeight:
-                                                          speechState.wordMarking[flatIndex] != null
+                                                          speechState.wordMarking.elementAtOrNull(
+                                                                    flatIndex,
+                                                                  ) !=
+                                                                  null
                                                               ? FontWeight.bold
                                                               : FontWeight.normal,
                                                       height: 1.4,

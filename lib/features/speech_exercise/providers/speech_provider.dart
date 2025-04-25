@@ -120,7 +120,7 @@ class Speech extends _$Speech {
       newWordMarking[i] = formatedTargetWord == formatedRecognizedWord;
     }
 
-    if (newWordMarking.contains(false)) {
+    if (newWordMarking.contains(false) || newWordMarking.every((mark) => mark == true)) {
       stopListening();
     }
 
