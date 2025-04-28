@@ -53,10 +53,13 @@ class _LoadingRefreshIconState extends State<LoadingRefreshIcon>
     if (widget.isLoading) {
       return RotationTransition(
         turns: Tween(begin: 0.0, end: 1.0).animate(_controller),
-        child: Icon(widget.icon),
+        child: Icon(widget.icon, color: Theme.of(context).colorScheme.onSurface),
       );
     } else {
-      return GestureDetector(onTap: widget.onTap, child: Icon(widget.icon));
+      return GestureDetector(
+        onTap: widget.onTap,
+        child: Icon(widget.icon, color: Theme.of(context).colorScheme.onSurface),
+      );
     }
   }
 }

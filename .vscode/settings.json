@@ -1,5 +1,5 @@
 {
-  "dart.lineLength": 100,
+  "dart.lineLength": 120,
   "cSpell.words": ["cyid", "hinglish", "myapp", "unfreezed"],
   "cSpell.ignoreRegExpList": ["/[\\u0900-\\u097F]+/"]
 }

@@ -81,10 +81,7 @@ class Speech extends _$Speech {
       pauseFor: const Duration(minutes: 1),
       listenFor: const Duration(minutes: 1),
       onResult: _handleResult,
-      listenOptions: stt.SpeechListenOptions(
-        partialResults: true,
-        listenMode: stt.ListenMode.dictation,
-      ),
+      listenOptions: stt.SpeechListenOptions(partialResults: true, listenMode: stt.ListenMode.dictation),
     );
 
     state = state.copyWith(isListening: true);
@@ -95,13 +92,10 @@ class Speech extends _$Speech {
   }
 
   void _handleResult(SpeechRecognitionResult result) {
-    List<String> currRecognizedWords =
-        result.recognizedWords.split(' ').where((word) => word.isNotEmpty).toList();
+    List<String> currRecognizedWords = result.recognizedWords.split(' ').where((word) => word.isNotEmpty).toList();
 
     if (currRecognizedWords.isEmpty) {
-      state = state.copyWith(
-        offset: state.recognizedWords.where((word) => word.isNotEmpty).toList().length,
-      );
+      state = state.copyWith(offset: state.recognizedWords.where((word) => word.isNotEmpty).toList().length);
       return;
     }
 
@@ -115,9 +109,9 @@ class Speech extends _$Speech {
 
     for (int i = 0; i < newRecognizedWords.where((word) => word.isNotEmpty).length; i++) {
       if (i >= _targetWords.length) break;
-      String formatedTargetWord = _formatWord(_targetWords[i]);
-      String formatedRecognizedWord = _formatWord(newRecognizedWords[i]);
-      newWordMarking[i] = formatedTargetWord == formatedRecognizedWord;
+      String formattedTargetWord = _formatWord(_targetWords[i]);
+      String formattedRecognizedWord = _formatWord(newRecognizedWords[i]);
+      newWordMarking[i] = formattedTargetWord == formattedRecognizedWord;
     }
 
     if (newWordMarking.contains(false) || newWordMarking.every((mark) => mark == true)) {

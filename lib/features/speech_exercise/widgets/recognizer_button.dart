@@ -60,7 +60,7 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
 
   @override
   void dispose() {
-    ref.read(speechProvider.notifier).cancelListening();
+    if (mounted) ref.read(speechProvider.notifier).cancelListening();
     super.dispose();
   }
 
@@ -115,10 +115,7 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
                                 ),
                               ),
                           style: TextStyle(
-                            color:
-                                speechNotifier.isPassed
-                                    ? Colors.green.shade700
-                                    : Colors.red.shade700,
+                            color: speechNotifier.isPassed ? Colors.green.shade700 : Colors.red.shade700,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -139,15 +136,9 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
                   .prefLangText(
                     speechState.isListening
                         ? const PrefLangText(hindi: 'सुन रहे है...', hinglish: 'Listening...')
-                        : const PrefLangText(
-                          hindi: 'बोलने के लिए टैप करें',
-                          hinglish: 'Bolne ke liye tap karein',
-                        ),
+                        : const PrefLangText(hindi: 'बोलने के लिए टैप करें', hinglish: 'Bolne ke liye tap karein'),
                   ),
-              style: TextStyle(
-                color: speechState.isListening ? Colors.green : Colors.blue,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: speechState.isListening ? Colors.green : Colors.blue, fontSize: 12),
             ),
           ),
       ],

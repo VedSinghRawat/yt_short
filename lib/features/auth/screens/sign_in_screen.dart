@@ -27,32 +27,39 @@ class SignInScreen extends ConsumerWidget {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              if (isLoading) const Loader(),
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Column(
+                  RichText(
+                    textAlign: TextAlign.center,
+                    text: TextSpan(
                       children: [
-                        Text(
-                          "Welcome to",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.grey,
+                        TextSpan(
+                          text: 'Learn English\n',
+                          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                            fontSize: 56,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
-                          textAlign: TextAlign.center,
                         ),
-                        Text(
-                          "CodeYogi's English Course",
-                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                          textAlign: TextAlign.center,
+                        TextSpan(
+                          text: 'With CodeYogi',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.secondary,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 56),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 64.0),
+                    child: Image.asset(
+                      'assets/img/signin-baba.png', // Assuming the image is in assets/images
+                    ),
+                  ),
                   ElevatedButton.icon(
                     onPressed:
                         isLoading
@@ -70,22 +77,29 @@ class SignInScreen extends ConsumerWidget {
                                 context.go(Routes.home);
                               }
                             },
-                    icon: Image.network(
-                      'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png',
-                      height: 24,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Icon(Icons.login);
-                      },
+                    icon: Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: Image.network(
+                        'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png',
+                        height: 36,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(Icons.login);
+                        },
+                      ),
                     ),
                     label: const Text('Sign in with Google'),
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      textStyle: const TextStyle(fontSize: 16),
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
+                      textStyle: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
+                      side: BorderSide(color: Theme.of(context).colorScheme.onTertiary, width: 0.5),
                     ),
                   ),
                   const SizedBox(height: 64),
                 ],
               ),
+              if (isLoading) const Loader(),
             ],
           ),
         ),
@@ -120,8 +134,8 @@ showLevelChangeConfirmationDialog(BuildContext context, UserModel user, Ref ref)
       );
     },
     yesButtonStyle: ElevatedButton.styleFrom(
-      backgroundColor: Colors.blue,
-      foregroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.primary,
+      foregroundColor: Theme.of(context).colorScheme.onPrimary,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
   );
