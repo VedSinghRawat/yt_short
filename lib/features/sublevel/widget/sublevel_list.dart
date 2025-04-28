@@ -244,12 +244,16 @@ class _LevelText extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color.fromRGBO(0, 0, 0, 0.7),
+        color: Theme.of(context).colorScheme.surface.withOpacity(0.7),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         'Level $positionText',
-        style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onSurface,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }

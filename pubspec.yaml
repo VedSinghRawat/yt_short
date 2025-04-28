@@ -1,6 +1,6 @@
 name: myapp
-description: "A new Flutter project."
-publish_to: "none"
+description: 'A new Flutter project.'
+publish_to: 'none'
 
 version: 1.1.8+1
 
@@ -49,7 +49,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/sounds/
+    - assets/img/
     - .env
 
 executables:

@@ -35,7 +35,8 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
     _flatWords = [];
 
     // Split text by new lines to maintain line structure
-    final lines = widget.text.split('\n');
+    // final lines = widget.text.split('\n');
+    final lines = ['Turn left at the next corner you see.'];
     for (var line in lines) {
       List<String> lineWords = [];
       for (var word in line.split(' ')) {
@@ -71,110 +72,87 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
       fontWeight: FontWeight.w300,
       height: recognizedWordLineHeight,
     );
+
+    final textToShow = <String>[]; // Initialize an empty list for words to show
+    for (var i = 0; i < speechState.recognizedWords.length; i++) {
+      String word = speechState.recognizedWords[i];
+      if (word.isEmpty) continue;
+      if (i == 0) {
+        word = word[0].toUpperCase() + word.substring(1);
+      }
+      textToShow.add(word);
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,
         borderRadius: BorderRadius.circular(30),
-        boxShadow: const [
-          BoxShadow(color: Color.fromRGBO(255, 255, 255, 0.2), blurRadius: 12.0, spreadRadius: 4.0),
-        ],
+        boxShadow: const [BoxShadow(color: Color.fromRGBO(255, 255, 255, 0.2), blurRadius: 12.0, spreadRadius: 4.0)],
       ),
       clipBehavior: Clip.none,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          CloseButton(onClose: widget.onClose),
           Column(
             children: [
               // Top bar with heading and close button
               const Header(),
-              const SizedBox(height: 24),
               Container(
                 margin: const EdgeInsets.symmetric(vertical: 24.0),
-                padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
                     Column(
                       children: [
-                        // Listen button with icon
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 24.0),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.withValues(alpha: .1),
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(30),
-                              onTap: () {
+                        Padding(
+                          padding: const EdgeInsets.only(left: 12.0, bottom: 8.0), // Outer padding
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(
                                 ref
-                                    .read(speechProvider.notifier)
-                                    .playAudio(widget.levelId, widget.audioFilename);
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      speechState.isPlayingAudio
-                                          ? Icons.hearing_rounded
-                                          : Icons.hearing_outlined,
-                                      color: Colors.blue,
-                                      size: 24,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      ref
-                                          .watch(langProvider.notifier)
-                                          .prefLangText(
-                                            PrefLangText(
-                                              hindi:
-                                                  speechState.isPlayingAudio
-                                                      ? 'सुन रहे हैं...'
-                                                      : 'सुनें',
-                                              hinglish:
-                                                  speechState.isPlayingAudio
-                                                      ? 'Sun rahe hain...'
-                                                      : 'Sune',
-                                            ),
-                                          ),
-                                      style: const TextStyle(
-                                        color: Colors.blue,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
+                                    .watch(langProvider.notifier)
+                                    .prefLangText(
+                                      const PrefLangText(
+                                        hindi: 'नीचे दिया वाक्य बोलें:',
+                                        hinglish: 'Niche diya vakya bole:',
                                       ),
+                                    ),
+                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Stack(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Container(
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  borderRadius: BorderRadius.circular(15.0),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.white.withOpacity(0.25),
+                                      spreadRadius: 2,
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 3),
                                     ),
                                   ],
                                 ),
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        Column(
-                          children: [
-                            for (int lineIndex = 0; lineIndex < _words.length; lineIndex++)
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 16.0),
-                                child: Column(
-                                  children: [
-                                    Wrap(
-                                      spacing: 8,
-                                      runSpacing: 2,
-                                      alignment: WrapAlignment.center,
-                                      crossAxisAlignment: WrapCrossAlignment.center,
-                                      children: [
-                                        for (
-                                          int wordIndex = 0;
-                                          wordIndex < _words[lineIndex].length;
-                                          wordIndex++
-                                        )
-                                          Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              // Calculate the flat index for this word
+                                child: Padding(
+                                  padding: const EdgeInsets.only(top: 44.0, bottom: 24.0, left: 18.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      for (int lineIndex = 0; lineIndex < _words.length; lineIndex++)
+                                        Wrap(
+                                          spacing: 8,
+                                          alignment: WrapAlignment.start,
+                                          crossAxisAlignment: WrapCrossAlignment.center,
+                                          children: [
+                                            for (int wordIndex = 0; wordIndex < _words[lineIndex].length; wordIndex++)
                                               Builder(
                                                 builder: (context) {
                                                   int flatIndex = 0;
@@ -183,79 +161,154 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                                                   }
                                                   flatIndex += wordIndex;
 
-                                                  // Target word - Now directly returned by Builder
+                                                  // Determine color based on marking
+                                                  Color wordColor;
+                                                  FontWeight fontWeight = FontWeight.normal;
+                                                  final mark = speechState.wordMarking.elementAtOrNull(flatIndex);
+
+                                                  if (mark == null) {
+                                                    wordColor = Theme.of(
+                                                      context,
+                                                    ).colorScheme.onPrimary.withOpacity(0.7);
+                                                  } else if (mark == true) {
+                                                    wordColor = Colors.lightGreenAccent;
+                                                    fontWeight = FontWeight.bold;
+                                                  } else {
+                                                    // false
+                                                    wordColor = Colors.redAccent;
+                                                    fontWeight = FontWeight.bold;
+                                                  }
+
                                                   return Text(
                                                     _words[lineIndex][wordIndex],
                                                     style: TextStyle(
-                                                      color:
-                                                          speechState.wordMarking.elementAtOrNull(
-                                                                    flatIndex,
-                                                                  ) ==
-                                                                  null
-                                                              ? Colors.white60
-                                                              : speechState.wordMarking
-                                                                      .elementAtOrNull(flatIndex) ==
-                                                                  true
-                                                              ? Colors.lightBlue[200]
-                                                              : speechState.wordMarking
-                                                                      .elementAtOrNull(flatIndex) ==
-                                                                  false
-                                                              ? Colors.red
-                                                              : Colors.white,
+                                                      color: wordColor,
                                                       fontSize: 24,
-                                                      fontWeight:
-                                                          speechState.wordMarking.elementAtOrNull(
-                                                                    flatIndex,
-                                                                  ) !=
-                                                                  null
-                                                              ? FontWeight.bold
-                                                              : FontWeight.normal,
-                                                      height: 1.4,
+                                                      fontWeight: fontWeight,
                                                       textBaseline: TextBaseline.alphabetic,
                                                     ),
                                                   );
                                                 },
                                               ),
-                                            ],
-                                          ),
-                                      ],
-                                    ),
-                                  ],
+                                          ],
+                                        ),
+                                    ],
+                                  ),
                                 ),
                               ),
+                            ),
+                            // Listen button positioned top-right of the Card
+                            Positioned(
+                              top: 20, // Adjust position slightly from edge
+                              right: 20, // Adjust position slightly from edge
+                              child: Material(
+                                color: Theme.of(context).colorScheme.secondary, // Background color
+                                borderRadius: BorderRadius.circular(30), // Match InkWell radius
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(30),
+                                  onTap: () {
+                                    ref.read(speechProvider.notifier).playAudio(widget.levelId, widget.audioFilename);
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12.0, // Adjusted padding
+                                      vertical: 6.0, // Adjusted padding
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          speechState.isPlayingAudio ? Icons.hearing_rounded : Icons.hearing_outlined,
+                                          size: 18,
+                                          color: Theme.of(context).colorScheme.onSecondary,
+                                        ),
+                                        const SizedBox(width: 8), // Adjusted spacing
+                                        Text(
+                                          ref
+                                              .watch(langProvider.notifier)
+                                              .prefLangText(
+                                                PrefLangText(
+                                                  hindi: speechState.isPlayingAudio ? 'सुन रहे हैं...' : 'सुनें',
+                                                  hinglish: speechState.isPlayingAudio ? 'Sun rahe hain...' : 'Sune',
+                                                ),
+                                              ),
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.onSecondary,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
                           ],
                         ),
-                        if (speechNotifier.isTestCompleted)
-                          Container(
-                            padding: const EdgeInsets.all(8.0),
+                        const SizedBox(height: 24), // Spacing before "You Said" section
+                        // "You Said:" Label
+                        Padding(
+                          padding: const EdgeInsets.only(left: 12.0, bottom: 8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              Text(
+                                ref
+                                    .watch(langProvider.notifier)
+                                    .prefLangText(const PrefLangText(hindi: 'आपने कहा:', hinglish: 'Aapne kaha:')),
+                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Recognized Words Card
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16.0), // Internal padding
                             decoration: BoxDecoration(
-                              color: speechNotifier.isPassed ? Colors.green[300] : Colors.red[300],
-                              shape: BoxShape.circle,
+                              color: Theme.of(context).colorScheme.primary, // Use primary background
+                              borderRadius: BorderRadius.circular(15.0),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1), // Subtle shadow
+                                  spreadRadius: 1,
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
-                            child: Center(
-                              child: Icon(
-                                speechNotifier.isPassed
-                                    ? Icons.download_done_rounded
-                                    : Icons.error_rounded,
-                                color: Colors.white,
-                                size: 30,
+                            child: Text(
+                              '${textToShow.join(' ')}${_flatWords.length == textToShow.length ? '.' : ''}',
+                              style: recognizedWordStyle.copyWith(
+                                color: Theme.of(context).colorScheme.secondary,
+                                fontWeight: FontWeight.w400,
                               ),
                             ),
                           ),
+                        ),
                       ],
                     ),
                   ],
                 ),
               ),
-              // Display recognized words at the bottom
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-                child: Text(
-                  speechState.recognizedWords.where((w) => w.isNotEmpty).join(' '),
-                  style: recognizedWordStyle,
-                  textAlign: TextAlign.center,
+              if (speechNotifier.isTestCompleted)
+                Container(
+                  padding: const EdgeInsets.all(8.0),
+                  decoration: BoxDecoration(
+                    color: speechNotifier.isPassed ? Colors.green[300] : Colors.red[300],
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Icon(
+                      speechNotifier.isPassed ? Icons.download_done_rounded : Icons.error_rounded,
+                      color: Colors.white,
+                      size: 30,
+                    ),
+                  ),
                 ),
-              ),
               const Spacer(),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
@@ -263,6 +316,7 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
               ),
             ],
           ),
+          CloseButton(onClose: widget.onClose),
         ],
       ),
     );
@@ -274,12 +328,25 @@ class Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.all(9.0),
-      child: Center(
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.primary,
+          borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
+        ),
         child: Text(
           'Speech Exercise',
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+          style: theme.textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.onPrimary,
+            fontSize: 28,
+          ),
+          textAlign: TextAlign.center,
         ),
       ),
     );
@@ -298,13 +365,7 @@ class CloseButton extends StatelessWidget {
       top: -10,
       child: Container(
         decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey[400]!.withValues(alpha: .2),
-              blurRadius: 10,
-              spreadRadius: 2,
-            ),
-          ],
+          boxShadow: [BoxShadow(color: Colors.grey[400]!.withValues(alpha: .2), blurRadius: 10, spreadRadius: 2)],
           border: Border.all(color: Colors.grey[400]!, width: 1.9),
           borderRadius: BorderRadius.circular(20),
         ),
