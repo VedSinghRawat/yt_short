@@ -68,10 +68,7 @@ class AuthController extends _$AuthController {
             return AlertDialog(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
-                side: BorderSide(
-                  color: Theme.of(dialogContext).colorScheme.outline.withValues(alpha: 0.2),
-                  width: 2.0,
-                ),
+                side: BorderSide(color: Theme.of(dialogContext).colorScheme.outline.withValues(alpha: 0.2), width: 2.0),
               ),
               title: const Text('आपकी पसंदीदा भाषा क्या है? / Aapki pasandida bhasha kya hai?'),
               content: const Text(
@@ -130,18 +127,13 @@ class AuthController extends _$AuthController {
       final level = progress?.maxLevel ?? 1;
       final subLevel = progress?.maxSubLevel ?? 1;
 
-      if (context.mounted &&
-          (user.maxLevel > level || (user.maxLevel == level && user.maxSubLevel > subLevel))) {
+      if (context.mounted && (user.maxLevel > level || (user.maxLevel == level && user.maxSubLevel > subLevel))) {
         await showLevelChangeConfirmationDialog(context, user, ref);
       } else if (progress != null) {
         SharedPref.store(PrefKey.currProgress(userEmail: user.email), progress);
       }
     } catch (e, stackTrace) {
-      developer.log(
-        'Error in AuthController.signInWithGoogle',
-        error: e.toString(),
-        stackTrace: stackTrace,
-      );
+      developer.log('Error in AuthController.signInWithGoogle', error: e.toString(), stackTrace: stackTrace);
       final userController = ref.read(userControllerProvider.notifier);
       userController.removeCurrentUser();
       if (context.mounted) {
@@ -198,11 +190,7 @@ class AuthController extends _$AuthController {
             await activityLogController.syncActivityLogs(activityLogs);
             await SharedPref.removeValue(PrefKey.activityLogs);
           } catch (e, stackTrace) {
-            developer.log(
-              'Error in AuthController.signOut',
-              error: e.toString(),
-              stackTrace: stackTrace,
-            );
+            developer.log('Error in AuthController.signOut', error: e.toString(), stackTrace: stackTrace);
           }
         }
 

@@ -19,11 +19,7 @@ class ActivityLogAPI implements IActivityLogAPI {
     if (googleIdToken == null) return;
 
     await _apiService.call(
-      params: ApiParams(
-        body: {'activityLogs': activityLogs},
-        method: ApiMethod.post,
-        endpoint: '/activity-log/sync',
-      ),
+      params: ApiParams(body: {'activityLogs': activityLogs}, method: ApiMethod.post, endpoint: '/activity-log/sync'),
     );
   }
 }

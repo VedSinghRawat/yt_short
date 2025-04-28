@@ -81,9 +81,7 @@ class StorageCleanupService {
             await Future.wait(
               toBeDeletedPaths.map(
                 (videoPath) => SharedPref.removeValue(
-                  PrefKey.eTag(
-                    PathService.videoPath(id, videoPath.split('/').last.replaceAll('.mp4', '')),
-                  ),
+                  PrefKey.eTag(PathService.videoPath(id, videoPath.split('/').last.replaceAll('.mp4', ''))),
                 ),
               ),
             );
@@ -111,14 +109,8 @@ class StorageCleanupService {
   }
 
   /// Removes least-important cached levels while protecting nearby levels
-  Future<void> removeFurthestCachedIds(
-    List<String> cachedIds,
-    List<String> orderedIds,
-    String currentId,
-  ) async {
-    final Map<String, int> idToIndexMap = {
-      for (int i = 0; i < orderedIds.length; i++) orderedIds[i]: i,
-    };
+  Future<void> removeFurthestCachedIds(List<String> cachedIds, List<String> orderedIds, String currentId) async {
+    final Map<String, int> idToIndexMap = {for (int i = 0; i < orderedIds.length; i++) orderedIds[i]: i};
 
     final int currentIndex = idToIndexMap[currentId] ?? -1;
 
@@ -141,8 +133,7 @@ class StorageCleanupService {
 
   /// Prevents deletion of current, previous and next two levels
   bool _isProtectedLevel(int dist) =>
-      (dist < 0 && dist.abs() <= AppConstants.kMaxPreviousLevelsToKeep) ||
-      dist <= AppConstants.kMaxNextLevelsToKeep;
+      (dist < 0 && dist.abs() <= AppConstants.kMaxPreviousLevelsToKeep) || dist <= AppConstants.kMaxNextLevelsToKeep;
 }
 
 final storageCleanupServiceProvider = Provider<StorageCleanupService>(

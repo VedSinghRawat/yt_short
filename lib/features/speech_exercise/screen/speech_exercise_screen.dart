@@ -17,13 +17,7 @@ class SpeechExerciseScreen extends ConsumerStatefulWidget {
   final String? videoLocalPath;
   final List<String>? videoUrls;
 
-  const SpeechExerciseScreen({
-    super.key,
-    required this.exercise,
-    this.videoLocalPath,
-    this.videoUrls,
-    this.uniqueId,
-  });
+  const SpeechExerciseScreen({super.key, required this.exercise, this.videoLocalPath, this.videoUrls, this.uniqueId});
 
   @override
   ConsumerState<SpeechExerciseScreen> createState() => _SpeechExerciseScreenState();

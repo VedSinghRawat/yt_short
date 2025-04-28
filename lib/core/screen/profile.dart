@@ -33,9 +33,7 @@ class ProfileScreen extends ConsumerWidget {
         Scaffold(
           appBar: AppBar(
             title: Text(
-              ref
-                  .read(langProvider.notifier)
-                  .prefLangText(const PrefLangText(hindi: 'प्रोफाइल', hinglish: 'Profile')),
+              ref.read(langProvider.notifier).prefLangText(const PrefLangText(hindi: 'प्रोफाइल', hinglish: 'Profile')),
             ),
             elevation: 0,
             actions: [
@@ -78,11 +76,7 @@ class ProfileScreen extends ConsumerWidget {
                       const SizedBox(height: 10),
                       Text(
                         user?.email ?? 'Guest User',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: const TextStyle(fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold),
                       ),
 
                       const SizedBox(height: 20),
@@ -96,12 +90,7 @@ class ProfileScreen extends ConsumerWidget {
                     context,
                     title: ref
                         .read(langProvider.notifier)
-                        .prefLangText(
-                          const PrefLangText(
-                            hindi: 'अपनी भाषा चुनें',
-                            hinglish: 'Language Preference',
-                          ),
-                        ),
+                        .prefLangText(const PrefLangText(hindi: 'अपनी भाषा चुनें', hinglish: 'Language Preference')),
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -109,9 +98,7 @@ class ProfileScreen extends ConsumerWidget {
                           Text(
                             ref
                                 .read(langProvider.notifier)
-                                .prefLangText(
-                                  const PrefLangText(hindi: 'भाषा', hinglish: 'Language'),
-                                ),
+                                .prefLangText(const PrefLangText(hindi: 'भाषा', hinglish: 'Language')),
                             style: const TextStyle(fontSize: 16),
                           ),
                           DropdownButton<PrefLang>(
@@ -157,9 +144,7 @@ class ProfileScreen extends ConsumerWidget {
                     context,
                     title: ref
                         .read(langProvider.notifier)
-                        .prefLangText(
-                          const PrefLangText(hindi: 'प्रगति विवरण', hinglish: 'Progress Overview'),
-                        ),
+                        .prefLangText(const PrefLangText(hindi: 'प्रगति विवरण', hinglish: 'Progress Overview')),
                     children: [
                       _buildInfoRow(
                         ref
@@ -170,31 +155,19 @@ class ProfileScreen extends ConsumerWidget {
                       _buildInfoRow(
                         ref
                             .read(langProvider.notifier)
-                            .prefLangText(
-                              const PrefLangText(hindi: 'सबलेवल', hinglish: 'Sublevel'),
-                            ),
+                            .prefLangText(const PrefLangText(hindi: 'सबलेवल', hinglish: 'Sublevel')),
                         '${progress.subLevel}',
                       ),
                       _buildInfoRow(
                         ref
                             .read(langProvider.notifier)
-                            .prefLangText(
-                              const PrefLangText(
-                                hindi: 'अधिकतम लेवल',
-                                hinglish: 'Max Level Reached',
-                              ),
-                            ),
+                            .prefLangText(const PrefLangText(hindi: 'अधिकतम लेवल', hinglish: 'Max Level Reached')),
                         '${progress.maxLevel}',
                       ),
                       _buildInfoRow(
                         ref
                             .read(langProvider.notifier)
-                            .prefLangText(
-                              const PrefLangText(
-                                hindi: 'अधिकतम सबलेवल',
-                                hinglish: 'Max Sublevel Reached',
-                              ),
-                            ),
+                            .prefLangText(const PrefLangText(hindi: 'अधिकतम सबलेवल', hinglish: 'Max Sublevel Reached')),
                         '${progress.maxSubLevel}',
                       ),
                     ],
@@ -208,11 +181,7 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildInfoCard(
-    BuildContext context, {
-    required String title,
-    required List<Widget> children,
-  }) {
+  Widget _buildInfoCard(BuildContext context, {required String title, required List<Widget> children}) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       elevation: 2,

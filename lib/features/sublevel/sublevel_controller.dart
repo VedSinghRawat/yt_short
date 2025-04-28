@@ -93,14 +93,8 @@ class SublevelController extends _$SublevelController {
       state = state.copyWith(loadedLevelIds: {...state.loadedLevelIds, levelId});
       return levelId;
     } catch (e, stackTrace) {
-      developer.log(
-        'Error in SublevelController._listByLevel',
-        error: e.toString(),
-        stackTrace: stackTrace,
-      );
-      state = state.copyWith(
-        error: ref.read(langProvider.notifier).prefLangText(AppConstants.unknownError),
-      );
+      developer.log('Error in SublevelController._listByLevel', error: e.toString(), stackTrace: stackTrace);
+      state = state.copyWith(error: ref.read(langProvider.notifier).prefLangText(AppConstants.unknownError));
       return null;
     } finally {
       state = state.copyWith(loadingLevelIds: {...state.loadingLevelIds}..remove(levelId));
@@ -110,23 +104,17 @@ class SublevelController extends _$SublevelController {
   void setVideoPlayingError(String e) => state = state.copyWith(error: e);
 
   Future<void> _addExistVideoSublevelEntries(LevelDTO levelDTO, int level, String levelId) async {
-    final entries = await FileService.listEntities(
-      Directory(PathService.levelVideosDirLocalPath(levelId)),
-    );
+    final entries = await FileService.listEntities(Directory(PathService.levelVideosDirLocalPath(levelId)));
 
     final videoFiles = entries.toSet();
 
     final sublevels =
-        levelDTO.sub_levels.where((dto) => videoFiles.contains("${dto.videoFilename}.mp4")).map((
-          dto,
-        ) {
+        levelDTO.sub_levels.where((dto) => videoFiles.contains("${dto.videoFilename}.mp4")).map((dto) {
           final index = levelDTO.sub_levels.indexOf(dto) + 1;
           return SubLevel.fromSubLevelDTO(dto, level, index, levelId);
         }).toSet();
 
-    state = state.copyWith(
-      sublevels: state.sublevels == null ? sublevels : {...state.sublevels!, ...sublevels},
-    );
+    state = state.copyWith(sublevels: state.sublevels == null ? sublevels : {...state.sublevels!, ...sublevels});
   }
 
   void setHasFinishedVideo(bool to) => state = state.copyWith(hasFinishedVideo: to);
@@ -152,9 +140,7 @@ class SublevelController extends _$SublevelController {
       final orderedIds = asyncOrderIds.value;
 
       if (orderedIds == null) {
-        state = state.copyWith(
-          error: ref.read(langProvider.notifier).prefLangText(AppConstants.unknownError),
-        );
+        state = state.copyWith(error: ref.read(langProvider.notifier).prefLangText(AppConstants.unknownError));
         return;
       }
 
@@ -179,9 +165,7 @@ class SublevelController extends _$SublevelController {
       await Future.wait(fetchTasks);
 
       if (currLevelIndex < 0 || currUserLevel >= orderedIds.length) {
-        final message = ref
-            .read(langProvider.notifier)
-            .prefLangText(AppConstants.allLevelsCompleted);
+        final message = ref.read(langProvider.notifier).prefLangText(AppConstants.allLevelsCompleted);
 
         state = state.copyWith(error: message);
       }
@@ -202,10 +186,7 @@ class SublevelController extends _$SublevelController {
 
       await storageCleanupService.removeFurthestCachedIds(cachedIds, orderedIds, currLevelId);
     } catch (e) {
-      developer.log(
-        'error in sublevel controller clean levels: $e',
-        stackTrace: StackTrace.current,
-      );
+      developer.log('error in sublevel controller clean levels: $e', stackTrace: StackTrace.current);
     }
   }
 

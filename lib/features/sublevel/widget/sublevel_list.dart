@@ -25,12 +25,7 @@ class SublevelsList extends ConsumerStatefulWidget {
   final Set<String> loadingIds;
   final Future<void> Function(int index, PageController controller)? onVideoChange;
 
-  const SublevelsList({
-    super.key,
-    required this.sublevels,
-    this.onVideoChange,
-    required this.loadingIds,
-  });
+  const SublevelsList({super.key, required this.sublevels, this.onVideoChange, required this.loadingIds});
 
   @override
   ConsumerState<SublevelsList> createState() => _SublevelsListState();
@@ -68,10 +63,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
   void initState() {
     super.initState();
     _pageController = PageController();
-    _bounceController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    );
+    _bounceController = AnimationController(duration: const Duration(milliseconds: 1000), vsync: this);
 
     _bounceAnimation = Tween<double>(
       begin: 0.0,
@@ -98,9 +90,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
-    final hasFinishedVideo = ref.watch(
-      sublevelControllerProvider.select((value) => value.hasFinishedVideo),
-    );
+    final hasFinishedVideo = ref.watch(sublevelControllerProvider.select((value) => value.hasFinishedVideo));
 
     if (hasFinishedVideo) {
       _bounceController.repeat(reverse: true);
@@ -132,17 +122,12 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
               final isLastSublevel = index == widget.sublevels.length;
 
               final isLoading =
-                  sublevel == null
-                      ? widget.loadingIds.isNotEmpty
-                      : widget.loadingIds.contains(sublevel.levelId);
+                  sublevel == null ? widget.loadingIds.isNotEmpty : widget.loadingIds.contains(sublevel.levelId);
 
               if ((isLastSublevel || sublevel == null) && !isLoading) {
                 final error = ref.watch(sublevelControllerProvider).error;
 
-                Console.error(
-                  Failure(message: 'sublevel error is $error $index'),
-                  StackTrace.current,
-                );
+                Console.error(Failure(message: 'sublevel error is $error $index'), StackTrace.current);
 
                 if (error == null) {
                   return const Loader();
@@ -153,9 +138,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
                   text: error,
                   buttonText: ref
                       .read(langProvider.notifier)
-                      .prefLangText(
-                        const PrefLangText(hindi: 'पुनः प्रयास करें', hinglish: 'Retry'),
-                      ),
+                      .prefLangText(const PrefLangText(hindi: 'पुनः प्रयास करें', hinglish: 'Retry')),
                 );
               }
 
@@ -164,10 +147,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
               }
               final positionText = '${sublevel.level}-${sublevel.index}';
 
-              String? localPath = PathService.videoLocalPath(
-                sublevel.levelId,
-                sublevel.videoFilename,
-              );
+              String? localPath = PathService.videoLocalPath(sublevel.levelId, sublevel.videoFilename);
 
               final urls =
                   [BaseUrl.cloudflare, BaseUrl.s3]
@@ -209,11 +189,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
                                 ),
                           ),
                         ),
-                        Positioned(
-                          top: 16,
-                          right: 16,
-                          child: _LevelText(positionText: positionText),
-                        ),
+                        Positioned(top: 16, right: 16, child: _LevelText(positionText: positionText)),
                       ],
                     ),
                   );
@@ -249,11 +225,7 @@ class _LevelText extends StatelessWidget {
       ),
       child: Text(
         'Level $positionText',
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.onSurface,
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-        ),
+        style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.bold),
       ),
     );
   }

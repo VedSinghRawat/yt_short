@@ -18,8 +18,7 @@ class LoadingRefreshIcon extends StatefulWidget {
   State<LoadingRefreshIcon> createState() => _LoadingRefreshIconState();
 }
 
-class _LoadingRefreshIconState extends State<LoadingRefreshIcon>
-    with SingleTickerProviderStateMixin {
+class _LoadingRefreshIconState extends State<LoadingRefreshIcon> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   @override

@@ -29,18 +29,15 @@ class _VideoProgressBarState extends State<VideoProgressBar> with SingleTickerPr
   void initState() {
     super.initState();
 
-    _timerController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    )..addListener(() {
-        final estimatedProgress = _estimateCurrentProgress();
+    _timerController = AnimationController(vsync: this, duration: const Duration(milliseconds: 500))..addListener(() {
+      final estimatedProgress = _estimateCurrentProgress();
 
-        if (_currentProgress != estimatedProgress) {
-          setState(() {
-            _currentProgress = estimatedProgress;
-          });
-        }
-      });
+      if (_currentProgress != estimatedProgress) {
+        setState(() {
+          _currentProgress = estimatedProgress;
+        });
+      }
+    });
   }
 
   @override
@@ -129,26 +126,15 @@ class _VideoProgressBarState extends State<VideoProgressBar> with SingleTickerPr
             clipBehavior: Clip.none,
             alignment: Alignment.centerLeft,
             children: [
-              Container(
-                height: 3,
-                width: progressBarWidth,
-                color: Colors.grey.withAlpha(128),
-              ),
-              Container(
-                height: 3,
-                width: clampedIndicatorPosition,
-                color: Colors.red,
-              ),
+              Container(height: 3, width: progressBarWidth, color: Colors.grey.withAlpha(128)),
+              Container(height: 3, width: clampedIndicatorPosition, color: Colors.red),
               Positioned(
                 left: clampedIndicatorPosition - 5,
                 top: (10 - 10) / 2,
                 child: Container(
                   width: 10,
                   height: 10,
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
+                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
                 ),
               ),
             ],

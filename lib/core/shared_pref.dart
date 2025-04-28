@@ -137,10 +137,7 @@ class SharedPref {
     }
   }
 
-  static Future<void> pushValue<LT, ST extends List<LT>, K extends PrefKey<ST, LT>>(
-    K prefKey,
-    LT newValue,
-  ) async {
+  static Future<void> pushValue<LT, ST extends List<LT>, K extends PrefKey<ST, LT>>(K prefKey, LT newValue) async {
     final existing = get(prefKey);
     dynamic updated;
 
@@ -175,10 +172,7 @@ class SharedPref {
       }
 
       final merged = oldValueMap.map(
-        (k, v) =>
-            valueMap.containsKey(k) && valueMap[k] != null
-                ? MapEntry(k, valueMap[k])
-                : MapEntry(k, v),
+        (k, v) => valueMap.containsKey(k) && valueMap[k] != null ? MapEntry(k, valueMap[k]) : MapEntry(k, v),
       );
 
       if (key.fromJson != null) {

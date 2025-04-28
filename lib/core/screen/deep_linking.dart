@@ -33,12 +33,7 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
     if (authState.loading) {
       final text = ref
           .read(langProvider.notifier)
-          .prefLangText(
-            const PrefLangText(
-              hindi: 'आपका खाता लिंक हो रहा है...',
-              hinglish: 'Linking your account...',
-            ),
-          );
+          .prefLangText(const PrefLangText(hindi: 'आपका खाता लिंक हो रहा है...', hinglish: 'Linking your account...'));
 
       return Scaffold(body: Center(child: Loader(text: text)));
     }
@@ -53,10 +48,7 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
           ),
-          child:
-              authState.error != null
-                  ? _buildErrorUI(context, authState.error!)
-                  : _buildSuccessUI(context),
+          child: authState.error != null ? _buildErrorUI(context, authState.error!) : _buildSuccessUI(context),
         ),
       ),
     );
@@ -74,11 +66,7 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
         const SizedBox(height: 12),
         Text(headingText, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
-        Text(
-          error,
-          textAlign: TextAlign.center,
-          style: TextStyle(color: Theme.of(context).colorScheme.error),
-        ),
+        Text(error, textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.error)),
         const SizedBox(height: 24),
         ElevatedButton(
           style: ElevatedButton.styleFrom(

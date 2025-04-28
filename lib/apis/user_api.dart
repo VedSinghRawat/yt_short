@@ -40,11 +40,7 @@ class UserAPI implements IUserAPI {
   Future<UserDTO> updateProfile({required PrefLang prefLang}) async {
     try {
       final response = await _apiService.call(
-        params: ApiParams(
-          method: ApiMethod.patch,
-          endpoint: '/user/profile',
-          body: {'prefLang': prefLang.name},
-        ),
+        params: ApiParams(method: ApiMethod.patch, endpoint: '/user/profile', body: {'prefLang': prefLang.name}),
       );
 
       if (response.statusCode != 200) {

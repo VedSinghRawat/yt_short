@@ -114,29 +114,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return true;
   }
 
-  Future<void> syncProgress(
-    int index,
-    List<SubLevel> sublevels,
-    String? userEmail,
-    int subLevel,
-    int maxLevel,
-  ) async {
+  Future<void> syncProgress(int index, List<SubLevel> sublevels, String? userEmail, int subLevel, int maxLevel) async {
     if (!isLevelChanged(index, sublevels)) return;
 
     bool isSyncSucceed = false;
 
     if (userEmail != null) {
       final currSubLevel = sublevels[index];
-      isSyncSucceed = await ref
-          .read(userControllerProvider.notifier)
-          .sync(currSubLevel.levelId, subLevel);
+      isSyncSucceed = await ref.read(userControllerProvider.notifier).sync(currSubLevel.levelId, subLevel);
     }
 
     final previousSubLevel = sublevels[index - 1];
     final currSubLevel = sublevels[index];
 
-    if (((previousSubLevel.level < currSubLevel.level && currSubLevel.level > maxLevel) ||
-            !isSyncSucceed) &&
+    if (((previousSubLevel.level < currSubLevel.level && currSubLevel.level > maxLevel) || !isSyncSucceed) &&
         currSubLevel.level > AppConstants.kAuthRequiredLevel) {
       await SharedPref.store(PrefKey.doneToday, 1);
     }
@@ -221,12 +212,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final localMaxLevel = localProgress?.maxLevel ?? 0;
     final localMaxSubLevel = localProgress?.maxSubLevel ?? 0;
 
-    final isLocalLevelAfter = isLevelAfter(
-      level,
-      sublevelIndex,
-      user?.maxLevel ?? 0,
-      user?.maxSubLevel ?? 0,
-    );
+    final isLocalLevelAfter = isLevelAfter(level, sublevelIndex, user?.maxLevel ?? 0, user?.maxSubLevel ?? 0);
 
     // Check if video change should be cancelled
     if (cancelVideoChange(
@@ -238,25 +224,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       user?.isAdmin == true,
       user?.doneToday,
     )) {
-      controller.animateToPage(
-        index - 1,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
+      controller.animateToPage(index - 1, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
       return;
     }
 
     ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(false);
 
     // Sync the local progress
-    await syncLocalProgress(
-      level,
-      sublevelIndex,
-      sublevel.levelId,
-      localMaxLevel,
-      localMaxSubLevel,
-      userEmail,
-    );
+    await syncLocalProgress(level, sublevelIndex, sublevel.levelId, localMaxLevel, localMaxSubLevel, userEmail);
 
     final lastLoggedInEmail = SharedPref.get(PrefKey.user)?.email;
 
@@ -265,11 +240,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // If the user is logged in, add an activity log entry
     await SharedPref.pushValue(
       PrefKey.activityLogs,
-      ActivityLog(
-        subLevel: sublevelIndex,
-        levelId: sublevel.levelId,
-        userEmail: userEmail ?? lastLoggedInEmail,
-      ),
+      ActivityLog(subLevel: sublevelIndex, levelId: sublevel.levelId, userEmail: userEmail ?? lastLoggedInEmail),
     );
 
     // Sync the progress with db if the user moves to a new level
@@ -297,9 +268,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final loadingLevelIds = ref.watch(
-      sublevelControllerProvider.select((state) => state.loadingLevelIds),
-    );
+    final loadingLevelIds = ref.watch(sublevelControllerProvider.select((state) => state.loadingLevelIds));
 
     final sublevels = ref.watch(sublevelControllerProvider.select((state) => state.sublevels));
 
@@ -318,11 +287,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       appBar: const HomeScreenAppBar(),
-      body: SublevelsList(
-        loadingIds: loadingLevelIds,
-        sublevels: _sortedSublevels!,
-        onVideoChange: onVideoChange,
-      ),
+      body: SublevelsList(loadingIds: loadingLevelIds, sublevels: _sortedSublevels!, onVideoChange: onVideoChange),
     );
   }
 }

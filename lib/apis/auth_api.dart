@@ -33,9 +33,7 @@ class AuthAPI implements IAuthAPI {
 
       await _apiService.setToken(auth.idToken ?? '');
 
-      final response = await _apiService.call(
-        params: const ApiParams(endpoint: '/auth/google', method: ApiMethod.get),
-      );
+      final response = await _apiService.call(params: const ApiParams(endpoint: '/auth/google', method: ApiMethod.get));
 
       final user = UserDTO.fromJson(response.data['user']);
 
@@ -69,10 +67,7 @@ class AuthAPI implements IAuthAPI {
       params: ApiParams(endpoint: '/user/sync-cy-id', method: ApiMethod.post, body: {'cyId': cyId}),
     );
 
-    SharedPref.store(
-      PrefKey.cyId,
-      '',
-    ); // set cyId to empty string to indicate that it has been synced
+    SharedPref.store(PrefKey.cyId, ''); // set cyId to empty string to indicate that it has been synced
   }
 }
 

@@ -45,9 +45,7 @@ class _ScrollIndicatorState extends State<ScrollIndicator> with SingleTickerProv
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: .7),
         borderRadius: BorderRadius.circular(30),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: .2), blurRadius: 10, spreadRadius: 2),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .2), blurRadius: 10, spreadRadius: 2)],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -79,11 +77,7 @@ class _ScrollIndicatorState extends State<ScrollIndicator> with SingleTickerProv
                       color: Colors.white,
                       size: 64,
                       shadows: [
-                        Shadow(
-                          color: Colors.white.withOpacity(0.5),
-                          blurRadius: 15,
-                          offset: const Offset(0, 2),
-                        ),
+                        Shadow(color: Colors.white.withOpacity(0.5), blurRadius: 15, offset: const Offset(0, 2)),
                       ],
                     ),
                   ],

@@ -65,9 +65,7 @@ class SignInScreen extends ConsumerWidget {
                         isLoading
                             ? null
                             : () async {
-                              await ref
-                                  .read(authControllerProvider.notifier)
-                                  .signInWithGoogle(context);
+                              await ref.read(authControllerProvider.notifier).signInWithGoogle(context);
 
                               if (!context.mounted) return;
 

@@ -10,12 +10,8 @@ class ActivityLog implements SharedPrefClass {
   final String userEmail;
   final int timestamp;
 
-  ActivityLog({
-    required this.subLevel,
-    required this.levelId,
-    required this.userEmail,
-    int? timestamp,
-  }) : timestamp = timestamp ?? DateTime.now().millisecondsSinceEpoch;
+  ActivityLog({required this.subLevel, required this.levelId, required this.userEmail, int? timestamp})
+    : timestamp = timestamp ?? DateTime.now().millisecondsSinceEpoch;
 
   factory ActivityLog.fromJson(Map<String, dynamic> json) => _$ActivityLogFromJson(json);
 

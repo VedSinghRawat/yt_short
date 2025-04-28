@@ -46,16 +46,13 @@ class InitializeService {
         handleDeepLinking(), // deep linking depends on user
       ]);
 
-      final currProgress = SharedPref.get(
-        PrefKey.currProgress(userEmail: userControllerState.currentUser?.email),
-      );
+      final currProgress = SharedPref.get(PrefKey.currProgress(userEmail: userControllerState.currentUser?.email));
 
       final apiUser = userControllerState.currentUser;
       if (currProgress == null && apiUser == null) return;
 
       final localLastModified = currProgress?.modified ?? 0;
-      final apiLastModified =
-          apiUser != null ? DateTime.parse(apiUser.modified).millisecondsSinceEpoch : 0;
+      final apiLastModified = apiUser != null ? DateTime.parse(apiUser.modified).millisecondsSinceEpoch : 0;
 
       localLastModified > apiLastModified
           ? await userController.sync(currProgress!.levelId!, currProgress.subLevel!)

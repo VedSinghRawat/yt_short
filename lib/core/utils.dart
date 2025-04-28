@@ -43,10 +43,7 @@ void showSnackBar(
               ),
             ),
             const VerticalDivider(color: Colors.white, thickness: 1),
-            IconButton(
-              onPressed: () => messenger.clearSnackBars(),
-              icon: const Icon(Icons.close, color: Colors.white),
-            ),
+            IconButton(onPressed: () => messenger.clearSnackBars(), icon: const Icon(Icons.close, color: Colors.white)),
           ],
         ),
       ),

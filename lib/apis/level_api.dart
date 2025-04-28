@@ -19,9 +19,7 @@ class LevelApi implements ILevelApi {
   @override
   Future<LevelDTO?> get(String id) async {
     try {
-      final response = await apiService.getCloudStorageData(
-        endpoint: PathService.levelJsonPath(id),
-      );
+      final response = await apiService.getCloudStorageData(endpoint: PathService.levelJsonPath(id));
 
       if (response == null) return null;
 

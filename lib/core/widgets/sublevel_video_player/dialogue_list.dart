@@ -62,11 +62,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_scrollController.hasClients) return;
-      _scrollController.animateToItem(
-        0,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+      _scrollController.animateToItem(0, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
 
       if (_selectedDialogueIndex == 0) return;
       setState(() => _selectedDialogueIndex = 0);
@@ -130,11 +126,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
   }
 
   // --- Function to Calculate Item Height ---
-  double _calculateItemHeight(
-    BoxConstraints constraints,
-    List<Dialogue> dialogues,
-    PrefLang prefLang,
-  ) {
+  double _calculateItemHeight(BoxConstraints constraints, List<Dialogue> dialogues, PrefLang prefLang) {
     double maxOverallItemHeight = 0;
 
     final timePainter = TextPainter(
@@ -150,22 +142,14 @@ class _DialogueListState extends ConsumerState<DialogueList> {
     const double iconContainerWidth = selectedIconSize + (iconPadding * 2) + (iconBorder * 2);
     const double fixedSpacing = 16.0 + 12.0;
     final double availableWidthForFlexible =
-        constraints.maxWidth -
-        timeTextWidth -
-        iconContainerWidth -
-        fixedSpacing -
-        (horizontalPadding * 2);
+        constraints.maxWidth - timeTextWidth - iconContainerWidth - fixedSpacing - (horizontalPadding * 2);
     final double textConstraintWidth = max(0, availableWidthForFlexible * textWidthPercentage);
 
     const double selectedFontSize = 20;
     const FontWeight selectedFontWeight = FontWeight.bold;
     const double translationFontSize = selectedFontSize * 0.75;
 
-    const mainTextStyle = TextStyle(
-      fontSize: selectedFontSize,
-      color: Colors.white,
-      fontWeight: selectedFontWeight,
-    );
+    const mainTextStyle = TextStyle(fontSize: selectedFontSize, color: Colors.white, fontWeight: selectedFontWeight);
     const translationTextStyle = TextStyle(
       fontSize: translationFontSize,
       color: Colors.white70,
@@ -184,8 +168,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
 
       if (dialogue.hindiText.isNotEmpty && dialogue.hinglishText.isNotEmpty) {
         currentTextColumnHeight += betweenTextPadding;
-        final translationText =
-            prefLang == PrefLang.hindi ? dialogue.hindiText : dialogue.hinglishText;
+        final translationText = prefLang == PrefLang.hindi ? dialogue.hindiText : dialogue.hinglishText;
         final translationPainter = TextPainter(
           text: TextSpan(text: translationText, style: translationTextStyle),
           textDirection: TextDirection.ltr,
@@ -235,11 +218,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
     return LayoutBuilder(
       builder: (context, constraints) {
         // Call the calculation function
-        final double calculatedItemHeight = _calculateItemHeight(
-          constraints,
-          widget.dialogues,
-          prefLang,
-        );
+        final double calculatedItemHeight = _calculateItemHeight(constraints, widget.dialogues, prefLang);
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
           widget.onHeightCalculated?.call(calculatedItemHeight);
@@ -306,14 +285,11 @@ class _DialogueListState extends ConsumerState<DialogueList> {
                                         ),
                                         textAlign: TextAlign.center,
                                       ),
-                                      if (dialogue.hindiText.isNotEmpty &&
-                                          dialogue.hinglishText.isNotEmpty)
+                                      if (dialogue.hindiText.isNotEmpty && dialogue.hinglishText.isNotEmpty)
                                         Padding(
                                           padding: const EdgeInsets.only(top: betweenTextPadding),
                                           child: Text(
-                                            prefLang == PrefLang.hindi
-                                                ? dialogue.hindiText
-                                                : dialogue.hinglishText,
+                                            prefLang == PrefLang.hindi ? dialogue.hindiText : dialogue.hinglishText,
                                             style: TextStyle(
                                               fontSize: textFontSize * 0.75,
                                               color: Colors.white70,

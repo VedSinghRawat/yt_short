@@ -58,9 +58,7 @@ class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
               final progress = SharedPref.get(PrefKey.currProgress(userEmail: currentUser?.email));
 
               if (progress != null && progress.levelId != null && progress.subLevel != null) {
-                await ref
-                    .read(userControllerProvider.notifier)
-                    .sync(progress.levelId!, progress.subLevel!);
+                await ref.read(userControllerProvider.notifier).sync(progress.levelId!, progress.subLevel!);
               }
 
               setState(() {
@@ -76,14 +74,8 @@ class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
                     .read(langProvider.notifier)
                     .prefLangText(
                       isSuccess
-                          ? const PrefLangText(
-                            hindi: 'डेटा सफलतापूर्वक अपडेट हो गया',
-                            hinglish: 'Data update ho gaya',
-                          )
-                          : const PrefLangText(
-                            hindi: 'डेटा अपडेट नहीं हो सका।',
-                            hinglish: 'Data update nahin ho saka',
-                          ),
+                          ? const PrefLangText(hindi: 'डेटा सफलतापूर्वक अपडेट हो गया', hinglish: 'Data update ho gaya')
+                          : const PrefLangText(hindi: 'डेटा अपडेट नहीं हो सका।', hinglish: 'Data update nahin ho saka'),
                     ),
               );
             },
