@@ -116,7 +116,7 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
                         )
                         : speechState.isListening
                         ? const ActiveMic()
-                        : const Icon(Icons.mic_none, color: Colors.blue, size: 32),
+                        : const Icon(Icons.mic_none, color: Colors.blue, size: 34),
               ),
             ),
           ),
@@ -132,7 +132,7 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
                         ? const PrefLangText(hindi: 'सुन रहे है...', hinglish: 'Listening...')
                         : const PrefLangText(hindi: 'बोलने के लिए टैप करें', hinglish: 'Bolne ke liye tap karein'),
                   ),
-              style: TextStyle(color: speechState.isListening ? Colors.green : Colors.blue, fontSize: 12),
+              style: TextStyle(color: speechState.isListening ? Colors.green : Colors.blue, fontSize: 14),
             ),
           ),
       ],

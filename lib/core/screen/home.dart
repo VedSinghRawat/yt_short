@@ -127,9 +127,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final previousSubLevel = sublevels[index - 1];
     final currSubLevel = sublevels[index];
 
-    if (((previousSubLevel.level < currSubLevel.level && currSubLevel.level > maxLevel) || !isSyncSucceed) &&
-        currSubLevel.level > AppConstants.kAuthRequiredLevel) {
-      await SharedPref.store(PrefKey.doneToday, 1);
+    if (((previousSubLevel.level < currSubLevel.level) || !isSyncSucceed) && currSubLevel.level > maxLevel) {
+      final doneToday = SharedPref.get(PrefKey.doneToday);
+
+      await SharedPref.store(PrefKey.doneToday, doneToday! + 1);
     }
   }
 

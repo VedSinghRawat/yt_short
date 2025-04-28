@@ -178,6 +178,8 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                                                         mark != null
                                                             ? const EdgeInsets.symmetric(horizontal: 5, vertical: 4)
                                                             : null,
+                                                    margin:
+                                                        mark != null ? const EdgeInsets.symmetric(vertical: 2) : null,
                                                     decoration: BoxDecoration(
                                                       color: backgroundColor,
                                                       borderRadius: BorderRadius.circular(6),
