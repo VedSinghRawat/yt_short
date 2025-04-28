@@ -21,7 +21,7 @@
     </queries>
 
     <application
-        android:label="myapp"
+        android:label="AngrezYogi"
         android:usesCleartextTraffic="true"
         android:hardwareAccelerated="false"
         android:name="${applicationName}"

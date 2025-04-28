@@ -35,7 +35,7 @@ class MyApp extends ConsumerWidget {
     );
 
     return MaterialApp.router(
-      title: 'English Course',
+      title: 'AngrezYogi',
       theme: customDarkTheme, // Use the custom theme
       routerConfig: router,
     );

@@ -50,7 +50,7 @@ void showSnackBar(
       backgroundColor: backgroundColor,
       behavior: SnackBarBehavior.floating,
       duration: duration,
-      margin: EdgeInsets.only(bottom: deviceHeight - 120, left: 16, right: 16),
+      margin: EdgeInsets.only(bottom: deviceHeight - 200, left: 16, right: 16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       padding: const EdgeInsets.only(left: 10, right: 0, top: 10, bottom: 10),
     ),

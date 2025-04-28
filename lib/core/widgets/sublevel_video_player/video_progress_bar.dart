@@ -55,11 +55,13 @@ class _VideoProgressBarState extends State<VideoProgressBar> with SingleTickerPr
       }
 
       // loopback
-      if (widget.currentPositionMs < 500) {
-        _lastUpdateTime = DateTime.now();
-        _currentProgress = 0.0;
-        _lastEstimatedPositionMs = widget.currentPositionMs;
-        _pausedPositionMs = widget.currentPositionMs;
+      if (widget.isPlaying) {
+        if (widget.currentPositionMs < 500 || (_lastEstimatedPositionMs - widget.currentPositionMs) > 1000) {
+          _lastUpdateTime = DateTime.now();
+          _currentProgress = _calculateProgress(widget.currentPositionMs, widget.durationMs);
+          _lastEstimatedPositionMs = widget.currentPositionMs;
+          _pausedPositionMs = widget.currentPositionMs;
+        }
       }
     });
 
@@ -130,7 +132,7 @@ class _VideoProgressBarState extends State<VideoProgressBar> with SingleTickerPr
               Container(height: 3, width: clampedIndicatorPosition, color: Colors.red),
               Positioned(
                 left: clampedIndicatorPosition - 5,
-                top: (10 - 10) / 2,
+                top: 0,
                 child: Container(
                   width: 10,
                   height: 10,

@@ -202,8 +202,8 @@ class _DialogueListState extends ConsumerState<DialogueList> {
               .read(langProvider.notifier)
               .prefLangText(
                 const PrefLangText(
-                  hindi: 'अभी दिखाने के लिए कोई डायलॉग नहीं है',
-                  hinglish: 'Abhi dikhane ke liye koi dialogue nahi hai',
+                  hindi: 'अभी तक कोई डायलॉग नहीं आया है।',
+                  hinglish: 'Abhi video me koi dialogue nahi aye hai.',
                 ),
               ),
           style: const TextStyle(color: Colors.white70, fontSize: 24),

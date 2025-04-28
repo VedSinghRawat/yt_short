@@ -132,7 +132,7 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
                         ? const PrefLangText(hindi: 'सुन रहे है...', hinglish: 'Listening...')
                         : const PrefLangText(hindi: 'बोलने के लिए टैप करें', hinglish: 'Bolne ke liye tap karein'),
                   ),
-              style: TextStyle(color: speechState.isListening ? Colors.green : Colors.blue, fontSize: 14),
+              style: TextStyle(color: speechState.isListening ? Colors.green : Colors.blue, fontSize: 18),
             ),
           ),
       ],

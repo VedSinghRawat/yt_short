@@ -27,14 +27,16 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
   VideoPlayerController? _exerciseController;
   bool _hasShownDialog = false;
   bool _isDialogOpen = false;
+  Function(bool)? _setIsSeeking;
 
-  void _onControllerInitialized(VideoPlayerController controller) {
+  void _onControllerInitialized(VideoPlayerController controller, Function(bool) setIsSeeking) {
     if (!mounted) return;
 
     _exerciseController?.removeListener(_exerciseListener);
 
     setState(() {
       _exerciseController = controller;
+      _setIsSeeking = setIsSeeking;
     });
     _exerciseController!.addListener(_exerciseListener);
   }
@@ -56,7 +58,7 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
     }
   }
 
-  void _onClose() {
+  Future<void> _onClose() async {
     setState(() {
       _isDialogOpen = false;
     });
@@ -80,7 +82,10 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
       return;
     }
 
-    _exerciseController?.seekTo(Duration.zero);
+    _setIsSeeking?.call(true);
+    await _exerciseController?.seekTo(Duration.zero);
+    await _exerciseController?.play();
+    _setIsSeeking?.call(false);
     ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(false);
   }
 
@@ -100,10 +105,10 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
       builder:
           (context) => PopScope(
             canPop: true,
-            onPopInvokedWithResult: (bool result, bool? didPop) {
+            onPopInvokedWithResult: (bool result, bool? didPop) async {
               if (_hasShownDialog) return;
 
-              _onClose();
+              await _onClose();
             },
             child: Dialog(
               backgroundColor: Colors.transparent,
@@ -112,9 +117,9 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
                 levelId: widget.exercise.levelId,
                 audioFilename: widget.exercise.audioFilename,
                 text: widget.exercise.text,
-                onClose: () {
-                  _onClose();
-                  context.pop();
+                onClose: () async {
+                  await _onClose();
+                  if (mounted) context.pop();
                 },
                 onContinue: () {
                   if (mounted) {
