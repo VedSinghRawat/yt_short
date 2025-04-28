@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/services/path_service.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/features/user/user_controller.dart';
@@ -194,24 +193,10 @@ class _DialogueListState extends ConsumerState<DialogueList> {
 
     if (widget.dialogues.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        widget.onHeightCalculated?.call(45.0);
+        widget.onHeightCalculated?.call(0);
       });
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-        child: Center(
-          child: Text(
-            ref
-                .read(langProvider.notifier)
-                .prefLangText(
-                  const PrefLangText(
-                    hindi: 'अभी तक कोई डायलॉग नहीं आया है।',
-                    hinglish: 'Abhi video me koi dialogue nahi aye hai.',
-                  ),
-                ),
-            style: const TextStyle(color: Colors.white70, fontSize: 24),
-          ),
-        ),
-      );
+
+      return const SizedBox.shrink();
     }
 
     final prefLang = ref.watch(
