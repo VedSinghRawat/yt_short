@@ -25,7 +25,7 @@
         android:usesCleartextTraffic="true"
         android:hardwareAccelerated="false"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/launcher_icon">
 
         <activity
             android:name=".MainActivity"
