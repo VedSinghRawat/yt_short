@@ -7,6 +7,7 @@ import 'package:myapp/core/services/initialize_service.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/core/widgets/loading_refresh_icon.dart';
+import 'package:myapp/features/auth/auth_controller.dart';
 import 'package:myapp/features/user/user_controller.dart';
 
 class HomeScreenAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
@@ -22,6 +23,18 @@ class HomeScreenAppBar extends ConsumerStatefulWidget implements PreferredSizeWi
 class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
   bool _isLoading = false;
 
+  String _getWelcomeMessage() {
+    final isFirstLogin = ref.read(authControllerProvider).loginInThisSession;
+
+    if (isFirstLogin) {
+      return ref.read(langProvider.notifier).prefLangText(const PrefLangText(hindi: 'स्वागत है', hinglish: 'Welcome'));
+    }
+
+    return ref
+        .read(langProvider.notifier)
+        .prefLangText(const PrefLangText(hindi: 'वापसी पर स्वागत है', hinglish: 'Welcome Back'));
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentUser = ref.watch(userControllerProvider.select((state) => state.currentUser));
@@ -31,11 +44,7 @@ class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
     final needsReload = currentUser?.email.isEmpty ?? true && isLoggedIn;
 
     return AppBar(
-      title: Text(
-        ref
-            .read(langProvider.notifier)
-            .prefLangText(const PrefLangText(hindi: 'अंग्रेजी सीखें', hinglish: 'English Sikhe')),
-      ),
+      title: Text(_getWelcomeMessage()),
       actions: [
         if (needsReload || syncFailed)
           LoadingRefreshIcon(
