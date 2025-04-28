@@ -1,8 +1,12 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:myapp/core/shared_pref.dart';
+import 'package:myapp/core/utils.dart';
 import 'package:myapp/core/widgets/sublevel_video_player/sublevel_video_player.dart';
+import 'package:myapp/features/speech_exercise/providers/speech_provider.dart';
 import 'package:myapp/features/speech_exercise/widgets/exercise_sentence_card.dart';
+import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'package:myapp/models/speech_exercise/speech_exercise.dart';
 import 'package:video_player/video_player.dart';
@@ -13,13 +17,7 @@ class SpeechExerciseScreen extends ConsumerStatefulWidget {
   final String? videoLocalPath;
   final List<String>? videoUrls;
 
-  const SpeechExerciseScreen({
-    super.key,
-    required this.exercise,
-    this.videoLocalPath,
-    this.videoUrls,
-    this.uniqueId,
-  });
+  const SpeechExerciseScreen({super.key, required this.exercise, this.videoLocalPath, this.videoUrls, this.uniqueId});
 
   @override
   ConsumerState<SpeechExerciseScreen> createState() => _SpeechExerciseScreenState();
@@ -58,10 +56,32 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _exerciseController?.removeListener(_exerciseListener);
-    super.dispose();
+  void _onClose() {
+    setState(() {
+      _isDialogOpen = false;
+    });
+
+    final localProgress = SharedPref.get(PrefKey.currProgress());
+
+    final isMaxLevel = isLevelAfter(
+      localProgress?.maxLevel ?? 0,
+      localProgress?.maxSubLevel ?? 0,
+      widget.exercise.level,
+      widget.exercise.index,
+    );
+
+    final isAdmin = ref.read(userControllerProvider).currentUser?.isAdmin ?? false;
+    final isPassed = ref.read(speechProvider.notifier).isPassed;
+
+    if (isAdmin || isMaxLevel || isPassed) {
+      setState(() {
+        _hasShownDialog = true;
+      });
+      return;
+    }
+
+    _exerciseController?.seekTo(Duration.zero);
+    ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(false);
   }
 
   void _showTestSentenceDialog() {
@@ -70,54 +90,45 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
     if (!mounted) return;
 
     setState(() {
-      _hasShownDialog = true;
       _isDialogOpen = true;
     });
 
-    final isAdmin = ref.read(userControllerProvider).currentUser?.isAdmin ?? false;
-
     showDialog(
       context: context,
-      barrierDismissible: isAdmin || kDebugMode,
+      barrierDismissible: true,
       barrierColor: const Color.fromRGBO(0, 0, 0, 0.9),
       builder:
           (context) => PopScope(
-            canPop: isAdmin || kDebugMode,
+            canPop: true,
             onPopInvokedWithResult: (bool result, bool? didPop) {
-              setState(() {
-                _isDialogOpen = false;
-              });
+              if (_hasShownDialog) return;
+
+              _onClose();
             },
             child: Dialog(
               backgroundColor: Colors.transparent,
               insetPadding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: const Color.fromRGBO(255, 255, 255, 0.75),
-                  borderRadius: BorderRadius.circular(30),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color.fromRGBO(255, 255, 255, 0.2),
-                      blurRadius: 12.0,
-                      spreadRadius: 4.0,
-                    ),
-                  ],
-                ),
-                child: SpeechExerciseCard(
-                  text: widget.exercise.text,
-                  onContinue: () {
-                    if (mounted) {
-                      _exerciseController?.play();
-                      Navigator.of(context).pop();
-                    }
-                  },
-                ),
+              child: SpeechExerciseCard(
+                levelId: widget.exercise.levelId,
+                audioFilename: widget.exercise.audioFilename,
+                text: widget.exercise.text,
+                onClose: () {
+                  _onClose();
+                  context.pop();
+                },
+                onContinue: () {
+                  if (mounted) {
+                    setState(() {
+                      _hasShownDialog = true;
+                    });
+                    _exerciseController?.play();
+                    context.pop();
+                  }
+                },
               ),
             ),
           ),
-    ).then((_) {
-      if (mounted) {}
-    });
+    );
   }
 
   @override

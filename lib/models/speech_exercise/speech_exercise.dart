@@ -9,6 +9,7 @@ part 'speech_exercise.freezed.dart';
 class SpeechExercise with _$SpeechExercise {
   const factory SpeechExercise({
     required String videoFilename,
+    required String audioFilename,
     required String text,
     required int pauseAt,
     required List<Dialogue> dialogues,
@@ -24,11 +25,11 @@ class SpeechExercise with _$SpeechExercise {
 class SpeechExerciseDTO with _$SpeechExerciseDTO {
   const factory SpeechExerciseDTO({
     required String videoFilename,
+    required String audioFilename,
     required String text,
     required int pauseAt,
     required List<Dialogue> dialogues,
   }) = _SpeechExerciseDTO;
 
-  factory SpeechExerciseDTO.fromJson(Map<String, dynamic> json) =>
-      _$SpeechExerciseDTOFromJson(json);
+  factory SpeechExerciseDTO.fromJson(Map<String, dynamic> json) => _$SpeechExerciseDTOFromJson(json);
 }

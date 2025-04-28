@@ -26,6 +26,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
   late FixedExtentScrollController _scrollController;
   int _selectedDialogueIndex = 0;
   final _audioPlayer = AudioPlayer();
+  String _playingDialogueFilename = '';
 
   @override
   void initState() {
@@ -61,11 +62,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_scrollController.hasClients) return;
-      _scrollController.animateToItem(
-        0,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+      _scrollController.animateToItem(0, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
 
       if (_selectedDialogueIndex == 0) return;
       setState(() => _selectedDialogueIndex = 0);
@@ -82,22 +79,54 @@ class _DialogueListState extends ConsumerState<DialogueList> {
       final file = File(filePath);
       if (!await file.exists()) {
         developer.log("Audio file not found: $filePath");
+        if (mounted && _playingDialogueFilename == audioFilename) {
+          setState(() => _playingDialogueFilename = ''); // Reset if file not found
+        }
         return;
       }
 
       await _audioPlayer.setFilePath(filePath);
-      await _audioPlayer.play();
+
+      // Update state immediately to show green icon
+      if (mounted) {
+        setState(() {
+          _playingDialogueFilename = audioFilename;
+        });
+      }
+
+      // Play and wait for completion or error
+      await _audioPlayer
+          .play()
+          .then((_) {
+            // When playback completes normally
+            if (mounted && _playingDialogueFilename == audioFilename) {
+              setState(() {
+                _playingDialogueFilename = '';
+              });
+            }
+          })
+          .catchError((error) {
+            // Handle errors during playback
+            developer.log("Error during audio playback: $error");
+            if (mounted && _playingDialogueFilename == audioFilename) {
+              setState(() {
+                _playingDialogueFilename = '';
+              });
+            }
+          });
     } catch (e) {
-      developer.log("Error playing dialogue audio: $e");
+      developer.log("Error setting up or playing dialogue audio: $e");
+      // Ensure state is reset even if setup fails
+      if (mounted && _playingDialogueFilename == audioFilename) {
+        setState(() {
+          _playingDialogueFilename = '';
+        });
+      }
     }
   }
 
   // --- Function to Calculate Item Height ---
-  double _calculateItemHeight(
-    BoxConstraints constraints,
-    List<Dialogue> dialogues,
-    PrefLang prefLang,
-  ) {
+  double _calculateItemHeight(BoxConstraints constraints, List<Dialogue> dialogues, PrefLang prefLang) {
     double maxOverallItemHeight = 0;
 
     final timePainter = TextPainter(
@@ -113,22 +142,14 @@ class _DialogueListState extends ConsumerState<DialogueList> {
     const double iconContainerWidth = selectedIconSize + (iconPadding * 2) + (iconBorder * 2);
     const double fixedSpacing = 16.0 + 12.0;
     final double availableWidthForFlexible =
-        constraints.maxWidth -
-        timeTextWidth -
-        iconContainerWidth -
-        fixedSpacing -
-        (horizontalPadding * 2);
+        constraints.maxWidth - timeTextWidth - iconContainerWidth - fixedSpacing - (horizontalPadding * 2);
     final double textConstraintWidth = max(0, availableWidthForFlexible * textWidthPercentage);
 
     const double selectedFontSize = 20;
     const FontWeight selectedFontWeight = FontWeight.bold;
     const double translationFontSize = selectedFontSize * 0.75;
 
-    const mainTextStyle = TextStyle(
-      fontSize: selectedFontSize,
-      color: Colors.white,
-      fontWeight: selectedFontWeight,
-    );
+    const mainTextStyle = TextStyle(fontSize: selectedFontSize, color: Colors.white, fontWeight: selectedFontWeight);
     const translationTextStyle = TextStyle(
       fontSize: translationFontSize,
       color: Colors.white70,
@@ -147,8 +168,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
 
       if (dialogue.hindiText.isNotEmpty && dialogue.hinglishText.isNotEmpty) {
         currentTextColumnHeight += betweenTextPadding;
-        final translationText =
-            prefLang == PrefLang.hindi ? dialogue.hindiText : dialogue.hinglishText;
+        final translationText = prefLang == PrefLang.hindi ? dialogue.hindiText : dialogue.hinglishText;
         final translationPainter = TextPainter(
           text: TextSpan(text: translationText, style: translationTextStyle),
           textDirection: TextDirection.ltr,
@@ -198,11 +218,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
     return LayoutBuilder(
       builder: (context, constraints) {
         // Call the calculation function
-        final double calculatedItemHeight = _calculateItemHeight(
-          constraints,
-          widget.dialogues,
-          prefLang,
-        );
+        final double calculatedItemHeight = _calculateItemHeight(constraints, widget.dialogues, prefLang);
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
           widget.onHeightCalculated?.call(calculatedItemHeight);
@@ -226,7 +242,13 @@ class _DialogueListState extends ConsumerState<DialogueList> {
                   final FontWeight textFontWeight = isSelected ? FontWeight.bold : FontWeight.w500;
                   final double iconSize = isSelected ? 20 : 18;
                   final Color timeColor = isSelected ? Colors.white : Colors.white70;
-                  final Color iconColor = isSelected ? Colors.white : Colors.white70;
+                  final isPlaying = _playingDialogueFilename == dialogue.audioFilename;
+                  final Color iconColor =
+                      isPlaying
+                          ? Colors.green.shade400
+                          : isSelected
+                          ? Colors.white
+                          : Colors.white70;
                   // Constants needed inside the loop, moved outside the height calculation function
                   const double horizontalPadding = 16.0;
                   const double textWidthPercentage = 0.7;
@@ -263,14 +285,11 @@ class _DialogueListState extends ConsumerState<DialogueList> {
                                         ),
                                         textAlign: TextAlign.center,
                                       ),
-                                      if (dialogue.hindiText.isNotEmpty &&
-                                          dialogue.hinglishText.isNotEmpty)
+                                      if (dialogue.hindiText.isNotEmpty && dialogue.hinglishText.isNotEmpty)
                                         Padding(
                                           padding: const EdgeInsets.only(top: betweenTextPadding),
                                           child: Text(
-                                            prefLang == PrefLang.hindi
-                                                ? dialogue.hindiText
-                                                : dialogue.hinglishText,
+                                            prefLang == PrefLang.hindi ? dialogue.hindiText : dialogue.hinglishText,
                                             style: TextStyle(
                                               fontSize: textFontSize * 0.75,
                                               color: Colors.white70,
@@ -291,13 +310,20 @@ class _DialogueListState extends ConsumerState<DialogueList> {
                           onTap: () async {
                             await _playDialogueAudio(dialogue.audioFilename);
                           },
-                          child: Container(
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
                             padding: const EdgeInsets.all(4.0),
                             decoration: BoxDecoration(
-                              color: Colors.white.withAlpha((255 * 0.2).round()),
+                              color: isPlaying ? Colors.white : Colors.white.withAlpha(50),
                               shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white70, width: 1),
+                              border: Border.all(
+                                color: isPlaying ? Colors.green.shade100 : Colors.white70,
+                                width: isPlaying ? 1.5 : 1,
+                              ),
                             ),
+                            transform: Matrix4.identity()..scale(isPlaying ? 1.1 : 1.0),
+                            transformAlignment: Alignment.center,
                             child: Icon(Icons.volume_up, color: iconColor, size: iconSize),
                           ),
                         ),

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/apis/sublevel_api.dart';
 import 'package:myapp/core/console.dart';
@@ -15,19 +16,24 @@ class SubLevelService {
 
   final ISubLevelAPI subLevelAPI;
 
-  Future<void> getVideoFiles(LevelDTO levelDTO) async {
-    // First fetch all video files in parallel
+  Future<void> getFiles(LevelDTO levelDTO) async {
     await Future.wait(
       levelDTO.sub_levels.map((subLevelDTO) async {
         final videoData = await subLevelAPI.getVideo(levelDTO.id, subLevelDTO.videoFilename);
-
-        if (videoData == null) return;
+        final audioData =
+            subLevelDTO.isSpeechExercise ? await subLevelAPI.getAudio(levelDTO.id, subLevelDTO.audioFilename!) : null;
 
         try {
-          final videoPath = PathService.videoLocalPath(levelDTO.id, subLevelDTO.videoFilename);
-          final videoFile = File(videoPath);
-          await videoFile.parent.create(recursive: true); // Ensure directory exists
-          await videoFile.writeAsBytes(videoData);
+          if (videoData != null) {
+            final videoPath = PathService.videoLocalPath(levelDTO.id, subLevelDTO.videoFilename);
+
+            await _store(levelDTO, videoPath, videoData);
+          }
+
+          if (audioData != null) {
+            final audioPath = PathService.audioLocalPath(levelDTO.id, subLevelDTO.audioFilename!);
+            await _store(levelDTO, audioPath, audioData);
+          }
         } catch (e) {
           Console.log('Error saving video file for ${subLevelDTO.videoFilename}: $e');
         }
@@ -35,12 +41,17 @@ class SubLevelService {
     );
   }
 
+  Future<void> _store(LevelDTO levelDTO, String path, Uint8List data) async {
+    final file = File(path);
+
+    await file.parent.create(recursive: true);
+
+    await file.writeAsBytes(data);
+  }
+
   Future<void> getDialogueAudioFiles(LevelDTO levelDTO) async {
     final uniqueZipNums =
-        levelDTO.sub_levels
-            .expand((subLevelDto) => subLevelDto.dialogues)
-            .map((dialogue) => dialogue.zipNum)
-            .toSet();
+        levelDTO.sub_levels.expand((subLevelDto) => subLevelDto.dialogues).map((dialogue) => dialogue.zipNum).toSet();
 
     await Future.wait(
       uniqueZipNums.map((zipNum) async {

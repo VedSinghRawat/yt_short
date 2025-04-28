@@ -6,31 +6,58 @@ import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/error/failure.dart';
 
-void showErrorSnackBar(BuildContext context, String message) {
+enum SnackBarType { error, info, success }
+
+void showSnackBar(
+  BuildContext context, {
+  required String message,
+  SnackBarType type = SnackBarType.info,
+  Duration duration = const Duration(seconds: 3),
+}) {
   if (!context.mounted) return;
 
-  // Remove mounted check since ScaffoldMessenger handles this internally
+  final (backgroundColor, icon) = switch (type) {
+    SnackBarType.error => (Colors.red, Icons.error_outline),
+    SnackBarType.info => (Colors.blue, Icons.info_outline),
+    SnackBarType.success => (Colors.green, Icons.check_circle_outline),
+  };
+
   final messenger = ScaffoldMessenger.of(context);
+  final deviceHeight = MediaQuery.of(context).size.height;
+
   messenger.clearSnackBars();
   messenger.showSnackBar(
     SnackBar(
-      content: Text(message),
-      backgroundColor: Theme.of(context).colorScheme.error,
+      content: IntrinsicHeight(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Icon(icon, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.white),
+              ),
+            ),
+            const VerticalDivider(color: Colors.white, thickness: 1),
+            IconButton(onPressed: () => messenger.clearSnackBars(), icon: const Icon(Icons.close, color: Colors.white)),
+          ],
+        ),
+      ),
+      backgroundColor: backgroundColor,
       behavior: SnackBarBehavior.floating,
-      duration: const Duration(seconds: 3),
-      margin: const EdgeInsets.all(8),
+      duration: duration,
+      margin: EdgeInsets.only(bottom: deviceHeight - 120, left: 16, right: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      padding: const EdgeInsets.only(left: 10, right: 0, top: 10, bottom: 10),
     ),
   );
 }
 
-void showSnackBar(BuildContext context, String text) {
-  if (!context.mounted) return;
-
-  ScaffoldMessenger.of(context)
-    ..removeCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(text)));
-}
-
+// check if levelA is after levelB if levelA is after levelB then return true
 bool isLevelAfter(int levelA, int subLevelA, int levelB, int subLevelB) {
   return levelA > levelB || (levelA == levelB && subLevelA > subLevelB);
 }

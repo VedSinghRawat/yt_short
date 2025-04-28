@@ -1,14 +1,24 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:myapp/core/controllers/lang_notifier.dart';
+import 'package:myapp/features/speech_exercise/providers/speech_provider.dart';
 import 'package:myapp/features/speech_exercise/widgets/recognizer_button.dart';
-import 'package:speech_to_text/speech_recognition_result.dart';
 
 class SpeechExerciseCard extends ConsumerStatefulWidget {
   final String text;
   final VoidCallback onContinue;
+  final String levelId;
+  final String audioFilename;
+  final VoidCallback onClose;
 
-  const SpeechExerciseCard({super.key, required this.text, required this.onContinue});
+  const SpeechExerciseCard({
+    super.key,
+    required this.text,
+    required this.onContinue,
+    required this.levelId,
+    required this.audioFilename,
+    required this.onClose,
+  });
 
   @override
   ConsumerState<SpeechExerciseCard> createState() => _SpeechExerciseCardState();
@@ -16,32 +26,24 @@ class SpeechExerciseCard extends ConsumerStatefulWidget {
 
 class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
   late List<List<String>> _words;
-  late List<bool?> _wordMarking;
-  int _offset = 0;
-  late List<String> _recognizedWords;
-  late int _totalWordCount;
-
-  bool get passed => _wordMarking.every((mark) => mark == true);
-  bool get failed =>
-      _recognizedWords.where((word) => word.isNotEmpty).toList().length == _totalWordCount &&
-      !passed;
-  bool get testCompleted => passed || failed;
+  late List<String> _flatWords;
 
   @override
   void initState() {
     super.initState();
     _words = [];
-    _totalWordCount = 0;
+    _flatWords = [];
 
     // Split text by new lines to maintain line structure
-    final lines = widget.text.split('\n');
+    // final lines = widget.text.split('\n');
+    final lines = ['Turn left at the next corner you see.'];
     for (var line in lines) {
       List<String> lineWords = [];
       for (var word in line.split(' ')) {
         word = word.trim();
         if (word.isNotEmpty) {
           lineWords.add(word);
-          _totalWordCount++;
+          _flatWords.add(word);
         }
       }
       if (lineWords.isNotEmpty) {
@@ -49,62 +51,17 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
       }
     }
 
-    _wordMarking = List.generate(_totalWordCount, (index) => null);
-    _recognizedWords = List.filled(_totalWordCount, '');
-  }
-
-  void _onStopListening() {
-    if (!context.mounted) return;
-
-    setState(() {
-      _wordMarking = List.generate(_totalWordCount, (index) => null);
-      _recognizedWords = List.filled(_totalWordCount, '');
+    // Initialize the speech provider with target words
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      ref.read(speechProvider.notifier).setTargetWords(_flatWords);
     });
-  }
-
-  void _onSpeechResult(SpeechRecognitionResult result) {
-    List<String> currRecognizedWords =
-        result.recognizedWords.split(' ').where((word) => word.isNotEmpty).toList();
-
-    setState(() {
-      if (currRecognizedWords.isEmpty) {
-        _offset = _recognizedWords.where((word) => word.isNotEmpty).length;
-        return;
-      }
-
-      for (var i = 0; i < currRecognizedWords.length; i++) {
-        _recognizedWords[i + _offset] = currRecognizedWords[i];
-      }
-
-      for (int i = 0; i < _recognizedWords.where((word) => word.isNotEmpty).length; i++) {
-        // Get the actual word from the nested structure
-        String targetWord = _getWordAtIndex(i);
-        String formatedTargetWord = formatWord(targetWord);
-        String formatedRecognizedWord = formatWord(_recognizedWords[i]);
-
-        _wordMarking[i] = formatedTargetWord == formatedRecognizedWord;
-      }
-    });
-  }
-
-  // Helper method to get word at a flat index from the nested structure
-  String _getWordAtIndex(int flatIndex) {
-    int wordsSoFar = 0;
-    for (var line in _words) {
-      if (flatIndex < wordsSoFar + line.length) {
-        return line[flatIndex - wordsSoFar];
-      }
-      wordsSoFar += line.length;
-    }
-    return ''; // Should not reach here if index is valid
-  }
-
-  String formatWord(String word) {
-    return word.replaceAll(RegExp(r'[^\w\s]'), '').toLowerCase();
   }
 
   @override
   Widget build(BuildContext context) {
+    final speechState = ref.watch(speechProvider);
+    final speechNotifier = ref.read(speechProvider.notifier);
+
     // Match font sizes and line heights to keep total vertical space in sync
     const double recognizedWordFontSize = 24;
     const double recognizedWordLineHeight = 1.4; // Adjust if needed
@@ -116,142 +73,315 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
       height: recognizedWordLineHeight,
     );
 
-    const recognizedWordHeight = recognizedWordFontSize * recognizedWordLineHeight;
+    final textToShow = <String>[]; // Initialize an empty list for words to show
+    for (var i = 0; i < speechState.recognizedWords.length; i++) {
+      String word = speechState.recognizedWords[i];
+      if (word.isEmpty) continue;
+      if (i == 0) {
+        word = word[0].toUpperCase() + word.substring(1);
+      }
+      textToShow.add(word);
+    }
 
     return Container(
-      padding: const EdgeInsets.all(16.0),
-      color: Theme.of(context).scaffoldBackgroundColor,
-      child: Column(
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: const [BoxShadow(color: Color.fromRGBO(255, 255, 255, 0.2), blurRadius: 12.0, spreadRadius: 4.0)],
+      ),
+      clipBehavior: Clip.none,
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 24.0),
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                Column(
+          Column(
+            children: [
+              // Top bar with heading and close button
+              const Header(),
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 24.0),
+                child: Column(
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 24.0),
-                      child: Text(
-                        ref
-                            .read(langProvider.notifier)
-                            .prefLangText(
-                              const PrefLangText(
-                                hindi: 'कृपया आगे बढ़ने के लिए नीचे दिया गया वाक्य बोलें।',
-                                hinglish:
-                                    'Kripya aage badhne ke liye neeche diya gaya sentence boliye',
-                              ),
-                            ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    const SizedBox(height: 48),
-                    // Display each line in its own Wrap
                     Column(
                       children: [
-                        for (int lineIndex = 0; lineIndex < _words.length; lineIndex++)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 16.0),
-                            child: Wrap(
-                              spacing: 8,
-                              runSpacing: 16,
-                              alignment: WrapAlignment.center,
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              children: [
-                                for (
-                                  int wordIndex = 0;
-                                  wordIndex < _words[lineIndex].length;
-                                  wordIndex++
-                                )
-                                  Column(
-                                    mainAxisSize: MainAxisSize.min,
+                        Padding(
+                          padding: const EdgeInsets.only(left: 12.0, bottom: 8.0), // Outer padding
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(
+                                ref
+                                    .watch(langProvider.notifier)
+                                    .prefLangText(
+                                      const PrefLangText(
+                                        hindi: 'नीचे दिया वाक्य बोलें:',
+                                        hinglish: 'Niche diya vakya bole:',
+                                      ),
+                                    ),
+                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Stack(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Container(
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  borderRadius: BorderRadius.circular(15.0),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.white.withOpacity(0.25),
+                                      spreadRadius: 2,
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 3),
+                                    ),
+                                  ],
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.only(top: 44.0, bottom: 24.0, left: 18.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      // Calculate the flat index for this word
-                                      Builder(
-                                        builder: (context) {
-                                          int flatIndex = 0;
-                                          for (int i = 0; i < lineIndex; i++) {
-                                            flatIndex += _words[i].length;
-                                          }
-                                          flatIndex += wordIndex;
+                                      for (int lineIndex = 0; lineIndex < _words.length; lineIndex++)
+                                        Wrap(
+                                          spacing: 8,
+                                          alignment: WrapAlignment.start,
+                                          crossAxisAlignment: WrapCrossAlignment.center,
+                                          children: [
+                                            for (int wordIndex = 0; wordIndex < _words[lineIndex].length; wordIndex++)
+                                              Builder(
+                                                builder: (context) {
+                                                  int flatIndex = 0;
+                                                  for (int i = 0; i < lineIndex; i++) {
+                                                    flatIndex += _words[i].length;
+                                                  }
+                                                  flatIndex += wordIndex;
 
-                                          // Recognized word
-                                          return Column(
-                                            children: [
-                                              _recognizedWords[flatIndex].isNotEmpty
-                                                  ? Text(
-                                                    _recognizedWords[flatIndex],
-                                                    style: recognizedWordStyle.copyWith(
+                                                  // Determine color based on marking
+                                                  Color wordColor;
+                                                  FontWeight fontWeight = FontWeight.normal;
+                                                  final mark = speechState.wordMarking.elementAtOrNull(flatIndex);
+
+                                                  if (mark == null) {
+                                                    wordColor = Theme.of(
+                                                      context,
+                                                    ).colorScheme.onPrimary.withOpacity(0.7);
+                                                  } else if (mark == true) {
+                                                    wordColor = Colors.lightGreenAccent;
+                                                    fontWeight = FontWeight.bold;
+                                                  } else {
+                                                    // false
+                                                    wordColor = Colors.redAccent;
+                                                    fontWeight = FontWeight.bold;
+                                                  }
+
+                                                  return Text(
+                                                    _words[lineIndex][wordIndex],
+                                                    style: TextStyle(
+                                                      color: wordColor,
+                                                      fontSize: 24,
+                                                      fontWeight: fontWeight,
                                                       textBaseline: TextBaseline.alphabetic,
                                                     ),
-                                                  )
-                                                  : const SizedBox(height: recognizedWordHeight),
-
-                                              // Target word
-                                              Text(
-                                                _words[lineIndex][wordIndex],
-                                                style: TextStyle(
-                                                  color:
-                                                      _wordMarking[flatIndex] == null
-                                                          ? Colors.white60
-                                                          : _wordMarking[flatIndex] == true
-                                                          ? Colors.lightBlue[200]
-                                                          : _wordMarking[flatIndex] == false
-                                                          ? Colors.red
-                                                          : Colors.white,
-                                                  fontSize: 24,
-                                                  fontWeight:
-                                                      _wordMarking[flatIndex] != null
-                                                          ? FontWeight.bold
-                                                          : FontWeight.normal,
-                                                  height: 1.4,
-                                                  textBaseline: TextBaseline.alphabetic,
-                                                ),
+                                                  );
+                                                },
                                               ),
-                                            ],
-                                          );
-                                        },
-                                      ),
+                                          ],
+                                        ),
                                     ],
                                   ),
+                                ),
+                              ),
+                            ),
+                            // Listen button positioned top-right of the Card
+                            Positioned(
+                              top: 20, // Adjust position slightly from edge
+                              right: 20, // Adjust position slightly from edge
+                              child: Material(
+                                color: Theme.of(context).colorScheme.secondary, // Background color
+                                borderRadius: BorderRadius.circular(30), // Match InkWell radius
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(30),
+                                  onTap: () {
+                                    ref.read(speechProvider.notifier).playAudio(widget.levelId, widget.audioFilename);
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12.0, // Adjusted padding
+                                      vertical: 6.0, // Adjusted padding
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          speechState.isPlayingAudio ? Icons.hearing_rounded : Icons.hearing_outlined,
+                                          size: 18,
+                                          color: Theme.of(context).colorScheme.onSecondary,
+                                        ),
+                                        const SizedBox(width: 8), // Adjusted spacing
+                                        Text(
+                                          ref
+                                              .watch(langProvider.notifier)
+                                              .prefLangText(
+                                                PrefLangText(
+                                                  hindi: speechState.isPlayingAudio ? 'सुन रहे हैं...' : 'सुनें',
+                                                  hinglish: speechState.isPlayingAudio ? 'Sun rahe hain...' : 'Sune',
+                                                ),
+                                              ),
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.onSecondary,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24), // Spacing before "You Said" section
+                        // "You Said:" Label
+                        Padding(
+                          padding: const EdgeInsets.only(left: 12.0, bottom: 8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              Text(
+                                ref
+                                    .watch(langProvider.notifier)
+                                    .prefLangText(const PrefLangText(hindi: 'आपने कहा:', hinglish: 'Aapne kaha:')),
+                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Recognized Words Card
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16.0), // Internal padding
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary, // Use primary background
+                              borderRadius: BorderRadius.circular(15.0),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1), // Subtle shadow
+                                  spreadRadius: 1,
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
                               ],
                             ),
+                            child: Text(
+                              '${textToShow.join(' ')}${_flatWords.length == textToShow.length ? '.' : ''}',
+                              style: recognizedWordStyle.copyWith(
+                                color: Theme.of(context).colorScheme.secondary,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
                           ),
+                        ),
                       ],
                     ),
-                    if (testCompleted)
-                      Container(
-                        padding: const EdgeInsets.all(8.0),
-                        decoration: BoxDecoration(
-                          color: passed ? Colors.green[300] : Colors.red[300],
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: Icon(
-                            passed ? Icons.download_done_rounded : Icons.error_rounded,
-                            color: Colors.white,
-                            size: 30,
-                          ),
-                        ),
-                      ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              if (speechNotifier.isTestCompleted)
+                Container(
+                  padding: const EdgeInsets.all(8.0),
+                  decoration: BoxDecoration(
+                    color: speechNotifier.isPassed ? Colors.green[300] : Colors.red[300],
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Icon(
+                      speechNotifier.isPassed ? Icons.download_done_rounded : Icons.error_rounded,
+                      color: Colors.white,
+                      size: 30,
+                    ),
+                  ),
+                ),
+              const Spacer(),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+                child: RecognizerButton(onContinue: widget.onContinue),
+              ),
+            ],
           ),
-          const Spacer(),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-            child: RecognizerButton(
-              testCompleted: testCompleted,
-              passed: passed,
-              failed: failed,
-              onContinue: widget.onContinue,
-              onResult: _onSpeechResult,
-              onStopListening: _onStopListening,
-            ),
-          ),
+          CloseButton(onClose: widget.onClose),
         ],
+      ),
+    );
+  }
+}
+
+class Header extends StatelessWidget {
+  const Header({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.primary,
+          borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
+        ),
+        child: Text(
+          'Speech Exercise',
+          style: theme.textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.onPrimary,
+            fontSize: 28,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+}
+
+class CloseButton extends StatelessWidget {
+  const CloseButton({super.key, required this.onClose});
+
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      right: -10,
+      top: -10,
+      child: Container(
+        decoration: BoxDecoration(
+          boxShadow: [BoxShadow(color: Colors.grey[400]!.withValues(alpha: .2), blurRadius: 10, spreadRadius: 2)],
+          border: Border.all(color: Colors.grey[400]!, width: 1.9),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Material(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            child: InkWell(
+              onTap: onClose,
+              child: Padding(
+                padding: const EdgeInsets.all(4.0),
+                child: Icon(Icons.close_rounded, size: 20, color: Colors.grey[400]),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -49,7 +49,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/sounds/
+    - assets/img/
     - .env
     - .env.prod
 

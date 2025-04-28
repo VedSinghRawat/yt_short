@@ -9,8 +9,7 @@ part 'obstructive_error_controller.g.dart';
 class ObstructiveErrorState with _$ObstructiveErrorState {
   const ObstructiveErrorState._();
 
-  const factory ObstructiveErrorState({String? content, @Default(false) bool closable}) =
-      _ObstructiveErrorState;
+  const factory ObstructiveErrorState({String? content, @Default(false) bool closable}) = _ObstructiveErrorState;
 }
 
 @riverpod

@@ -29,10 +29,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
 
         routes: [
-          GoRoute(
-            path: Routes.home,
-            builder: (context, state) => const AuthWrapper(child: HomeScreen()),
-          ),
+          GoRoute(path: Routes.home, builder: (context, state) => const AuthWrapper(child: HomeScreen())),
 
           GoRoute(path: Routes.signIn, builder: (context, state) => const SignInScreen()),
 

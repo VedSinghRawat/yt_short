@@ -24,8 +24,7 @@ class ActivityLogController extends StateNotifier<ActivityLogControllerState> {
   }
 }
 
-final activityLogControllerProvider =
-    StateNotifierProvider<ActivityLogController, ActivityLogControllerState>((ref) {
-      final activityLogAPI = ref.read(activityLogAPIProvider);
-      return ActivityLogController(activityLogAPI);
-    });
+final activityLogControllerProvider = StateNotifierProvider<ActivityLogController, ActivityLogControllerState>((ref) {
+  final activityLogAPI = ref.read(activityLogAPIProvider);
+  return ActivityLogController(activityLogAPI);
+});

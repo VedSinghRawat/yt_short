@@ -35,8 +35,7 @@ class SublevelVideoPlayer extends ConsumerStatefulWidget {
   ConsumerState<SublevelVideoPlayer> createState() => _SublevelVideoPlayerState();
 }
 
-class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
-    with WidgetsBindingObserver {
+class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with WidgetsBindingObserver {
   VideoPlayerController? _controller;
   Duration? _lastPosition;
   bool _isInitialized = false;
@@ -46,6 +45,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
   bool _showPlayPauseIcon = false;
   IconData _iconData = Icons.play_arrow;
   Timer? _iconTimer;
+  bool isFinished = false;
 
   List<Dialogue> _displayableDialogues = [];
   double? _dialogueListHeight;
@@ -124,13 +124,14 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
     final position = _controller!.value.position;
     final duration = _controller!.value.duration;
 
-    if (duration > Duration.zero) {
-      final bool isNearEnd = (duration - position).inSeconds <= 1;
-      if (isNearEnd && !ref.read(sublevelControllerProvider).hasFinishedVideo) {
-        ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
-        _controller?.removeListener(_listener);
-      }
+    if (position <= Duration.zero || duration <= Duration.zero) return;
+
+    if (isFinished && !ref.read(sublevelControllerProvider).hasFinishedVideo) {
+      ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
+      _controller?.removeListener(_listener);
     }
+
+    isFinished = (duration - position).inMilliseconds <= 600;
   }
 
   void _changePlayingState({bool changeToPlay = true}) async {
@@ -230,12 +231,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
         throw Exception(
           ref
               .read(langProvider.notifier)
-              .prefLangText(
-                const PrefLangText(
-                  hindi: 'वीडियो फ़ाइल नहीं मिली',
-                  hinglish: 'Video file nahin mili',
-                ),
-              ),
+              .prefLangText(const PrefLangText(hindi: 'वीडियो फ़ाइल नहीं मिली', hinglish: 'Video file nahin mili')),
         );
       }
 
@@ -270,10 +266,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
 
       widget.onControllerInitialized?.call(_controller!);
     } catch (e) {
-      developer.log(
-        'Error initializing video player ${widget.videoLocalPath}',
-        error: e.toString(),
-      );
+      developer.log('Error initializing video player ${widget.videoLocalPath}', error: e.toString());
       _controller?.removeListener(_listener);
       if (mounted) {
         setState(() {
@@ -310,8 +303,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
 
   @override
   Widget build(BuildContext context) {
-    final bool isPlayerReady =
-        _isInitialized && _controller != null && _controller!.value.isInitialized;
+    final bool isPlayerReady = _isInitialized && _controller != null && _controller!.value.isInitialized;
     final bool isPaused = isPlayerReady && !_controller!.value.isPlaying;
     final bool showDialogueArea = isPaused && _isVisible;
 
@@ -335,12 +327,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
                   alignment: Alignment.center,
                   children: [
                     if (error != null)
-                      Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: ErrorPage(text: error!),
-                        ),
-                      )
+                      Center(child: Padding(padding: const EdgeInsets.all(8.0), child: ErrorPage(text: error!)))
                     else if (isPlayerReady)
                       Center(
                         child: AspectRatio(
@@ -349,10 +336,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
                         ),
                       )
                     else
-                      const AspectRatio(
-                        aspectRatio: 16 / 9,
-                        child: Center(child: CircularProgressIndicator()),
-                      ),
+                      const AspectRatio(aspectRatio: 16 / 9, child: Center(child: CircularProgressIndicator())),
                     PlayPauseButton(showPlayPauseIcon: _showPlayPauseIcon, iconData: _iconData),
                   ],
                 ),
@@ -360,9 +344,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
               Visibility(
                 visible: showDialogueArea,
                 child: Positioned.fill(
-                  child: IgnorePointer(
-                    child: Container(color: Colors.black.withAlpha((255 * 0.25).round())),
-                  ),
+                  child: IgnorePointer(child: Container(color: Colors.black.withAlpha((255 * 0.25).round()))),
                 ),
               ),
               Visibility(
@@ -429,9 +411,16 @@ class PlayPauseButton extends StatelessWidget {
       opacity: _showPlayPauseIcon ? 1.0 : 0.0,
       duration: const Duration(milliseconds: 400),
       child: Container(
-        decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface.withOpacity(0.6),
+          shape: BoxShape.circle,
+        ),
         padding: const EdgeInsets.all(20),
-        child: Icon(_iconData, size: MediaQuery.of(context).size.width * 0.12, color: Colors.white),
+        child: Icon(
+          _iconData,
+          size: MediaQuery.of(context).size.width * 0.12,
+          color: Theme.of(context).colorScheme.onSurface,
+        ),
       ),
     );
   }

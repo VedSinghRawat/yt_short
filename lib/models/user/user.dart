@@ -38,7 +38,7 @@ class UserModel with _$UserModel implements SharedPrefClass {
     return UserModel.fromJson(jsonDTO);
   }
 
-  bool get isAdmin => false;
+  bool get isAdmin => role == UserRole.admin;
 }
 
 @freezed
