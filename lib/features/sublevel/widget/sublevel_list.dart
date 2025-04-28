@@ -19,6 +19,7 @@ import 'package:myapp/features/sublevel/widget/error_page.dart';
 import 'package:myapp/features/speech_exercise/screen/speech_exercise_screen.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
+import 'dart:async';
 
 class SublevelsList extends ConsumerStatefulWidget {
   final List<SubLevel> sublevels;
@@ -35,6 +36,8 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
   late PageController _pageController;
   late AnimationController _bounceController;
   late Animation<double> _bounceAnimation;
+  bool _showAnimation = false;
+  Timer? _animationTimer;
 
   void _jumpToPage(Duration timeStamp) async {
     final userEmail = ref.read(userControllerProvider).currentUser?.email;
@@ -57,6 +60,19 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
       PrefKey.currProgress(userEmail: userEmail),
       Progress(level: jumpSublevel.level, subLevel: jumpSublevel.index),
     );
+  }
+
+  void _startAnimationTimer() {
+    _showAnimation = true;
+    _animationTimer?.cancel();
+    _animationTimer = Timer(const Duration(milliseconds: 3750), () {
+      if (mounted) {
+        setState(() {
+          _showAnimation = false;
+        });
+        ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(false);
+      }
+    });
   }
 
   @override
@@ -85,6 +101,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
   void dispose() {
     _bounceController.dispose();
     _pageController.dispose();
+    _animationTimer?.cancel();
     super.dispose();
   }
 
@@ -92,9 +109,10 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
   Widget build(BuildContext context) {
     final hasFinishedVideo = ref.watch(sublevelControllerProvider.select((value) => value.hasFinishedVideo));
 
-    if (hasFinishedVideo) {
+    if (hasFinishedVideo && !_showAnimation) {
+      _startAnimationTimer();
       _bounceController.repeat(reverse: true);
-    } else {
+    } else if (!hasFinishedVideo || !_showAnimation) {
       _bounceController.stop();
       _bounceController.reset();
     }
@@ -145,6 +163,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
               if (sublevel == null) {
                 return const Loader();
               }
+
               final positionText = '${sublevel.level}-${sublevel.index}';
 
               String? localPath = PathService.videoLocalPath(sublevel.levelId, sublevel.videoFilename);
@@ -166,7 +185,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
                 animation: _bounceAnimation,
                 builder: (context, child) {
                   return Transform.translate(
-                    offset: Offset(0, hasFinishedVideo ? -_bounceAnimation.value : 0),
+                    offset: Offset(0, _showAnimation ? -_bounceAnimation.value : 0),
                     child: Stack(
                       children: [
                         Center(
@@ -197,13 +216,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
               );
             },
           ),
-          if (hasFinishedVideo)
-            const Positioned(
-              bottom: 40,
-              left: 0,
-              right: 0,
-              child: Center(child: ScrollIndicator(text: 'Scroll up for next video')),
-            ),
+          if (_showAnimation) const Positioned(bottom: 40, left: 0, right: 0, child: Center(child: ScrollIndicator())),
         ],
       ),
     );
@@ -220,7 +233,7 @@ class _LevelText extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface.withOpacity(0.7),
+        color: Theme.of(context).colorScheme.surface.withValues(alpha: .7),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
