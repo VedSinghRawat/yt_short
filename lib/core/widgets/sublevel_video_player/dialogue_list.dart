@@ -206,7 +206,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
                   hinglish: 'Abhi dikhane ke liye koi dialogue nahi hai',
                 ),
               ),
-          style: const TextStyle(color: Colors.white70, fontSize: 14),
+          style: const TextStyle(color: Colors.white70, fontSize: 24),
         ),
       );
     }

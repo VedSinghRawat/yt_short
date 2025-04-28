@@ -23,7 +23,7 @@ class MyApp extends ConsumerWidget {
       brightness: Brightness.dark,
       colorScheme: const ColorScheme.dark(
         primary: Color.fromARGB(255, 223, 150, 39), // Slightly lighter surfaces
-        onPrimary: Colors.white70,
+        onPrimary: Color.fromARGB(255, 34, 33, 33),
         secondary: Color.fromARGB(255, 10, 59, 117),
         onSecondary: Colors.white70, // Text/icons on secondary color
         error: Colors.redAccent,

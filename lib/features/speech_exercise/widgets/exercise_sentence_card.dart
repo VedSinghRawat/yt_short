@@ -35,8 +35,7 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
     _flatWords = [];
 
     // Split text by new lines to maintain line structure
-    // final lines = widget.text.split('\n');
-    final lines = ['Turn left at the next corner you see.'];
+    final lines = widget.text.split('\n');
     for (var line in lines) {
       List<String> lineWords = [];
       for (var word in line.split(' ')) {
@@ -142,7 +141,7 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                                   ],
                                 ),
                                 child: Padding(
-                                  padding: const EdgeInsets.only(top: 44.0, bottom: 24.0, left: 18.0),
+                                  padding: const EdgeInsets.only(bottom: 44.0, top: 24.0, left: 18.0),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
@@ -162,30 +161,34 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                                                   flatIndex += wordIndex;
 
                                                   // Determine color based on marking
-                                                  Color wordColor;
-                                                  FontWeight fontWeight = FontWeight.normal;
+                                                  Color? backgroundColor;
+                                                  FontWeight fontWeight = FontWeight.w600;
                                                   final mark = speechState.wordMarking.elementAtOrNull(flatIndex);
-
-                                                  if (mark == null) {
-                                                    wordColor = Theme.of(
-                                                      context,
-                                                    ).colorScheme.onPrimary.withOpacity(0.7);
-                                                  } else if (mark == true) {
-                                                    wordColor = Colors.lightGreenAccent;
+                                                  if (mark == true) {
+                                                    backgroundColor = const Color.fromARGB(255, 8, 85, 10);
                                                     fontWeight = FontWeight.bold;
-                                                  } else {
+                                                  } else if (mark == false) {
                                                     // false
-                                                    wordColor = Colors.redAccent;
-                                                    fontWeight = FontWeight.bold;
+                                                    backgroundColor = Colors.redAccent;
+                                                    fontWeight = FontWeight.normal;
                                                   }
 
-                                                  return Text(
-                                                    _words[lineIndex][wordIndex],
-                                                    style: TextStyle(
-                                                      color: wordColor,
-                                                      fontSize: 24,
-                                                      fontWeight: fontWeight,
-                                                      textBaseline: TextBaseline.alphabetic,
+                                                  return Container(
+                                                    padding:
+                                                        mark != null
+                                                            ? const EdgeInsets.symmetric(horizontal: 5, vertical: 4)
+                                                            : null,
+                                                    decoration: BoxDecoration(
+                                                      color: backgroundColor,
+                                                      borderRadius: BorderRadius.circular(6),
+                                                    ),
+                                                    child: Text(
+                                                      _words[lineIndex][wordIndex],
+                                                      style: TextStyle(
+                                                        fontSize: 24,
+                                                        fontWeight: fontWeight,
+                                                        textBaseline: TextBaseline.alphabetic,
+                                                      ),
                                                     ),
                                                   );
                                                 },
@@ -199,7 +202,7 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                             ),
                             // Listen button positioned top-right of the Card
                             Positioned(
-                              top: 20, // Adjust position slightly from edge
+                              bottom: 20, // Adjust position slightly from edge
                               right: 20, // Adjust position slightly from edge
                               child: Material(
                                 color: Theme.of(context).colorScheme.secondary, // Background color
@@ -269,7 +272,12 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                             width: double.infinity,
                             padding: const EdgeInsets.all(16.0), // Internal padding
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary, // Use primary background
+                              color:
+                                  !speechNotifier.isTestCompleted
+                                      ? Theme.of(context).colorScheme.primary
+                                      : speechNotifier.isPassed
+                                      ? Colors.green[400]
+                                      : Colors.red[400], // Use primary background
                               borderRadius: BorderRadius.circular(15.0),
                               boxShadow: [
                                 BoxShadow(
@@ -283,8 +291,11 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                             child: Text(
                               '${textToShow.join(' ')}${_flatWords.length == textToShow.length ? '.' : ''}',
                               style: recognizedWordStyle.copyWith(
-                                color: Theme.of(context).colorScheme.secondary,
-                                fontWeight: FontWeight.w400,
+                                color:
+                                    !speechNotifier.isTestCompleted
+                                        ? Theme.of(context).colorScheme.onPrimary
+                                        : Colors.white,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
@@ -294,21 +305,6 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                   ],
                 ),
               ),
-              if (speechNotifier.isTestCompleted)
-                Container(
-                  padding: const EdgeInsets.all(8.0),
-                  decoration: BoxDecoration(
-                    color: speechNotifier.isPassed ? Colors.green[300] : Colors.red[300],
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Icon(
-                      speechNotifier.isPassed ? Icons.download_done_rounded : Icons.error_rounded,
-                      color: Colors.white,
-                      size: 30,
-                    ),
-                  ),
-                ),
               const Spacer(),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),

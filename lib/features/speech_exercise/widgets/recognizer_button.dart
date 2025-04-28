@@ -72,9 +72,9 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
             shape: speechNotifier.isTestCompleted ? BoxShape.rectangle : BoxShape.circle,
             borderRadius: speechNotifier.isTestCompleted ? BorderRadius.circular(40) : null,
             color:
-                speechNotifier.isFailed
-                    ? Colors.red.shade100
-                    : speechState.isListening | speechNotifier.isPassed
+                speechNotifier.isTestCompleted
+                    ? Colors.white
+                    : speechState.isListening
                     ? Colors.green.shade100
                     : Colors.blue.shade100,
             boxShadow: const [
@@ -109,8 +109,8 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
                                 ),
                               ),
                           style: TextStyle(
-                            color: speechNotifier.isPassed ? Colors.green.shade700 : Colors.red.shade700,
-                            fontSize: 16,
+                            color: speechNotifier.isPassed ? Colors.green.shade400 : Colors.red.shade400,
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
                         )
