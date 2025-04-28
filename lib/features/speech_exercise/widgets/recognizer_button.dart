@@ -59,12 +59,6 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
   }
 
   @override
-  void dispose() {
-    ref.read(speechProvider.notifier).cancelListening();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final speechState = ref.watch(speechProvider);
     final speechNotifier = ref.read(speechProvider.notifier);

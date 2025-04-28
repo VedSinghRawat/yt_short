@@ -12,6 +12,7 @@ import 'package:myapp/core/services/path_service.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/widgets/loader.dart';
+import 'package:myapp/core/widgets/scroll_indicator.dart';
 import 'package:myapp/core/widgets/sublevel_video_player/sublevel_video_player.dart';
 import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'package:myapp/features/sublevel/widget/error_page.dart';
@@ -35,8 +36,10 @@ class SublevelsList extends ConsumerStatefulWidget {
   ConsumerState<SublevelsList> createState() => _SublevelsListState();
 }
 
-class _SublevelsListState extends ConsumerState<SublevelsList> {
+class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTickerProviderStateMixin {
   late PageController _pageController;
+  late AnimationController _bounceController;
+  late Animation<double> _bounceAnimation;
 
   void _jumpToPage(Duration timeStamp) async {
     final userEmail = ref.read(userControllerProvider).currentUser?.email;
@@ -65,6 +68,15 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
   void initState() {
     super.initState();
     _pageController = PageController();
+    _bounceController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+
+    _bounceAnimation = Tween<double>(
+      begin: 0.0,
+      end: 30.0,
+    ).animate(CurvedAnimation(parent: _bounceController, curve: Curves.easeInOut));
 
     WidgetsBinding.instance.addPostFrameCallback(_jumpToPage);
   }
@@ -79,101 +91,144 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
 
   @override
   void dispose() {
+    _bounceController.dispose();
     _pageController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final hasFinishedVideo = ref.watch(
+      sublevelControllerProvider.select((value) => value.hasFinishedVideo),
+    );
+
+    if (hasFinishedVideo) {
+      _bounceController.repeat(reverse: true);
+    } else {
+      _bounceController.stop();
+      _bounceController.reset();
+    }
+
     return RefreshIndicator(
       onRefresh: () async {
         if (widget.sublevels[0].level == 1 && widget.sublevels[0].index == 0) return;
 
         await Future.delayed(const Duration(seconds: 5));
       },
-      child: PageView.builder(
-        controller: _pageController,
-        allowImplicitScrolling: true,
-        dragStartBehavior: DragStartBehavior.down,
-        itemCount: widget.sublevels.length + 1,
-        scrollDirection: Axis.vertical,
-        onPageChanged: (index) async {
-          await widget.onVideoChange?.call(index, _pageController);
-        },
-        itemBuilder: (context, index) {
-          final sublevel = widget.sublevels.length > index ? widget.sublevels[index] : null;
+      child: Stack(
+        children: [
+          PageView.builder(
+            controller: _pageController,
+            allowImplicitScrolling: true,
+            dragStartBehavior: DragStartBehavior.down,
+            itemCount: widget.sublevels.length + 1,
+            scrollDirection: Axis.vertical,
+            onPageChanged: (index) async {
+              await widget.onVideoChange?.call(index, _pageController);
+            },
+            itemBuilder: (context, index) {
+              final sublevel = widget.sublevels.length > index ? widget.sublevels[index] : null;
 
-          final isLastSublevel = index == widget.sublevels.length;
+              final isLastSublevel = index == widget.sublevels.length;
 
-          final isLoading =
-              sublevel == null
-                  ? widget.loadingIds.isNotEmpty
-                  : widget.loadingIds.contains(sublevel.levelId);
+              final isLoading =
+                  sublevel == null
+                      ? widget.loadingIds.isNotEmpty
+                      : widget.loadingIds.contains(sublevel.levelId);
 
-          if ((isLastSublevel || sublevel == null) && !isLoading) {
-            final error = ref.watch(sublevelControllerProvider).error;
+              if ((isLastSublevel || sublevel == null) && !isLoading) {
+                final error = ref.watch(sublevelControllerProvider).error;
 
-            Console.error(Failure(message: 'sublevel error is $error $index'), StackTrace.current);
+                Console.error(
+                  Failure(message: 'sublevel error is $error $index'),
+                  StackTrace.current,
+                );
 
-            if (error == null) {
-              return const Loader();
-            }
+                if (error == null) {
+                  return const Loader();
+                }
 
-            return ErrorPage(
-              onRefresh: () => widget.onVideoChange?.call(index, _pageController),
-              text: error,
-              buttonText: ref
-                  .read(langProvider.notifier)
-                  .prefLangText(const PrefLangText(hindi: 'पुनः प्रयास करें', hinglish: 'Retry')),
-            );
-          }
-
-          if (sublevel == null) {
-            return const Loader();
-          }
-          final positionText = '${sublevel.level}-${sublevel.index}';
-
-          String? localPath = PathService.videoLocalPath(sublevel.levelId, sublevel.videoFilename);
-
-          final urls =
-              [BaseUrl.cloudflare, BaseUrl.s3]
-                  .map(
-                    (url) => ref
-                        .read(subLevelServiceProvider)
-                        .getVideoUrl(sublevel.levelId, sublevel.videoFilename, url),
-                  )
-                  .toList();
-
-          if (index == 0 && !File(localPath).existsSync()) {
-            localPath = null;
-          }
-
-          return Stack(
-            children: [
-              Center(
-                child: sublevel.when(
-                  video:
-                      (video) => SublevelVideoPlayer(
-                        key: Key(positionText),
-                        uniqueId: positionText,
-                        videoLocalPath: localPath,
-                        videoUrls: urls,
-                        dialogues: sublevel.dialogues,
+                return ErrorPage(
+                  onRefresh: () => widget.onVideoChange?.call(index, _pageController),
+                  text: error,
+                  buttonText: ref
+                      .read(langProvider.notifier)
+                      .prefLangText(
+                        const PrefLangText(hindi: 'पुनः प्रयास करें', hinglish: 'Retry'),
                       ),
-                  speechExercise:
-                      (speechExercise) => SpeechExerciseScreen(
-                        key: Key(positionText),
-                        uniqueId: positionText,
-                        exercise: speechExercise,
-                        videoLocalPath: localPath,
-                        videoUrls: urls,
-                      ),
-                ),
-              ),
-              Positioned(top: 16, right: 16, child: _LevelText(positionText: positionText)),
-            ],
-          );
-        },
+                );
+              }
+
+              if (sublevel == null) {
+                return const Loader();
+              }
+              final positionText = '${sublevel.level}-${sublevel.index}';
+
+              String? localPath = PathService.videoLocalPath(
+                sublevel.levelId,
+                sublevel.videoFilename,
+              );
+
+              final urls =
+                  [BaseUrl.cloudflare, BaseUrl.s3]
+                      .map(
+                        (url) => ref
+                            .read(subLevelServiceProvider)
+                            .getVideoUrl(sublevel.levelId, sublevel.videoFilename, url),
+                      )
+                      .toList();
+
+              if (index == 0 && !File(localPath).existsSync()) {
+                localPath = null;
+              }
+
+              return AnimatedBuilder(
+                animation: _bounceAnimation,
+                builder: (context, child) {
+                  return Transform.translate(
+                    offset: Offset(0, hasFinishedVideo ? -_bounceAnimation.value : 0),
+                    child: Stack(
+                      children: [
+                        Center(
+                          child: sublevel.when(
+                            video:
+                                (video) => SublevelVideoPlayer(
+                                  key: Key(positionText),
+                                  uniqueId: positionText,
+                                  videoLocalPath: localPath,
+                                  videoUrls: urls,
+                                  dialogues: sublevel.dialogues,
+                                ),
+                            speechExercise:
+                                (speechExercise) => SpeechExerciseScreen(
+                                  key: Key(positionText),
+                                  uniqueId: positionText,
+                                  exercise: speechExercise,
+                                  videoLocalPath: localPath,
+                                  videoUrls: urls,
+                                ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 16,
+                          right: 16,
+                          child: _LevelText(positionText: positionText),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+          if (hasFinishedVideo)
+            const Positioned(
+              bottom: 40,
+              left: 0,
+              right: 0,
+              child: Center(child: ScrollIndicator(text: 'Scroll up for next video')),
+            ),
+        ],
       ),
     );
   }

@@ -159,11 +159,22 @@ class AuthController extends _$AuthController {
 
       if (user != null) {
         final activityLogs = SharedPref.get(PrefKey.activityLogs);
+
         if (activityLogs != null) {
-          await activityLogController.syncActivityLogs(activityLogs);
-          await SharedPref.removeValue(PrefKey.activityLogs);
+          try {
+            await activityLogController.syncActivityLogs(activityLogs);
+            await SharedPref.removeValue(PrefKey.activityLogs);
+          } catch (e, stackTrace) {
+            developer.log(
+              'Error in AuthController.signOut',
+              error: e.toString(),
+              stackTrace: stackTrace,
+            );
+          }
         }
+
         await authAPI.signOut();
+
         userController.removeCurrentUser();
         await Future.delayed(Duration.zero); // Allow UI to update
       }

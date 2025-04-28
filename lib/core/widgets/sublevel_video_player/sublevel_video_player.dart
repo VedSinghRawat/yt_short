@@ -46,6 +46,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
   bool _showPlayPauseIcon = false;
   IconData _iconData = Icons.play_arrow;
   Timer? _iconTimer;
+  bool isFinished = false;
 
   List<Dialogue> _displayableDialogues = [];
   double? _dialogueListHeight;
@@ -124,13 +125,14 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer>
     final position = _controller!.value.position;
     final duration = _controller!.value.duration;
 
-    if (duration > Duration.zero) {
-      final bool isNearEnd = (duration - position).inSeconds <= 1;
-      if (isNearEnd && !ref.read(sublevelControllerProvider).hasFinishedVideo) {
-        ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
-        _controller?.removeListener(_listener);
-      }
+    if (position <= Duration.zero || duration <= Duration.zero) return;
+
+    if (isFinished && !ref.read(sublevelControllerProvider).hasFinishedVideo) {
+      ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
+      _controller?.removeListener(_listener);
     }
+
+    isFinished = (duration - position).inMilliseconds <= 600;
   }
 
   void _changePlayingState({bool changeToPlay = true}) async {

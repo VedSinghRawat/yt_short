@@ -78,7 +78,7 @@ class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
                       isSuccess
                           ? const PrefLangText(
                             hindi: 'डेटा सफलतापूर्वक अपडेट हो गया',
-                            hinglish: 'Data updated successfully',
+                            hinglish: 'Data update ho gaya',
                           )
                           : const PrefLangText(
                             hindi: 'डेटा अपडेट नहीं हो सका।',

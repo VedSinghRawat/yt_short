@@ -107,6 +107,8 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
           (context) => PopScope(
             canPop: true,
             onPopInvokedWithResult: (bool result, bool? didPop) {
+              if (_hasShownDialog) return;
+
               _onClose();
             },
             child: Dialog(

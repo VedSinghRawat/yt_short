@@ -35,6 +35,9 @@ class Speech extends _$Speech {
   @override
   SpeechState build() {
     _speech = stt.SpeechToText();
+
+    ref.onDispose(cancelListening);
+
     return const SpeechState();
   }
 
