@@ -196,17 +196,20 @@ class _DialogueListState extends ConsumerState<DialogueList> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         widget.onHeightCalculated?.call(45.0);
       });
-      return Center(
-        child: Text(
-          ref
-              .read(langProvider.notifier)
-              .prefLangText(
-                const PrefLangText(
-                  hindi: 'अभी तक कोई डायलॉग नहीं आया है।',
-                  hinglish: 'Abhi video me koi dialogue nahi aye hai.',
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: Center(
+          child: Text(
+            ref
+                .read(langProvider.notifier)
+                .prefLangText(
+                  const PrefLangText(
+                    hindi: 'अभी तक कोई डायलॉग नहीं आया है।',
+                    hinglish: 'Abhi video me koi dialogue nahi aye hai.',
+                  ),
                 ),
-              ),
-          style: const TextStyle(color: Colors.white70, fontSize: 24),
+            style: const TextStyle(color: Colors.white70, fontSize: 24),
+          ),
         ),
       );
     }
