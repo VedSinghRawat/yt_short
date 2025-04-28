@@ -47,7 +47,7 @@ class SignInScreen extends ConsumerWidget {
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontSize: 32,
                             fontWeight: FontWeight.w600,
-                            color: Theme.of(context).colorScheme.secondary,
+                            color: Theme.of(context).colorScheme.onPrimary,
                           ),
                         ),
                       ],
