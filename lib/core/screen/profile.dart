@@ -66,7 +66,7 @@ class ProfileScreen extends ConsumerWidget {
                       const SizedBox(height: 20),
                       CircleAvatar(
                         radius: 50,
-                        backgroundColor: theme.colorScheme.onPrimary.withOpacity(0.9), // Use onPrimary from theme
+                        backgroundColor: const Color.fromARGB(225, 255, 255, 255), // Use onPrimary from theme
                         child: Text(
                           user?.email.substring(0, 1).toUpperCase() ?? 'G',
                           style: TextStyle(
@@ -78,9 +78,9 @@ class ProfileScreen extends ConsumerWidget {
                       const SizedBox(height: 10),
                       Text(
                         user?.email ?? 'Guest User',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 20,
-                          color: theme.colorScheme.onPrimary, // Use onPrimary color from theme
+                          color: Color.fromARGB(225, 255, 255, 255), // Use onPrimary color from theme
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -90,61 +90,7 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 20),
-                // Language Preference Card
-                if (user != null)
-                  _buildInfoCard(
-                    context,
-                    title: ref
-                        .read(langProvider.notifier)
-                        .prefLangText(const PrefLangText(hindi: 'अपनी भाषा चुनें', hinglish: 'Language Preference')),
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            ref
-                                .read(langProvider.notifier)
-                                .prefLangText(const PrefLangText(hindi: 'भाषा', hinglish: 'Language')),
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                          DropdownButton<PrefLang>(
-                            value: user.prefLang,
-                            items:
-                                PrefLang.values.map((PrefLang lang) {
-                                  return DropdownMenuItem<PrefLang>(
-                                    value: lang,
-                                    child: Text(lang.name == 'hindi' ? 'हिंदी' : 'Hinglish'),
-                                  );
-                                }).toList(),
-                            onChanged:
-                                userLoading // Disable dropdown while loading
-                                    ? null
-                                    : (PrefLang? newValue) {
-                                      if (newValue != null && newValue != user.prefLang) {
-                                        userController.updatePrefLang(newValue).then((success) {
-                                          if (!success && context.mounted) {
-                                            showSnackBar(
-                                              context,
-                                              message: ref
-                                                  .read(langProvider.notifier)
-                                                  .prefLangText(
-                                                    const PrefLangText(
-                                                      hindi: 'भाषा नहीं बदल सके',
-                                                      hinglish: 'Bhasa nahin badal sake',
-                                                    ),
-                                                  ),
-                                              type: SnackBarType.error,
-                                            );
-                                          }
-                                        });
-                                      }
-                                    },
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                const SizedBox(height: 20),
+
                 if (progress != null && progress.level != null)
                   _buildInfoCard(
                     context,
@@ -179,6 +125,66 @@ class ProfileScreen extends ConsumerWidget {
                             .read(langProvider.notifier)
                             .prefLangText(const PrefLangText(hindi: 'अधिकतम सबलेवल', hinglish: 'Max Sublevel Reached')),
                         '${progress.maxSubLevel}',
+                      ),
+                    ],
+                  ),
+                const SizedBox(height: 20),
+                // Language Preference Card
+                if (user != null)
+                  _buildInfoCard(
+                    context,
+                    title: ref
+                        .read(langProvider.notifier)
+                        .prefLangText(const PrefLangText(hindi: 'अतिरिक्त', hinglish: 'Extras')),
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            ref
+                                .read(langProvider.notifier)
+                                .prefLangText(const PrefLangText(hindi: 'भाषा', hinglish: 'Language')),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
+                          ),
+                          DropdownButton<PrefLang>(
+                            value: user.prefLang,
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                            items:
+                                PrefLang.values.map((PrefLang lang) {
+                                  return DropdownMenuItem<PrefLang>(
+                                    value: lang,
+                                    child: Text(lang.name == 'hindi' ? 'हिंदी' : 'Hinglish'),
+                                  );
+                                }).toList(),
+                            onChanged:
+                                userLoading // Disable dropdown while loading
+                                    ? null
+                                    : (PrefLang? newValue) {
+                                      if (newValue != null && newValue != user.prefLang) {
+                                        userController.updatePrefLang(newValue).then((success) {
+                                          if (!success && context.mounted) {
+                                            showSnackBar(
+                                              context,
+                                              message: ref
+                                                  .read(langProvider.notifier)
+                                                  .prefLangText(
+                                                    const PrefLangText(
+                                                      hindi: 'भाषा नहीं बदल सके',
+                                                      hinglish: 'Bhasa nahin badal sake',
+                                                    ),
+                                                  ),
+                                              type: SnackBarType.error,
+                                            );
+                                          }
+                                        });
+                                      }
+                                    },
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -230,22 +236,8 @@ class ProfileScreen extends ConsumerWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 16,
-              color: theme.colorScheme.onPrimary.withOpacity(0.7), // Use onPrimary for contrast
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              // Use onSurface color from theme
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: theme.colorScheme.onPrimary, // Use onPrimary for contrast
-            ),
-          ),
+          Text(label, style: TextStyle(fontSize: 16, color: theme.colorScheme.onPrimary, fontWeight: FontWeight.w700)),
+          Text(value, style: TextStyle(fontSize: 16, color: theme.colorScheme.onPrimary, fontWeight: FontWeight.w500)),
         ],
       ),
     );
