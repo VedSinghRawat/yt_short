@@ -32,7 +32,7 @@ class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
 
     return ref
         .read(langProvider.notifier)
-        .prefLangText(const PrefLangText(hindi: 'वापसी पर स्वागत है', hinglish: 'Welcome Back'));
+        .prefLangText(const PrefLangText(hindi: 'वापस app में स्वागत है!', hinglish: 'Welcome Back!'));
   }
 
   @override

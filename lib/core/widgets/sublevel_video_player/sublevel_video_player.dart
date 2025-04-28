@@ -144,9 +144,6 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
       shouldBeFinished = true;
     }
 
-    developer.log(
-      '_lastTimeRemaining: $_lastTimeRemaining, timeRemaining: ${timeRemaining.inMilliseconds}, isSeeking: $_isSeeking',
-    );
     // Only check for backward jump if not in exercise mode, as seekTo(0) in exercises can trigger this.
     if (!_isSeeking && _lastTimeRemaining != null && timeRemaining.inMilliseconds > _lastTimeRemaining!) {
       shouldBeFinished = true;
