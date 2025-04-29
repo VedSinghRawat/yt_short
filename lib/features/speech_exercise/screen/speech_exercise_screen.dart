@@ -16,8 +16,16 @@ class SpeechExerciseScreen extends ConsumerStatefulWidget {
   final String? uniqueId;
   final String? videoLocalPath;
   final List<String>? videoUrls;
+  final VoidCallback? goToNext;
 
-  const SpeechExerciseScreen({super.key, required this.exercise, this.videoLocalPath, this.videoUrls, this.uniqueId});
+  const SpeechExerciseScreen({
+    super.key,
+    required this.exercise,
+    this.videoLocalPath,
+    this.videoUrls,
+    this.uniqueId,
+    this.goToNext,
+  });
 
   @override
   ConsumerState<SpeechExerciseScreen> createState() => _SpeechExerciseScreenState();
@@ -128,6 +136,7 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
                     });
                     _exerciseController?.play();
                     context.pop();
+                    widget.goToNext?.call();
                   }
                 },
               ),

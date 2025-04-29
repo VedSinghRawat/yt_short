@@ -206,6 +206,13 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
                               exercise: speechExercise,
                               videoLocalPath: localPath,
                               videoUrls: urls,
+                              goToNext: () {
+                                _pageController.animateToPage(
+                                  index + 1,
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeInOut,
+                                );
+                              },
                             ),
                       ),
                     ),
