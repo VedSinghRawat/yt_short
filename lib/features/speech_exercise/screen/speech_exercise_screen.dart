@@ -134,9 +134,9 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
                     setState(() {
                       _hasShownDialog = true;
                     });
-                    _exerciseController?.play();
                     context.pop();
                     await _exerciseController?.seekTo(Duration.zero);
+                    await _exerciseController?.play();
                     widget.goToNext?.call();
                   }
                 },
