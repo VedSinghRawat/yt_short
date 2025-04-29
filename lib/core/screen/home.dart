@@ -287,7 +287,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     return Scaffold(
-      appBar: const HomeScreenAppBar(),
+      // appBar: const HomeScreenAppBar(),
       body: SublevelsList(loadingIds: loadingLevelIds, sublevels: _sortedSublevels!, onVideoChange: onVideoChange),
     );
   }

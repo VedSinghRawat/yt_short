@@ -26,6 +26,7 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
 
       if (speechNotifier.isFailed) {
         speechNotifier.reset();
+        await speechNotifier.startListening(context);
         return;
       }
 

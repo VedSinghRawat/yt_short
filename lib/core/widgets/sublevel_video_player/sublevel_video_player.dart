@@ -281,7 +281,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
       }
 
       _controller!.addListener(_listener);
-      await _controller!.setLooping(true);
+      // await _controller!.setLooping(true);
       await _controller!.initialize();
 
       if (mounted) {
