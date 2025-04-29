@@ -209,8 +209,8 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
                             ),
                       ),
                     ),
-                    Positioned(top: 16, right: 16, child: _LevelText(positionText: positionText)),
 
+                    // Positioned(top: 16, right: 16, child: _LevelText(positionText: positionText)),
                     if (_showAnimation)
                       const Positioned(bottom: 40, left: 0, right: 0, child: Center(child: ScrollIndicator())),
                   ],
@@ -224,23 +224,23 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
   }
 }
 
-class _LevelText extends StatelessWidget {
-  final String positionText;
+// class _LevelText extends StatelessWidget {
+//   final String positionText;
 
-  const _LevelText({required this.positionText});
+//   const _LevelText({required this.positionText});
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface.withValues(alpha: .7),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        'Level $positionText',
-        style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return Container(
+//       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+//       decoration: BoxDecoration(
+//         color: Theme.of(context).colorScheme.surface.withValues(alpha: .7),
+//         borderRadius: BorderRadius.circular(8),
+//       ),
+//       child: Text(
+//         'Level $positionText',
+//         style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.bold),
+//       ),
+//     );
+//   }
+// }
