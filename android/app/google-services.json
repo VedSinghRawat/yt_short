@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "731914931196",
+    "project_id": "english-course-app-a5396",
+    "storage_bucket": "english-course-app-a5396.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:731914931196:android:c54ab15cb438c76c508079",
+        "android_client_info": {
+          "package_name": "com.example.codeyogienglishcourse"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBufcdDuso7mnf-fm0rkLbs1xsWh77Pn9A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

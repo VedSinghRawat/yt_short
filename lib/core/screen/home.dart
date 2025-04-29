@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
-import 'package:myapp/core/console.dart';
 import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
@@ -16,6 +15,8 @@ import '../../features/sublevel/widget/sublevel_list.dart';
 import '../../features/user/user_controller.dart';
 import 'package:myapp/core/services/interstitial_ad_service.dart';
 import 'package:myapp/core/widgets/interstitial_ad_handler.dart';
+import 'dart:async';
+import 'package:myapp/core/services/analytics_service.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -46,6 +47,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     bool hasLocalProgress,
     bool isAdmin,
     int? doneToday,
+    String levelId,
   ) {
     if (isAdmin) return false;
 
@@ -71,6 +73,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
       type: SnackBarType.error,
     );
+
+    unawaited(AnalyticsService().attemptScrollForward(level: level, sublevel: subLevel, levelId: levelId));
 
     return true;
   }
@@ -219,6 +223,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final isLocalLevelAfter = isLevelAfter(level, sublevelIndex, user?.maxLevel ?? 0, user?.maxSubLevel ?? 0);
 
+    // Capture Backward Scroll analytics
+    final previousSublevel = localProgress?.subLevel ?? 0;
+    final previousLevel = localProgress?.level ?? 0;
+    final previousLevelId = localProgress?.levelId ?? '';
+
+    final isScrolledBackwards = isLevelAfter(previousLevel, previousSublevel, level, sublevelIndex);
+
+    if (isScrolledBackwards) {
+      unawaited(
+        AnalyticsService().scrollBackward(
+          fromLevel: previousLevel,
+          fromSublevel: previousSublevel,
+          toLevel: level,
+          toSublevel: sublevelIndex,
+          fromLevelId: previousLevelId,
+          toLevelId: sublevel.levelId,
+        ),
+      );
+    }
+    //--------------------------------
+
     // Check if video change should be cancelled
     if (cancelVideoChange(
       isLocalLevelAfter ? localMaxLevel : user?.maxLevel ?? 0,
@@ -228,6 +253,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       localProgress != null,
       user?.isAdmin == true,
       user?.doneToday,
+      sublevel.levelId,
     )) {
       controller.animateToPage(index - 1, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
       return;
