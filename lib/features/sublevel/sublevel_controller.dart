@@ -29,8 +29,8 @@ class SublevelControllerState with _$SublevelControllerState {
   const factory SublevelControllerState({
     Set<SubLevel>? sublevels,
     @Default(false) bool hasFinishedVideo,
-    @Default({}) Set<String> loadedLevelIds,
-    @Default({}) Set<String> loadingLevelIds,
+    // true when loading, false when loaded
+    @Default({}) Map<String, bool> loadingByLevelId,
     String? error,
   }) = _SublevelControllerState;
 
@@ -50,7 +50,7 @@ class SublevelController extends _$SublevelController {
   late final LevelService levelService = ref.read(levelServiceProvider);
 
   Future<String?> _listByLevel(String levelId, int level) async {
-    state = state.copyWith(loadingLevelIds: {...state.loadingLevelIds, levelId});
+    state = state.copyWith(loadingByLevelId: {...state.loadingByLevelId, levelId: true});
 
     try {
       final levelDTOEither = await ref.read(levelServiceProvider).getLevel(levelId, ref);
@@ -90,14 +90,14 @@ class SublevelController extends _$SublevelController {
 
       await _addExistVideoSublevelEntries(levelDTO, level, levelId);
 
-      state = state.copyWith(loadedLevelIds: {...state.loadedLevelIds, levelId});
+      state = state.copyWith(loadingByLevelId: {...state.loadingByLevelId}..remove(levelId));
       return levelId;
     } catch (e, stackTrace) {
       developer.log('Error in SublevelController._listByLevel', error: e.toString(), stackTrace: stackTrace);
       state = state.copyWith(error: ref.read(langProvider.notifier).prefLangText(AppConstants.unknownError));
       return null;
     } finally {
-      state = state.copyWith(loadingLevelIds: {...state.loadingLevelIds}..remove(levelId));
+      state = state.copyWith(loadingByLevelId: {...state.loadingByLevelId}..remove(levelId));
     }
   }
 
@@ -201,8 +201,7 @@ class SublevelController extends _$SublevelController {
     }
   }
 
-  bool _isLevelFetched(String levelId) =>
-      state.loadedLevelIds.contains(levelId) || state.loadingLevelIds.contains(levelId);
+  bool _isLevelFetched(String levelId) => state.loadingByLevelId[levelId] == false;
 
   List<String?> _getSurroundingLevelIds(int currIndex, List<String?> orderedIds) {
     return [

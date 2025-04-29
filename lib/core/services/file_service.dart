@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter_archive/flutter_archive.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -19,6 +20,14 @@ class FileService {
     final file = File(path);
 
     await file.delete();
+  }
+
+  static Future<void> store(String path, Uint8List data) async {
+    final file = File(path);
+
+    await file.parent.create(recursive: true);
+
+    await file.writeAsBytes(data);
   }
 
   static int getDirectorySize(Directory directory) {

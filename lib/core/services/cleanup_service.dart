@@ -95,8 +95,8 @@ class StorageCleanupService {
       int i = 0;
 
       final toBeDeletedPaths = <String, Set<String>>{};
-      final foldersToDelete = <String>{};
-      final etagsToCleanByLevelId = <String>{};
+      final dirPathsToDelete = <String>{};
+      final etagsToClean = <String>{};
 
       // Start deleting until space is freed, also breaking the loop if the
       //protected levels are reached
@@ -118,7 +118,7 @@ class StorageCleanupService {
           final videoSize = await videoFile.length();
 
           toBeDeletedPaths[levelId]!.add(videoPath);
-          etagsToCleanByLevelId.add(PathService.video(levelId, videoPath.split('/').last.replaceAll('.mp4', '')));
+          etagsToClean.add(PathService.video(levelId, videoPath.split('/').last.replaceAll('.mp4', '')));
 
           totalSize -= videoSize;
 
@@ -129,7 +129,7 @@ class StorageCleanupService {
               final audioSize = await audioFile.length();
               toBeDeletedPaths[levelId]!.add(audioPath);
 
-              etagsToCleanByLevelId.add(PathService.video(levelId, audioPath.split('/').last.replaceAll('.mp3', '')));
+              etagsToClean.add(PathService.video(levelId, audioPath.split('/').last.replaceAll('.mp3', '')));
 
               totalSize -= audioSize;
             }
@@ -137,9 +137,9 @@ class StorageCleanupService {
 
           // delete full folder if there are no videos left
           if (index == level.sub_levels.length - 1) {
-            foldersToDelete.add(folderPath);
+            dirPathsToDelete.add(folderPath);
 
-            etagsToCleanByLevelId.add(PathService.levelJson(levelId));
+            etagsToClean.add(PathService.levelJson(levelId));
             toBeDeletedPaths[levelId] = {};
             continue;
           }
@@ -152,7 +152,9 @@ class StorageCleanupService {
         i++;
       }
 
-      await Future.wait(etagsToCleanByLevelId.map((videoPath) => SharedPref.removeValue(PrefKey.eTag())));
+      await Future.wait(toBeDeletedPaths.values.map((paths) => compute(_deleteFiles, paths.toList())));
+      await Future.wait(dirPathsToDelete.map((dir) => compute(_deleteFolderRecursively, dir)));
+      await Future.wait(etagsToClean.map((eTag) => SharedPref.removeValue(PrefKey.eTag(eTag))));
     } catch (e) {
       developer.log("Error in cleanup process: $e");
     }

@@ -8,6 +8,7 @@ import 'package:myapp/core/services/file_service.dart';
 import 'package:myapp/core/services/level_service.dart';
 import 'package:myapp/core/services/path_service.dart';
 import 'package:myapp/models/level/level.dart';
+import 'package:myapp/models/models.dart';
 
 class SubLevelService {
   final LevelService levelService;
@@ -16,41 +17,30 @@ class SubLevelService {
 
   final ISubLevelAPI subLevelAPI;
 
-  Future<void> getFiles(LevelDTO levelDTO) async {
-    await Future.wait(
-      levelDTO.sub_levels.map((subLevelDTO) async {
-        final videoData = await subLevelAPI.getVideo(levelDTO.id, subLevelDTO.videoFilename);
-        final audioData =
-            subLevelDTO.isSpeechExercise ? await subLevelAPI.getAudio(levelDTO.id, subLevelDTO.audioFilename!) : null;
+  Future<void> getFile(SubLevelDTO subLevelDTO, String levelId) async {
+    final videoData = await subLevelAPI.getVideo(levelId, subLevelDTO.videoFilename);
+    final audioData =
+        subLevelDTO.isSpeechExercise
+            ? await subLevelAPI.getAudio(levelId, (subLevelDTO as SpeechExerciseDTO).audioFilename)
+            : null;
 
-        try {
-          if (videoData != null) {
-            final videoPath = PathService.videoLocal(levelDTO.id, subLevelDTO.videoFilename);
-            await _store(levelDTO, videoPath, videoData);
-          }
+    try {
+      if (videoData != null) {
+        final videoPath = PathService.videoLocal(levelId, subLevelDTO.videoFilename);
+        await FileService.store(videoPath, videoData);
+      }
 
-          if (audioData != null) {
-            final audioPath = PathService.audioLocal(levelDTO.id, subLevelDTO.audioFilename!);
-            await _store(levelDTO, audioPath, audioData);
-          }
-        } catch (e) {
-          Console.log('Error saving video file for ${subLevelDTO.videoFilename}: $e');
-        }
-      }),
-    );
+      if (audioData != null) {
+        final audioPath = PathService.audioLocal(levelId, (subLevelDTO as SpeechExerciseDTO).audioFilename);
+        await FileService.store(audioPath, audioData);
+      }
+    } catch (e) {
+      Console.log('Error saving video file for ${subLevelDTO.videoFilename}: $e');
+    }
   }
 
-  Future<void> _store(LevelDTO levelDTO, String path, Uint8List data) async {
-    final file = File(path);
-
-    await file.parent.create(recursive: true);
-
-    await file.writeAsBytes(data);
-  }
-
-  Future<void> getDialogueAudioFiles(LevelDTO levelDTO) async {
-    final uniqueZipNums =
-        levelDTO.sub_levels.expand((subLevelDto) => subLevelDto.dialogues).map((dialogue) => dialogue.zipNum).toSet();
+  Future<void> getDialogueAudioFiles(SubLevelDTO subLevelDTO) async {
+    final uniqueZipNums = subLevelDTO.dialogues.map((dialogue) => dialogue.zipNum).toSet();
 
     await Future.wait(
       uniqueZipNums.map((zipNum) async {
