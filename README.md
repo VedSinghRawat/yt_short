@@ -29,7 +29,3 @@ OR
                                         this "export PATH="$PATH":"$HOME/.   pub-cache/bin""
 
 4. From your Flutter project directory -> "flutterfire configure"
-
-//Crashlytics setup documentation
-
-1.
