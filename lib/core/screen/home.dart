@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
+import 'package:myapp/core/console.dart';
 import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
@@ -12,6 +14,8 @@ import 'package:myapp/models/sublevel/sublevel.dart';
 import '../../features/sublevel/sublevel_controller.dart';
 import '../../features/sublevel/widget/sublevel_list.dart';
 import '../../features/user/user_controller.dart';
+import 'package:myapp/core/services/interstitial_ad_service.dart';
+import 'package:myapp/core/widgets/interstitial_ad_handler.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -22,6 +26,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   List<SubLevel>? _sortedSublevels;
+  int _videosWatched = 0;
 
   @override
   void initState() {
@@ -248,6 +253,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     // Sync the last sync time with the server
     await syncActivityLogs();
+
+    _videosWatched++;
+
+    if (_videosWatched > dotenv.getInt("AD_SUBLEVEL_COUNT")) {
+      ref.read(interstitialAdNotifierProvider.notifier).setShowAd(true);
+      return;
+    }
   }
 
   List<SubLevel> _getSortedSublevels(List<SubLevel> sublevels) {
@@ -271,6 +283,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final loadingLevelIds = ref.watch(sublevelControllerProvider.select((state) => state.loadingLevelIds));
 
     final sublevels = ref.watch(sublevelControllerProvider.select((state) => state.sublevels));
+
+    final showAd = ref.watch(interstitialAdNotifierProvider.select((state) => state.showAd));
+
+    if (showAd) {
+      return InterstitialAdHandler(
+        onAdFinished: () {
+          _videosWatched = 0;
+        },
+      );
+    }
 
     if (sublevels == null) {
       return const Loader();
