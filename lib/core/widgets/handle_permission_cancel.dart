@@ -3,11 +3,7 @@ import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-Future<void> handlePermissionDenied(
-  BuildContext context,
-  String errorMessage, {
-  required Permission permission,
-}) async {
+Future<void> handlePermissionDenied(BuildContext context, String errorMessage, {required Permission permission}) async {
   try {
     PermissionStatus permissionStatus = await permission.request();
 

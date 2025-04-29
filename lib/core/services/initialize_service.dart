@@ -20,13 +20,13 @@ import 'dart:developer' as developer;
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 class InitializeService {
-  UserControllerState userControllerState;
   InitializeAPI initializeAPI;
   LevelController levelController;
   UserController userController;
+  Ref ref;
 
   InitializeService({
-    required this.userControllerState,
+    required this.ref,
     required this.initializeAPI,
     required this.levelController,
     required this.userController,
@@ -47,17 +47,17 @@ class InitializeService {
       ]);
 
       final currProgress = SharedPref.get(
-        PrefKey.currProgress(userEmail: userControllerState.currentUser?.email),
+        PrefKey.currProgress(userEmail: ref.read(userControllerProvider).currentUser?.email),
       );
 
-      final apiUser = userControllerState.currentUser;
+      final apiUser = ref.read(userControllerProvider).currentUser;
       if (currProgress == null && apiUser == null) return;
 
       final localLastModified = currProgress?.modified ?? 0;
-      final apiLastModified =
-          apiUser != null ? DateTime.parse(apiUser.modified).millisecondsSinceEpoch : 0;
+      final apiLastModified = apiUser != null ? DateTime.parse(apiUser.modified).millisecondsSinceEpoch : 0;
+      final b = localLastModified > apiLastModified;
 
-      localLastModified > apiLastModified
+      b
           ? await userController.sync(currProgress!.levelId!, currProgress.subLevel!)
           : await SharedPref.copyWith(
             PrefKey.currProgress(userEmail: apiUser?.email),
@@ -138,7 +138,7 @@ class InitializeService {
 
 final initializeServiceProvider = FutureProvider<InitializeService>((ref) async {
   final service = InitializeService(
-    userControllerState: ref.read(userControllerProvider),
+    ref: ref,
     initializeAPI: ref.read(initializeAPIService),
     levelController: ref.read(levelControllerProvider.notifier),
     userController: ref.read(userControllerProvider.notifier),

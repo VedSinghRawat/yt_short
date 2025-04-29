@@ -38,9 +38,7 @@ class LevelApi implements ILevelApi {
   @override
   Future<List<String>?> getOrderedIds() async {
     try {
-      final response = await apiService.getCloudStorageData<Map<String, dynamic>?>(
-        endpoint: PathService.orderedIds(),
-      );
+      final response = await apiService.getCloudStorageData<Map<String, dynamic>?>(endpoint: PathService.orderedIds());
 
       final ids = response?.data?['orderedIds'];
       if (ids == null) return null;

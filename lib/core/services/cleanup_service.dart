@@ -33,9 +33,7 @@ class StorageCleanupService {
     final orderedIds = levelController.value;
     if (orderedIds == null) return;
 
-    final Map<String, int> idToIndexMap = {
-      for (int i = 0; i < orderedIds.length; i++) orderedIds[i]: i,
-    };
+    final Map<String, int> idToIndexMap = {for (int i = 0; i < orderedIds.length; i++) orderedIds[i]: i};
 
     final int currentIndex = idToIndexMap[currentId] ?? -1;
 
@@ -120,25 +118,18 @@ class StorageCleanupService {
           final videoSize = await videoFile.length();
 
           toBeDeletedPaths[levelId]!.add(videoPath);
-          etagsToCleanByLevelId.add(
-            PathService.video(levelId, videoPath.split('/').last.replaceAll('.mp4', '')),
-          );
+          etagsToCleanByLevelId.add(PathService.video(levelId, videoPath.split('/').last.replaceAll('.mp4', '')));
 
           totalSize -= videoSize;
 
           if (sub.isSpeechExercise) {
-            final audioPath = PathService.audioLocal(
-              levelId,
-              (sub as SpeechExercise).audioFilename,
-            );
+            final audioPath = PathService.audioLocal(levelId, (sub as SpeechExercise).audioFilename);
             final audioFile = File(audioPath);
             if (await audioFile.exists()) {
               final audioSize = await audioFile.length();
               toBeDeletedPaths[levelId]!.add(audioPath);
 
-              etagsToCleanByLevelId.add(
-                PathService.video(levelId, audioPath.split('/').last.replaceAll('.mp3', '')),
-              );
+              etagsToCleanByLevelId.add(PathService.video(levelId, audioPath.split('/').last.replaceAll('.mp3', '')));
 
               totalSize -= audioSize;
             }
@@ -161,9 +152,7 @@ class StorageCleanupService {
         i++;
       }
 
-      await Future.wait(
-        etagsToCleanByLevelId.map((videoPath) => SharedPref.removeValue(PrefKey.eTag())),
-      );
+      await Future.wait(etagsToCleanByLevelId.map((videoPath) => SharedPref.removeValue(PrefKey.eTag())));
     } catch (e) {
       developer.log("Error in cleanup process: $e");
     }
@@ -171,8 +160,7 @@ class StorageCleanupService {
 
   /// Prevents deletion of current, previous and next two levels
   bool _isProtectedLevel(int dist) =>
-      (dist < 0 && dist.abs() <= AppConstants.kMaxPreviousLevelsToKeep) ||
-      dist <= AppConstants.kMaxNextLevelsToKeep;
+      (dist < 0 && dist.abs() <= AppConstants.kMaxPreviousLevelsToKeep) || dist <= AppConstants.kMaxNextLevelsToKeep;
 }
 
 final storageCleanupServiceProvider = Provider<StorageCleanupService>(

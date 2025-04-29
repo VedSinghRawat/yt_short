@@ -31,6 +31,5 @@ class SpeechExerciseDTO with _$SpeechExerciseDTO {
     required List<Dialogue> dialogues,
   }) = _SpeechExerciseDTO;
 
-  factory SpeechExerciseDTO.fromJson(Map<String, dynamic> json) =>
-      _$SpeechExerciseDTOFromJson(json);
+  factory SpeechExerciseDTO.fromJson(Map<String, dynamic> json) => _$SpeechExerciseDTOFromJson(json);
 }

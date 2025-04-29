@@ -36,10 +36,7 @@ class LevelController extends _$LevelController {
       return _getIds();
     }
 
-    return AsyncValue.error(
-      Failure(message: parseError(error.type!, ref), type: error.type),
-      StackTrace.current,
-    );
+    return AsyncValue.error(Failure(message: parseError(error.type!, ref), type: error.type), StackTrace.current);
   }
 
   Future<AsyncValue<List<String>>> _handleRes(List<String>? ids) async {

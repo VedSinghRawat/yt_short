@@ -58,8 +58,7 @@ class SubLevelAPI implements ISubLevelAPI {
       return response?.data;
     } on DioException catch (e) {
       developer.log('Error in SubLevelAPI.getAudio: $e');
-      // throw Failure(message: e.toString()); //TODO: temporary
-      return null;
+      throw Failure(message: e.toString());
     }
   }
 }

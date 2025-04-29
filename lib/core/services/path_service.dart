@@ -6,8 +6,7 @@ class PathService {
 
   static String level(String levelId) => '$levelsDocDir/$levelId';
 
-  static String levelJsonFull(String levelId) =>
-      '${FileService.documentsDirectory.path}${levelJson(levelId)}';
+  static String levelJsonFull(String levelId) => '${FileService.documentsDirectory.path}${levelJson(levelId)}';
 
   static String orderedIds() => '/levels/ordered_ids.json';
 
@@ -16,8 +15,7 @@ class PathService {
   static String levelVideosDir(String levelId) => '/levels/$levelId/videos';
   static String levelAudiosDir(String levelId) => '/levels/$levelId/audios';
 
-  static String video(String levelId, String videoFilename) =>
-      '${levelVideosDir(levelId)}/$videoFilename.mp4';
+  static String video(String levelId, String videoFilename) => '${levelVideosDir(levelId)}/$videoFilename.mp4';
 
   static String levelVideosDirLocal(String levelId) =>
       '${FileService.documentsDirectory.path}${levelVideosDir(levelId)}';
@@ -32,8 +30,7 @@ class PathService {
 
   static String dialogueTempZip(int zipNum) => '$dialogueAudioDir/zips/$zipNum.zip';
 
-  static String audio(String levelId, String audioFilename) =>
-      '${levelAudiosDir(levelId)}/$audioFilename.mp3';
+  static String audio(String levelId, String audioFilename) => '${levelAudiosDir(levelId)}/$audioFilename.mp3';
 
   static String audioLocal(String levelId, String audioFilename) =>
       '${FileService.documentsDirectory.path}${audio(levelId, audioFilename)}';

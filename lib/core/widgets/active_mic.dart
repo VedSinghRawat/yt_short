@@ -15,8 +15,7 @@ class _ActiveMicState extends State<ActiveMic> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 800))
-      ..repeat(reverse: true);
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 800))..repeat(reverse: true);
 
     _animation = Tween<double>(
       begin: 1.0,
@@ -46,10 +45,7 @@ class _ActiveMicState extends State<ActiveMic> with TickerProviderStateMixin {
                 child: Container(
                   width: 40,
                   height: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
-                  ),
+                  decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.2), shape: BoxShape.circle),
                 ),
               ),
               const Icon(Icons.mic, size: 32, color: Colors.green),

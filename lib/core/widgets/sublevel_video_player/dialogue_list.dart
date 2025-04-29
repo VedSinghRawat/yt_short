@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/services/path_service.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/features/user/user_controller.dart';
@@ -62,11 +61,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_scrollController.hasClients) return;
-      _scrollController.animateToItem(
-        0,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+      _scrollController.animateToItem(0, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
 
       if (_selectedDialogueIndex == 0) return;
       setState(() => _selectedDialogueIndex = 0);
@@ -130,11 +125,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
   }
 
   // --- Function to Calculate Item Height ---
-  double _calculateItemHeight(
-    BoxConstraints constraints,
-    List<Dialogue> dialogues,
-    PrefLang prefLang,
-  ) {
+  double _calculateItemHeight(BoxConstraints constraints, List<Dialogue> dialogues, PrefLang prefLang) {
     double maxOverallItemHeight = 0;
 
     final timePainter = TextPainter(
@@ -150,22 +141,14 @@ class _DialogueListState extends ConsumerState<DialogueList> {
     const double iconContainerWidth = selectedIconSize + (iconPadding * 2) + (iconBorder * 2);
     const double fixedSpacing = 16.0 + 12.0;
     final double availableWidthForFlexible =
-        constraints.maxWidth -
-        timeTextWidth -
-        iconContainerWidth -
-        fixedSpacing -
-        (horizontalPadding * 2);
+        constraints.maxWidth - timeTextWidth - iconContainerWidth - fixedSpacing - (horizontalPadding * 2);
     final double textConstraintWidth = max(0, availableWidthForFlexible * textWidthPercentage);
 
     const double selectedFontSize = 20;
     const FontWeight selectedFontWeight = FontWeight.bold;
     const double translationFontSize = selectedFontSize * 0.75;
 
-    const mainTextStyle = TextStyle(
-      fontSize: selectedFontSize,
-      color: Colors.white,
-      fontWeight: selectedFontWeight,
-    );
+    const mainTextStyle = TextStyle(fontSize: selectedFontSize, color: Colors.white, fontWeight: selectedFontWeight);
     const translationTextStyle = TextStyle(
       fontSize: translationFontSize,
       color: Colors.white70,
@@ -184,8 +167,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
 
       if (dialogue.hindiText.isNotEmpty && dialogue.hinglishText.isNotEmpty) {
         currentTextColumnHeight += betweenTextPadding;
-        final translationText =
-            prefLang == PrefLang.hindi ? dialogue.hindiText : dialogue.hinglishText;
+        final translationText = prefLang == PrefLang.hindi ? dialogue.hindiText : dialogue.hinglishText;
         final translationPainter = TextPainter(
           text: TextSpan(text: translationText, style: translationTextStyle),
           textDirection: TextDirection.ltr,
@@ -211,21 +193,10 @@ class _DialogueListState extends ConsumerState<DialogueList> {
 
     if (widget.dialogues.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        widget.onHeightCalculated?.call(45.0);
+        widget.onHeightCalculated?.call(0);
       });
-      return Center(
-        child: Text(
-          ref
-              .read(langProvider.notifier)
-              .prefLangText(
-                const PrefLangText(
-                  hindi: 'अभी दिखाने के लिए कोई डायलॉग नहीं है',
-                  hinglish: 'Abhi dikhane ke liye koi dialogue nahi hai',
-                ),
-              ),
-          style: const TextStyle(color: Colors.white70, fontSize: 14),
-        ),
-      );
+
+      return const SizedBox.shrink();
     }
 
     final prefLang = ref.watch(
@@ -235,11 +206,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
     return LayoutBuilder(
       builder: (context, constraints) {
         // Call the calculation function
-        final double calculatedItemHeight = _calculateItemHeight(
-          constraints,
-          widget.dialogues,
-          prefLang,
-        );
+        final double calculatedItemHeight = _calculateItemHeight(constraints, widget.dialogues, prefLang);
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
           widget.onHeightCalculated?.call(calculatedItemHeight);
@@ -306,14 +273,11 @@ class _DialogueListState extends ConsumerState<DialogueList> {
                                         ),
                                         textAlign: TextAlign.center,
                                       ),
-                                      if (dialogue.hindiText.isNotEmpty &&
-                                          dialogue.hinglishText.isNotEmpty)
+                                      if (dialogue.hindiText.isNotEmpty && dialogue.hinglishText.isNotEmpty)
                                         Padding(
                                           padding: const EdgeInsets.only(top: betweenTextPadding),
                                           child: Text(
-                                            prefLang == PrefLang.hindi
-                                                ? dialogue.hindiText
-                                                : dialogue.hinglishText,
+                                            prefLang == PrefLang.hindi ? dialogue.hindiText : dialogue.hinglishText,
                                             style: TextStyle(
                                               fontSize: textFontSize * 0.75,
                                               color: Colors.white70,

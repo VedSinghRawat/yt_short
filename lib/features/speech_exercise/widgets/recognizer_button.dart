@@ -26,6 +26,7 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
 
       if (speechNotifier.isFailed) {
         speechNotifier.reset();
+        await speechNotifier.startListening(context);
         return;
       }
 
@@ -46,7 +47,7 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
   void _showRecognizerError() {
     showSnackBar(
       context,
-      ref
+      message: ref
           .read(langProvider.notifier)
           .prefLangText(
             const PrefLangText(
@@ -54,13 +55,8 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
               hinglish: 'Kuchh galat ho gaya, kripya dobara kosis karein',
             ),
           ),
+      type: SnackBarType.error,
     );
-  }
-
-  @override
-  void dispose() {
-    ref.read(speechProvider.notifier).cancelListening();
-    super.dispose();
   }
 
   @override
@@ -77,9 +73,9 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
             shape: speechNotifier.isTestCompleted ? BoxShape.rectangle : BoxShape.circle,
             borderRadius: speechNotifier.isTestCompleted ? BorderRadius.circular(40) : null,
             color:
-                speechNotifier.isFailed
-                    ? Colors.red.shade100
-                    : speechState.isListening | speechNotifier.isPassed
+                speechNotifier.isTestCompleted
+                    ? Colors.white
+                    : speechState.isListening
                     ? Colors.green.shade100
                     : Colors.blue.shade100,
             boxShadow: const [
@@ -114,17 +110,14 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
                                 ),
                               ),
                           style: TextStyle(
-                            color:
-                                speechNotifier.isPassed
-                                    ? Colors.green.shade700
-                                    : Colors.red.shade700,
-                            fontSize: 16,
+                            color: speechNotifier.isPassed ? Colors.green.shade400 : Colors.red.shade400,
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
                         )
                         : speechState.isListening
                         ? const ActiveMic()
-                        : const Icon(Icons.mic_none, color: Colors.blue, size: 32),
+                        : const Icon(Icons.mic_none, color: Colors.blue, size: 34),
               ),
             ),
           ),
@@ -138,15 +131,9 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
                   .prefLangText(
                     speechState.isListening
                         ? const PrefLangText(hindi: 'सुन रहे है...', hinglish: 'Listening...')
-                        : const PrefLangText(
-                          hindi: 'बोलने के लिए टैप करें',
-                          hinglish: 'Bolne ke liye tap karein',
-                        ),
+                        : const PrefLangText(hindi: 'बोलने के लिए टैप करें', hinglish: 'Bolne ke liye tap karein'),
                   ),
-              style: TextStyle(
-                color: speechState.isListening ? Colors.green : Colors.blue,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: speechState.isListening ? Colors.green : Colors.blue, fontSize: 18),
             ),
           ),
       ],

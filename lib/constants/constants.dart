@@ -2,10 +2,9 @@ import 'package:myapp/core/controllers/lang_notifier.dart';
 
 class AppConstants {
   // Auth and sync constants
-  static const int kAuthRequiredLevel = 1;
   static const int kMinProgressSyncingDiffInMillis = Duration.millisecondsPerMinute * 1;
   static const String kIOSAppId = '';
-  static const int kMaxLevelCompletionsPerDay = 1;
+  static const int kMaxLevelCompletionsPerDay = 2;
 
   // Storage constants
   static const int kMaxStorageSizeBytes = 100 * 1024 * 1024; // 100mb
@@ -64,8 +63,7 @@ class AppConstants {
 
   static const allLevelsCompleted = PrefLangText(
     hindi: 'फिलहाल के लिए इतने ही लेसन हैं। नए लेसन के लिए कुछ समय बाद फिर से चेक करें!',
-    hinglish:
-        'Filhal ke liye itne hi lessons hain. Naye lessons ke liye kuchh samay baad dobara check karein!',
+    hinglish: 'Filhal ke liye itne hi lessons hain. Naye lessons ke liye kuchh samay baad dobara check karein!',
   );
 
   static const obstructiveErrorStatus = 599;

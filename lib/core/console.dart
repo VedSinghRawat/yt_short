@@ -7,19 +7,7 @@ import 'dart:math';
 class Console {
   static final Map<String, Stopwatch> _stopwatches = {};
   static final Map<String, String> _colorTags = {};
-  static final List<String> _colorEmojis = [
-    '🟥',
-    '🟧',
-    '🟨',
-    '🟩',
-    '🟦',
-    '🟪',
-    '⬛',
-    '🟫',
-    '🔵',
-    '🔴',
-    '🟢',
-  ];
+  static final List<String> _colorEmojis = ['🟥', '🟧', '🟨', '🟩', '🟦', '🟪', '⬛', '🟫', '🔵', '🔴', '🟢'];
 
   static String _getOrCreateColorTag(String name) {
     if (_colorTags.containsKey(name)) return _colorTags[name]!;
@@ -42,13 +30,7 @@ class Console {
 
   static void error(Failure failure, StackTrace stackTrace) {
     if (!kDebugMode) return;
-    dev.log(
-      failure.message,
-      error: failure,
-      stackTrace: stackTrace,
-      name: '[log] error',
-      level: 1000,
-    );
+    dev.log(failure.message, error: failure, stackTrace: stackTrace, name: '[log] error', level: 1000);
   }
 
   static void timeStart(String name) {

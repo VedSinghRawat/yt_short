@@ -7,11 +7,7 @@ import 'package:myapp/core/router/router.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  if (kDebugMode) {
-    await dotenv.load(fileName: '.env');
-  } else {
-    await dotenv.load(fileName: '.env.prod');
-  }
+  await dotenv.load(fileName: kDebugMode ? '.env' : '.env.prod');
 
   runApp(const ProviderScope(child: MyApp()));
 }
@@ -23,9 +19,24 @@ class MyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
 
+    final customDarkTheme = ThemeData(
+      brightness: Brightness.dark,
+      colorScheme: const ColorScheme.dark(
+        primary: Color.fromARGB(255, 223, 150, 39), // Slightly lighter surfaces
+        onPrimary: Color.fromARGB(255, 34, 33, 33),
+        secondary: Color.fromARGB(255, 10, 59, 117),
+        onSecondary: Colors.white70, // Text/icons on secondary color
+        error: Colors.redAccent,
+        onError: Colors.black, // Text/icons on error color
+        surface: Color.fromARGB(255, 20, 20, 20),
+        onSurface: Color.fromARGB(255, 250, 248, 248), // Text/icons on surfaces
+      ),
+      useMaterial3: true,
+    );
+
     return MaterialApp.router(
-      title: 'English Course',
-      theme: ThemeData.dark(useMaterial3: true),
+      title: 'AngrezYogi',
+      theme: customDarkTheme, // Use the custom theme
       routerConfig: router,
     );
   }

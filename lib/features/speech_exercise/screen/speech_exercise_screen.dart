@@ -1,8 +1,12 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:myapp/core/shared_pref.dart';
+import 'package:myapp/core/utils.dart';
 import 'package:myapp/core/widgets/sublevel_video_player/sublevel_video_player.dart';
+import 'package:myapp/features/speech_exercise/providers/speech_provider.dart';
 import 'package:myapp/features/speech_exercise/widgets/exercise_sentence_card.dart';
+import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'package:myapp/models/speech_exercise/speech_exercise.dart';
 import 'package:video_player/video_player.dart';
@@ -12,6 +16,7 @@ class SpeechExerciseScreen extends ConsumerStatefulWidget {
   final String? uniqueId;
   final String? videoLocalPath;
   final List<String>? videoUrls;
+  final VoidCallback? goToNext;
 
   const SpeechExerciseScreen({
     super.key,
@@ -19,6 +24,7 @@ class SpeechExerciseScreen extends ConsumerStatefulWidget {
     this.videoLocalPath,
     this.videoUrls,
     this.uniqueId,
+    this.goToNext,
   });
 
   @override
@@ -29,14 +35,16 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
   VideoPlayerController? _exerciseController;
   bool _hasShownDialog = false;
   bool _isDialogOpen = false;
+  Function(bool)? _setIsSeeking;
 
-  void _onControllerInitialized(VideoPlayerController controller) {
+  void _onControllerInitialized(VideoPlayerController controller, Function(bool) setIsSeeking) {
     if (!mounted) return;
 
     _exerciseController?.removeListener(_exerciseListener);
 
     setState(() {
       _exerciseController = controller;
+      _setIsSeeking = setIsSeeking;
     });
     _exerciseController!.addListener(_exerciseListener);
   }
@@ -58,10 +66,35 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _exerciseController?.removeListener(_exerciseListener);
-    super.dispose();
+  Future<void> _onClose() async {
+    setState(() {
+      _isDialogOpen = false;
+    });
+
+    final localProgress = SharedPref.get(PrefKey.currProgress());
+
+    final isMaxLevel = isLevelAfter(
+      localProgress?.maxLevel ?? 0,
+      localProgress?.maxSubLevel ?? 0,
+      widget.exercise.level,
+      widget.exercise.index,
+    );
+
+    final isAdmin = ref.read(userControllerProvider).currentUser?.isAdmin ?? false;
+    final isPassed = ref.read(speechProvider.notifier).isPassed;
+
+    if (isAdmin || isMaxLevel || isPassed) {
+      setState(() {
+        _hasShownDialog = true;
+      });
+      return;
+    }
+
+    _setIsSeeking?.call(true);
+    await _exerciseController?.seekTo(Duration.zero);
+    await _exerciseController?.play();
+    _setIsSeeking?.call(false);
+    ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(false);
   }
 
   void _showTestSentenceDialog() {
@@ -70,11 +103,8 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
     if (!mounted) return;
 
     setState(() {
-      _hasShownDialog = true;
       _isDialogOpen = true;
     });
-
-    final isAdmin = ref.read(userControllerProvider).currentUser?.isAdmin ?? false;
 
     showDialog(
       context: context,
@@ -82,38 +112,34 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
       barrierColor: const Color.fromRGBO(0, 0, 0, 0.9),
       builder:
           (context) => PopScope(
-            canPop: isAdmin || kDebugMode,
-            onPopInvokedWithResult: (bool result, bool? didPop) {
-              setState(() {
-                _isDialogOpen = false;
-              });
+            canPop: true,
+            onPopInvokedWithResult: (bool result, bool? didPop) async {
+              if (_hasShownDialog) return;
+
+              await _onClose();
             },
             child: Dialog(
               backgroundColor: Colors.transparent,
               insetPadding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: const Color.fromRGBO(255, 255, 255, 0.75),
-                  borderRadius: BorderRadius.circular(30),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color.fromRGBO(255, 255, 255, 0.2),
-                      blurRadius: 12.0,
-                      spreadRadius: 4.0,
-                    ),
-                  ],
-                ),
-                child: SpeechExerciseCard(
-                  levelId: widget.exercise.levelId,
-                  audioFilename: widget.exercise.audioFilename,
-                  text: widget.exercise.text,
-                  onContinue: () {
-                    if (mounted) {
-                      _exerciseController?.play();
-                      Navigator.of(context).pop();
-                    }
-                  },
-                ),
+              child: SpeechExerciseCard(
+                levelId: widget.exercise.levelId,
+                audioFilename: widget.exercise.audioFilename,
+                text: widget.exercise.text,
+                onClose: () async {
+                  await _onClose();
+                  if (mounted) context.pop();
+                },
+                onContinue: () async {
+                  if (mounted) {
+                    setState(() {
+                      _hasShownDialog = true;
+                    });
+                    context.pop();
+                    await _exerciseController?.seekTo(Duration.zero);
+                    await _exerciseController?.play();
+                    widget.goToNext?.call();
+                  }
+                },
               ),
             ),
           ),

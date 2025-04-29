@@ -21,9 +21,7 @@ class SubLevelService {
       levelDTO.sub_levels.map((subLevelDTO) async {
         final videoData = await subLevelAPI.getVideo(levelDTO.id, subLevelDTO.videoFilename);
         final audioData =
-            subLevelDTO.isSpeechExercise
-                ? await subLevelAPI.getAudio(levelDTO.id, subLevelDTO.audioFilename!)
-                : null;
+            subLevelDTO.isSpeechExercise ? await subLevelAPI.getAudio(levelDTO.id, subLevelDTO.audioFilename!) : null;
 
         try {
           if (videoData != null) {
@@ -52,10 +50,7 @@ class SubLevelService {
 
   Future<void> getDialogueAudioFiles(LevelDTO levelDTO) async {
     final uniqueZipNums =
-        levelDTO.sub_levels
-            .expand((subLevelDto) => subLevelDto.dialogues)
-            .map((dialogue) => dialogue.zipNum)
-            .toSet();
+        levelDTO.sub_levels.expand((subLevelDto) => subLevelDto.dialogues).map((dialogue) => dialogue.zipNum).toSet();
 
     await Future.wait(
       uniqueZipNums.map((zipNum) async {

@@ -12,8 +12,7 @@ part 'initialize_api.g.dart';
 class InitializeResponse with _$InitializeResponse {
   const factory InitializeResponse({UserDTO? user}) = _InitializeResponse;
 
-  factory InitializeResponse.fromJson(Map<String, dynamic> json) =>
-      _$InitializeResponseFromJson(json);
+  factory InitializeResponse.fromJson(Map<String, dynamic> json) => _$InitializeResponseFromJson(json);
 }
 
 abstract class IInitializeAPI {

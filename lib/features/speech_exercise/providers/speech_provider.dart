@@ -35,6 +35,9 @@ class Speech extends _$Speech {
   @override
   SpeechState build() {
     _speech = stt.SpeechToText();
+
+    ref.onDispose(cancelListening);
+
     return const SpeechState();
   }
 
@@ -81,10 +84,7 @@ class Speech extends _$Speech {
       pauseFor: const Duration(minutes: 1),
       listenFor: const Duration(minutes: 1),
       onResult: _handleResult,
-      listenOptions: stt.SpeechListenOptions(
-        partialResults: true,
-        listenMode: stt.ListenMode.dictation,
-      ),
+      listenOptions: stt.SpeechListenOptions(partialResults: true, listenMode: stt.ListenMode.dictation),
     );
 
     state = state.copyWith(isListening: true);
@@ -95,13 +95,10 @@ class Speech extends _$Speech {
   }
 
   void _handleResult(SpeechRecognitionResult result) {
-    List<String> currRecognizedWords =
-        result.recognizedWords.split(' ').where((word) => word.isNotEmpty).toList();
+    List<String> currRecognizedWords = result.recognizedWords.split(' ').where((word) => word.isNotEmpty).toList();
 
     if (currRecognizedWords.isEmpty) {
-      state = state.copyWith(
-        offset: state.recognizedWords.where((word) => word.isNotEmpty).toList().length,
-      );
+      state = state.copyWith(offset: state.recognizedWords.where((word) => word.isNotEmpty).toList().length);
       return;
     }
 
@@ -115,9 +112,13 @@ class Speech extends _$Speech {
 
     for (int i = 0; i < newRecognizedWords.where((word) => word.isNotEmpty).length; i++) {
       if (i >= _targetWords.length) break;
-      String formatedTargetWord = _formatWord(_targetWords[i]);
-      String formatedRecognizedWord = _formatWord(newRecognizedWords[i]);
-      newWordMarking[i] = formatedTargetWord == formatedRecognizedWord;
+      String formattedTargetWord = _formatWord(_targetWords[i]);
+      String formattedRecognizedWord = _formatWord(newRecognizedWords[i]);
+      newWordMarking[i] = formattedTargetWord == formattedRecognizedWord;
+    }
+
+    if (newWordMarking.contains(false) || newWordMarking.every((mark) => mark == true)) {
+      stopListening();
     }
 
     state = state.copyWith(recognizedWords: newRecognizedWords, wordMarking: newWordMarking);
@@ -140,7 +141,7 @@ class Speech extends _$Speech {
   }
 
   Future<void> playAudio(String levelId, String audioFilename) async {
-    if (state.isPlayingAudio) {
+    if (audioPlayer.playing) {
       await audioPlayer.stop();
       state = state.copyWith(isPlayingAudio: false);
       return;
@@ -150,9 +151,13 @@ class Speech extends _$Speech {
 
     await audioPlayer.setFilePath(audioFile);
 
-    await audioPlayer.play();
-
     state = state.copyWith(isPlayingAudio: true);
+
+    await audioPlayer.play().then((_) async {
+      state = state.copyWith(isPlayingAudio: false);
+
+      await audioPlayer.stop();
+    });
   }
 
   void reset() {

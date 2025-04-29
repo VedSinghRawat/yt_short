@@ -16,11 +16,16 @@ part 'auth_controller.g.dart';
 class AuthControllerState {
   final bool loading;
   final String? error;
+  final bool loginInThisSession;
 
-  AuthControllerState({required this.loading, this.error});
+  AuthControllerState({required this.loading, this.error, required this.loginInThisSession});
 
-  AuthControllerState copyWith({bool? loading, String? error}) {
-    return AuthControllerState(loading: loading ?? this.loading, error: error ?? this.error);
+  AuthControllerState copyWith({bool? loading, String? error, bool? loginInThisSession}) {
+    return AuthControllerState(
+      loading: loading ?? this.loading,
+      error: error ?? this.error,
+      loginInThisSession: loginInThisSession ?? this.loginInThisSession,
+    );
   }
 }
 
@@ -31,7 +36,7 @@ class AuthController extends _$AuthController {
 
   @override
   AuthControllerState build() {
-    return AuthControllerState(loading: false);
+    return AuthControllerState(loading: false, loginInThisSession: false);
   }
 
   Future<void> signInWithGoogle(BuildContext context) async {
@@ -66,26 +71,56 @@ class AuthController extends _$AuthController {
           barrierDismissible: false, // User must choose
           builder: (BuildContext dialogContext) {
             return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(color: Theme.of(dialogContext).colorScheme.outline.withValues(alpha: 0.2), width: 2.0),
+              ),
               title: const Text('आपकी पसंदीदा भाषा क्या है? / Aapki pasandida bhasha kya hai?'),
               content: const Text(
                 'वह भाषा चुनें जिसमें आप सबसे अधिक सहज हैं। / Vo bhasha chunen jis mein aap sabse adhik sahaj hain.',
               ),
               actions: <Widget>[
                 TextButton(
-                  child: const Text('हिन्दी'),
+                  style: TextButton.styleFrom(
+                    backgroundColor: Theme.of(dialogContext).colorScheme.primary,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(color: Theme.of(dialogContext).colorScheme.onPrimary),
+                    ),
+                  ),
                   onPressed: () => Navigator.of(dialogContext).pop(PrefLang.hindi),
+                  child: Text(
+                    'हिन्दी',
+                    style: TextStyle(
+                      color: Theme.of(dialogContext).colorScheme.onSecondary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
                 TextButton(
-                  child: const Text('Hinglish'),
+                  style: TextButton.styleFrom(
+                    backgroundColor: Theme.of(dialogContext).colorScheme.secondary,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(color: Theme.of(dialogContext).colorScheme.onSecondary),
+                    ),
+                  ),
                   onPressed: () => Navigator.of(dialogContext).pop(PrefLang.hinglish),
+                  child: Text(
+                    'Hinglish',
+                    style: TextStyle(
+                      color: Theme.of(dialogContext).colorScheme.onSecondary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ],
             );
           },
         );
 
-        // If user somehow dismissed dialog without choosing (though barrierDismissible=false)
-        // or if dialog returns null, default to hinglish and save it.
         final finalLang = chosenLang ?? PrefLang.hinglish;
         await userController.updatePrefLang(finalLang);
       }
@@ -97,22 +132,19 @@ class AuthController extends _$AuthController {
       final level = progress?.maxLevel ?? 1;
       final subLevel = progress?.maxSubLevel ?? 1;
 
-      if (context.mounted &&
-          (user.maxLevel > level || (user.maxLevel == level && user.maxSubLevel > subLevel))) {
+      if (context.mounted && (user.maxLevel > level || (user.maxLevel == level && user.maxSubLevel > subLevel))) {
         await showLevelChangeConfirmationDialog(context, user, ref);
       } else if (progress != null) {
         SharedPref.store(PrefKey.currProgress(userEmail: user.email), progress);
       }
+
+      state = state.copyWith(loginInThisSession: true);
     } catch (e, stackTrace) {
-      developer.log(
-        'Error in AuthController.signInWithGoogle',
-        error: e.toString(),
-        stackTrace: stackTrace,
-      );
+      developer.log('Error in AuthController.signInWithGoogle', error: e.toString(), stackTrace: stackTrace);
       final userController = ref.read(userControllerProvider.notifier);
       userController.removeCurrentUser();
       if (context.mounted) {
-        showErrorSnackBar(context, e.toString());
+        showSnackBar(context, message: e.toString(), type: SnackBarType.error);
       }
     } finally {
       _isProcessing = false;
@@ -159,18 +191,25 @@ class AuthController extends _$AuthController {
 
       if (user != null) {
         final activityLogs = SharedPref.get(PrefKey.activityLogs);
+
         if (activityLogs != null) {
-          await activityLogController.syncActivityLogs(activityLogs);
-          await SharedPref.removeValue(PrefKey.activityLogs);
+          try {
+            await activityLogController.syncActivityLogs(activityLogs);
+            await SharedPref.removeValue(PrefKey.activityLogs);
+          } catch (e, stackTrace) {
+            developer.log('Error in AuthController.signOut', error: e.toString(), stackTrace: stackTrace);
+          }
         }
+
         await authAPI.signOut();
+
         userController.removeCurrentUser();
         await Future.delayed(Duration.zero); // Allow UI to update
       }
     } catch (e, stackTrace) {
       developer.log('Error in AuthController.signOut', error: e.toString(), stackTrace: stackTrace);
       if (context.mounted) {
-        showErrorSnackBar(context, e.toString());
+        showSnackBar(context, message: e.toString(), type: SnackBarType.error);
       }
     } finally {
       _isProcessing = false;

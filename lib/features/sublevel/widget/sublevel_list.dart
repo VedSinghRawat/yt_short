@@ -12,31 +12,32 @@ import 'package:myapp/core/services/path_service.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/widgets/loader.dart';
+import 'package:myapp/core/widgets/scroll_indicator.dart';
 import 'package:myapp/core/widgets/sublevel_video_player/sublevel_video_player.dart';
 import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'package:myapp/features/sublevel/widget/error_page.dart';
 import 'package:myapp/features/speech_exercise/screen/speech_exercise_screen.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
+import 'dart:async';
 
 class SublevelsList extends ConsumerStatefulWidget {
   final List<SubLevel> sublevels;
   final Set<String> loadingIds;
   final Future<void> Function(int index, PageController controller)? onVideoChange;
 
-  const SublevelsList({
-    super.key,
-    required this.sublevels,
-    this.onVideoChange,
-    required this.loadingIds,
-  });
+  const SublevelsList({super.key, required this.sublevels, this.onVideoChange, required this.loadingIds});
 
   @override
   ConsumerState<SublevelsList> createState() => _SublevelsListState();
 }
 
-class _SublevelsListState extends ConsumerState<SublevelsList> {
+class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTickerProviderStateMixin {
   late PageController _pageController;
+  late AnimationController _bounceController;
+  late Animation<double> _bounceAnimation;
+  bool _showAnimation = false;
+  Timer? _animationTimer;
 
   void _jumpToPage(Duration timeStamp) async {
     final userEmail = ref.read(userControllerProvider).currentUser?.email;
@@ -61,10 +62,28 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
     );
   }
 
+  void _startAnimationTimer() {
+    _showAnimation = true;
+    _animationTimer?.cancel();
+    _animationTimer = Timer(const Duration(milliseconds: 3750), () {
+      if (mounted) {
+        setState(() {
+          _showAnimation = false;
+        });
+      }
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
+    _bounceController = AnimationController(duration: const Duration(milliseconds: 1000), vsync: this);
+
+    _bounceAnimation = Tween<double>(
+      begin: 0.0,
+      end: 30.0,
+    ).animate(CurvedAnimation(parent: _bounceController, curve: Curves.easeInOut));
 
     WidgetsBinding.instance.addPostFrameCallback(_jumpToPage);
   }
@@ -79,12 +98,24 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
 
   @override
   void dispose() {
+    _bounceController.dispose();
     _pageController.dispose();
+    _animationTimer?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(sublevelControllerProvider.select((value) => value.hasFinishedVideo), (previous, next) {
+      if (next) {
+        _startAnimationTimer();
+        _bounceController.repeat(reverse: true);
+      } else {
+        _bounceController.stop();
+        _bounceController.reset();
+      }
+    });
+
     return RefreshIndicator(
       onRefresh: () async {
         if (widget.sublevels[0].level == 1 && widget.sublevels[0].index == 0) return;
@@ -98,6 +129,11 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
         itemCount: widget.sublevels.length + 1,
         scrollDirection: Axis.vertical,
         onPageChanged: (index) async {
+          _bounceController.stop();
+          _bounceController.reset();
+          setState(() {
+            _showAnimation = false;
+          });
           await widget.onVideoChange?.call(index, _pageController);
         },
         itemBuilder: (context, index) {
@@ -106,9 +142,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
           final isLastSublevel = index == widget.sublevels.length;
 
           final isLoading =
-              sublevel == null
-                  ? widget.loadingIds.isNotEmpty
-                  : widget.loadingIds.contains(sublevel.levelId);
+              sublevel == null ? widget.loadingIds.isNotEmpty : widget.loadingIds.contains(sublevel.levelId);
 
           if ((isLastSublevel || sublevel == null) && !isLoading) {
             final error = ref.watch(sublevelControllerProvider).error;
@@ -131,6 +165,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
           if (sublevel == null) {
             return const Loader();
           }
+
           final positionText = '${sublevel.level}-${sublevel.index}';
 
           String? localPath = PathService.videoLocal(sublevel.levelId, sublevel.videoFilename);
@@ -138,9 +173,8 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
           final urls =
               [BaseUrl.cloudflare, BaseUrl.s3]
                   .map(
-                    (url) => ref
-                        .read(subLevelServiceProvider)
-                        .getVideoUrl(sublevel.levelId, sublevel.videoFilename, url),
+                    (url) =>
+                        ref.read(subLevelServiceProvider).getVideoUrl(sublevel.levelId, sublevel.videoFilename, url),
                   )
                   .toList();
 
@@ -148,30 +182,48 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
             localPath = null;
           }
 
-          return Stack(
-            children: [
-              Center(
-                child: sublevel.when(
-                  video:
-                      (video) => SublevelVideoPlayer(
-                        key: Key(positionText),
-                        uniqueId: positionText,
-                        videoLocalPath: localPath,
-                        videoUrls: urls,
-                        dialogues: sublevel.dialogues,
+          return AnimatedBuilder(
+            animation: _bounceAnimation,
+            builder: (context, child) {
+              return Transform.translate(
+                offset: Offset(0, _showAnimation ? -_bounceAnimation.value : 0),
+                child: Stack(
+                  children: [
+                    Center(
+                      child: sublevel.when(
+                        video:
+                            (video) => SublevelVideoPlayer(
+                              key: Key(positionText),
+                              uniqueId: positionText,
+                              videoLocalPath: localPath,
+                              videoUrls: urls,
+                              dialogues: sublevel.dialogues,
+                            ),
+                        speechExercise:
+                            (speechExercise) => SpeechExerciseScreen(
+                              key: Key(positionText),
+                              uniqueId: positionText,
+                              exercise: speechExercise,
+                              videoLocalPath: localPath,
+                              videoUrls: urls,
+                              goToNext: () {
+                                _pageController.animateToPage(
+                                  index + 1,
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeInOut,
+                                );
+                              },
+                            ),
                       ),
-                  speechExercise:
-                      (speechExercise) => SpeechExerciseScreen(
-                        key: Key(positionText),
-                        uniqueId: positionText,
-                        exercise: speechExercise,
-                        videoLocalPath: localPath,
-                        videoUrls: urls,
-                      ),
+                    ),
+
+                    // Positioned(top: 16, right: 16, child: _LevelText(positionText: positionText)),
+                    if (_showAnimation)
+                      const Positioned(bottom: 40, left: 0, right: 0, child: Center(child: ScrollIndicator())),
+                  ],
                 ),
-              ),
-              Positioned(top: 16, right: 16, child: _LevelText(positionText: positionText)),
-            ],
+              );
+            },
           );
         },
       ),
@@ -179,23 +231,23 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
   }
 }
 
-class _LevelText extends StatelessWidget {
-  final String positionText;
+// class _LevelText extends StatelessWidget {
+//   final String positionText;
 
-  const _LevelText({required this.positionText});
+//   const _LevelText({required this.positionText});
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: const Color.fromRGBO(0, 0, 0, 0.7),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        'Level $positionText',
-        style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return Container(
+//       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+//       decoration: BoxDecoration(
+//         color: Theme.of(context).colorScheme.surface.withValues(alpha: .7),
+//         borderRadius: BorderRadius.circular(8),
+//       ),
+//       child: Text(
+//         'Level $positionText',
+//         style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.bold),
+//       ),
+//     );
+//   }
+// }

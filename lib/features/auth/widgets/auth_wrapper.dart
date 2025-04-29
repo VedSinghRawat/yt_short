@@ -13,9 +13,7 @@ class AuthWrapper extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user =
-        ref.watch(userControllerProvider.select((state) => state.currentUser)) ??
-        SharedPref.get(PrefKey.user);
+    final user = ref.watch(userControllerProvider.select((state) => state.currentUser)) ?? SharedPref.get(PrefKey.user);
 
     if (user == null) {
       WidgetsBinding.instance.addPostFrameCallback((timeStamp) {

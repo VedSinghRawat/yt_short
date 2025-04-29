@@ -6,54 +6,58 @@ import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/error/failure.dart';
 
-void _showCustomSnackBar(
+enum SnackBarType { error, info, success }
+
+void showSnackBar(
   BuildContext context, {
   required String message,
-  Color? backgroundColor,
+  SnackBarType type = SnackBarType.info,
   Duration duration = const Duration(seconds: 3),
-  IconData? icon,
 }) {
   if (!context.mounted) return;
 
+  final (backgroundColor, icon) = switch (type) {
+    SnackBarType.error => (Colors.red, Icons.error_outline),
+    SnackBarType.info => (Colors.blue, Icons.info_outline),
+    SnackBarType.success => (Colors.green, Icons.check_circle_outline),
+  };
+
   final messenger = ScaffoldMessenger.of(context);
+  final deviceHeight = MediaQuery.of(context).size.height;
+
   messenger.clearSnackBars();
   messenger.showSnackBar(
     SnackBar(
-      content: Row(
-        children: [
-          if (icon != null) ...[Icon(icon, color: Colors.white), const SizedBox(width: 12)],
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.white),
+      content: IntrinsicHeight(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Icon(icon, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.white),
+              ),
             ),
-          ),
-        ],
+            const VerticalDivider(color: Colors.white, thickness: 1),
+            IconButton(onPressed: () => messenger.clearSnackBars(), icon: const Icon(Icons.close, color: Colors.white)),
+          ],
+        ),
       ),
-      backgroundColor: backgroundColor ?? Colors.grey[800],
+      backgroundColor: backgroundColor,
       behavior: SnackBarBehavior.floating,
       duration: duration,
-      margin: const EdgeInsets.all(16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      margin: EdgeInsets.only(bottom: deviceHeight - 200, left: 16, right: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      padding: const EdgeInsets.only(left: 10, right: 0, top: 10, bottom: 10),
     ),
   );
 }
 
-void showErrorSnackBar(BuildContext context, String message) {
-  _showCustomSnackBar(
-    context,
-    message: message,
-    backgroundColor: Colors.grey[850],
-    duration: const Duration(seconds: 4),
-    icon: Icons.error_outline,
-  );
-}
-
-void showSnackBar(BuildContext context, String text) {
-  _showCustomSnackBar(context, message: text);
-}
-
+// check if levelA is after levelB if levelA is after levelB then return true
 bool isLevelAfter(int levelA, int subLevelA, int levelB, int subLevelB) {
   return levelA > levelB || (levelA == levelB && subLevelA > subLevelB);
 }
