@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:android_play_install_referrer/android_play_install_referrer.dart';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +14,7 @@ import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/features/sublevel/level_controller.dart';
 import 'package:myapp/features/user/user_controller.dart';
 import 'dart:developer' as developer;
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 // Global key for navigation
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -34,6 +34,8 @@ class InitializeService {
 
   Future<void> initialize() async {
     try {
+      await MobileAds.instance.initialize();
+
       // order matters
       await SharedPref.init(); // first init shared pref
       await InfoService.init(); // then init info service

@@ -122,9 +122,7 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
               backgroundColor: Colors.transparent,
               insetPadding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
               child: SpeechExerciseCard(
-                levelId: widget.exercise.levelId,
-                audioFilename: widget.exercise.audioFilename,
-                text: widget.exercise.text,
+                speechExercise: widget.exercise,
                 onClose: () async {
                   await _onClose();
                   if (mounted) context.pop();

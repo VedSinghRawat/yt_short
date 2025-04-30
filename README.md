@@ -10,9 +10,8 @@ dart run tools/setup.dart
 -> Configure your debugger for flavour (https://docs.flutter.dev/deployment/flavors)
 OR
 -> Run "flutter run --flavor dev" in terminal
-            |
-            |
-            ----> For production
+
+----> For production
             1. register production admob project application_id in "/android/app/src/prod/AndroidManifest.xml"
             2. Create a interstistial unit and add the unit id in .env
 
@@ -29,3 +28,12 @@ OR
                                         this "export PATH="$PATH":"$HOME/.   pub-cache/bin""
 
 4. From your Flutter project directory -> "flutterfire configure"
+
+// Test Analytics (firebase debug mode)
+
+1. To enable Analytics debug mode on an Android device, execute the following commands: 
+    -> adb shell setprop debug.firebase.analytics.app  com.example.codeyogienglishcourse
+
+    This behavior persists until you explicitly disable debug mode by executing the following command:
+    -> adb shell setprop debug.firebase.analytics.app .none.
+
