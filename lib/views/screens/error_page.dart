@@ -16,7 +16,7 @@ class ErrorPage extends StatelessWidget {
           Text(
             text,
             overflow: TextOverflow.clip,
-            style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.onBackground),
+            style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.onSurface),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),

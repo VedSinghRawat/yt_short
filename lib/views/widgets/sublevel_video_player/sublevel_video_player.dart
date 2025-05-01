@@ -446,7 +446,7 @@ class PlayPauseButton extends StatelessWidget {
       duration: const Duration(milliseconds: 400),
       child: Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface.withOpacity(0.6),
+          color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.6),
           shape: BoxShape.circle,
         ),
         padding: const EdgeInsets.all(20),

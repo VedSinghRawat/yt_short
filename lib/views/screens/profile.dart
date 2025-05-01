@@ -186,7 +186,7 @@ class ProfileScreen extends ConsumerWidget {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.secondary),
             ),
             Divider(
-              color: theme.colorScheme.onPrimary.withOpacity(0.5),
+              color: theme.colorScheme.onPrimary.withValues(alpha: .5),
               height: 20,
             ), // Adjust divider color for contrast
             ...children,

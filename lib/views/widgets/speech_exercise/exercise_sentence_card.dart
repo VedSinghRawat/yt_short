@@ -128,7 +128,7 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                                   borderRadius: BorderRadius.circular(15.0),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.white.withOpacity(0.25),
+                                      color: Colors.white.withValues(alpha: .25),
                                       spreadRadius: 2,
                                       blurRadius: 6,
                                       offset: const Offset(0, 3),
@@ -276,7 +276,7 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                               borderRadius: BorderRadius.circular(15.0),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.1), // Subtle shadow
+                                  color: Colors.black.withValues(alpha: 0.1), // Subtle shadow
                                   spreadRadius: 1,
                                   blurRadius: 4,
                                   offset: const Offset(0, 2),
