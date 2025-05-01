@@ -13,7 +13,7 @@ import 'package:myapp/models/sublevel/sublevel.dart';
 import '../../features/sublevel/sublevel_controller.dart';
 import '../../features/sublevel/widget/sublevel_list.dart';
 import '../../features/user/user_controller.dart';
-import 'package:myapp/core/services/interstitial_ad_service.dart';
+import 'package:myapp/core/controllers/interstitial_ad_controller.dart';
 import 'package:myapp/core/widgets/interstitial_ad_handler.dart';
 import 'dart:async';
 import 'package:myapp/core/services/analytics_service.dart';
@@ -282,7 +282,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     _videosWatched++;
 
-    if (_videosWatched > dotenv.getInt("AD_SUBLEVEL_COUNT")) {
+    if (_videosWatched > AppConstants.adSubLevelCount) {
       ref.read(interstitialAdNotifierProvider.notifier).setShowAd(true);
       return;
     }

@@ -70,4 +70,6 @@ class AppConstants {
 
   // UI constants
   static const String kViewCloseActionName = 'closeAction';
+
+  static const int adSubLevelCount = 4;
 }

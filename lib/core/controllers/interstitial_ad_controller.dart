@@ -4,7 +4,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-part 'interstitial_ad_service.g.dart';
+part 'interstitial_ad_controller.g.dart';
 
 class InterstitialAdState {
   final bool isLoading;
@@ -40,22 +40,22 @@ class InterstitialAdNotifier extends _$InterstitialAdNotifier {
         adUnitId: dotenv.env["INTERSTITIAL_AD_UNIT_ID"]!,
         request: const AdRequest(),
         adLoadCallback: InterstitialAdLoadCallback(
-          onAdLoaded: (ad) {
+          onAdLoaded: (ad) async {
             ad.fullScreenContentCallback = FullScreenContentCallback(
-              onAdDismissedFullScreenContent: (ad) {
-                ad.dispose();
+              onAdDismissedFullScreenContent: (ad) async {
+                await ad.dispose();
                 state = state.copyWith(showAd: false);
                 onAdFinished?.call();
               },
-              onAdFailedToShowFullScreenContent: (ad, error) {
-                ad.dispose();
+              onAdFailedToShowFullScreenContent: (ad, error) async {
+                await ad.dispose();
                 state = state.copyWith(isLoading: false, error: error.toString());
                 onAdFinished?.call();
               },
             );
 
             state = state.copyWith(isLoading: false, error: null);
-            ad.show();
+            await ad.show();
           },
           onAdFailedToLoad: (error) {
             state = state.copyWith(isLoading: false, error: error.toString());

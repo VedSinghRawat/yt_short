@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../services/interstitial_ad_service.dart';
+import '../controllers/interstitial_ad_controller.dart';
 import '../widgets/loader.dart';
 
 class InterstitialAdHandler extends ConsumerStatefulWidget {
