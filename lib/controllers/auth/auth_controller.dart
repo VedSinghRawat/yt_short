@@ -9,7 +9,7 @@ import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/views/screens/sign_in_screen.dart';
 import 'package:myapp/models/user/user.dart'; // Import User model for PrefLang
 import 'dart:async';
-import '../../apis/auth_api.dart';
+import '../../apis/auth/auth_api.dart';
 import '../../core/utils.dart';
 import '../user/user_controller.dart';
 

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:fpdart/fpdart.dart';
 import 'package:myapp/core/console.dart';
-import 'package:myapp/core/error/failure.dart';
+import 'package:myapp/core/error/api_error.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/activity_log/activity_log.dart';
@@ -24,7 +24,7 @@ class PrefKey<ST, LT> {
   static const isFirstLaunch = PrefKey<bool, Unit>(name: 'isFirstLaunch');
   static const orderedIds = PrefKey<List<String>, String>(name: 'orderedIds');
   static const doneToday = PrefKey<int, Unit>(name: 'doneToday');
-  static const user = PrefKey<UserModel, Unit>(name: 'user', fromJson: UserModel.fromJson);
+  static const user = PrefKey<User, Unit>(name: 'user', fromJson: User.fromJson);
 
   static const activityLogs = PrefKey<List<ActivityLog>, ActivityLog>(
     fromJson: ActivityLog.fromJson,
@@ -103,7 +103,7 @@ class SharedPref {
 
       return result as ST;
     } catch (e) {
-      Console.error(Failure(message: e.toString()), StackTrace.current);
+      Console.error(APIError(message: e.toString()), StackTrace.current);
 
       rethrow;
     }
@@ -131,7 +131,7 @@ class SharedPref {
 
       await _pref.setString(destructedKey.key, validVal);
     } catch (e) {
-      Console.error(Failure(message: e.toString()), StackTrace.current);
+      Console.error(APIError(message: e.toString()), StackTrace.current);
 
       rethrow;
     }

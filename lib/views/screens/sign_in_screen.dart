@@ -108,7 +108,7 @@ class SignInScreen extends ConsumerWidget {
   }
 }
 
-showLevelChangeConfirmationDialog(BuildContext context, UserModel user, Ref ref) {
+showLevelChangeConfirmationDialog(BuildContext context, User user, Ref ref) {
   return showConfirmationDialog(
     context,
     question: ref

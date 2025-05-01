@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:myapp/apis/activity_log_api.dart';
+import 'package:myapp/apis/activityLog/activity_log_api.dart';
 import 'package:myapp/models/activity_log/activity_log.dart';
 
 class ActivityLogControllerState {

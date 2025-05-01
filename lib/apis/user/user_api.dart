@@ -1,8 +1,10 @@
 import 'dart:developer' as developer;
 import 'package:dio/dio.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/services/api/api_service.dart';
-import '../models/models.dart';
+import 'package:myapp/models/models.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'user_api.g.dart';
 
 abstract class IUserAPI {
   Future<UserDTO> sync(String levelId, int subLevel);
@@ -55,6 +57,7 @@ class UserAPI implements IUserAPI {
   }
 }
 
-final userAPIProvider = Provider<IUserAPI>((ref) {
+@riverpod
+UserAPI userAPI(ref) {
   return UserAPI(ref.read(apiServiceProvider));
-});
+}

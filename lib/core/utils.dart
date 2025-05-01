@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:myapp/constants.dart';
-import 'package:myapp/core/error/failure.dart';
+import 'package:myapp/core/error/api_error.dart';
 import 'package:myapp/models/user/user.dart';
 
 enum SnackBarType { error, info, success }
@@ -78,7 +78,7 @@ num getMax(List<num?> numbers) {
 }
 
 // type alias for fpdart
-typedef FutureEither<T> = Future<Either<Failure, T>>;
+typedef FutureEither<T> = Future<Either<APIError, T>>;
 
 typedef FutureVoid = FutureEither<void>;
 
@@ -86,7 +86,7 @@ final dioConnectionErrors = {DioExceptionType.connectionError};
 
 /// Return user friendly error message based on dio exception type
 String parseError(DioExceptionType? type, PrefLang lang) {
-  return AppConstants.kErrorMessages(type, lang);
+  return AppConstants.kDioErrorMessages(type, lang);
 }
 
 bool isPrimitive(dynamic value) {

@@ -1,7 +1,7 @@
 import 'dart:developer' as dev;
 
 import 'package:flutter/foundation.dart';
-import 'package:myapp/core/error/failure.dart';
+import 'package:myapp/core/error/api_error.dart';
 import 'dart:math';
 
 class Console {
@@ -28,7 +28,7 @@ class Console {
     dev.log('$message time: ${DateTime.now()}', name: name ?? '[log] Console');
   }
 
-  static void error(Failure failure, StackTrace stackTrace) {
+  static void error(APIError failure, StackTrace stackTrace) {
     if (!kDebugMode) return;
     dev.log(failure.message, error: failure, stackTrace: stackTrace, name: '[log] error', level: 1000);
   }
@@ -50,7 +50,7 @@ class Console {
     final stopwatch = _stopwatches[name];
 
     if (stopwatch == null) {
-      error(Failure(message: 'No stopwatch found for name: $name'), StackTrace.current);
+      error(APIError(message: 'No stopwatch found for name: $name'), StackTrace.current);
       return;
     }
 

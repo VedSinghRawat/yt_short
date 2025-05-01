@@ -1,12 +1,15 @@
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:myapp/apis/sublevel_api.dart';
+import 'package:myapp/apis/sublevel/sublevel_api.dart';
 import 'package:myapp/core/console.dart';
 import 'package:myapp/services/api/api_service.dart';
 import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/level/level_service.dart';
 import 'package:myapp/services/path/path_service.dart';
 import 'package:myapp/models/models.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'sublevel_service.g.dart';
 
 class SubLevelService {
   final LevelService levelService;
@@ -15,7 +18,7 @@ class SubLevelService {
 
   final ISubLevelAPI subLevelAPI;
 
-  Future<void> getFile(SubLevelDTO subLevelDTO, String levelId) async {
+  Future<void> downloadFiles(SubLevelDTO subLevelDTO, String levelId) async {
     final videoData = await subLevelAPI.getVideo(levelId, subLevelDTO.videoFilename);
     final audioData =
         subLevelDTO.isSpeechExercise
@@ -35,9 +38,7 @@ class SubLevelService {
     } catch (e) {
       Console.log('Error saving video file for ${subLevelDTO.videoFilename}: $e');
     }
-  }
 
-  Future<void> getDialogueAudioFiles(SubLevelDTO subLevelDTO) async {
     final uniqueZipNums = subLevelDTO.dialogues.map((dialogue) => dialogue.zipNum).toSet();
 
     await Future.wait(
@@ -76,9 +77,9 @@ class SubLevelService {
   }
 }
 
-final subLevelServiceProvider = Provider<SubLevelService>((ref) {
+@riverpod
+SubLevelService subLevelService(Ref ref) {
   final subLevelAPI = ref.watch(subLevelAPIProvider);
   final levelService = ref.watch(levelServiceProvider);
-
   return SubLevelService(subLevelAPI, levelService);
-});
+}

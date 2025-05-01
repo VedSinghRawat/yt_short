@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:android_play_install_referrer/android_play_install_referrer.dart';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +14,9 @@ import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/controllers/level/level_controller.dart';
 import 'package:myapp/controllers/user/user_controller.dart';
 import 'dart:developer' as developer;
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'initialize_service.g.dart';
 
 // Global key for navigation
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -136,14 +138,15 @@ class InitializeService {
   }
 }
 
-final initializeServiceProvider = FutureProvider<InitializeService>((ref) async {
+@riverpod
+Future<InitializeService> initializeService(Ref ref) async {
   final service = InitializeService(
     ref: ref,
-    initializeAPI: ref.read(initializeAPIService),
-    levelController: ref.read(levelControllerProvider.notifier),
-    userController: ref.read(userControllerProvider.notifier),
+    initializeAPI: ref.watch(initializeAPIProvider),
+    levelController: ref.watch(levelControllerProvider.notifier),
+    userController: ref.watch(userControllerProvider.notifier),
   );
 
   await service.initialize();
   return service;
-});
+}

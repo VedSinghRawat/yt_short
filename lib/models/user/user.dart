@@ -8,10 +8,10 @@ part 'user.g.dart';
 enum PrefLang { hindi, hinglish }
 
 @freezed
-class UserModel with _$UserModel implements SharedPrefClass {
-  const UserModel._();
+class User with _$User implements SharedPrefClass {
+  const User._();
 
-  const factory UserModel({
+  const factory User({
     required String email,
     required String levelId,
     required int subLevel,
@@ -28,14 +28,14 @@ class UserModel with _$UserModel implements SharedPrefClass {
     required PrefLang? prefLang,
   }) = _UserModel;
 
-  factory UserModel.fromJson(Map<String, dynamic> json) => _$UserModelFromJson(json);
+  factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
 
-  factory UserModel.fromUserDTO(UserDTO dto, int level, int maxLevel) {
+  factory User.fromUserDTO(UserDTO dto, int level, int maxLevel) {
     final jsonDTO = dto.toJson();
     jsonDTO['level'] = level;
     jsonDTO['maxLevel'] = maxLevel;
 
-    return UserModel.fromJson(jsonDTO);
+    return User.fromJson(jsonDTO);
   }
 
   bool get isAdmin => role == UserRole.admin;

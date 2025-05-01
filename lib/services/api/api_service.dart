@@ -1,12 +1,17 @@
+import 'dart:developer' as developer;
+
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:myapp/constants.dart';
+import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/controllers/obstructiveError/obstructive_error_controller.dart';
+import 'package:myapp/core/error/api_error.dart';
+import 'package:myapp/core/utils.dart';
+import 'package:myapp/models/user/user.dart';
 import 'package:myapp/services/googleSignIn/google_sign_in.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -47,10 +52,15 @@ class ApiService {
   final Dio _dio = Dio();
   final GoogleSignIn _googleSignIn;
   final ObstructiveErrorController _obstructiveErrorController;
+  final PrefLang _lang;
 
-  ApiService({required GoogleSignIn googleSignIn, required ObstructiveErrorController obstructiveErrorController})
-    : _googleSignIn = googleSignIn,
-      _obstructiveErrorController = obstructiveErrorController;
+  ApiService({
+    required GoogleSignIn googleSignIn,
+    required ObstructiveErrorController obstructiveErrorController,
+    required PrefLang lang,
+  }) : _googleSignIn = googleSignIn,
+       _obstructiveErrorController = obstructiveErrorController,
+       _lang = lang;
 
   Future<void> setToken(String token) async {
     await SharedPref.store(PrefKey.googleIdToken, token);
@@ -88,32 +98,30 @@ class ApiService {
         return e.response as Response<T>;
       }
 
-      if ((e.response?.statusCode ?? 0) != 304) {
-        developer.log('ApiError on uri $baseUrl: ${e.response?.data}');
-      }
-
-      if (e.response?.data == null ||
+      if (!(e.response?.data == null ||
           e.response?.data is! Map<String, dynamic> ||
           e.response?.data['message'] == null ||
-          e.response?.data['message'].toLowerCase().contains('token used too late') == false) {
-        rethrow;
+          e.response?.data['message'].toLowerCase().contains('token used too late') == false)) {
+        final account = await _googleSignIn.signInSilently();
+
+        if (account != null) {
+          final auth = await account.authentication;
+
+          final idToken = auth.idToken;
+
+          if (idToken == null) rethrow;
+
+          await setToken(idToken);
+
+          return await call<T>(params: params);
+        }
       }
 
-      final account = await _googleSignIn.signInSilently();
+      developer.log('Error in ApiService.call: $e');
 
-      if (account != null) {
-        final auth = await account.authentication;
+      final isBadRes = e.response?.statusCode != null && e.response!.statusCode! > 400 && e.response!.statusCode! < 511;
 
-        final idToken = auth.idToken;
-
-        if (idToken == null) rethrow;
-
-        await setToken(idToken);
-
-        return await call<T>(params: params);
-      }
-
-      rethrow;
+      throw APIError.fromJson(isBadRes ? e.response?.data : parseError(e.type, _lang), trace: e.stackTrace);
     }
   }
 
@@ -174,5 +182,6 @@ final apiServiceProvider = Provider<ApiService>((ref) {
   return ApiService(
     googleSignIn: ref.read(googleSignInProvider),
     obstructiveErrorController: ref.read(obstructiveErrorControllerProvider.notifier),
+    lang: ref.read(langControllerProvider),
   );
 });

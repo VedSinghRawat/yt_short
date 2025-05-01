@@ -3,11 +3,10 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
-import 'package:myapp/apis/level_api.dart';
+import 'package:myapp/apis/level/level_api.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
-import 'package:myapp/core/error/failure.dart';
+import 'package:myapp/core/error/api_error.dart';
 import 'package:myapp/services/path/path_service.dart';
-import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/level/level.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -25,7 +24,7 @@ class LevelService {
     return file.exists();
   }
 
-  Future<void> _saveLevel(LevelDTO level) async {
+  Future<void> setLocalLevel(LevelDTO level) async {
     final file = File(PathService.levelJsonFull(level.id));
 
     await file.parent.create(recursive: true);
@@ -46,34 +45,26 @@ class LevelService {
   }
 
   FutureEither<LevelDTO> getLevel(String id, Ref ref) async {
-    try {
-      final level = await levelApi.get(id);
+    final level = await levelApi.get(id);
 
-      if (level != null) {
-        await _saveLevel(level);
+    if (level != null) {
+      await setLocalLevel(level);
 
-        return right(level);
-      }
-
-      final localLevel = await getLocalLevel(id);
-
-      if (localLevel == null) {
-        return left(
-          Failure(
-            message: parseError(DioExceptionType.connectionError, ref.read(langControllerProvider)),
-            trace: StackTrace.current,
-            type: DioExceptionType.connectionError,
-          ),
-        );
-      }
-
-      return right(localLevel);
-    } catch (e, st) {
-      //remove eTag from shared pref
-      await SharedPref.removeValue(PrefKey.eTag(PathService.levelJson(id)));
-
-      return left(Failure(message: e.toString(), trace: st));
+      return right(level);
     }
+
+    final localLevel = await getLocalLevel(id);
+
+    if (localLevel == null) {
+      return left(
+        APIError(
+          message: parseError(DioExceptionType.connectionError, ref.read(langControllerProvider)),
+          trace: StackTrace.current,
+        ),
+      );
+    }
+
+    return right(localLevel);
   }
 }
 

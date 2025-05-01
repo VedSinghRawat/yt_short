@@ -32,13 +32,14 @@ class StorageCleanupService {
   }
 
   /// Removes least-important cached levels while protecting nearby levels
-  Future<void> cleanLocalFiles(List<String> localLevelIds, String currentId) async {
+  Future<void> cleanLocalFiles(String currentLevelId) async {
+    final localLevelIds = await FileService.listNames(Directory(PathService.levelsDocDir), type: EntitiesType.folders);
     final orderedIds = levelController.orderedIds;
     if (orderedIds == null) return;
 
     final Map<String, int> idToIndexMap = {for (int i = 0; i < orderedIds.length; i++) orderedIds[i]: i};
 
-    final int currentIndex = idToIndexMap[currentId] ?? -1;
+    final int currentIndex = idToIndexMap[currentLevelId] ?? -1;
 
     // renaming the localLevelIds to deletableIds before sorting for semantics
     final deletableLevelIds = localLevelIds;

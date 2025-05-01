@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
+import 'package:myapp/controllers/level/level_controller.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/utils.dart';
@@ -29,7 +30,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      await ref.read(sublevelControllerProvider.notifier).fetchSublevels();
+      await ref.read(levelControllerProvider.notifier).fetchLevels();
     });
   }
 
@@ -57,10 +58,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       message: ref
           .read(langControllerProvider.notifier)
           .choose(
-            const PrefLangText(
-              hindi: 'कृपया आगे बढ़ने से पहले वर्तमान वीडियो पूरा करें',
-              hinglish: 'Kripya aage badne se pehle current video ko complete karein',
-            ),
+            hindi: 'कृपया आगे बढ़ने से पहले वर्तमान वीडियो पूरा करें',
+            hinglish: 'Kripya aage badne se pehle current video ko complete karein',
           ),
       type: SnackBarType.error,
     );
@@ -82,16 +81,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       message: ref
           .read(langControllerProvider.notifier)
           .choose(
-            PrefLangText(
-              hinglish:
-                  isDoneTodayNull
-                      ? 'Connection fail ho gaya hai, kripya upar right corner mein diye gaye reload icon par click karein.'
-                      : 'Aap har din sirf ${AppConstants.kMaxLevelCompletionsPerDay} levels complete kar sakte hain.',
-              hindi:
-                  isDoneTodayNull
-                      ? 'कनेक्शन नहीं हो पाया, ऊपर दाएँ कोने में रीलोड वाले आइकन पर क्लिक करें।'
-                      : 'आप हर दिन सिर्फ ${AppConstants.kMaxLevelCompletionsPerDay} लेवल पूरा कर सकते हैं।',
-            ),
+            hinglish:
+                isDoneTodayNull
+                    ? 'Connection fail ho gaya hai, kripya upar right corner mein diye gaye reload icon par click karein.'
+                    : 'Aap har din sirf ${AppConstants.kMaxLevelCompletionsPerDay} levels complete kar sakte hain.',
+            hindi:
+                isDoneTodayNull
+                    ? 'कनेक्शन नहीं हो पाया, ऊपर दाएँ कोने में रीलोड वाले आइकन पर क्लिक करें।'
+                    : 'आप हर दिन सिर्फ ${AppConstants.kMaxLevelCompletionsPerDay} लेवल पूरा कर सकते हैं।',
           ),
       type: SnackBarType.error,
     );
@@ -106,7 +103,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     if (index < _sortedSublevels!.length) return false;
 
-    await ref.read(sublevelControllerProvider.notifier).fetchSublevels();
+    await ref.read(levelControllerProvider.notifier).fetchLevels();
 
     return true;
   }
@@ -141,7 +138,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> fetchSublevels() async {
-    await ref.read(sublevelControllerProvider.notifier).fetchSublevels();
+    await ref.read(levelControllerProvider.notifier).fetchLevels();
   }
 
   Future<void> syncActivityLogs() async {
@@ -266,8 +263,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final loadingLevelIds = ref.watch(sublevelControllerProvider.select((state) => state.loadingByLevelId));
-
+    final loadingLevelIds = ref.watch(levelControllerProvider.select((state) => state.loadingByLevelId));
     final sublevels = ref.watch(sublevelControllerProvider.select((state) => state.sublevels));
 
     if (sublevels == null) {

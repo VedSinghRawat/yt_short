@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/core/console.dart';
-import 'package:myapp/core/error/failure.dart';
+import 'package:myapp/core/error/api_error.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/views/widgets/loader.dart';
@@ -18,7 +18,7 @@ import 'dart:async';
 
 class SublevelsList extends ConsumerStatefulWidget {
   final List<SubLevel> sublevels;
-  final Set<String> loadingIds;
+  final Map<String, bool> loadingIds;
   final Future<void> Function(int index, PageController controller)? onVideoChange;
 
   const SublevelsList({super.key, required this.sublevels, this.onVideoChange, required this.loadingIds});
@@ -137,12 +137,12 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
           final isLastSublevel = index == widget.sublevels.length;
 
           final isLoading =
-              sublevel == null ? widget.loadingIds.isNotEmpty : widget.loadingIds.contains(sublevel.levelId);
+              sublevel == null ? widget.loadingIds.isNotEmpty : (widget.loadingIds[sublevel.levelId] ?? true);
 
           if ((isLastSublevel || sublevel == null) && !isLoading) {
             final error = ref.watch(sublevelControllerProvider).error;
 
-            Console.error(Failure(message: 'sublevel error is $error $index'), StackTrace.current);
+            Console.error(APIError(message: 'sublevel error is $error $index'), StackTrace.current);
 
             if (error == null) {
               return const Loader();

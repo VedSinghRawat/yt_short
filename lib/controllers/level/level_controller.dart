@@ -1,13 +1,14 @@
 import 'package:dio/dio.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:myapp/constants.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
-import 'package:myapp/core/error/failure.dart';
+import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
+import 'package:myapp/controllers/user/user_controller.dart';
 import 'package:myapp/services/level/level_service.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/level/level.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:myapp/apis/level_api.dart';
-import 'package:myapp/core/shared_pref.dart';
+import 'package:myapp/apis/level/level_api.dart';
 
 part 'level_controller.freezed.dart';
 part 'level_controller.g.dart';
@@ -28,75 +29,85 @@ class LevelControllerState with _$LevelControllerState {
 class LevelController extends _$LevelController {
   late final levelService = ref.watch(levelServiceProvider);
   late final langController = ref.watch(langControllerProvider);
-
+  late final subLevelController = ref.watch(sublevelControllerProvider.notifier);
+  late final userController = ref.watch(userControllerProvider);
   @override
   LevelControllerState build() => const LevelControllerState();
 
   Future<Level?> getLevel(String id) async {
+    state = state.copyWith(loadingByLevelId: state.loadingByLevelId..update(id, (value) => true, ifAbsent: () => true));
+
     final levelDTOEither = await levelService.getLevel(id, ref);
 
-    final levelDTO = levelDTOEither.fold((l) {
-      state = state.copyWith(error: parseError(l.type, ref.read(langControllerProvider)));
-      return null;
-    }, (r) => r);
+    final level = levelDTOEither.fold(
+      (l) {
+        state = state.copyWith(error: l.message);
+        return null;
+      },
+      (r) {
+        final level = Level.fromLevelDTO(r);
+        int i = 1;
+        r.sub_levels.map((subLevelDTO) => subLevelController.handleDTO(subLevelDTO, level.id, i++));
+        return level;
+      },
+    );
 
-    if (levelDTO == null) return null;
+    state = state.copyWith(loadingByLevelId: state.loadingByLevelId..update(id, (value) => false));
 
-    return Level.fromLevelDTO(levelDTO);
+    return level;
   }
 
   Future<void> getOrderedIds() async {
-    const AsyncValue.loading();
+    List<String>? res;
 
     try {
-      final res = await ref.read(levelApiProvider).getOrderedIds();
+      res = await ref.read(levelApiProvider).getOrderedIds();
+      if (res == null) {}
+    } on DioException catch (e) {
+      state = state.copyWith(error: parseError(e.type, ref.read(langControllerProvider)));
+    }
 
-      final list = await _handleRes(res);
+    state = state.copyWith(orderedIds: res);
+  }
 
-      state = state.copyWith(orderedIds: list.value ?? []);
-    } on Failure catch (e) {
-      final err = await _handleErr(e);
-      state = state.copyWith(orderedIds: err.value ?? []);
-    } catch (e) {
-      state = state.copyWith(error: e.toString());
+  Future<void> fetchLevels() async {
+    final orderedIds = ref.read(levelControllerProvider).orderedIds;
+
+    if (orderedIds == null) {
+      state = state.copyWith(error: parseError(DioExceptionType.unknown, ref.read(langControllerProvider)));
+      return;
+    }
+
+    state = state.copyWith(error: null);
+
+    String currUserLevelId = ref.read(userControllerProvider).levelId ?? orderedIds.first;
+
+    final loading = state.loadingByLevelId;
+    if (loading[currUserLevelId] == false) {
+      await getLevel(currUserLevelId);
+    }
+
+    final surroundingLevelIds = _getSurroundingLevelIds(orderedIds.indexOf(currUserLevelId), orderedIds);
+
+    final a =
+        surroundingLevelIds
+            .map((levelId) => levelId != null && loading[levelId] == false ? getLevel(levelId) : Future.value(null))
+            .toList();
+
+    await Future.wait(a);
+
+    if (currUserLevelId == orderedIds.last) {
+      final message = AppConstants.allLevelsCompleted(ref.read(langControllerProvider));
+
+      state = state.copyWith(error: message);
     }
   }
 
-  Future<AsyncValue<List<String>>> _handleErr(Failure error) async {
-    final localIds = SharedPref.get(PrefKey.orderedIds);
-
-    if (dioConnectionErrors.contains(error.type) && localIds != null) {
-      return _getIds();
-    }
-
-    return AsyncValue.error(
-      Failure(message: parseError(error.type, ref.read(langControllerProvider)), type: error.type),
-      StackTrace.current,
-    );
-  }
-
-  Future<AsyncValue<List<String>>> _handleRes(List<String>? ids) async {
-    if (ids != null) {
-      await SharedPref.store(PrefKey.orderedIds, ids);
-      return AsyncValue.data(ids);
-    }
-
-    return _getIds();
-  }
-
-  Future<AsyncValue<List<String>>> _getIds() async {
-    final ids = SharedPref.get(PrefKey.orderedIds);
-
-    if (ids != null) return AsyncValue.data(ids);
-
-    await SharedPref.removeValue(PrefKey.orderedIds);
-
-    return AsyncValue.error(
-      Failure(
-        message: parseError(DioExceptionType.unknown, ref.read(langControllerProvider)),
-        type: DioExceptionType.unknown,
-      ),
-      StackTrace.current,
-    );
+  List<String?> _getSurroundingLevelIds(int currIndex, List<String?> orderedIds) {
+    return [
+      orderedIds.elementAtOrNull(currIndex - 1),
+      orderedIds.elementAtOrNull(currIndex + 1),
+      orderedIds.elementAtOrNull(currIndex + 2),
+    ];
   }
 }

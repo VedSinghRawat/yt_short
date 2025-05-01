@@ -252,7 +252,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
     _controller = null;
 
     try {
-      String? localPath = PathService.videoLocal(widget.subLevel.levelId, widget.subLevel.videoFilename);
+      String localPath = PathService.videoLocal(widget.subLevel.levelId, widget.subLevel.videoFilename);
 
       final urls =
           [BaseUrl.cloudflare, BaseUrl.s3]
@@ -263,17 +263,9 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
               )
               .toList();
 
-      final file = localPath != null ? File(localPath) : null;
+      final file = File(localPath);
 
-      if (file != null && !await file.exists()) {
-        throw Exception(
-          ref
-              .read(langControllerProvider.notifier)
-              .choose(hindi: 'वीडियो फ़ाइल नहीं मिली', hinglish: 'Video file nahin mili'),
-        );
-      }
-
-      if (file != null) {
+      if (await file.exists()) {
         _controller = VideoPlayerController.file(file);
       } else if (urls.isNotEmpty) {
         try {
@@ -302,18 +294,16 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
 
       widget.onControllerInitialized?.call(_controller!, setIsSeeking);
     } catch (e) {
-      developer.log('Error initializing video player ${localPath ?? urls.join(", ")}', error: e.toString());
+      developer.log('Error initializing video player ${widget.subLevel.videoFilename}', error: e.toString());
+
       _controller?.removeListener(_listener);
+
       await _controller?.dispose();
       _controller = null;
+
       if (mounted) {
         setState(() {
           error = '$errorText: ${e.toString()}';
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
           _isInitializing = false;
         });
       }
@@ -355,7 +345,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
     final double currentDialogueContainerHeight = _dialogueListHeight ?? standardDialogueHeight;
 
     return VisibilityDetector(
-      key: Key(widget.uniqueId ?? widget.videoLocalPath ?? widget.videoUrls?.first ?? ''),
+      key: Key(widget.subLevel.videoFilename + widget.subLevel.index.toString()),
       onVisibilityChanged: _onVisibilityChanged,
       child: SafeArea(
         child: Column(

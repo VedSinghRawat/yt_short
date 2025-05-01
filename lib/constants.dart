@@ -21,7 +21,7 @@ class AppConstants {
   // Referrer constants
   static const String kDefaultReferrer = "utm_source=google-play&utm_medium=organic";
 
-  static String kErrorMessages(DioExceptionType? eType, PrefLang lang) {
+  static String kDioErrorMessages(DioExceptionType? eType, PrefLang lang) {
     return switch (eType) {
       DioExceptionType.connectionError => switch (lang) {
         PrefLang.hindi => 'इंटरनेट काम नहीं कर रहा है। कृपया अपना कनेक्शन जांचें।',
