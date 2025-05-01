@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/core/error/failure.dart';
-import 'package:myapp/core/services/api_service.dart';
-import 'package:myapp/core/services/path_service.dart';
+import 'package:myapp/services/api/api_service.dart';
+import 'package:myapp/services/path/path_service.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/level/level.dart';
 

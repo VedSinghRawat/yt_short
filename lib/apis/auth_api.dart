@@ -3,8 +3,8 @@ import 'dart:developer' as developer;
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:myapp/core/services/api_service.dart';
-import 'package:myapp/core/services/google_sign_in.dart';
+import 'package:myapp/services/api/api_service.dart';
+import 'package:myapp/services/googleSignIn/google_sign_in.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/models/user/user.dart';
 

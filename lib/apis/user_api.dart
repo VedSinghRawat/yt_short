@@ -1,7 +1,7 @@
 import 'dart:developer' as developer;
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:myapp/core/services/api_service.dart';
+import 'package:myapp/services/api/api_service.dart';
 import '../models/models.dart';
 
 abstract class IUserAPI {

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:myapp/core/screen/deep_linking.dart';
-import 'package:myapp/core/services/initialize_service.dart';
-import 'package:myapp/core/widgets/obstructive_error_wrapper.dart';
-import 'package:myapp/features/auth/screens/sign_in_screen.dart';
-import 'package:myapp/core/screen/home.dart';
-import 'package:myapp/features/auth/widgets/auth_wrapper.dart';
-import 'package:myapp/features/initialize/initialize_screen.dart';
-import 'package:myapp/core/screen/profile.dart';
+import 'package:myapp/views/screens/deep_linking.dart';
+import 'package:myapp/services/initialize/initialize_service.dart';
+import 'package:myapp/views/widgets/obstructive_error_wrapper.dart';
+import 'package:myapp/views/screens/sign_in_screen.dart';
+import 'package:myapp/views/screens/home.dart';
+import 'package:myapp/views/widgets/auth/auth_wrapper.dart';
+import 'package:myapp/views/screens/initialize_screen.dart';
+import 'package:myapp/views/screens/profile.dart';
 
 class Routes {
   static const home = '/home';
