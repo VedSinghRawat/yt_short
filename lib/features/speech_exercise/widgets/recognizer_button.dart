@@ -4,10 +4,14 @@ import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/core/widgets/active_mic.dart';
 import 'package:myapp/features/speech_exercise/providers/speech_provider.dart';
+import 'package:myapp/core/services/analytics_service.dart';
+import 'dart:async';
+import 'package:myapp/models/models.dart';
 
 class RecognizerButton extends ConsumerStatefulWidget {
   final VoidCallback onContinue;
-  const RecognizerButton({super.key, required this.onContinue});
+  final SpeechExercise speechExercise;
+  const RecognizerButton({super.key, required this.onContinue, required this.speechExercise});
 
   @override
   ConsumerState<RecognizerButton> createState() => _RecognizerButtonState();
@@ -27,6 +31,8 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
       if (speechNotifier.isFailed) {
         speechNotifier.reset();
         await speechNotifier.startListening(context);
+
+        unawaited(AnalyticsService().exerciseRetry(speechExercise: widget.speechExercise));
         return;
       }
 

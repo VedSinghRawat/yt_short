@@ -79,3 +79,8 @@ android/app/.cxx/
 # Environment files
 .env.prod
 .env
+
+# Fiirebase
+**/google-services.json
+firebase.json
+**/firebase_options.dart

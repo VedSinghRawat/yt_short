@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'dart:async';
+import 'package:myapp/core/services/analytics_service.dart';
+import 'package:myapp/core/shared_pref.dart';
 
 class VideoProgressBar extends StatefulWidget {
   final int durationMs;
@@ -24,6 +27,7 @@ class _VideoProgressBarState extends State<VideoProgressBar> with SingleTickerPr
   int _pausedPositionMs = 0;
   DateTime _lastUpdateTime = DateTime.now();
   double _currentProgress = 0.0;
+  bool _hasHalfwayThrough = false;
 
   @override
   void initState() {
@@ -62,6 +66,24 @@ class _VideoProgressBarState extends State<VideoProgressBar> with SingleTickerPr
           _lastEstimatedPositionMs = widget.currentPositionMs;
           _pausedPositionMs = widget.currentPositionMs;
         }
+      }
+
+      // Gether analytics if the video has looped halfway through
+      if (widget.currentPositionMs >= (widget.durationMs ~/ 2) && !_hasHalfwayThrough) {
+        _hasHalfwayThrough = true;
+        final progress = SharedPref.get(PrefKey.currProgress());
+
+        if (progress?.level != null && progress?.levelId != null && progress?.subLevel != null) {
+          unawaited(
+            AnalyticsService().sublevelLoop(
+              level: progress!.level!,
+              sublevel: progress.subLevel!,
+              levelId: progress.levelId!,
+            ),
+          );
+        }
+      } else if (_hasHalfwayThrough && widget.currentPositionMs < (widget.durationMs ~/ 2)) {
+        _hasHalfwayThrough = false;
       }
     });
 

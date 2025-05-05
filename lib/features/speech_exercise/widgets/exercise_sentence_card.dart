@@ -3,21 +3,18 @@ import 'package:flutter/material.dart';
 import 'package:myapp/core/controllers/lang_notifier.dart';
 import 'package:myapp/features/speech_exercise/providers/speech_provider.dart';
 import 'package:myapp/features/speech_exercise/widgets/recognizer_button.dart';
+import 'package:myapp/models/models.dart';
 
 class SpeechExerciseCard extends ConsumerStatefulWidget {
-  final String text;
   final VoidCallback onContinue;
-  final String levelId;
-  final String audioFilename;
   final VoidCallback onClose;
+  final SpeechExercise speechExercise;
 
   const SpeechExerciseCard({
     super.key,
-    required this.text,
     required this.onContinue,
-    required this.levelId,
-    required this.audioFilename,
     required this.onClose,
+    required this.speechExercise,
   });
 
   @override
@@ -35,7 +32,7 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
     _flatWords = [];
 
     // Split text by new lines to maintain line structure
-    final lines = widget.text.split('\n');
+    final lines = widget.speechExercise.text.split('\n');
     for (var line in lines) {
       List<String> lineWords = [];
       for (var word in line.split(' ')) {
@@ -212,7 +209,7 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                                 child: InkWell(
                                   borderRadius: BorderRadius.circular(30),
                                   onTap: () {
-                                    ref.read(speechProvider.notifier).playAudio(widget.levelId, widget.audioFilename);
+                                    ref.read(speechProvider.notifier).playAudio(widget.speechExercise.levelId, widget.speechExercise.audioFilename);
                                   },
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
@@ -310,7 +307,7 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
               const Spacer(),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-                child: RecognizerButton(onContinue: widget.onContinue),
+                child: RecognizerButton(onContinue: widget.onContinue, speechExercise: widget.speechExercise),
               ),
             ],
           ),

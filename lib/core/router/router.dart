@@ -9,6 +9,7 @@ import 'package:myapp/core/screen/home.dart';
 import 'package:myapp/features/auth/widgets/auth_wrapper.dart';
 import 'package:myapp/features/initialize/initialize_screen.dart';
 import 'package:myapp/core/screen/profile.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 
 class Routes {
   static const home = '/home';
@@ -22,6 +23,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     navigatorKey: navigatorKey,
     initialLocation: Routes.init,
+    observers: [FirebaseAnalyticsObserver(analytics: FirebaseAnalytics.instance)],
     routes: [
       ShellRoute(
         builder: (context, state, child) {
