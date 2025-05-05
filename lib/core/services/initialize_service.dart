@@ -34,8 +34,6 @@ class InitializeService {
 
   Future<void> initialize() async {
     try {
-      await MobileAds.instance.initialize();
-
       // order matters
       await SharedPref.init(); // first init shared pref
       await InfoService.init(); // then init info service
@@ -46,6 +44,7 @@ class InitializeService {
         FileService.init(),
         levelController.getOrderedIds(),
         handleDeepLinking(), // deep linking depends on user
+        MobileAds.instance.initialize(),
       ]);
 
       final currProgress = SharedPref.get(
