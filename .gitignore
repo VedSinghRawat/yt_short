@@ -79,3 +79,6 @@ android/app/.cxx/
 # Environment files
 .env.prod
 .env
+
+# VSCode related
+.vscode/

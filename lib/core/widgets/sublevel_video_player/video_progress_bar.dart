@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter/material.dart';
 import 'dart:math';
 
@@ -44,26 +46,24 @@ class _VideoProgressBarState extends State<VideoProgressBar> with SingleTickerPr
   void didUpdateWidget(covariant VideoProgressBar oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    setState(() {
-      // paused
-      if (oldWidget.isPlaying && !widget.isPlaying) {
+    // paused
+    if (oldWidget.isPlaying && !widget.isPlaying) {
+      setState(() {
         _pausedPositionMs = _lastEstimatedPositionMs;
-      }
-      // played
-      if (!oldWidget.isPlaying && widget.isPlaying) {
-        _lastUpdateTime = DateTime.now();
-      }
+      });
+    }
 
-      // loopback
-      if (widget.isPlaying) {
-        if (widget.currentPositionMs < 500 || (_lastEstimatedPositionMs - widget.currentPositionMs) > 1000) {
-          _lastUpdateTime = DateTime.now();
-          _currentProgress = _calculateProgress(widget.currentPositionMs, widget.durationMs);
-          _lastEstimatedPositionMs = widget.currentPositionMs;
-          _pausedPositionMs = widget.currentPositionMs;
+    // played
+    if (!oldWidget.isPlaying && widget.isPlaying) {
+      setState(() {
+        _lastUpdateTime = DateTime.now();
+        if (widget.currentPositionMs == 0) {
+          _lastEstimatedPositionMs = 0;
+          _pausedPositionMs = 0;
+          _currentProgress = _estimateCurrentProgress();
         }
-      }
-    });
+      });
+    }
 
     widget.isPlaying ? _timerController.repeat() : _timerController.stop();
   }
