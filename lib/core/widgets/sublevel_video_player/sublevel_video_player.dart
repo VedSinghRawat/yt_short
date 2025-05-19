@@ -17,7 +17,7 @@ class SublevelVideoPlayer extends ConsumerStatefulWidget {
   final String? videoLocalPath;
   final String? uniqueId;
   final List<String>? videoUrls;
-  final Function(VideoPlayerController controller, Function(bool) setIsSeeking)? onControllerInitialized;
+  final Function(VideoPlayerController controller, Function(Duration) seek)? onControllerInitialized;
   final List<Dialogue> dialogues;
   final bool stayPause;
 
@@ -100,12 +100,6 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
     }
   }
 
-  void setIsSeeking(bool isSeeking) {
-    setState(() {
-      _isSeeking = isSeeking;
-    });
-  }
-
   void _listener() {
     if (!mounted || _controller == null) return;
 
@@ -169,7 +163,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
       _updateDisplayableDialogues(_controller!.value.position);
     } else {
       if (_controller!.value.position >= _controller!.value.duration) {
-        await _controller!.seekTo(Duration.zero);
+        await seek(Duration.zero);
       }
       play();
     }
@@ -289,7 +283,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
       }
 
       if (_lastPosition != null) {
-        await _controller!.seekTo(_lastPosition!);
+        await seek(Duration.zero);
         _lastPosition = null;
       }
 
@@ -297,7 +291,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
         await play();
       }
 
-      widget.onControllerInitialized?.call(_controller!, setIsSeeking);
+      widget.onControllerInitialized?.call(_controller!, seek);
     } catch (e) {
       developer.log(
         'Error initializing video player ${widget.videoLocalPath ?? widget.videoUrls?.join(", ")}',
@@ -343,6 +337,38 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
     });
   }
 
+  Future<void> seek(Duration newPosition) async {
+    if (_controller == null || !_controller!.value.isInitialized) return;
+    setState(() {
+      _isSeeking = true;
+    });
+    await _controller!.seekTo(newPosition);
+    setState(() {
+      _isSeeking = false;
+    });
+  }
+
+  Future<void> _seekBackward() async {
+    if (_controller == null || !_controller!.value.isInitialized) return;
+    final currentPosition = _controller!.value.position;
+    var newPosition = currentPosition - const Duration(seconds: 5);
+    if (newPosition < Duration.zero) {
+      newPosition = Duration.zero;
+    }
+    await seek(newPosition);
+  }
+
+  Future<void> _seekForward() async {
+    if (_controller == null || !_controller!.value.isInitialized) return;
+    final currentPosition = _controller!.value.position;
+    final duration = _controller!.value.duration;
+    var newPosition = currentPosition + const Duration(seconds: 5);
+    if (newPosition > duration) {
+      newPosition = duration;
+    }
+    await seek(newPosition);
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isPlayerInitialized = _controller != null && _controller!.value.isInitialized;
@@ -383,6 +409,27 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
                       else
                         const AspectRatio(aspectRatio: 16 / 9, child: Center(child: CircularProgressIndicator())),
                       PlayPauseButton(showPlayPauseIcon: _showPlayPauseIcon, iconData: _iconData),
+                      Positioned(
+                        left: 100,
+                        bottom: 16,
+                        child: IconButton(
+                          icon: const Icon(Icons.replay_5, color: Colors.white, size: 30),
+                          onPressed: _seekBackward,
+                          style: IconButton.styleFrom(backgroundColor: Colors.black.withOpacity(0.3)),
+                        ),
+                      ),
+                      Positioned(
+                        right: 100,
+                        bottom: 16,
+                        child: Visibility(
+                          visible: ref.watch(sublevelControllerProvider.select((s) => s.hasFinishedVideo)),
+                          child: IconButton(
+                            icon: const Icon(Icons.forward_5, color: Colors.white, size: 30),
+                            onPressed: _seekForward,
+                            style: IconButton.styleFrom(backgroundColor: Colors.black.withOpacity(0.3)),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
