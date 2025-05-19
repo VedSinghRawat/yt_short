@@ -26,16 +26,16 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
   VideoPlayerController? _exerciseController;
   bool _hasShownDialog = false;
   bool _isDialogOpen = false;
-  Function(bool)? _setIsSeeking;
+  Function(Duration)? _seek;
 
-  void _onControllerInitialized(VideoPlayerController controller, Function(bool) setIsSeeking) {
+  void _onControllerInitialized(VideoPlayerController controller, Function(Duration) seek) {
     if (!mounted) return;
 
     _exerciseController?.removeListener(_exerciseListener);
 
     setState(() {
       _exerciseController = controller;
-      _setIsSeeking = setIsSeeking;
+      _seek = seek;
     });
     _exerciseController!.addListener(_exerciseListener);
   }
@@ -81,10 +81,8 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
       return;
     }
 
-    _setIsSeeking?.call(true);
-    await _exerciseController?.seekTo(Duration.zero);
+    await _seek?.call(Duration.zero);
     await _exerciseController?.play();
-    _setIsSeeking?.call(false);
     ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(false);
   }
 
