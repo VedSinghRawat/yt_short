@@ -53,6 +53,7 @@ class InitializeService {
       );
 
       final apiUser = ref.read(userControllerProvider).currentUser;
+      developer.log('currProgress: ${currProgress?.toJson()}, apiUser: ${apiUser?.toJson()}');
       if (currProgress == null && apiUser == null) return;
 
       final localLastModified = currProgress?.modified ?? 0;

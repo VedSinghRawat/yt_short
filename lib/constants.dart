@@ -82,4 +82,6 @@ class AppConstants {
 
   // UI constants
   static const String kViewCloseActionName = 'closeAction';
+
+  static const int kMaxHttpStatusCode = 512;
 }

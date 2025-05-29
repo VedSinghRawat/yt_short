@@ -49,7 +49,14 @@ class BaseUrl {
 }
 
 class ApiService {
-  final Dio _dio = Dio();
+  final Dio _dio = Dio(
+    BaseOptions(
+      followRedirects: false,
+      validateStatus: (status) {
+        return status! < AppConstants.kMaxHttpStatusCode;
+      },
+    ),
+  );
   final GoogleSignIn _googleSignIn;
   final ObstructiveErrorController _obstructiveErrorController;
   final PrefLang _lang;
@@ -83,6 +90,7 @@ class ApiService {
         params.baseUrl != null
             ? '${params.baseUrl?.url}${params.endpoint}'
             : '${BaseUrl.backend.url}${params.endpoint}';
+
     try {
       final options = Options(
         method: params.method.name.toUpperCase(),
@@ -90,18 +98,19 @@ class ApiService {
         responseType: params.responseType,
         contentType: 'application/json',
       );
-      return await _dio.request(baseUrl, data: params.body, options: options);
-    } on DioException catch (e) {
-      if (e.response?.statusCode == AppConstants.obstructiveErrorStatus) {
-        _obstructiveErrorController.showObstructiveError(e.response?.data['content']);
 
-        return e.response as Response<T>;
+      final response = await _dio.request<T>(baseUrl, data: params.body, options: options);
+
+      if (response.statusCode == AppConstants.obstructiveErrorStatus) {
+        _obstructiveErrorController.showObstructiveError((response.data as dynamic)['content']);
+
+        return response;
       }
 
-      if (!(e.response?.data == null ||
-          e.response?.data is! Map<String, dynamic> ||
-          e.response?.data['message'] == null ||
-          e.response?.data['message'].toLowerCase().contains('token used too late') == false)) {
+      if (!(response.data == null ||
+          response.data is! Map<String, dynamic> ||
+          (response.data as dynamic)['message'] == null ||
+          (response.data as dynamic)['message'].toLowerCase().contains('token used too late') == false)) {
         final account = await _googleSignIn.signInSilently();
 
         if (account != null) {
@@ -109,7 +118,7 @@ class ApiService {
 
           final idToken = auth.idToken;
 
-          if (idToken == null) rethrow;
+          if (idToken == null) throw APIError(message: 'Token is null');
 
           await setToken(idToken);
 
@@ -117,11 +126,11 @@ class ApiService {
         }
       }
 
+      return response;
+    } on DioException catch (e) {
       developer.log('Error in ApiService.call: $e');
 
-      final isBadRes = e.response?.statusCode != null && e.response!.statusCode! > 400 && e.response!.statusCode! < 511;
-
-      throw APIError.fromJson(isBadRes ? e.response?.data : parseError(e.type, _lang), trace: e.stackTrace);
+      throw APIError(message: parseError(e.type, _lang), trace: e.stackTrace);
     }
   }
 
@@ -129,7 +138,7 @@ class ApiService {
   /// Store the ETag of the data. It will fetch and return null if the data has not changed.
   Future<Response<T>?> getCloudStorageData<T>({required String endpoint, ResponseType? responseType}) async {
     try {
-      return await _getCloudData(endpoint: endpoint, baseUrl: BaseUrl.cloudflare, responseType: responseType);
+      return await _getCloudData<T>(endpoint: endpoint, baseUrl: BaseUrl.cloudflare, responseType: responseType);
     } on DioException catch (e) {
       if (e.type != DioExceptionType.unknown && e.type != DioExceptionType.badResponse) {
         rethrow;
@@ -156,25 +165,18 @@ class ApiService {
       headers: {if (storedETag != null) HttpHeaders.ifNoneMatchHeader: storedETag, ...?params.headers},
     );
 
-    try {
-      final response = await call<T>(params: mergedParams);
-
-      final newETag = response.headers.value(HttpHeaders.etagHeader);
-
-      if (newETag != null) {
-        await SharedPref.store(PrefKey.eTag(eTagId), newETag);
-      }
-
-      return response;
-
-      // INFO: Dio throws 304 as an exception, not a success.
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 304) {
-        return null;
-      }
-
-      rethrow;
+    final response = await call<T>(params: mergedParams);
+    if (response.statusCode == 304) {
+      return null;
     }
+
+    final newETag = response.headers.value(HttpHeaders.etagHeader);
+
+    if (newETag != null) {
+      await SharedPref.store(PrefKey.eTag(eTagId), newETag);
+    }
+
+    return response;
   }
 }
 

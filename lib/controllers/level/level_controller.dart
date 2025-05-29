@@ -1,9 +1,12 @@
+import 'dart:developer' as developer;
+
 import 'package:dio/dio.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:myapp/constants.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
 import 'package:myapp/controllers/user/user_controller.dart';
+import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/services/level/level_service.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/level/level.dart';
@@ -62,7 +65,11 @@ class LevelController extends _$LevelController {
 
     try {
       res = await ref.read(levelApiProvider).getOrderedIds();
-      if (res == null) {}
+      if (res != null) {
+        await SharedPref.store(PrefKey.orderedIds, res);
+      } else {
+        res = SharedPref.get(PrefKey.orderedIds);
+      }
     } on DioException catch (e) {
       state = state.copyWith(error: parseError(e.type, ref.read(langControllerProvider)));
     }
@@ -71,7 +78,8 @@ class LevelController extends _$LevelController {
   }
 
   Future<void> fetchLevels() async {
-    final orderedIds = ref.read(levelControllerProvider).orderedIds;
+    final orderedIds = ref.read(levelControllerProvider.notifier).state.orderedIds;
+    developer.log('orderedIds: $orderedIds');
 
     if (orderedIds == null) {
       state = state.copyWith(error: parseError(DioExceptionType.unknown, ref.read(langControllerProvider)));
@@ -79,11 +87,11 @@ class LevelController extends _$LevelController {
     }
 
     state = state.copyWith(error: null);
-
-    String currUserLevelId = ref.read(userControllerProvider).levelId ?? orderedIds.first;
+    final user = ref.read(userControllerProvider);
+    String currUserLevelId = user.levelId ?? orderedIds.first;
 
     final loading = state.loadingByLevelId;
-    if (loading[currUserLevelId] == false) {
+    if (loading[currUserLevelId] == null) {
       await getLevel(currUserLevelId);
     }
 
