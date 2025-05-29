@@ -11,6 +11,7 @@ import 'package:myapp/core/services/api_service.dart';
 import 'package:myapp/core/services/path_service.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
+import 'package:myapp/core/utils.dart';
 import 'package:myapp/core/widgets/loader.dart';
 import 'package:myapp/core/widgets/scroll_indicator.dart';
 import 'package:myapp/core/widgets/sublevel_video_player/sublevel_video_player.dart';
@@ -107,6 +108,17 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
   @override
   Widget build(BuildContext context) {
     ref.listen(sublevelControllerProvider.select((value) => value.hasFinishedVideo), (previous, next) {
+      final progress = SharedPref.get(PrefKey.currProgress());
+
+      if (!isLevelEqual(
+        progress?.level ?? 0,
+        progress?.subLevel ?? 0,
+        progress?.maxLevel ?? 0,
+        progress?.maxSubLevel ?? 0,
+      )) {
+        return;
+      }
+
       if (next) {
         _startAnimationTimer();
         _bounceController.repeat(reverse: true);
@@ -189,32 +201,31 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
                 offset: Offset(0, _showAnimation ? -_bounceAnimation.value : 0),
                 child: Stack(
                   children: [
-                    Center(
-                      child: sublevel.when(
-                        video:
-                            (video) => SublevelVideoPlayer(
-                              key: Key(positionText),
-                              uniqueId: positionText,
-                              videoLocalPath: localPath,
-                              videoUrls: urls,
-                              dialogues: sublevel.dialogues,
-                            ),
-                        speechExercise:
-                            (speechExercise) => SpeechExerciseScreen(
-                              key: Key(positionText),
-                              uniqueId: positionText,
-                              exercise: speechExercise,
-                              videoLocalPath: localPath,
-                              videoUrls: urls,
-                              goToNext: () {
-                                _pageController.animateToPage(
-                                  index + 1,
-                                  duration: const Duration(milliseconds: 300),
-                                  curve: Curves.easeInOut,
-                                );
-                              },
-                            ),
-                      ),
+                    sublevel.when(
+                      video:
+                          (video) => SublevelVideoPlayer(
+                            key: Key(positionText),
+                            uniqueId: positionText,
+                            videoLocalPath: localPath,
+                            videoUrls: urls,
+                            dialogues: sublevel.dialogues,
+                          ),
+                      speechExercise:
+                          (speechExercise) => SpeechExerciseScreen(
+                            key: Key(positionText),
+                            uniqueId: positionText,
+                            exercise: speechExercise,
+                            videoLocalPath: localPath,
+                            videoUrls: urls,
+                            goToNext: () {
+                              ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
+                              _pageController.animateToPage(
+                                index + 1,
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                              );
+                            },
+                          ),
                     ),
 
                     if (_showAnimation)

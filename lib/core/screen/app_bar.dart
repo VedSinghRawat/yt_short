@@ -8,6 +8,7 @@ import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/core/widgets/loading_refresh_icon.dart';
 import 'package:myapp/features/auth/auth_controller.dart';
+import 'package:myapp/features/sublevel/sublevel_controller.dart';
 import 'package:myapp/features/user/user_controller.dart';
 
 class HomeScreenAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
@@ -43,57 +44,76 @@ class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
 
     final needsReload = currentUser?.email.isEmpty ?? true && isLoggedIn;
 
-    return AppBar(
-      title: Text(_getWelcomeMessage()),
-      actions: [
-        if (needsReload || syncFailed)
-          LoadingRefreshIcon(
-            isLoading: _isLoading,
-            onTap: () async {
-              setState(() {
-                _isLoading = true;
-              });
+    final showAppBar = ref.watch(sublevelControllerProvider.select((state) => state.showAppBar));
 
-              final initializeService = await ref.read(initializeServiceProvider.future);
+    return Stack(
+      children: [
+        AnimatedPositioned(
+          duration: const Duration(milliseconds: 300),
+          top: showAppBar ? 0 : -100,
+          left: 0,
+          right: 0,
+          height: showAppBar ? 100 : 0,
+          child: AppBar(
+            title: Text(_getWelcomeMessage()),
+            actions: [
+              if (needsReload || syncFailed)
+                LoadingRefreshIcon(
+                  isLoading: _isLoading,
+                  onTap: () async {
+                    setState(() {
+                      _isLoading = true;
+                    });
 
-              final isSuccess = await initializeService.initialApiCall();
+                    final initializeService = await ref.read(initializeServiceProvider.future);
 
-              if (syncFailed) {
-                await ref
-                    .read(userControllerProvider.notifier)
-                    .sync(currentUser?.levelId ?? '', currentUser?.subLevel ?? 0);
-              }
+                    final isSuccess = await initializeService.initialApiCall();
 
-              final progress = SharedPref.get(PrefKey.currProgress(userEmail: currentUser?.email));
+                    if (syncFailed) {
+                      await ref
+                          .read(userControllerProvider.notifier)
+                          .sync(currentUser?.levelId ?? '', currentUser?.subLevel ?? 0);
+                    }
 
-              if (progress != null && progress.levelId != null && progress.subLevel != null) {
-                await ref.read(userControllerProvider.notifier).sync(progress.levelId!, progress.subLevel!);
-              }
+                    final progress = SharedPref.get(PrefKey.currProgress(userEmail: currentUser?.email));
 
-              setState(() {
-                _isLoading = false;
-              });
+                    if (progress != null && progress.levelId != null && progress.subLevel != null) {
+                      await ref.read(userControllerProvider.notifier).sync(progress.levelId!, progress.subLevel!);
+                    }
 
-              if (!context.mounted) return;
+                    setState(() {
+                      _isLoading = false;
+                    });
 
-              showSnackBar(
-                context,
-                type: isSuccess ? SnackBarType.success : SnackBarType.error,
-                message: ref
-                    .read(langProvider.notifier)
-                    .prefLangText(
-                      isSuccess
-                          ? const PrefLangText(hindi: 'डेटा सफलतापूर्वक अपडेट हो गया', hinglish: 'Data update ho gaya')
-                          : const PrefLangText(hindi: 'डेटा अपडेट नहीं हो सका।', hinglish: 'Data update nahin ho saka'),
-                    ),
-              );
-            },
+                    if (!context.mounted) return;
+
+                    showSnackBar(
+                      context,
+                      type: isSuccess ? SnackBarType.success : SnackBarType.error,
+                      message: ref
+                          .read(langProvider.notifier)
+                          .prefLangText(
+                            isSuccess
+                                ? const PrefLangText(
+                                  hindi: 'डेटा सफलतापूर्वक अपडेट हो गया',
+                                  hinglish: 'Data update ho gaya',
+                                )
+                                : const PrefLangText(
+                                  hindi: 'डेटा अपडेट नहीं हो सका।',
+                                  hinglish: 'Data update nahin ho saka',
+                                ),
+                          ),
+                    );
+                  },
+                ),
+              IconButton(
+                onPressed: () {
+                  context.push(isLoggedIn ? Routes.profile : Routes.signIn);
+                },
+                icon: Icon(isLoggedIn ? Icons.account_circle : Icons.person_add),
+              ),
+            ],
           ),
-        IconButton(
-          onPressed: () {
-            context.push(isLoggedIn ? Routes.profile : Routes.signIn);
-          },
-          icon: Icon(isLoggedIn ? Icons.account_circle : Icons.person_add),
         ),
       ],
     );

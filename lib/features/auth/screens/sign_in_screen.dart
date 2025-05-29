@@ -108,8 +108,8 @@ class SignInScreen extends ConsumerWidget {
   }
 }
 
-showLevelChangeConfirmationDialog(BuildContext context, UserModel user, Ref ref) {
-  return showConfirmationDialog(
+showLevelChangeConfirmationDialog(BuildContext context, UserModel user, Ref ref) async {
+  final result = await showConfirmationDialog(
     context,
     question: ref
         .read(langProvider.notifier)
@@ -121,22 +121,22 @@ showLevelChangeConfirmationDialog(BuildContext context, UserModel user, Ref ref)
                 'Aap already Level ${user.maxLevel}, Sublevel ${user.maxSubLevel} par hain. Kya aap wahan se continue karna chahenge?',
           ),
         ),
-    onResult: (result) async {
-      await SharedPref.store(
-        PrefKey.currProgress(userEmail: user.email),
-        Progress(
-          level: result ? user.maxLevel : null,
-          subLevel: result ? user.maxSubLevel : null,
-          maxLevel: user.maxLevel,
-          maxSubLevel: user.maxSubLevel,
-          levelId: result ? user.levelId : null,
-        ),
-      );
-    },
+
     yesButtonStyle: ElevatedButton.styleFrom(
       backgroundColor: Theme.of(context).colorScheme.primary,
       foregroundColor: Theme.of(context).colorScheme.onPrimary,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ),
+  );
+
+  await SharedPref.store(
+    PrefKey.currProgress(userEmail: user.email),
+    Progress(
+      level: result ? user.maxLevel : null,
+      subLevel: result ? user.maxSubLevel : null,
+      maxLevel: user.maxLevel,
+      maxSubLevel: user.maxSubLevel,
+      levelId: result ? user.levelId : null,
     ),
   );
 }

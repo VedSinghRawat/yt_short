@@ -1,6 +1,5 @@
 import 'dart:developer' as developer;
 import 'dart:io';
-import 'dart:math'; // Import for max function
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -124,69 +123,6 @@ class _DialogueListState extends ConsumerState<DialogueList> {
     }
   }
 
-  // --- Function to Calculate Item Height ---
-  double _calculateItemHeight(BoxConstraints constraints, List<Dialogue> dialogues, PrefLang prefLang) {
-    double maxOverallItemHeight = 0;
-
-    final timePainter = TextPainter(
-      text: const TextSpan(text: "00:00", style: TextStyle(fontSize: timeFontSize)),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    final double maxTimeHeight = timePainter.height;
-
-    const double maxIconHeight = selectedIconSize + (iconPadding * 2) + (iconBorder * 2);
-    final double maxNonTextHeight = max(maxTimeHeight, maxIconHeight);
-
-    final double timeTextWidth = timePainter.width;
-    const double iconContainerWidth = selectedIconSize + (iconPadding * 2) + (iconBorder * 2);
-    const double fixedSpacing = 16.0 + 12.0;
-    final double availableWidthForFlexible =
-        constraints.maxWidth - timeTextWidth - iconContainerWidth - fixedSpacing - (horizontalPadding * 2);
-    final double textConstraintWidth = max(0, availableWidthForFlexible * textWidthPercentage);
-
-    const double selectedFontSize = 20;
-    const FontWeight selectedFontWeight = FontWeight.bold;
-    const double translationFontSize = selectedFontSize * 0.75;
-
-    const mainTextStyle = TextStyle(fontSize: selectedFontSize, color: Colors.white, fontWeight: selectedFontWeight);
-    const translationTextStyle = TextStyle(
-      fontSize: translationFontSize,
-      color: Colors.white70,
-      fontWeight: FontWeight.normal,
-    );
-
-    for (final dialogue in dialogues) {
-      double currentTextColumnHeight = 0;
-
-      final textPainter = TextPainter(
-        text: TextSpan(text: dialogue.text, style: mainTextStyle),
-        textDirection: TextDirection.ltr,
-        textAlign: TextAlign.center,
-      )..layout(maxWidth: textConstraintWidth);
-      currentTextColumnHeight += textPainter.height;
-
-      if (dialogue.hindiText.isNotEmpty && dialogue.hinglishText.isNotEmpty) {
-        currentTextColumnHeight += betweenTextPadding;
-        final translationText = prefLang == PrefLang.hindi ? dialogue.hindiText : dialogue.hinglishText;
-        final translationPainter = TextPainter(
-          text: TextSpan(text: translationText, style: translationTextStyle),
-          textDirection: TextDirection.ltr,
-          textAlign: TextAlign.center,
-        )..layout(maxWidth: textConstraintWidth);
-        currentTextColumnHeight += translationPainter.height;
-      }
-
-      final double currentItemHeight = max(currentTextColumnHeight, maxNonTextHeight);
-
-      if (currentItemHeight > maxOverallItemHeight) {
-        maxOverallItemHeight = currentItemHeight;
-      }
-    }
-
-    return (maxOverallItemHeight + overallVerticalPadding) * 1.1;
-  }
-  // --- End Function ---
-
   @override
   Widget build(BuildContext context) {
     _previousDialogues = List.from(widget.dialogues);
@@ -205,8 +141,9 @@ class _DialogueListState extends ConsumerState<DialogueList> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Call the calculation function
-        final double calculatedItemHeight = _calculateItemHeight(constraints, widget.dialogues, prefLang);
+        // Calculate item height for full screen
+        final double screenHeight = MediaQuery.of(context).size.height;
+        final double calculatedItemHeight = screenHeight * 0.2; // 20% of screen height per item
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
           widget.onHeightCalculated?.call(calculatedItemHeight);
@@ -217,7 +154,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
             ListWheelScrollView.useDelegate(
               controller: _scrollController,
               itemExtent: calculatedItemHeight,
-              diameterRatio: 2.3,
+              diameterRatio: 1.7,
               perspective: 0.004,
               physics: const FixedExtentScrollPhysics(),
               childDelegate: ListWheelChildListDelegate(
@@ -226,9 +163,9 @@ class _DialogueListState extends ConsumerState<DialogueList> {
                   final formattedTime = formatDurationMMSS(dialogue.time);
                   final bool isSelected = index == _selectedDialogueIndex;
 
-                  final double textFontSize = isSelected ? 20 : 18;
+                  final double textFontSize = isSelected ? 22 : 18; // Reduced font sizes
                   final FontWeight textFontWeight = isSelected ? FontWeight.bold : FontWeight.w500;
-                  final double iconSize = isSelected ? 20 : 18;
+                  final double iconSize = isSelected ? 24 : 20; // Reduced icon sizes
                   final Color timeColor = isSelected ? Colors.white : Colors.white70;
                   final isPlaying = _playingDialogueFilename == dialogue.audioFilename;
                   final Color iconColor =
@@ -237,29 +174,26 @@ class _DialogueListState extends ConsumerState<DialogueList> {
                           : isSelected
                           ? Colors.white
                           : Colors.white70;
-                  // Constants needed inside the loop, moved outside the height calculation function
-                  const double horizontalPadding = 16.0;
-                  const double textWidthPercentage = 0.7;
-                  const double betweenTextPadding = 2.0;
 
                   return Container(
                     color: Colors.transparent,
                     alignment: Alignment.center,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Text(formattedTime, style: TextStyle(fontSize: 12, color: timeColor)),
-                        const SizedBox(width: 16),
+                        Text(formattedTime, style: TextStyle(fontSize: 16, color: timeColor)),
+                        const SizedBox(width: 24),
                         Flexible(
                           child: LayoutBuilder(
                             builder: (context, constraints) {
-                              // Inner LayoutBuilder might still be needed if text width depends on Flexible allocation
                               return Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: horizontalPadding),
+                                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+
                                 child: SizedBox(
-                                  width: constraints.maxWidth * textWidthPercentage,
+                                  width: constraints.maxWidth * 0.8,
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -275,11 +209,11 @@ class _DialogueListState extends ConsumerState<DialogueList> {
                                       ),
                                       if (dialogue.hindiText.isNotEmpty && dialogue.hinglishText.isNotEmpty)
                                         Padding(
-                                          padding: const EdgeInsets.only(top: betweenTextPadding),
+                                          padding: const EdgeInsets.only(top: 8),
                                           child: Text(
                                             prefLang == PrefLang.hindi ? dialogue.hindiText : dialogue.hinglishText,
                                             style: TextStyle(
-                                              fontSize: textFontSize * 0.75,
+                                              fontSize: textFontSize * 0.8,
                                               color: Colors.white70,
                                               fontWeight: FontWeight.normal,
                                             ),
@@ -293,7 +227,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
                             },
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 16),
                         GestureDetector(
                           onTap: () async {
                             await _playDialogueAudio(dialogue.audioFilename);
@@ -301,16 +235,16 @@ class _DialogueListState extends ConsumerState<DialogueList> {
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 300),
                             curve: Curves.easeInOut,
-                            padding: const EdgeInsets.all(4.0),
+                            padding: const EdgeInsets.all(8.0),
                             decoration: BoxDecoration(
                               color: isPlaying ? Colors.white : Colors.white.withAlpha(50),
                               shape: BoxShape.circle,
                               border: Border.all(
                                 color: isPlaying ? Colors.green.shade100 : Colors.white70,
-                                width: isPlaying ? 1.5 : 1,
+                                width: isPlaying ? 2 : 1.5,
                               ),
                             ),
-                            transform: Matrix4.identity()..scale(isPlaying ? 1.1 : 1.0),
+                            transform: Matrix4.identity()..scale(isPlaying ? 1.2 : 1.0),
                             transformAlignment: Alignment.center,
                             child: Icon(Icons.volume_up, color: iconColor, size: iconSize),
                           ),
@@ -329,7 +263,6 @@ class _DialogueListState extends ConsumerState<DialogueList> {
                 child: Container(
                   height: calculatedItemHeight,
                   decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16.0)),
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
@@ -364,12 +297,3 @@ class _DialogueListState extends ConsumerState<DialogueList> {
     );
   }
 }
-
-const double horizontalPadding = 16.0;
-const double textWidthPercentage = 0.7;
-const double betweenTextPadding = 2.0;
-const double overallVerticalPadding = 16.0;
-const double timeFontSize = 12.0;
-const double selectedIconSize = 20.0;
-const double iconPadding = 4.0;
-const double iconBorder = 1.0;

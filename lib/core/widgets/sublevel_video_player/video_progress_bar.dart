@@ -38,28 +38,40 @@ class _VideoProgressBarState extends State<VideoProgressBar> with SingleTickerPr
         });
       }
     });
+
+    _lastEstimatedPositionMs = widget.currentPositionMs;
+    _pausedPositionMs = widget.currentPositionMs;
   }
 
   @override
   void didUpdateWidget(covariant VideoProgressBar oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // paused
+    if (widget.currentPositionMs >= 0 && (widget.currentPositionMs - _lastEstimatedPositionMs).abs() > 500) {
+      _lastEstimatedPositionMs = widget.currentPositionMs;
+      _pausedPositionMs = widget.currentPositionMs;
+      _lastUpdateTime = DateTime.now();
+
+      setState(() {
+        _currentProgress = _calculateProgress(widget.currentPositionMs, widget.durationMs);
+      });
+    }
+
     if (oldWidget.isPlaying && !widget.isPlaying) {
       setState(() {
         _pausedPositionMs = _lastEstimatedPositionMs;
       });
     }
 
-    // played
     if (!oldWidget.isPlaying && widget.isPlaying) {
       setState(() {
         _lastUpdateTime = DateTime.now();
-        if (widget.currentPositionMs == 0) {
+        // Only reset if position is explicitly set to 0 and we're not resuming from app lifecycle change
+        if (widget.currentPositionMs == 0 && _pausedPositionMs == 0) {
           _lastEstimatedPositionMs = 0;
           _pausedPositionMs = 0;
-          _currentProgress = _estimateCurrentProgress();
         }
+        _currentProgress = _estimateCurrentProgress();
       });
     }
 
@@ -75,7 +87,12 @@ class _VideoProgressBarState extends State<VideoProgressBar> with SingleTickerPr
   // Estimates progress based on the last known position and time elapsed
   double _estimateCurrentProgress() {
     if (!widget.isPlaying) {
-      return _currentProgress;
+      // When paused, use either the widget position (if valid) or our last estimate
+      if (widget.currentPositionMs > 0) {
+        _lastEstimatedPositionMs = widget.currentPositionMs;
+        _pausedPositionMs = widget.currentPositionMs;
+      }
+      return _calculateProgress(_pausedPositionMs, widget.durationMs);
     }
 
     final now = DateTime.now();

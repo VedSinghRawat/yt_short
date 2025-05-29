@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants/constants.dart';
 import 'package:myapp/core/controllers/lang_notifier.dart';
+import 'package:myapp/core/screen/app_bar.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/utils.dart';
@@ -287,7 +288,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       // appBar: const HomeScreenAppBar(),
-      body: SublevelsList(loadingIds: loadingLevelIds, sublevels: _sortedSublevels!, onVideoChange: onVideoChange),
+      body: Stack(
+        children: [
+          SublevelsList(loadingIds: loadingLevelIds, sublevels: _sortedSublevels!, onVideoChange: onVideoChange),
+          const HomeScreenAppBar(),
+        ],
+      ),
     );
   }
 }

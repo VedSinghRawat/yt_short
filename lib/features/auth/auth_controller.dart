@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:myapp/core/error/failure.dart';
+import 'package:myapp/core/widgets/show_confirmation_dialog.dart';
 import 'package:myapp/features/activity_log/activity_log.controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:myapp/core/shared_pref.dart';
@@ -211,6 +213,47 @@ class AuthController extends _$AuthController {
       if (context.mounted) {
         showSnackBar(context, message: e.toString(), type: SnackBarType.error);
       }
+    } finally {
+      _isProcessing = false;
+      state = state.copyWith(loading: false);
+    }
+  }
+
+  Future<bool> resetProfile(BuildContext context) async {
+    if (_isProcessing) return false;
+
+    _isProcessing = true;
+    state = state.copyWith(loading: true);
+
+    try {
+      final userController = ref.read(userControllerProvider.notifier);
+      final authAPI = ref.read(authAPIProvider);
+      final user = ref.read(userControllerProvider).currentUser;
+
+      if (user == null) return false;
+
+      final confirmed = await showConfirmationDialog(context, question: 'Are you sure you want to reset your profile?');
+
+      if (!confirmed) return false;
+
+      final userDTO = await authAPI.resetProfile();
+
+      if (userDTO == null) return false;
+
+      userController.updateCurrentUser(userDTO);
+
+      return true;
+    } on Failure catch (e, stackTrace) {
+      developer.log('Error in AuthController.deleteProfile', error: e.toString(), stackTrace: stackTrace);
+
+      final error = parseError(e.type, ref);
+
+      if (context.mounted) {
+        showSnackBar(context, message: error, type: SnackBarType.error);
+      }
+
+      state = state.copyWith(error: error);
+      return false;
     } finally {
       _isProcessing = false;
       state = state.copyWith(loading: false);

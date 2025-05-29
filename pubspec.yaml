@@ -36,6 +36,7 @@ dependencies:
   flutter_archive: ^6.0.3
   just_audio: ^0.9.46
   chewie: ^1.11.1
+  lottie: ^3.3.1
 
 dev_dependencies:
   flutter_test:
@@ -51,6 +52,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/img/
+    - assets/animations/
     - .env
     - .env.prod
 

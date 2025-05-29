@@ -31,6 +31,7 @@ class SublevelControllerState with _$SublevelControllerState {
     @Default(false) bool hasFinishedVideo,
     @Default({}) Set<String> loadedLevelIds,
     @Default({}) Set<String> loadingLevelIds,
+    @Default(false) bool showAppBar,
     String? error,
   }) = _SublevelControllerState;
 
@@ -102,6 +103,8 @@ class SublevelController extends _$SublevelController {
   }
 
   void setVideoPlayingError(String e) => state = state.copyWith(error: e);
+
+  void setShowAppBar(bool to) => state = state.copyWith(showAppBar: to);
 
   Future<void> _addExistVideoSublevelEntries(LevelDTO levelDTO, int level, String levelId) async {
     final entries = await FileService.listEntities(Directory(PathService.levelVideosDirLocalPath(levelId)));

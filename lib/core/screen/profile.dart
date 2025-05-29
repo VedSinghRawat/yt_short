@@ -35,10 +35,8 @@ class ProfileScreen extends ConsumerWidget {
           appBar: AppBar(
             title: Text(
               ref.read(langProvider.notifier).prefLangText(const PrefLangText(hindi: 'प्रोफाइल', hinglish: 'Profile')),
-              // No explicit color needed, AppBar uses theme's onSurface implicitly
             ),
             elevation: 0,
-            // Background color will be inherited from the theme's AppBarTheme or ColorScheme.surface
             actions: [
               if (user != null)
                 IconButton(
@@ -186,6 +184,36 @@ class ProfileScreen extends ConsumerWidget {
                           ),
                         ],
                       ),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.restart_alt),
+                          label: Text(
+                            ref
+                                .read(langProvider.notifier)
+                                .prefLangText(
+                                  const PrefLangText(hindi: 'प्रोफाइल रीसेट करें', hinglish: 'Reset Profile'),
+                                ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: theme.colorScheme.error,
+                            foregroundColor: theme.colorScheme.onError,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          onPressed:
+                              isLoading
+                                  ? null
+                                  : () async {
+                                    final success = await authController.resetProfile(context);
+
+                                    if (context.mounted && success) {
+                                      showSnackBar(context, message: 'Profile reset successfully');
+                                    }
+                                  },
+                        ),
+                      ),
                     ],
                   ),
               ],
@@ -219,7 +247,7 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ),
             Divider(
-              color: theme.colorScheme.onPrimary.withOpacity(0.5),
+              color: theme.colorScheme.onPrimary.withValues(alpha: .5),
               height: 20,
             ), // Adjust divider color for contrast
             ...children,

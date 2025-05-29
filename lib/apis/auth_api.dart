@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:myapp/core/error/failure.dart';
 import 'package:myapp/core/services/api_service.dart';
 import 'package:myapp/core/services/google_sign_in.dart';
 import 'package:myapp/core/shared_pref.dart';
@@ -12,6 +13,7 @@ abstract class IAuthAPI {
   Future<UserDTO?> signInWithGoogle();
   Future<void> signOut();
   Future<void> syncCyId();
+  Future<UserDTO?> resetProfile();
 }
 
 class AuthAPI implements IAuthAPI {
@@ -68,6 +70,22 @@ class AuthAPI implements IAuthAPI {
     );
 
     SharedPref.store(PrefKey.cyId, ''); // set cyId to empty string to indicate that it has been synced
+  }
+
+  @override
+  Future<UserDTO?> resetProfile() async {
+    try {
+      final response = await _apiService.call(
+        params: const ApiParams(endpoint: '/user/reset-profile', method: ApiMethod.get),
+      );
+
+      return UserDTO.fromJson(response.data['user']);
+    } on DioException catch (e) {
+      throw Failure(message: e.response?.data?.toString() ?? e.toString(), type: e.type);
+    } catch (e, stackTrace) {
+      developer.log('Error during profile reset', error: e.toString(), stackTrace: stackTrace);
+      throw Failure(message: e.toString());
+    }
   }
 }
 
