@@ -1,4 +1,5 @@
 import 'dart:developer' as developer;
+import 'dart:math' as Math;
 
 import 'package:dio/dio.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -38,7 +39,10 @@ class LevelController extends _$LevelController {
   LevelControllerState build() => const LevelControllerState();
 
   Future<Level?> getLevel(String id) async {
-    state = state.copyWith(loadingByLevelId: state.loadingByLevelId..update(id, (value) => true, ifAbsent: () => true));
+    developer.log('getLevel: $id');
+    state = state.copyWith(
+      loadingByLevelId: {...state.loadingByLevelId}..update(id, (value) => true, ifAbsent: () => true),
+    );
 
     final levelDTOEither = await levelService.getLevel(id, ref);
 
@@ -48,14 +52,16 @@ class LevelController extends _$LevelController {
         return null;
       },
       (r) {
+        developer.log('r: $r');
         final level = Level.fromLevelDTO(r);
+        developer.log('level: $level');
         int i = 1;
         r.sub_levels.map((subLevelDTO) => subLevelController.handleDTO(subLevelDTO, level.id, i++));
         return level;
       },
     );
 
-    state = state.copyWith(loadingByLevelId: state.loadingByLevelId..update(id, (value) => false));
+    state = state.copyWith(loadingByLevelId: {...state.loadingByLevelId}..update(id, (value) => false));
 
     return level;
   }
@@ -79,7 +85,6 @@ class LevelController extends _$LevelController {
 
   Future<void> fetchLevels() async {
     final orderedIds = ref.read(levelControllerProvider.notifier).state.orderedIds;
-    developer.log('orderedIds: $orderedIds');
 
     if (orderedIds == null) {
       state = state.copyWith(error: parseError(DioExceptionType.unknown, ref.read(langControllerProvider)));
@@ -97,12 +102,12 @@ class LevelController extends _$LevelController {
 
     final surroundingLevelIds = _getSurroundingLevelIds(orderedIds.indexOf(currUserLevelId), orderedIds);
 
-    final a =
+    final fetchLevelReqs =
         surroundingLevelIds
-            .map((levelId) => levelId != null && loading[levelId] == false ? getLevel(levelId) : Future.value(null))
+            .map((levelId) => loading[levelId] == null ? getLevel(levelId) : Future.value(null))
             .toList();
 
-    await Future.wait(a);
+    await Future.wait(fetchLevelReqs);
 
     if (currUserLevelId == orderedIds.last) {
       final message = AppConstants.allLevelsCompleted(ref.read(langControllerProvider));
@@ -111,11 +116,15 @@ class LevelController extends _$LevelController {
     }
   }
 
-  List<String?> _getSurroundingLevelIds(int currIndex, List<String?> orderedIds) {
-    return [
-      orderedIds.elementAtOrNull(currIndex - 1),
-      orderedIds.elementAtOrNull(currIndex + 1),
-      orderedIds.elementAtOrNull(currIndex + 2),
-    ];
+  List<String> _getSurroundingLevelIds(int currIndex, List<String?> orderedIds) {
+    final startBefore = Math.max(0, currIndex - AppConstants.kMaxBeforeLevels);
+    final endAfter = Math.min(orderedIds.length, currIndex + AppConstants.kMaxAfterLevels + 1);
+    final startAfter = Math.min(orderedIds.length, currIndex + 1);
+
+    return orderedIds
+        .sublist(startBefore, currIndex)
+        .followedBy(orderedIds.sublist(startAfter, endAfter))
+        .whereType<String>()
+        .toList();
   }
 }

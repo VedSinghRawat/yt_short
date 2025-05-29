@@ -53,14 +53,13 @@ class InitializeService {
       );
 
       final apiUser = ref.read(userControllerProvider).currentUser;
-      developer.log('currProgress: ${currProgress?.toJson()}, apiUser: ${apiUser?.toJson()}');
       if (currProgress == null && apiUser == null) return;
 
       final localLastModified = currProgress?.modified ?? 0;
       final apiLastModified = apiUser != null ? DateTime.parse(apiUser.modified).millisecondsSinceEpoch : 0;
-      final b = localLastModified > apiLastModified;
+      final localIsNewer = localLastModified > apiLastModified && currProgress?.levelId != null;
 
-      b
+      localIsNewer
           ? await userController.sync(currProgress!.levelId!, currProgress.subLevel!)
           : await SharedPref.copyWith(
             PrefKey.currProgress(userEmail: apiUser?.email),
