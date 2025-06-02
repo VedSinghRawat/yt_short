@@ -41,7 +41,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
   bool isFinished = false;
   int? _lastTimeRemaining;
 
-  List<Dialogue> _displayableDialogues = [];
+  List<SubDialogue> _displayableDialogues = [];
   double? _dialogueListHeight;
 
   @override
@@ -246,14 +246,14 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
     _controller = null;
 
     try {
-      String localPath = PathService.videoLocal(widget.subLevel.levelId, widget.subLevel.videoFilename);
+      String localPath = PathService.sublevelVideo(widget.subLevel.levelId, widget.subLevel.id);
 
       final urls =
           [BaseUrl.cloudflare, BaseUrl.s3]
               .map(
                 (url) => ref
-                    .read(subLevelServiceProvider)
-                    .getVideoUrl(widget.subLevel.levelId, widget.subLevel.videoFilename, url),
+                    .read(sublevelControllerProvider.notifier)
+                    .getVideoUrl(widget.subLevel.levelId, widget.subLevel.id, url),
               )
               .toList();
 
@@ -288,7 +288,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
 
       widget.onControllerInitialized?.call(_controller!, seek);
     } catch (e) {
-      developer.log('Error initializing video player ${widget.subLevel.videoFilename}', error: e.toString());
+      developer.log('Error initializing video player ${widget.subLevel.id}', error: e.toString());
 
       _controller?.removeListener(_listener);
 
@@ -371,7 +371,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
     final double currentDialogueContainerHeight = _dialogueListHeight ?? standardDialogueHeight;
 
     return VisibilityDetector(
-      key: Key(widget.subLevel.videoFilename + widget.subLevel.index.toString()),
+      key: Key(widget.subLevel.id + widget.subLevel.index.toString()),
       onVisibilityChanged: _onVisibilityChanged,
       child: SafeArea(
         child: Column(

@@ -1,6 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:flutter/foundation.dart';
-import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 
 part 'level.g.dart';
@@ -13,16 +12,12 @@ class Level with _$Level {
   factory Level.fromJson(Map<String, dynamic> json) => _$LevelFromJson(json);
 
   factory Level.fromLevelDTO(LevelDTO levelDTO) {
-    return Level(
-      id: levelDTO.id,
-      title: levelDTO.title,
-      subLevelIds: levelDTO.sub_levels.map((e) => e.videoFilename).toList(),
-    );
+    return Level(id: levelDTO.id, title: levelDTO.title, subLevelIds: levelDTO.sub_levels.map((e) => e.id).toList());
   }
 }
 
 @freezed
-class LevelDTO with _$LevelDTO implements SharedPrefClass {
+class LevelDTO with _$LevelDTO {
   const factory LevelDTO({
     required String id,
     required String title,

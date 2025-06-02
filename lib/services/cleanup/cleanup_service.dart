@@ -71,13 +71,13 @@ class StorageCleanupService {
 
         for (var sub in level.sub_levels) {
           for (var dialogue in sub.dialogues) {
-            final filename = dialogue.audioFilename;
+            final filename = dialogue.id;
 
             if (sublevelIdsByDialogueFilename[filename] == null) {
               sublevelIdsByDialogueFilename[filename] = {};
             }
 
-            sublevelIdsByDialogueFilename[filename]!.add(sub.videoFilename);
+            sublevelIdsByDialogueFilename[filename]!.add(sub.id);
           }
         }
       }),
@@ -115,14 +115,14 @@ class StorageCleanupService {
 
         // Delete videos one by one and update size
         for (var (index, sub) in level.sub_levels.indexed) {
-          final videoPath = PathService.videoLocal(levelId, sub.videoFilename);
+          final videoPath = PathService.videoLocal(levelId, sub.id);
           final videoFile = File(videoPath);
           if (!await videoFile.exists()) continue;
 
           final videoSize = await videoFile.length();
 
           toBeDeletedPaths[levelId]!.add(videoPath);
-          etagsToClean.add(PathService.video(levelId, videoPath.split('/').last.replaceAll('.mp4', '')));
+          etagsToClean.add(PathService.sublevelVideo(levelId, videoPath.split('/').last.replaceAll('.mp4', '')));
 
           totalSize -= videoSize;
 
@@ -133,7 +133,7 @@ class StorageCleanupService {
               final audioSize = await audioFile.length();
               toBeDeletedPaths[levelId]!.add(audioPath);
 
-              etagsToClean.add(PathService.video(levelId, audioPath.split('/').last.replaceAll('.mp3', '')));
+              etagsToClean.add(PathService.sublevelVideo(levelId, audioPath.split('/').last.replaceAll('.mp3', '')));
 
               totalSize -= audioSize;
             }

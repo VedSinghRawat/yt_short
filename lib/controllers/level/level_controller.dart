@@ -4,10 +4,12 @@ import 'dart:math' as Math;
 import 'package:dio/dio.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:myapp/constants.dart';
+import 'package:myapp/controllers/dialogue/dialogue_controller.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
 import 'package:myapp/controllers/user/user_controller.dart';
 import 'package:myapp/core/shared_pref.dart';
+import 'package:myapp/models/sublevel/sublevel.dart';
 import 'package:myapp/services/level/level_service.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/level/level.dart';
@@ -34,17 +36,20 @@ class LevelController extends _$LevelController {
   late final levelService = ref.watch(levelServiceProvider);
   late final langController = ref.watch(langControllerProvider);
   late final subLevelController = ref.watch(sublevelControllerProvider.notifier);
+  late final dialogueController = ref.watch(dialogueControllerProvider.notifier);
   late final userController = ref.watch(userControllerProvider);
+
   @override
   LevelControllerState build() => const LevelControllerState();
 
-  Future<Level?> getLevel(String id) async {
-    developer.log('getLevel: $id');
+  Future<void> getLevel(String id) async {
     state = state.copyWith(
       loadingByLevelId: {...state.loadingByLevelId}..update(id, (value) => true, ifAbsent: () => true),
     );
 
     final levelDTOEither = await levelService.getLevel(id, ref);
+    List<SubLevelDTO> sublevelDTOs = [];
+    Set<String> dialogueIds = {};
 
     final level = levelDTOEither.fold(
       (l) {
@@ -52,18 +57,30 @@ class LevelController extends _$LevelController {
         return null;
       },
       (r) {
-        developer.log('r: $r');
         final level = Level.fromLevelDTO(r);
-        developer.log('level: $level');
         int i = 1;
-        r.sub_levels.map((subLevelDTO) => subLevelController.handleDTO(subLevelDTO, level.id, i++));
+        sublevelDTOs = r.sub_levels;
+        r.sub_levels.map((subLevelDTO) {
+          subLevelController.set(subLevelDTO, level.id, i++);
+          dialogueIds.addAll(subLevelDTO.dialogues.map((d) => d.id));
+        });
+
         return level;
       },
     );
 
     state = state.copyWith(loadingByLevelId: {...state.loadingByLevelId}..update(id, (value) => false));
 
-    return level;
+    if (level == null) return;
+
+    await Future.wait([
+      ...dialogueIds.map((dialogueId) async {
+        final dialogue = await dialogueController.get(dialogueId);
+        if (dialogue == null) return;
+        await dialogueController.downloadData(dialogue.zipNum);
+      }),
+      ...sublevelDTOs.map((subLevelDTO) => subLevelController.downloadData(subLevelDTO, level.id)),
+    ]);
   }
 
   Future<void> getOrderedIds() async {

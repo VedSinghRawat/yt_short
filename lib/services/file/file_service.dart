@@ -82,6 +82,10 @@ class FileService {
     await ZipFile.extractToDirectory(zipFile: zipFile, destinationDir: destinationDir);
     return destinationDir;
   }
+
+  static File getFile(String path, {bool cache = false}) {
+    return File('${cache ? cacheDirectory.path : documentsDirectory.path}$path');
+  }
 }
 
 enum EntitiesType { folders, files }

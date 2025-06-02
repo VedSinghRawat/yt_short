@@ -105,3 +105,12 @@ String formatDurationMMSS(double seconds) {
   final secs = twoDigits(duration.inSeconds.remainder(60));
   return '$minutes:$secs';
 }
+
+bool hasToJson<T>(T o) {
+  try {
+    (o as dynamic).toJson();
+    return true;
+  } on NoSuchMethodError {
+    return false;
+  }
+}

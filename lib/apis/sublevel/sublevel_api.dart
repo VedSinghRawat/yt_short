@@ -7,8 +7,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'sublevel_api.g.dart';
 
 abstract class ISubLevelAPI {
-  Future<Uint8List?> getDialogueZip(int zipNum);
-  Future<Uint8List?> getVideo(String levelId, String videoFilename);
+  Future<Uint8List?> getVideo(String levelId, String id);
   Future<Uint8List?> getAudio(String levelId, String audioFilename);
 }
 
@@ -18,19 +17,9 @@ class SubLevelAPI implements ISubLevelAPI {
   final ApiService apiService;
 
   @override
-  Future<Uint8List?> getVideo(String levelId, String videoFilename) async {
+  Future<Uint8List?> getVideo(String levelId, String id) async {
     final response = await apiService.getCloudStorageData(
-      endpoint: PathService.video(levelId, videoFilename),
-      responseType: ResponseType.bytes,
-    );
-
-    return response?.data;
-  }
-
-  @override
-  Future<Uint8List?> getDialogueZip(int zipNum) async {
-    final response = await apiService.getCloudStorageData<Uint8List?>(
-      endpoint: '/dialogues/zips/$zipNum.zip',
+      endpoint: PathService.sublevelVideo(levelId, id),
       responseType: ResponseType.bytes,
     );
 

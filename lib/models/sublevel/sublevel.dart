@@ -6,17 +6,10 @@ part 'sublevel.freezed.dart';
 part 'sublevel.g.dart';
 
 @freezed
-class Dialogue with _$Dialogue {
-  const factory Dialogue({
-    required String text,
-    required double time,
-    required String audioFilename,
-    required int zipNum,
-    required String hindiText,
-    required String hinglishText,
-  }) = _Dialogue;
+class SubDialogue with _$SubDialogue {
+  const factory SubDialogue({required String id, required double time}) = _SubDialogue;
 
-  factory Dialogue.fromJson(Map<String, dynamic> json) => _$DialogueFromJson(json);
+  factory SubDialogue.fromJson(Map<String, dynamic> json) => _$SubDialogueFromJson(json);
 }
 
 @freezed
@@ -43,21 +36,13 @@ class SubLevel with _$SubLevel {
               levelId: levelId,
               text: dto.text,
               pauseAt: dto.pauseAt,
-              videoFilename: dto.videoFilename,
+              id: dto.id,
               dialogues: dto.dialogues,
-              audioFilename: dto.audioFilename,
             ),
           ),
       video:
-          (dto) => SubLevel.video(
-            Video(
-              level: level,
-              index: index,
-              levelId: levelId,
-              videoFilename: dto.videoFilename,
-              dialogues: dto.dialogues,
-            ),
-          ),
+          (dto) =>
+              SubLevel.video(Video(level: level, index: index, levelId: levelId, id: dto.id, dialogues: dto.dialogues)),
     );
   }
 
@@ -68,10 +53,9 @@ class SubLevel with _$SubLevel {
 
   int get index => when(speechExercise: (speechExercise) => speechExercise.index, video: (video) => video.index);
 
-  String get videoFilename =>
-      when(speechExercise: (speechExercise) => speechExercise.videoFilename, video: (video) => video.videoFilename);
+  String get id => when(speechExercise: (speechExercise) => speechExercise.id, video: (video) => video.id);
 
-  List<Dialogue> get dialogues =>
+  List<SubDialogue> get dialogues =>
       when(speechExercise: (speechExercise) => speechExercise.dialogues, video: (video) => video.dialogues);
 
   bool get isVideo => this is _Video;
@@ -99,9 +83,8 @@ class SubLevelDTO with _$SubLevelDTO {
     return when(speechExercise: (speechExercise) => speechExercise.toJson(), video: (video) => video.toJson());
   }
 
-  String get videoFilename =>
-      when(speechExercise: (speechExercise) => speechExercise.videoFilename, video: (video) => video.videoFilename);
+  String get id => when(speechExercise: (speechExercise) => speechExercise.id, video: (video) => video.id);
 
-  List<Dialogue> get dialogues =>
+  List<SubDialogue> get dialogues =>
       when(speechExercise: (speechExercise) => speechExercise.dialogues, video: (video) => video.dialogues);
 }

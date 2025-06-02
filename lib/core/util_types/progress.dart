@@ -4,7 +4,7 @@ import 'package:myapp/core/shared_pref.dart';
 part 'progress.g.dart';
 
 @JsonSerializable()
-class Progress implements SharedPrefClass {
+class Progress {
   final int? level;
   final int? subLevel;
   final int? maxLevel;

@@ -1,8 +1,6 @@
-import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/apis/sublevel/sublevel_api.dart';
 import 'package:myapp/core/console.dart';
-import 'package:myapp/services/api/api_service.dart';
 import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/level/level_service.dart';
 import 'package:myapp/services/path/path_service.dart';
@@ -18,62 +16,23 @@ class SubLevelService {
 
   final ISubLevelAPI subLevelAPI;
 
-  Future<void> downloadFiles(SubLevelDTO subLevelDTO, String levelId) async {
-    final videoData = await subLevelAPI.getVideo(levelId, subLevelDTO.videoFilename);
-    final audioData =
-        subLevelDTO.isSpeechExercise
-            ? await subLevelAPI.getAudio(levelId, (subLevelDTO as SpeechExerciseDTO).audioFilename)
-            : null;
+  Future<void> downloadData(SubLevelDTO subLevelDTO, String levelId) async {
+    final videoData = await subLevelAPI.getVideo(levelId, subLevelDTO.id);
+    final audioData = subLevelDTO.isSpeechExercise ? await subLevelAPI.getAudio(levelId, subLevelDTO.id) : null;
 
     try {
       if (videoData != null) {
-        final videoPath = PathService.videoLocal(levelId, subLevelDTO.videoFilename);
+        final videoPath = PathService.sublevelVideo(levelId, subLevelDTO.id);
         await FileService.store(videoPath, videoData);
       }
 
       if (audioData != null) {
-        final audioPath = PathService.audioLocal(levelId, (subLevelDTO as SpeechExerciseDTO).audioFilename);
+        final audioPath = PathService.sublevelAudio(levelId, subLevelDTO.id);
         await FileService.store(audioPath, audioData);
       }
     } catch (e) {
-      Console.log('Error saving video file for ${subLevelDTO.videoFilename}: $e');
+      Console.log('Error saving video file for ${subLevelDTO.id}: $e');
     }
-
-    final uniqueZipNums = subLevelDTO.dialogues.map((dialogue) => dialogue.zipNum).toSet();
-
-    await Future.wait(
-      uniqueZipNums.map((zipNum) async {
-        final destinationDir = Directory(PathService.dialogueAudioDir);
-
-        final zipData = await subLevelAPI.getDialogueZip(zipNum);
-
-        if (zipData == null) return;
-
-        File? tempZipFile;
-        try {
-          final tempZipPath = PathService.dialogueTempZip(zipNum);
-          tempZipFile = File(tempZipPath);
-          await tempZipFile.parent.create(recursive: true);
-          await tempZipFile.writeAsBytes(zipData);
-
-          await FileService.unzip(tempZipFile, destinationDir);
-        } catch (e, _) {
-          Console.log('Error processing dialogue zip $zipNum: $e');
-        } finally {
-          if (tempZipFile != null && await tempZipFile.exists()) {
-            try {
-              await tempZipFile.delete();
-            } catch (e) {
-              Console.log('Error deleting temporary zip file ${tempZipFile.path}: $e');
-            }
-          }
-        }
-      }),
-    );
-  }
-
-  String getVideoUrl(String levelId, String videoFilename, BaseUrl baseUrl) {
-    return '${baseUrl.url}${PathService.video(levelId, videoFilename)}';
   }
 }
 

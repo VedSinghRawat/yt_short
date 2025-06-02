@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:android_play_install_referrer/android_play_install_referrer.dart';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +14,7 @@ import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/controllers/level/level_controller.dart';
 import 'package:myapp/controllers/user/user_controller.dart';
+import 'package:myapp/services/path/path_service.dart';
 import 'dart:developer' as developer;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -47,6 +49,12 @@ class InitializeService {
         levelController.getOrderedIds(),
         handleDeepLinking(), // deep linking depends on user
       ]);
+
+      // Create dialogues directory if it doesn't exist
+      final dialogueDir = Directory(PathService.dialogueAudioDir);
+      if (!await dialogueDir.exists()) {
+        await dialogueDir.create(recursive: true);
+      }
 
       final currProgress = SharedPref.get(
         PrefKey.currProgress(userEmail: ref.read(userControllerProvider).currentUser?.email),

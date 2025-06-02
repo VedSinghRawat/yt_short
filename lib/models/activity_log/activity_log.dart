@@ -4,7 +4,7 @@ import 'package:myapp/core/shared_pref.dart';
 part 'activity_log.g.dart';
 
 @JsonSerializable()
-class ActivityLog implements SharedPrefClass {
+class ActivityLog {
   final int subLevel;
   final String levelId;
   final String userEmail;

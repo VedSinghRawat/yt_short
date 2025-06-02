@@ -8,8 +8,8 @@ part 'video.freezed.dart';
 @freezed
 class Video with _$Video {
   const factory Video({
-    required String videoFilename,
-    required List<Dialogue> dialogues,
+    required String id,
+    required List<SubDialogue> dialogues,
     required int level,
     required int index,
     required String levelId,
@@ -20,7 +20,7 @@ class Video with _$Video {
 
 @freezed
 class VideoDTO with _$VideoDTO {
-  const factory VideoDTO({required String videoFilename, required List<Dialogue> dialogues}) = _VideoDTO;
+  const factory VideoDTO({required String id, required List<SubDialogue> dialogues}) = _VideoDTO;
 
   factory VideoDTO.fromJson(Map<String, dynamic> json) => _$VideoDTOFromJson(json);
 }

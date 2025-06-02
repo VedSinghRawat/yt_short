@@ -9,10 +9,6 @@ import 'package:myapp/models/activity_log/activity_log.dart';
 import 'package:myapp/models/user/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-abstract class SharedPrefClass {
-  Map<String, dynamic> toJson();
-}
-
 class PrefKey<ST, LT> {
   final dynamic Function(Map<String, dynamic> json)? fromJson;
   final String name;
@@ -118,10 +114,10 @@ class SharedPref {
         validVal = value.toString();
       } else if (isListOfPrimitives(value)) {
         validVal = jsonEncode(value);
-      } else if (value is SharedPrefClass) {
-        validVal = jsonEncode(value.toJson());
-      } else if (value is List && value.first is SharedPrefClass) {
-        final list = value.map((e) => e.toJson()).toList();
+      } else if (hasToJson(value)) {
+        validVal = jsonEncode((value as dynamic).toJson());
+      } else if (value is List && hasToJson(value.first)) {
+        final list = value.map((e) => (e as dynamic).toJson()).toList();
         validVal = jsonEncode(list);
       } else {
         throw UnsupportedError(
@@ -164,9 +160,9 @@ class SharedPref {
       if (value is Map) {
         oldValueMap = oldValue is Map ? oldValue : {};
         valueMap = value;
-      } else if (value is SharedPrefClass) {
-        oldValueMap = oldValue is SharedPrefClass ? oldValue.toJson() : {};
-        valueMap = value.toJson();
+      } else if (hasToJson(value)) {
+        oldValueMap = hasToJson(oldValue) ? (oldValue as dynamic).toJson() : {};
+        valueMap = (value as dynamic).toJson();
       } else {
         throw 'Unsupported type for copyWith in SharedPref';
       }

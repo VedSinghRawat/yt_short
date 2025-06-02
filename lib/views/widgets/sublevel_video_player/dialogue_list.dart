@@ -5,10 +5,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:myapp/models/dialogues/dialogues.dart';
 import 'package:myapp/services/path/path_service.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/controllers/user/user_controller.dart';
-import 'package:myapp/models/sublevel/sublevel.dart';
 import 'package:myapp/models/user/user.dart';
 
 class DialogueList extends ConsumerStatefulWidget {
@@ -230,7 +230,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
                   final FontWeight textFontWeight = isSelected ? FontWeight.bold : FontWeight.w500;
                   final double iconSize = isSelected ? 20 : 18;
                   final Color timeColor = isSelected ? Colors.white : Colors.white70;
-                  final isPlaying = _playingDialogueFilename == dialogue.audioFilename;
+                  final isPlaying = _playingDialogueFilename == dialogue.id;
                   final Color iconColor =
                       isPlaying
                           ? Colors.green.shade400
@@ -295,9 +295,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
                         ),
                         const SizedBox(width: 12),
                         GestureDetector(
-                          onTap: () async {
-                            await _playDialogueAudio(dialogue.audioFilename);
-                          },
+                          onTap: () => _playDialogueAudio(dialogue.id),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 300),
                             curve: Curves.easeInOut,
