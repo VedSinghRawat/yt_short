@@ -9,7 +9,6 @@ import 'package:myapp/services/path/path_service.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/controllers/level/level_controller.dart';
 import 'package:myapp/models/level/level.dart';
-import 'package:myapp/models/speech_exercise/speech_exercise.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'cleanup_service.g.dart';
@@ -33,7 +32,10 @@ class StorageCleanupService {
 
   /// Removes least-important cached levels while protecting nearby levels
   Future<void> cleanLocalFiles(String currentLevelId) async {
-    final localLevelIds = await FileService.listNames(Directory(PathService.levelsDocDir), type: EntitiesType.folders);
+    final localLevelIds = await FileService.listNames(
+      Directory('${FileService.documentsDirectory.path}/levels'),
+      type: EntitiesType.folders,
+    );
     final orderedIds = levelController.orderedIds;
     if (orderedIds == null) return;
 
@@ -84,7 +86,7 @@ class StorageCleanupService {
     );
 
     try {
-      Directory levelsDir = Directory(PathService.levelsDocDir);
+      Directory levelsDir = Directory('${FileService.documentsDirectory.path}/levels');
 
       // Ensure directory exists and input is valid
       if (!await levelsDir.exists() ||
@@ -106,7 +108,7 @@ class StorageCleanupService {
       //protected levels are reached
       while (i < deletableLevelIds.length - AppConstants.kProtectedIdsLength) {
         final levelId = deletableLevelIds[i];
-        final folderPath = PathService.level(levelId);
+        final folderPath = PathService.levelDir(levelId);
 
         final level = levelById[levelId];
         if (level == null) continue;
@@ -115,7 +117,7 @@ class StorageCleanupService {
 
         // Delete videos one by one and update size
         for (var (index, sub) in level.sub_levels.indexed) {
-          final videoPath = PathService.videoLocal(levelId, sub.id);
+          final videoPath = PathService.sublevelVideo(levelId, sub.id);
           final videoFile = File(videoPath);
           if (!await videoFile.exists()) continue;
 
@@ -127,7 +129,7 @@ class StorageCleanupService {
           totalSize -= videoSize;
 
           if (sub.isSpeechExercise) {
-            final audioPath = PathService.audioLocal(levelId, (sub as SpeechExercise).audioFilename);
+            final audioPath = PathService.sublevelAudio(levelId, sub.id);
             final audioFile = File(audioPath);
             if (await audioFile.exists()) {
               final audioSize = await audioFile.length();

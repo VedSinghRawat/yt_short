@@ -8,7 +8,7 @@ part 'sublevel_api.g.dart';
 
 abstract class ISubLevelAPI {
   Future<Uint8List?> getVideo(String levelId, String id);
-  Future<Uint8List?> getAudio(String levelId, String audioFilename);
+  Future<Uint8List?> getAudio(String levelId, String id);
 }
 
 class SubLevelAPI implements ISubLevelAPI {
@@ -27,9 +27,9 @@ class SubLevelAPI implements ISubLevelAPI {
   }
 
   @override
-  Future<Uint8List?> getAudio(String levelId, String audioFilename) async {
+  Future<Uint8List?> getAudio(String levelId, String id) async {
     final response = await apiService.getCloudStorageData(
-      endpoint: PathService.audio(levelId, audioFilename),
+      endpoint: PathService.sublevelAudio(levelId, id),
       responseType: ResponseType.bytes,
     );
 

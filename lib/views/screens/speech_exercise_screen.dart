@@ -112,7 +112,7 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
               insetPadding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
               child: SpeechExerciseCard(
                 levelId: widget.exercise.levelId,
-                audioFilename: widget.exercise.audioFilename,
+                audioFilename: widget.exercise.id,
                 text: widget.exercise.text,
                 onClose: () async {
                   await _onClose();

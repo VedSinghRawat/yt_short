@@ -6,15 +6,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/services/api/api_service.dart';
 import 'package:myapp/services/path/path_service.dart';
-import 'package:myapp/services/sublevel/sublevel_service.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
 import 'package:myapp/views/screens/error_page.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
-import 'package:flutter/foundation.dart'; // Import for listEquals
-import 'dialogue_list.dart'; // Import the new dialogue list widget
-import 'video_progress_bar.dart'; // Import the extracted progress bar
+import 'package:flutter/foundation.dart';
+import 'dialogue_list.dart';
+import 'video_progress_bar.dart';
 
 class SublevelVideoPlayer extends ConsumerStatefulWidget {
   final Function(VideoPlayerController controller, Function(Duration) seek)? onControllerInitialized;
@@ -270,7 +269,6 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
       }
 
       _controller!.addListener(_listener);
-      // await _controller!.setLooping(true);
       await _controller!.initialize();
 
       if (mounted) {
@@ -403,7 +401,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
                         child: IconButton(
                           icon: const Icon(Icons.replay_5, color: Colors.white, size: 30),
                           onPressed: _seekBackward,
-                          style: IconButton.styleFrom(backgroundColor: Colors.black.withOpacity(0.3)),
+                          style: IconButton.styleFrom(backgroundColor: Colors.black.withValues(alpha: 0.3)),
                         ),
                       ),
                       Positioned(
@@ -414,7 +412,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
                           child: IconButton(
                             icon: const Icon(Icons.forward_5, color: Colors.white, size: 30),
                             onPressed: _seekForward,
-                            style: IconButton.styleFrom(backgroundColor: Colors.black.withOpacity(0.3)),
+                            style: IconButton.styleFrom(backgroundColor: Colors.black.withValues(alpha: 0.3)),
                           ),
                         ),
                       ),

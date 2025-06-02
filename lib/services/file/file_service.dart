@@ -12,8 +12,19 @@ class FileService {
   FileService._internal();
 
   static Future<void> init() async {
+    const rootDirPaths = ['/levels', '/dialogues/zips', '/temp'];
+
     documentsDirectory = await getApplicationDocumentsDirectory();
     cacheDirectory = await getApplicationCacheDirectory();
+
+    await Future.wait(
+      rootDirPaths.map((path) async {
+        final dir = Directory('${documentsDirectory.path}$path');
+        if (!await dir.exists()) {
+          await dir.create(recursive: true);
+        }
+      }),
+    );
   }
 
   static Future<void> deleteFile(String path) async {

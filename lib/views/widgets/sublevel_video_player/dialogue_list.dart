@@ -5,14 +5,16 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:myapp/controllers/dialogue/dialogue_controller.dart';
 import 'package:myapp/models/dialogues/dialogues.dart';
+import 'package:myapp/models/sublevel/sublevel.dart';
 import 'package:myapp/services/path/path_service.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/controllers/user/user_controller.dart';
 import 'package:myapp/models/user/user.dart';
 
 class DialogueList extends ConsumerStatefulWidget {
-  final List<Dialogue> dialogues;
+  final List<SubDialogue> dialogues;
   final Function(double height)? onHeightCalculated;
 
   const DialogueList({super.key, required this.dialogues, this.onHeightCalculated});
@@ -203,10 +205,14 @@ class _DialogueListState extends ConsumerState<DialogueList> {
       userControllerProvider.select((state) => state.currentUser?.prefLang ?? PrefLang.hinglish),
     );
 
+    final dialogueMap = ref.watch(dialogueControllerProvider.select((state) => state.dialogues));
+
+    final dialogueByTime = Map.fromEntries(widget.dialogues.map((e) => MapEntry(e.time, dialogueMap[e.id]!)));
+
     return LayoutBuilder(
       builder: (context, constraints) {
         // Call the calculation function
-        final double calculatedItemHeight = _calculateItemHeight(constraints, widget.dialogues, prefLang);
+        final double calculatedItemHeight = _calculateItemHeight(constraints, dialogueByTime.values.toList(), prefLang);
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
           widget.onHeightCalculated?.call(calculatedItemHeight);
@@ -221,9 +227,12 @@ class _DialogueListState extends ConsumerState<DialogueList> {
               perspective: 0.004,
               physics: const FixedExtentScrollPhysics(),
               childDelegate: ListWheelChildListDelegate(
-                children: List<Widget>.generate(widget.dialogues.length, (index) {
-                  final dialogue = widget.dialogues[index];
-                  final formattedTime = formatDurationMMSS(dialogue.time);
+                children: List<Widget>.generate(dialogueByTime.length, (index) {
+                  final el = dialogueByTime.entries.elementAt(index);
+                  final dialogue = el.value;
+                  final time = el.key;
+
+                  final formattedTime = formatDurationMMSS(time);
                   final bool isSelected = index == _selectedDialogueIndex;
 
                   final double textFontSize = isSelected ? 20 : 18;

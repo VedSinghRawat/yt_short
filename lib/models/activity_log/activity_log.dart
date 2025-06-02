@@ -1,5 +1,4 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'package:myapp/core/shared_pref.dart';
 
 part 'activity_log.g.dart';
 
@@ -15,6 +14,5 @@ class ActivityLog {
 
   factory ActivityLog.fromJson(Map<String, dynamic> json) => _$ActivityLogFromJson(json);
 
-  @override
   Map<String, dynamic> toJson() => _$ActivityLogToJson(this);
 }

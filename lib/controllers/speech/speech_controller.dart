@@ -140,14 +140,14 @@ class Speech extends _$Speech {
     state = state.copyWith(isListening: false);
   }
 
-  Future<void> playAudio(String levelId, String audioFilename) async {
+  Future<void> playAudio(String levelId, String id) async {
     if (audioPlayer.playing) {
       await audioPlayer.stop();
       state = state.copyWith(isPlayingAudio: false);
       return;
     }
 
-    final audioFile = PathService.audioLocal(levelId, audioFilename);
+    final audioFile = PathService.sublevelAudio(levelId, id);
 
     await audioPlayer.setFilePath(audioFile);
 

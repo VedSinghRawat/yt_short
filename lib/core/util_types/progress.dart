@@ -1,5 +1,4 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'package:myapp/core/shared_pref.dart';
 
 part 'progress.g.dart';
 
@@ -17,7 +16,6 @@ class Progress {
 
   factory Progress.fromJson(Map<String, dynamic> json) => _$ProgressFromJson(json);
 
-  @override
   Map<String, dynamic> toJson() => _$ProgressToJson(this);
 
   Progress copyWith({int? level, int? subLevel, int? maxLevel, int? maxSubLevel, String? levelId}) {
