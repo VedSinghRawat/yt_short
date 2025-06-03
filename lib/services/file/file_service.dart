@@ -33,8 +33,8 @@ class FileService {
     await file.delete();
   }
 
-  static Future<void> store(String path, Uint8List data) async {
-    final file = File(path);
+  static Future<void> store(String path, Uint8List data, {bool cache = false}) async {
+    final file = File((cache ? cacheDirectory : documentsDirectory).path + path);
 
     await file.parent.create(recursive: true);
 
@@ -95,7 +95,7 @@ class FileService {
   }
 
   static File getFile(String path, {bool cache = false}) {
-    return File('${cache ? cacheDirectory.path : documentsDirectory.path}$path');
+    return File('${(cache ? cacheDirectory : documentsDirectory).path}$path');
   }
 }
 

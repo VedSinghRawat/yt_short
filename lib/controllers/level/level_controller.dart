@@ -1,5 +1,4 @@
 import 'dart:math' as Math;
-
 import 'package:dio/dio.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:myapp/constants.dart';
@@ -33,10 +32,10 @@ class LevelControllerState with _$LevelControllerState {
 @Riverpod(keepAlive: true)
 class LevelController extends _$LevelController {
   late final levelService = ref.watch(levelServiceProvider);
-  late final langController = ref.watch(langControllerProvider);
+  late final prefLang = ref.watch(langControllerProvider);
+  late final userState = ref.watch(userControllerProvider);
   late final subLevelController = ref.watch(sublevelControllerProvider.notifier);
   late final dialogueController = ref.watch(dialogueControllerProvider.notifier);
-  late final userController = ref.watch(userControllerProvider);
 
   @override
   LevelControllerState build() => const LevelControllerState();
@@ -59,10 +58,11 @@ class LevelController extends _$LevelController {
         final level = Level.fromLevelDTO(r);
         int i = 1;
         sublevelDTOs = r.sub_levels;
-        r.sub_levels.map((subLevelDTO) {
-          subLevelController.set(subLevelDTO, level.id, i++);
+
+        for (var subLevelDTO in r.sub_levels) {
+          subLevelController.set(subLevelDTO, level.id, i++, state.orderedIds?.indexOf(level.id) ?? 0);
           dialogueIds.addAll(subLevelDTO.dialogues.map((d) => d.id));
-        });
+        }
 
         return level;
       },

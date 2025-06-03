@@ -140,7 +140,7 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
     return SublevelVideoPlayer(
       onControllerInitialized: _onControllerInitialized,
       stayPause: _isDialogOpen,
-      subLevel: (widget.exercise as SubLevel),
+      subLevel: SubLevel.speechExercise(widget.exercise),
     );
   }
 }

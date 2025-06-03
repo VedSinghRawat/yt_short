@@ -11,6 +11,7 @@ import 'package:myapp/controllers/activityLog/activity_log.controller.dart';
 import 'package:myapp/models/activity_log/activity_log.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 import '../../controllers/sublevel/sublevel_controller.dart';
+import '../../core/console.dart';
 import '../widgets/sublevel_list.dart';
 import '../../controllers/user/user_controller.dart';
 
@@ -265,6 +266,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final loadingLevelIds = ref.watch(levelControllerProvider.select((state) => state.loadingByLevelId));
     final sublevels = ref.watch(sublevelControllerProvider.select((state) => state.sublevels));
+    Console.log('sublevels: ${sublevels?.length}');
 
     if (sublevels == null) {
       return const Loader();

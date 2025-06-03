@@ -23,17 +23,14 @@ class SublevelControllerState with _$SublevelControllerState {
 
 @Riverpod(keepAlive: true)
 class SublevelController extends _$SublevelController {
-  late final LevelControllerState levelController = ref.watch(levelControllerProvider);
+  late final levelState = ref.watch(levelControllerProvider);
   late final subLevelService = ref.watch(subLevelServiceProvider);
 
   @override
   SublevelControllerState build() => const SublevelControllerState();
 
-  void set(SubLevelDTO dto, String levelId, int index) async {
-    final orderedIds = levelController.orderedIds;
-    if (orderedIds == null) throw Exception('orderedIds is null');
-
-    final sublevel = SubLevel.fromSubLevelDTO(dto, orderedIds.indexOf(levelId), index, levelId);
+  void set(SubLevelDTO dto, String levelId, int index, int levelIndex) async {
+    final sublevel = SubLevel.fromSubLevelDTO(dto, levelIndex, index, levelId);
     state = state.copyWith(sublevels: state.sublevels == null ? {sublevel} : {...state.sublevels!, sublevel});
   }
 
