@@ -13,6 +13,7 @@ import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
 import 'package:myapp/views/screens/error_page.dart';
 import 'package:myapp/views/screens/speech_exercise_screen.dart';
 import 'package:myapp/controllers/user/user_controller.dart';
+import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 import 'dart:async';
 
@@ -104,6 +105,17 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
   @override
   Widget build(BuildContext context) {
     ref.listen(sublevelControllerProvider.select((value) => value.hasFinishedVideo), (previous, next) {
+      final progress = SharedPref.get(PrefKey.currProgress());
+
+      if (!isLevelEqual(
+        progress?.level ?? 0,
+        progress?.subLevel ?? 0,
+        progress?.maxLevel ?? 0,
+        progress?.maxSubLevel ?? 0,
+      )) {
+        return;
+      }
+
       if (next) {
         _startAnimationTimer();
         _bounceController.repeat(reverse: true);
@@ -180,6 +192,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
                               key: Key(positionText),
                               exercise: speechExercise,
                               goToNext: () {
+                                ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
                                 _pageController.animateToPage(
                                   index + 1,
                                   duration: const Duration(milliseconds: 300),

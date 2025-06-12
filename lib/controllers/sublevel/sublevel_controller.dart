@@ -18,6 +18,7 @@ class SublevelControllerState with _$SublevelControllerState {
     Set<SubLevel>? sublevels,
     @Default(false) bool hasFinishedVideo,
     String? error,
+    @Default(false) bool showAppBar,
   }) = _SublevelControllerState;
 }
 
@@ -49,4 +50,6 @@ class SublevelController extends _$SublevelController {
       state = state.copyWith(error: 'Failed to download sublevel data: $e');
     }
   }
+
+  void setShowAppBar(bool to) => state = state.copyWith(showAppBar: to);
 }

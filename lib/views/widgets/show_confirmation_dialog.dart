@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 
-Future<void> showConfirmationDialog(
+Future<bool> showConfirmationDialog(
   BuildContext context, {
   required String question,
-  required ValueChanged<bool> onResult,
   ButtonStyle? yesButtonStyle,
   ButtonStyle? noButtonStyle,
-}) {
-  return showDialog(
+}) async {
+  bool result = false;
+
+  await showDialog(
     context: context,
     builder: (context) {
       return AlertDialog(
@@ -18,7 +19,7 @@ Future<void> showConfirmationDialog(
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              onResult(false);
+              result = false;
             },
             style: noButtonStyle ?? TextButton.styleFrom(foregroundColor: Colors.grey),
             child: const Text('No'),
@@ -26,7 +27,7 @@ Future<void> showConfirmationDialog(
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              onResult(true);
+              result = true;
             },
             style:
                 yesButtonStyle ??
@@ -40,4 +41,6 @@ Future<void> showConfirmationDialog(
       );
     },
   );
+
+  return result;
 }

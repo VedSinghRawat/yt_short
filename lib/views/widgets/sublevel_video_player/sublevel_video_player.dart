@@ -8,6 +8,7 @@ import 'package:myapp/services/api/api_service.dart';
 import 'package:myapp/services/path/path_service.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
 import 'package:myapp/views/screens/error_page.dart';
+import 'package:myapp/core/console.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 import 'package:myapp/views/widgets/loader.dart';
 import 'package:video_player/video_player.dart';
@@ -39,9 +40,9 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
   Timer? _iconTimer;
   bool isFinished = false;
   int? _lastTimeRemaining;
+  bool _showDialogueArea = false;
 
   List<SubDialogue> _displayableDialogues = [];
-  double? _dialogueListHeight;
 
   @override
   void initState() {
@@ -63,13 +64,17 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
+  Future<void> didChangeAppLifecycleState(AppLifecycleState state) async {
     super.didChangeAppLifecycleState(state);
+    Console.log('didChangeAppLifecycleState: $state,lastPosition: $_lastPosition');
 
     if (state == AppLifecycleState.paused) {
       _controller?.removeListener(_listener);
-      _controller?.pause();
-      _lastPosition = _controller?.value.position;
+      // Save the current position before pausing
+      if (_controller != null && _controller!.value.isInitialized) {
+        _lastPosition = _controller!.value.position;
+      }
+      await pause();
       _controller?.dispose();
       _controller = null;
       if (mounted) {
@@ -149,7 +154,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
     final wasPlaying = _controller!.value.isPlaying;
 
     if (wasPlaying || !changeToPlay) {
-      await _controller!.pause();
+      await pause();
       _updateDisplayableDialogues(_controller!.value.position);
     } else {
       if (_controller!.value.position >= _controller!.value.duration) {
@@ -178,6 +183,24 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
   Future<void> play() async {
     if (_controller == null || !_controller!.value.isInitialized) return;
     await _controller!.play();
+
+    setDialogueAreaAndAppBar(false);
+  }
+
+  Future<void> pause() async {
+    if (_controller == null || !_controller!.value.isInitialized) return;
+
+    setDialogueAreaAndAppBar(true);
+
+    await _controller!.pause();
+  }
+
+  void setDialogueAreaAndAppBar(bool value) {
+    setState(() {
+      _showDialogueArea = value;
+    });
+
+    ref.read(sublevelControllerProvider.notifier).setShowAppBar(value);
   }
 
   Future<void> _handleVisibility(bool isVisible) async {
@@ -188,7 +211,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
     if (isVisible) {
       _controller!.addListener(_listener);
       if (!_controller!.value.isPlaying && error == null && !widget.stayPause && _controller!.value.isInitialized) {
-        await play();
+        await _controller!.play();
       }
     } else {
       if (_controller!.value.isPlaying && _controller!.value.isInitialized) {
@@ -196,6 +219,8 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
       }
       _controller!.removeListener(_listener);
     }
+
+    setDialogueAreaAndAppBar(false);
   }
 
   void _onVisibilityChanged(VisibilityInfo info) {
@@ -272,7 +297,8 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
       }
 
       if (_lastPosition != null) {
-        await seek(Duration.zero);
+        await seek(_lastPosition!);
+        Console.log('Restored to position: ${_lastPosition!.inSeconds} seconds');
         _lastPosition = null;
       }
 
@@ -354,120 +380,179 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
   Widget build(BuildContext context) {
     final bool isPlayerReady = _controller?.value.isInitialized ?? false;
 
-    final bool isPaused = isPlayerReady && !_controller!.value.isPlaying;
-    final bool showDialogueArea = isPaused && _isVisible;
-
-    final double screenHeight = MediaQuery.of(context).size.height;
-    final double standardDialogueHeight = screenHeight * 0.3;
-
-    final double currentDialogueContainerHeight = _dialogueListHeight ?? standardDialogueHeight;
-
-    developer.log('isPlayerReady: $isPlayerReady, isPaused: $isPaused, showDialogueArea: $showDialogueArea');
-
     return VisibilityDetector(
       key: Key(widget.subLevel.id + widget.subLevel.index.toString()),
       onVisibilityChanged: _onVisibilityChanged,
       child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: Stack(
           children: [
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                GestureDetector(
-                  onTap: _changePlayingState,
-                  child: Stack(
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Stack(
                     alignment: Alignment.center,
                     children: [
-                      if (error != null)
-                        Center(child: Padding(padding: const EdgeInsets.all(8.0), child: ErrorPage(text: error!)))
-                      else if (isPlayerReady)
-                        Center(
-                          child: AspectRatio(
-                            aspectRatio: _controller!.value.aspectRatio > 0 ? _controller!.value.aspectRatio : 16 / 9,
-                            child: VideoPlayer(_controller!),
-                          ),
-                        )
-                      else
-                        const AspectRatio(aspectRatio: 16 / 9, child: Center(child: Loader())),
-
-                      PlayPauseButton(showPlayPauseIcon: _showPlayPauseIcon, iconData: _iconData),
-
-                      Positioned(
-                        left: 100,
-                        bottom: 16,
-                        child: IconButton(
-                          icon: const Icon(Icons.replay_5, color: Colors.white, size: 30),
-                          onPressed: _seekBackward,
-                          style: IconButton.styleFrom(backgroundColor: Colors.black.withValues(alpha: 0.3)),
+                      GestureDetector(
+                        onTap: _changePlayingState,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            if (error != null)
+                              Center(child: Padding(padding: const EdgeInsets.all(8.0), child: ErrorPage(text: error!)))
+                            else if (isPlayerReady)
+                              Center(
+                                child: AspectRatio(
+                                  aspectRatio:
+                                      _controller!.value.aspectRatio > 0 ? _controller!.value.aspectRatio : 16 / 9,
+                                  child: VideoPlayer(_controller!),
+                                ),
+                              )
+                            else
+                              const AspectRatio(aspectRatio: 16 / 9, child: Loader()),
+                          ],
                         ),
                       ),
 
-                      Positioned(
-                        right: 100,
-                        bottom: 16,
-                        child: Visibility(
-                          visible: ref.watch(sublevelControllerProvider.select((s) => s.hasFinishedVideo)),
+                      if (isPlayerReady) ...[
+                        PlayPauseButton(showPlayPauseIcon: _showPlayPauseIcon, iconData: _iconData),
+
+                        Positioned(
+                          left: 100,
+                          bottom: 16,
                           child: IconButton(
-                            icon: const Icon(Icons.forward_5, color: Colors.white, size: 30),
-                            onPressed: _seekForward,
-                            style: IconButton.styleFrom(backgroundColor: Colors.black.withValues(alpha: 0.3)),
+                            icon: const Icon(Icons.replay_5, color: Colors.white, size: 30),
+                            onPressed: _seekBackward,
+                            style: IconButton.styleFrom(backgroundColor: Colors.black.withValues(alpha: .3)),
                           ),
                         ),
-                      ),
+                        Positioned(
+                          right: 100,
+                          bottom: 16,
+                          child: Visibility(
+                            visible: ref.watch(sublevelControllerProvider.select((s) => s.hasFinishedVideo)),
+                            child: IconButton(
+                              icon: const Icon(Icons.forward_5, color: Colors.white, size: 30),
+                              onPressed: _seekForward,
+                              style: IconButton.styleFrom(backgroundColor: Colors.black.withValues(alpha: .3)),
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
-                ),
-                Visibility(
-                  visible: showDialogueArea,
-                  child: Positioned.fill(
-                    child: IgnorePointer(child: Container(color: Colors.black.withAlpha((255 * 0.25).round()))),
-                  ),
-                ),
-                Visibility(
-                  visible: showDialogueArea,
-                  child: Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      height: currentDialogueContainerHeight,
-                      decoration: const BoxDecoration(
-                        color: Colors.black,
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
-                      ),
-                      child: DialogueList(
-                        dialogues: _displayableDialogues,
-                        onHeightCalculated: (height) {
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (mounted && _dialogueListHeight != height) {
-                              setState(() => _dialogueListHeight = height * 3);
-                            }
-                          });
-                        },
+                  if (isPlayerReady)
+                    ValueListenableBuilder<VideoPlayerValue>(
+                      valueListenable: _controller!,
+                      builder: (context, value, child) {
+                        if (value.duration > Duration.zero) {
+                          return VideoProgressBar(
+                            durationMs: value.duration.inMilliseconds,
+                            currentPositionMs: value.position.inMilliseconds,
+                            isPlaying: value.isPlaying,
+                          );
+                        } else {
+                          return const SizedBox(height: 10);
+                        }
+                      },
+                    )
+                  else
+                    const SizedBox(height: 10),
+                ],
+              ),
+            ),
+            if (_showDialogueArea && _displayableDialogues.isNotEmpty)
+              Positioned.fill(
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _showDialogueArea = false;
+                    });
+                  },
+                  child: Container(
+                    color: Colors.black.withValues(alpha: .5),
+                    child: Center(
+                      child: GestureDetector(
+                        onTap: () {}, // Prevents tap from propagating through dialog
+                        child: Container(
+                          width: double.infinity,
+                          height: MediaQuery.of(context).size.height,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).scaffoldBackgroundColor,
+                            boxShadow: const [
+                              BoxShadow(color: Color.fromRGBO(255, 255, 255, 0.2), blurRadius: 12.0, spreadRadius: 4.0),
+                            ],
+                          ),
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Column(
+                                children: [
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                                    decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary),
+                                    child: Text(
+                                      'Dialogues',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context).colorScheme.onPrimary,
+                                        fontSize: 22,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: DialogueList(
+                                      dialogues: _displayableDialogues,
+                                      onHeightCalculated: (_) {}, // Not needed anymore
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              // Close button
+                              Positioned(
+                                right: 8,
+                                top: 8,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.grey[400]!.withValues(alpha: .2),
+                                        blurRadius: 10,
+                                        spreadRadius: 2,
+                                      ),
+                                    ],
+                                    border: Border.all(color: Colors.grey[400]!, width: 1.9),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: Material(
+                                      color: Theme.of(context).scaffoldBackgroundColor,
+                                      child: InkWell(
+                                        onTap: () {
+                                          setState(() {
+                                            _showDialogueArea = false;
+                                          });
+                                        },
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(4.0),
+                                          child: Icon(Icons.close_rounded, size: 20, color: Colors.grey[400]),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ],
-            ),
-            if (isPlayerReady)
-              ValueListenableBuilder<VideoPlayerValue>(
-                valueListenable: _controller!,
-                builder: (context, value, child) {
-                  if (value.duration > Duration.zero) {
-                    return VideoProgressBar(
-                      durationMs: value.duration.inMilliseconds,
-                      currentPositionMs: value.position.inMilliseconds,
-                      isPlaying: value.isPlaying,
-                    );
-                  } else {
-                    return const SizedBox(height: 10);
-                  }
-                },
-              )
-            else
-              const SizedBox(height: 10),
+              ),
           ],
         ),
       ),
@@ -490,7 +575,7 @@ class PlayPauseButton extends StatelessWidget {
       duration: const Duration(milliseconds: 400),
       child: Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.6),
+          color: Theme.of(context).colorScheme.surface.withValues(alpha: .6),
           shape: BoxShape.circle,
         ),
         padding: const EdgeInsets.all(20),

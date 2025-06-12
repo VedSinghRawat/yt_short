@@ -2,8 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/core/utils.dart';
-import 'package:myapp/views/widgets/active_mic.dart';
 import 'package:myapp/controllers/speech/speech_controller.dart';
+import 'package:lottie/lottie.dart';
 
 class RecognizerButton extends ConsumerStatefulWidget {
   final VoidCallback onContinue;
@@ -68,21 +68,16 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
           width: speechNotifier.isTestCompleted ? 160 : 80,
           height: speechNotifier.isTestCompleted ? 60 : 80,
           decoration: BoxDecoration(
-            shape: speechNotifier.isTestCompleted ? BoxShape.rectangle : BoxShape.circle,
             borderRadius: speechNotifier.isTestCompleted ? BorderRadius.circular(40) : null,
-            color:
-                speechNotifier.isTestCompleted
-                    ? Colors.white
-                    : speechState.isListening
-                    ? Colors.green.shade100
-                    : Colors.blue.shade100,
-            boxShadow: const [
-              BoxShadow(
-                color: Color.fromRGBO(128, 128, 128, 0.3),
-                spreadRadius: 2,
-                blurRadius: 5,
-                offset: Offset(0, 2),
-              ),
+            color: speechNotifier.isTestCompleted ? Colors.white : null,
+            boxShadow: [
+              if (speechNotifier.isTestCompleted)
+                const BoxShadow(
+                  color: Color.fromRGBO(128, 128, 128, 0.3),
+                  spreadRadius: 2,
+                  blurRadius: 5,
+                  offset: Offset(0, 2),
+                ),
             ],
           ),
           child: InkWell(
@@ -112,7 +107,7 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
                           ),
                         )
                         : speechState.isListening
-                        ? const ActiveMic()
+                        ? Lottie.asset('assets/animations/active_mic.json', width: 34, height: 34)
                         : const Icon(Icons.mic_none, color: Colors.blue, size: 34),
               ),
             ),

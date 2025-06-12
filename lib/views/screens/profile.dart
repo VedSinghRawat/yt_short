@@ -151,6 +151,34 @@ class ProfileScreen extends ConsumerWidget {
                           ),
                         ],
                       ),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.restart_alt),
+                          label: Text(
+                            ref
+                                .read(langControllerProvider.notifier)
+                                .choose(hindi: 'प्रोफाइल रीसेट करें', hinglish: 'Reset Profile'),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: theme.colorScheme.error,
+                            foregroundColor: theme.colorScheme.onError,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          onPressed:
+                              isLoading
+                                  ? null
+                                  : () async {
+                                    final success = await authController.resetProfile(context);
+
+                                    if (context.mounted && success) {
+                                      showSnackBar(context, message: 'Profile reset successfully');
+                                    }
+                                  },
+                        ),
+                      ),
                     ],
                   ),
               ],
