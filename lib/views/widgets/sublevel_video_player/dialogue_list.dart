@@ -51,13 +51,9 @@ class _DialogueListState extends ConsumerState<DialogueList> {
     super.dispose();
   }
 
-  List<Dialogue> _previousDialogues = [];
-
   @override
   void didUpdateWidget(covariant DialogueList oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (listEquals(widget.dialogues, _previousDialogues)) return;
-    _previousDialogues = List.from(widget.dialogues);
 
     if (!_scrollController.hasClients || widget.dialogues.isEmpty) return;
 
@@ -191,8 +187,6 @@ class _DialogueListState extends ConsumerState<DialogueList> {
 
   @override
   Widget build(BuildContext context) {
-    _previousDialogues = List.from(widget.dialogues);
-
     if (widget.dialogues.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         widget.onHeightCalculated?.call(0);

@@ -1,5 +1,6 @@
 to get sha1 key run this command in terminal
-keytool -list -v -keystore ~/.android/debug.keystore
+linux: keytool -list -v -keystore ~/.android/debug.keystore -storepass android
+windows: keytool -list -v -keystore "$env:USERPROFILE\.android\debug.keystore" -storepass android
 
 dart run build_runner watch -d
 

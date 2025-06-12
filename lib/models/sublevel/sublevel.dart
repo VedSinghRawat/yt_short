@@ -26,7 +26,7 @@ class SubLevel with _$SubLevel {
     };
   }
 
-  factory SubLevel.fromSubLevelDTO(SubLevelDTO subLevelDTO, int level, int index, String levelId) {
+  factory SubLevel.fromDTO(SubLevelDTO subLevelDTO, int level, int index, String levelId) {
     return subLevelDTO.when(
       speechExercise:
           (dto) => SubLevel.speechExercise(

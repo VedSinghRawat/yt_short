@@ -9,6 +9,7 @@ import 'package:myapp/services/path/path_service.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
 import 'package:myapp/views/screens/error_page.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
+import 'package:myapp/views/widgets/loader.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:flutter/foundation.dart';
@@ -31,7 +32,6 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
   Duration? _lastPosition;
   String? error;
   bool _isVisible = false;
-  bool _isInitializing = false;
   bool _isSeeking = false;
 
   bool _showPlayPauseIcon = false;
@@ -75,11 +75,10 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
       if (mounted) {
         setState(() {
           _showPlayPauseIcon = false;
-          _isInitializing = false;
         });
       }
     } else if (state == AppLifecycleState.resumed) {
-      if (_controller == null && !_isInitializing) {
+      if (_controller == null) {
         _initializeVideoPlayerController();
       } else if (_controller != null &&
           _controller!.value.isInitialized &&
@@ -182,7 +181,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
   }
 
   Future<void> _handleVisibility(bool isVisible) async {
-    if (_controller == null || _isInitializing) return;
+    if (_controller == null) return;
 
     if (!_controller!.value.isInitialized) return;
 
@@ -232,11 +231,8 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
   }
 
   Future<void> _initializeVideoPlayerController() async {
-    if (_isInitializing) return;
-
     if (mounted) {
       setState(() {
-        _isInitializing = true;
         error = null;
       });
     }
@@ -296,7 +292,6 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
       if (mounted) {
         setState(() {
           error = '$errorText: ${e.toString()}';
-          _isInitializing = false;
         });
       }
     }
@@ -357,8 +352,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
 
   @override
   Widget build(BuildContext context) {
-    final bool isPlayerInitialized = _controller != null && _controller!.value.isInitialized;
-    final bool isPlayerReady = isPlayerInitialized && !_isInitializing;
+    final bool isPlayerReady = _controller?.value.isInitialized ?? false;
 
     final bool isPaused = isPlayerReady && !_controller!.value.isPlaying;
     final bool showDialogueArea = isPaused && _isVisible;
@@ -367,6 +361,8 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
     final double standardDialogueHeight = screenHeight * 0.3;
 
     final double currentDialogueContainerHeight = _dialogueListHeight ?? standardDialogueHeight;
+
+    developer.log('isPlayerReady: $isPlayerReady, isPaused: $isPaused, showDialogueArea: $showDialogueArea');
 
     return VisibilityDetector(
       key: Key(widget.subLevel.id + widget.subLevel.index.toString()),
@@ -393,8 +389,10 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
                           ),
                         )
                       else
-                        const AspectRatio(aspectRatio: 16 / 9, child: Center(child: CircularProgressIndicator())),
+                        const AspectRatio(aspectRatio: 16 / 9, child: Center(child: Loader())),
+
                       PlayPauseButton(showPlayPauseIcon: _showPlayPauseIcon, iconData: _iconData),
+
                       Positioned(
                         left: 100,
                         bottom: 16,
@@ -404,6 +402,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
                           style: IconButton.styleFrom(backgroundColor: Colors.black.withValues(alpha: 0.3)),
                         ),
                       ),
+
                       Positioned(
                         right: 100,
                         bottom: 16,

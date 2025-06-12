@@ -65,6 +65,8 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
         setState(() {
           _showAnimation = false;
         });
+        _bounceController.dispose();
+        _animationTimer?.cancel();
       }
     });
   }
@@ -94,8 +96,8 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
   @override
   void dispose() {
     _bounceController.dispose();
-    _pageController.dispose();
     _animationTimer?.cancel();
+    _pageController.dispose();
     super.dispose();
   }
 

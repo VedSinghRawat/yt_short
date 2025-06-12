@@ -126,6 +126,19 @@ class ApiService {
         }
       }
 
+      if (response.statusCode != null && response.statusCode! >= 400 && response.statusCode! < 500) {
+        String message = '';
+        try {
+          final data = response.data as Map<String, dynamic>;
+          message = data['message'];
+        } catch (e) {
+          developer.log('Error in ApiService.call: $e');
+          message = 'Something went wrong';
+        }
+
+        throw APIError(message: message, trace: StackTrace.current);
+      }
+
       return response;
     } on DioException catch (e) {
       developer.log('Error in ApiService.call: $e');

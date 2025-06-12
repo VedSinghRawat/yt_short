@@ -30,7 +30,7 @@ class SublevelController extends _$SublevelController {
   SublevelControllerState build() => const SublevelControllerState();
 
   void set(SubLevelDTO dto, String levelId, int index, int levelIndex) async {
-    final sublevel = SubLevel.fromSubLevelDTO(dto, levelIndex, index, levelId);
+    final sublevel = SubLevel.fromDTO(dto, levelIndex, index, levelId);
     state = state.copyWith(sublevels: state.sublevels == null ? {sublevel} : {...state.sublevels!, sublevel});
   }
 
