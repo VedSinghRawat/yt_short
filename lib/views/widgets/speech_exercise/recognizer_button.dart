@@ -64,55 +64,61 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
 
     return Column(
       children: [
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: speechNotifier.isTestCompleted ? BorderRadius.circular(40) : null,
-            color: speechNotifier.isTestCompleted ? Colors.white : null,
-            boxShadow: [
-              if (speechNotifier.isTestCompleted)
-                const BoxShadow(
-                  color: Color.fromRGBO(128, 128, 128, 0.3),
-                  spreadRadius: 2,
-                  blurRadius: 5,
-                  offset: Offset(0, 2),
-                ),
-            ],
-          ),
-          child: InkWell(
-            onTap: _handleButtonPress,
-            customBorder: speechNotifier.isPassed ? null : const CircleBorder(),
-            child: Container(
-              decoration: BoxDecoration(
-                shape: speechNotifier.isPassed ? BoxShape.rectangle : BoxShape.circle,
-                borderRadius: speechNotifier.isPassed ? BorderRadius.circular(40) : null,
-              ),
-              child: Center(
-                child:
-                    speechNotifier.isTestCompleted
-                        ? Text(
-                          ref
-                              .read(langControllerProvider.notifier)
-                              .choose(
-                                hindi: speechNotifier.isPassed ? 'आगे बढ़े' : 'पुनः प्रयास करें',
-                                hinglish: speechNotifier.isPassed ? 'Aage badhe' : 'Dobara kare',
+        SizedBox(
+          width: 150,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            decoration: BoxDecoration(
+              borderRadius: speechNotifier.isTestCompleted ? BorderRadius.circular(40) : null,
+              color: speechNotifier.isTestCompleted ? const Color.fromARGB(255, 241, 236, 236) : null,
+              boxShadow: [
+                if (speechNotifier.isTestCompleted)
+                  const BoxShadow(
+                    color: Color.fromRGBO(128, 128, 128, 0.3),
+                    spreadRadius: 2,
+                    blurRadius: 5,
+                    offset: Offset(0, 2),
+                  ),
+              ],
+            ),
+            child: Center(
+              child: InkWell(
+                onTap: _handleButtonPress,
+                customBorder: speechNotifier.isPassed ? null : const CircleBorder(),
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: speechNotifier.isPassed ? BoxShape.rectangle : BoxShape.circle,
+                    borderRadius: speechNotifier.isPassed ? BorderRadius.circular(40) : null,
+                  ),
+                  child: Center(
+                    child:
+                        speechNotifier.isTestCompleted
+                            ? Text(
+                              ref
+                                  .read(langControllerProvider.notifier)
+                                  .choose(
+                                    hindi: speechNotifier.isPassed ? 'आगे बढ़े' : 'पुनः प्रयास करें',
+                                    hinglish: speechNotifier.isPassed ? 'Aage badhe' : 'Dobara kare',
+                                  ),
+                              style: TextStyle(
+                                color: speechNotifier.isPassed ? Colors.green.shade400 : Colors.red.shade400,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
                               ),
-                          style: TextStyle(
-                            color: speechNotifier.isPassed ? Colors.green.shade400 : Colors.red.shade400,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        )
-                        : speechState.isListening
-                        ? Lottie.asset('assets/animations/active_mic.json', height: 120, width: 120)
-                        : Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Theme.of(context).colorScheme.secondary,
-                            border: Border.all(color: Theme.of(context).colorScheme.onSecondary, width: 2),
-                          ),
-                          child: Icon(Icons.mic_none, color: Theme.of(context).colorScheme.onSecondary, size: 40),
-                        ),
+                            )
+                            : speechState.isListening
+                            ? Lottie.asset('assets/animations/active_mic.json', height: 120, width: 120)
+                            : Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Theme.of(context).colorScheme.secondary,
+                                border: Border.all(color: Theme.of(context).colorScheme.onSecondary, width: 2),
+                              ),
+                              child: Icon(Icons.mic_none, color: Theme.of(context).colorScheme.onSecondary, size: 40),
+                            ),
+                  ),
+                ),
               ),
             ),
           ),
