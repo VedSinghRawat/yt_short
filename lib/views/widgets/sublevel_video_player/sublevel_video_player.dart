@@ -8,7 +8,6 @@ import 'package:myapp/services/api/api_service.dart';
 import 'package:myapp/services/path/path_service.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
 import 'package:myapp/views/screens/error_page.dart';
-import 'package:myapp/core/console.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 import 'package:myapp/views/widgets/loader.dart';
 import 'package:video_player/video_player.dart';
@@ -66,7 +65,6 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
   @override
   Future<void> didChangeAppLifecycleState(AppLifecycleState state) async {
     super.didChangeAppLifecycleState(state);
-    Console.log('didChangeAppLifecycleState: $state,lastPosition: $_lastPosition');
 
     if (state == AppLifecycleState.paused) {
       _controller?.removeListener(_listener);
@@ -298,7 +296,6 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
 
       if (_lastPosition != null) {
         await seek(_lastPosition!);
-        Console.log('Restored to position: ${_lastPosition!.inSeconds} seconds');
         _lastPosition = null;
       }
 
@@ -395,22 +392,21 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
                     children: [
                       GestureDetector(
                         onTap: _changePlayingState,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            if (error != null)
-                              Center(child: Padding(padding: const EdgeInsets.all(8.0), child: ErrorPage(text: error!)))
-                            else if (isPlayerReady)
-                              Center(
-                                child: AspectRatio(
-                                  aspectRatio:
-                                      _controller!.value.aspectRatio > 0 ? _controller!.value.aspectRatio : 16 / 9,
-                                  child: VideoPlayer(_controller!),
-                                ),
-                              )
-                            else
-                              const AspectRatio(aspectRatio: 16 / 9, child: Loader()),
-                          ],
+                        child: AspectRatio(
+                          aspectRatio: _controller?.value.aspectRatio ?? 16 / 9,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              if (error != null)
+                                Center(
+                                  child: Padding(padding: const EdgeInsets.all(8.0), child: ErrorPage(text: error!)),
+                                )
+                              else if (isPlayerReady && _controller != null)
+                                VideoPlayer(_controller!)
+                              else
+                                const Loader(),
+                            ],
+                          ),
                         ),
                       ),
 
