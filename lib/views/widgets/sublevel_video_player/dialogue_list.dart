@@ -1,10 +1,10 @@
 import 'dart:developer' as developer;
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:myapp/controllers/dialogue/dialogue_controller.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
+import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/path/path_service.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/controllers/user/user_controller.dart';
@@ -67,19 +67,19 @@ class _DialogueListState extends ConsumerState<DialogueList> {
     try {
       await _audioPlayer.stop();
 
-      final filePath = PathService.dialogueAudio(audioFilename);
+      final localAudioFilePath = PathService.dialogueAudio(audioFilename);
 
       // Check if file exists before attempting to play
-      final file = File(filePath);
+      final file = FileService.getFile(localAudioFilePath);
       if (!await file.exists()) {
-        developer.log("Audio file not found: $filePath");
+        developer.log("Audio file not found: $localAudioFilePath");
         if (mounted && _playingDialogueFilename == audioFilename) {
           setState(() => _playingDialogueFilename = ''); // Reset if file not found
         }
         return;
       }
 
-      await _audioPlayer.setFilePath(filePath);
+      await _audioPlayer.setFilePath(file.path);
 
       // Update state immediately to show green icon
       if (mounted) {

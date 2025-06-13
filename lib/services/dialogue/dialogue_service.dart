@@ -57,7 +57,7 @@ class DialogueService {
         await Future.wait(
           archive.files.map((file) async {
             if (file.isFile && file.name.contains('.mp3')) {
-              final audioFile = FileService.getFile(PathService.dialogueAudio(file.name));
+              final audioFile = FileService.getFile(PathService.dialogueAudio(file.name.replaceAll('.mp3', '')));
               await audioFile.parent.create(recursive: true);
               await audioFile.writeAsBytes(file.content as List<int>);
               Console.log('Successfully extracted audio for dialogue $file.name');
