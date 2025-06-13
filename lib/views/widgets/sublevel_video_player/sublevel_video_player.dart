@@ -462,95 +462,71 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
               ),
             ),
             if (_showDialogueArea && _displayableDialogues.isNotEmpty)
-              Positioned.fill(
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _showDialogueArea = false;
-                    });
-                  },
-                  child: Container(
-                    color: Colors.black.withValues(alpha: .5),
-                    child: Center(
-                      child: GestureDetector(
-                        onTap: () {}, // Prevents tap from propagating through dialog
-                        child: Container(
+              Container(
+                width: double.infinity,
+                height: MediaQuery.of(context).size.height,
+                margin: const EdgeInsets.only(top: kToolbarHeight - 10),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  boxShadow: const [
+                    BoxShadow(color: Color.fromRGBO(255, 255, 255, 0.2), blurRadius: 12.0, spreadRadius: 4.0),
+                  ],
+                ),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Column(
+                      children: [
+                        Container(
                           width: double.infinity,
-                          height: MediaQuery.of(context).size.height,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).scaffoldBackgroundColor,
-                            boxShadow: const [
-                              BoxShadow(color: Color.fromRGBO(255, 255, 255, 0.2), blurRadius: 12.0, spreadRadius: 4.0),
-                            ],
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                          decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary),
+                          child: Text(
+                            'Dialogues',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              fontSize: 22,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              Column(
-                                children: [
-                                  Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                                    decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary),
-                                    child: Text(
-                                      'Dialogues',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                        fontSize: 22,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: DialogueList(
-                                      dialogues: _displayableDialogues,
-                                      onHeightCalculated: (_) {}, // Not needed anymore
-                                    ),
-                                  ),
-                                ],
+                        ),
+                        Expanded(child: DialogueList(dialogues: _displayableDialogues)),
+                      ],
+                    ),
+                    // Close button
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          boxShadow: [
+                            BoxShadow(color: Colors.grey[400]!.withValues(alpha: .2), blurRadius: 10, spreadRadius: 2),
+                          ],
+                          border: Border.all(color: Colors.grey[400]!, width: 1.9),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Material(
+                            color: Theme.of(context).scaffoldBackgroundColor,
+                            child: InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _showDialogueArea = false;
+                                });
+                                play();
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.all(4.0),
+                                child: Icon(Icons.close_rounded, size: 20, color: Colors.grey[400]),
                               ),
-                              // Close button
-                              Positioned(
-                                right: 8,
-                                top: 8,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.grey[400]!.withValues(alpha: .2),
-                                        blurRadius: 10,
-                                        spreadRadius: 2,
-                                      ),
-                                    ],
-                                    border: Border.all(color: Colors.grey[400]!, width: 1.9),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(20),
-                                    child: Material(
-                                      color: Theme.of(context).scaffoldBackgroundColor,
-                                      child: InkWell(
-                                        onTap: () {
-                                          setState(() {
-                                            _showDialogueArea = false;
-                                          });
-                                        },
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(4.0),
-                                          child: Icon(Icons.close_rounded, size: 20, color: Colors.grey[400]),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ),
           ],

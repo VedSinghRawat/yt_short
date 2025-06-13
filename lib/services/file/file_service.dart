@@ -95,7 +95,6 @@ class FileService {
   }
 
   static File getFile(String path, {bool cache = false}) {
-    developer.log('${(cache ? cacheDirectory : documentsDirectory).path}$path');
     return File('${(cache ? cacheDirectory : documentsDirectory).path}$path');
   }
 }

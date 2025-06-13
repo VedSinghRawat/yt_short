@@ -1,5 +1,3 @@
-import 'dart:developer' as developer;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -37,7 +35,6 @@ class InitializeScreen extends ConsumerWidget {
     // Trigger navigation when initialized
     initState.whenData((_) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        developer.log('navigating to home');
         GoRouter.of(context).go(Routes.home);
       });
     });

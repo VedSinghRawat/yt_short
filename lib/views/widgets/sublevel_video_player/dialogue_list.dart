@@ -12,9 +12,8 @@ import 'package:myapp/models/user/user.dart';
 
 class DialogueList extends ConsumerStatefulWidget {
   final List<SubDialogue> dialogues;
-  final Function(double height)? onHeightCalculated;
 
-  const DialogueList({super.key, required this.dialogues, this.onHeightCalculated});
+  const DialogueList({super.key, required this.dialogues});
 
   @override
   ConsumerState<DialogueList> createState() => _DialogueListState();
@@ -122,10 +121,6 @@ class _DialogueListState extends ConsumerState<DialogueList> {
   @override
   Widget build(BuildContext context) {
     if (widget.dialogues.isEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        widget.onHeightCalculated?.call(0);
-      });
-
       return const SizedBox.shrink();
     }
 
@@ -142,10 +137,6 @@ class _DialogueListState extends ConsumerState<DialogueList> {
         // Calculate item height for full screen
         final double screenHeight = MediaQuery.of(context).size.height;
         final double calculatedItemHeight = screenHeight * 0.2; // 20% of screen height per item
-
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          widget.onHeightCalculated?.call(calculatedItemHeight);
-        });
 
         return Stack(
           children: [
@@ -228,7 +219,9 @@ class _DialogueListState extends ConsumerState<DialogueList> {
                             },
                           ),
                         ),
+
                         const SizedBox(width: 16),
+
                         GestureDetector(
                           onTap: () => _playDialogueAudio(dialogue.id),
                           child: AnimatedContainer(
