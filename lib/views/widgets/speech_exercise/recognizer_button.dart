@@ -65,8 +65,6 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
     return Column(
       children: [
         Container(
-          width: speechNotifier.isTestCompleted ? 160 : 80,
-          height: speechNotifier.isTestCompleted ? 60 : 80,
           decoration: BoxDecoration(
             borderRadius: speechNotifier.isTestCompleted ? BorderRadius.circular(40) : null,
             color: speechNotifier.isTestCompleted ? Colors.white : null,
@@ -84,8 +82,6 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
             onTap: _handleButtonPress,
             customBorder: speechNotifier.isPassed ? null : const CircleBorder(),
             child: Container(
-              width: speechNotifier.isPassed ? 160 : 80,
-              height: 80,
               decoration: BoxDecoration(
                 shape: speechNotifier.isPassed ? BoxShape.rectangle : BoxShape.circle,
                 borderRadius: speechNotifier.isPassed ? BorderRadius.circular(40) : null,
@@ -107,23 +103,35 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
                           ),
                         )
                         : speechState.isListening
-                        ? Lottie.asset('assets/animations/active_mic.json', width: 34, height: 34)
-                        : const Icon(Icons.mic_none, color: Colors.blue, size: 34),
+                        ? Lottie.asset('assets/animations/active_mic.json', height: 120, width: 120)
+                        : Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Theme.of(context).colorScheme.secondary,
+                            border: Border.all(color: Theme.of(context).colorScheme.onSecondary, width: 2),
+                          ),
+                          child: Icon(Icons.mic_none, color: Theme.of(context).colorScheme.onSecondary, size: 40),
+                        ),
               ),
             ),
           ),
         ),
+
         if (!speechNotifier.isTestCompleted)
           Padding(
-            padding: const EdgeInsets.only(top: 4),
+            padding: const EdgeInsets.only(top: 12),
             child: Text(
               ref
                   .read(langControllerProvider.notifier)
                   .choose(
-                    hindi: speechState.isListening ? 'सुन रहे है...' : 'बोलने के लिए टैप करें',
-                    hinglish: speechState.isListening ? 'Listening...' : 'Bolne ke liye tap karein',
+                    hindi: speechState.isListening ? 'सुन रहे है...' : 'बोलने से पहले टैप करें',
+                    hinglish: speechState.isListening ? 'Listening...' : 'Bolne se pehle tap karein',
                   ),
-              style: TextStyle(color: speechState.isListening ? Colors.green : Colors.blue, fontSize: 18),
+              style: TextStyle(
+                color: speechState.isListening ? Colors.green : Theme.of(context).colorScheme.secondary,
+                fontSize: 18,
+              ),
             ),
           ),
       ],

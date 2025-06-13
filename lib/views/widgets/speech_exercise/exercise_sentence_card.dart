@@ -197,23 +197,19 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                                 ),
                               ),
                             ),
-                            // Listen button positioned top-right of the Card
                             Positioned(
-                              bottom: 20, // Adjust position slightly from edge
-                              right: 20, // Adjust position slightly from edge
+                              bottom: 20,
+                              right: 20,
                               child: Material(
-                                color: Theme.of(context).colorScheme.secondary, // Background color
-                                borderRadius: BorderRadius.circular(30), // Match InkWell radius
+                                color: Theme.of(context).colorScheme.secondary,
+                                borderRadius: BorderRadius.circular(30),
                                 child: InkWell(
                                   borderRadius: BorderRadius.circular(30),
                                   onTap: () {
                                     ref.read(speechProvider.notifier).playAudio(widget.levelId, widget.audioFilename);
                                   },
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12.0, // Adjusted padding
-                                      vertical: 6.0, // Adjusted padding
-                                    ),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
@@ -222,7 +218,7 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                                           size: 18,
                                           color: Theme.of(context).colorScheme.onSecondary,
                                         ),
-                                        const SizedBox(width: 8), // Adjusted spacing
+                                        const SizedBox(width: 8),
                                         Text(
                                           ref
                                               .watch(langControllerProvider.notifier)
@@ -244,8 +240,9 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 24), // Spacing before "You Said" section
-                        // "You Said:" Label
+
+                        const SizedBox(height: 24),
+
                         Padding(
                           padding: const EdgeInsets.only(left: 12.0, bottom: 8.0),
                           child: Row(
@@ -260,23 +257,23 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                             ],
                           ),
                         ),
-                        // Recognized Words Card
+
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16.0),
                           child: Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.all(16.0), // Internal padding
+                            padding: const EdgeInsets.all(16.0),
                             decoration: BoxDecoration(
                               color:
                                   !speechNotifier.isTestCompleted
                                       ? Theme.of(context).colorScheme.primary
                                       : speechNotifier.isPassed
                                       ? Colors.green[400]
-                                      : Colors.red[400], // Use primary background
+                                      : Colors.red[400],
                               borderRadius: BorderRadius.circular(15.0),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.1), // Subtle shadow
+                                  color: Colors.black.withValues(alpha: 0.1),
                                   spreadRadius: 1,
                                   blurRadius: 4,
                                   offset: const Offset(0, 2),
@@ -300,7 +297,9 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                   ],
                 ),
               ),
+
               const Spacer(),
+
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
                 child: RecognizerButton(onContinue: widget.onContinue),
