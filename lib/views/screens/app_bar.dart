@@ -40,10 +40,9 @@ class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
       children: [
         AnimatedPositioned(
           duration: const Duration(milliseconds: 300),
-          top: showAppBar ? 0 : -100,
+          top: showAppBar ? 0 : -80,
           left: 0,
           right: 0,
-          height: showAppBar ? 100 : 0,
           child: AppBar(
             title: Text(
               isFirstLogin

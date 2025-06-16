@@ -6,7 +6,6 @@ import 'package:myapp/controllers/dialogue/dialogue_controller.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/path/path_service.dart';
-import 'package:myapp/core/utils.dart';
 import 'package:myapp/controllers/user/user_controller.dart';
 import 'package:myapp/models/user/user.dart';
 
@@ -130,121 +129,104 @@ class _DialogueListState extends ConsumerState<DialogueList> {
 
     final dialogueMap = ref.watch(dialogueControllerProvider.select((state) => state.dialogues));
 
-    final dialogueByTime = Map.fromEntries(widget.dialogues.map((e) => MapEntry(e.time, dialogueMap[e.id]!)));
+    final dialogues = widget.dialogues.map((e) => dialogueMap[e.id]!);
 
     return LayoutBuilder(
       builder: (context, constraints) {
         // Calculate item height for full screen
         final double screenHeight = MediaQuery.of(context).size.height;
-        final double calculatedItemHeight = screenHeight * 0.2; // 20% of screen height per item
+        final double calculatedItemHeight = screenHeight * 0.25;
 
         return Stack(
           children: [
             ListWheelScrollView.useDelegate(
               controller: _scrollController,
               itemExtent: calculatedItemHeight,
-              diameterRatio: 1.7,
-              perspective: 0.004,
+              diameterRatio: 2.0,
+              perspective: 0.002,
               physics: const FixedExtentScrollPhysics(),
               childDelegate: ListWheelChildListDelegate(
-                children: List<Widget>.generate(dialogueByTime.length, (index) {
-                  final el = dialogueByTime.entries.elementAt(index);
-                  final dialogue = el.value;
-                  final time = el.key;
+                children:
+                    dialogues.map((dialogue) {
+                      final bool isSelected = dialogue.id == _selectedDialogueIndex;
 
-                  final formattedTime = formatDurationMMSS(time);
-                  final bool isSelected = index == _selectedDialogueIndex;
+                      final double textFontSize = isSelected ? 22 : 18;
+                      final FontWeight textFontWeight = isSelected ? FontWeight.bold : FontWeight.w500;
+                      final double iconSize = isSelected ? 24 : 20;
+                      final isPlaying = _playingDialogueFilename == dialogue.id;
+                      final Color iconColor =
+                          isPlaying
+                              ? Colors.green.shade400
+                              : isSelected
+                              ? Colors.white
+                              : Colors.white70;
 
-                  final double textFontSize = isSelected ? 22 : 18; // Reduced font sizes
-                  final FontWeight textFontWeight = isSelected ? FontWeight.bold : FontWeight.w500;
-                  final double iconSize = isSelected ? 24 : 20; // Reduced icon sizes
-                  final Color timeColor = isSelected ? Colors.white : Colors.white70;
-                  final isPlaying = _playingDialogueFilename == dialogue.id;
-                  final Color iconColor =
-                      isPlaying
-                          ? Colors.green.shade400
-                          : isSelected
-                          ? Colors.white
-                          : Colors.white70;
-
-                  return Container(
-                    color: Colors.transparent,
-                    alignment: Alignment.center,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text(formattedTime, style: TextStyle(fontSize: 16, color: timeColor)),
-                        const SizedBox(width: 24),
-                        Flexible(
-                          child: LayoutBuilder(
-                            builder: (context, constraints) {
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-
-                                child: SizedBox(
-                                  width: constraints.maxWidth * 0.8,
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        dialogue.text,
-                                        style: TextStyle(
-                                          fontSize: textFontSize,
-                                          color: Colors.white,
-                                          fontWeight: textFontWeight,
-                                        ),
-                                        textAlign: TextAlign.center,
+                      return Container(
+                        color: Colors.transparent,
+                        alignment: Alignment.center,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          spacing: 45.0,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                              child: SizedBox(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      dialogue.text,
+                                      style: TextStyle(
+                                        fontSize: textFontSize,
+                                        color: Colors.white,
+                                        fontWeight: textFontWeight,
                                       ),
-                                      if (dialogue.hindiText.isNotEmpty && dialogue.hinglishText.isNotEmpty)
-                                        Padding(
-                                          padding: const EdgeInsets.only(top: 8),
-                                          child: Text(
-                                            prefLang == PrefLang.hindi ? dialogue.hindiText : dialogue.hinglishText,
-                                            style: TextStyle(
-                                              fontSize: textFontSize * 0.8,
-                                              color: Colors.white70,
-                                              fontWeight: FontWeight.normal,
-                                            ),
-                                            textAlign: TextAlign.center,
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    if (dialogue.hindiText.isNotEmpty && dialogue.hinglishText.isNotEmpty)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 8),
+                                        child: Text(
+                                          prefLang == PrefLang.hindi ? dialogue.hindiText : dialogue.hinglishText,
+                                          style: TextStyle(
+                                            fontSize: textFontSize * 0.8,
+                                            color: Colors.white70,
+                                            fontWeight: FontWeight.normal,
                                           ),
+                                          textAlign: TextAlign.center,
                                         ),
-                                    ],
-                                  ),
+                                      ),
+                                  ],
                                 ),
-                              );
-                            },
-                          ),
-                        ),
-
-                        const SizedBox(width: 16),
-
-                        GestureDetector(
-                          onTap: () => _playDialogueAudio(dialogue.id),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeInOut,
-                            padding: const EdgeInsets.all(8.0),
-                            decoration: BoxDecoration(
-                              color: isPlaying ? Colors.white : Colors.white.withAlpha(50),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: isPlaying ? Colors.green.shade100 : Colors.white70,
-                                width: isPlaying ? 2 : 1.5,
                               ),
                             ),
-                            transform: Matrix4.identity()..scale(isPlaying ? 1.2 : 1.0),
-                            transformAlignment: Alignment.center,
-                            child: Icon(Icons.volume_up, color: iconColor, size: iconSize),
-                          ),
+
+                            GestureDetector(
+                              onTap: () => _playDialogueAudio(dialogue.id),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                                padding: const EdgeInsets.all(8.0),
+                                decoration: BoxDecoration(
+                                  color: isPlaying ? Colors.white : Colors.white.withAlpha(50),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: isPlaying ? Colors.green.shade100 : Colors.white70,
+                                    width: isPlaying ? 2 : 1.5,
+                                  ),
+                                ),
+                                transform: Matrix4.identity()..scale(isPlaying ? 1.2 : 1.0),
+                                transformAlignment: Alignment.center,
+                                child: Icon(Icons.volume_up, color: iconColor, size: iconSize),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  );
-                }),
+                      );
+                    }).toList(),
               ),
             ),
             Positioned(

@@ -46,10 +46,8 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
   @override
   void initState() {
     super.initState();
-
     _updateDisplayableDialogues(Duration.zero);
     _initializeVideoPlayerController();
-
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -461,9 +459,9 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
               Container(
                 width: double.infinity,
                 height: MediaQuery.of(context).size.height,
-                margin: const EdgeInsets.only(top: kToolbarHeight - 10),
+                padding: const EdgeInsets.only(top: 50),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).scaffoldBackgroundColor,
+                  color: Colors.black,
                   boxShadow: const [
                     BoxShadow(color: Color.fromRGBO(255, 255, 255, 0.2), blurRadius: 12.0, spreadRadius: 4.0),
                   ],
