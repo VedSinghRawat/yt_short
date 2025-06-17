@@ -148,7 +148,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
               childDelegate: ListWheelChildListDelegate(
                 children:
                     dialogues.map((dialogue) {
-                      final bool isSelected = dialogue.id == _selectedDialogueIndex;
+                      final bool isSelected = dialogue.id == widget.dialogues[_selectedDialogueIndex].id;
 
                       final double textFontSize = isSelected ? 22 : 18;
                       final FontWeight textFontWeight = isSelected ? FontWeight.bold : FontWeight.w500;

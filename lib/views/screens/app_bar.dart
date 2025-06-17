@@ -40,65 +40,69 @@ class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
       children: [
         AnimatedPositioned(
           duration: const Duration(milliseconds: 300),
-          top: showAppBar ? 0 : -80,
+          top: showAppBar ? 0 : -kToolbarHeight,
           left: 0,
           right: 0,
-          child: AppBar(
-            title: Text(
-              isFirstLogin
-                  ? langController.choose(hindi: 'स्वागत है', hinglish: 'Welcome')
-                  : langController.choose(hindi: 'वापस app में स्वागत है!', hinglish: 'Welcome Back!'),
-            ),
-            actions: [
-              if (needsReload || syncFailed)
-                LoadingRefreshIcon(
-                  isLoading: _isLoading,
-                  onTap: () async {
-                    setState(() {
-                      _isLoading = true;
-                    });
-
-                    final initializeService = await ref.read(initializeServiceProvider.future);
-
-                    final isSuccess = await initializeService.initialApiCall();
-
-                    if (syncFailed) {
-                      await ref
-                          .read(userControllerProvider.notifier)
-                          .sync(currentUser?.levelId ?? '', currentUser?.subLevel ?? 0);
-                    }
-
-                    final progress = SharedPref.get(PrefKey.currProgress(userEmail: currentUser?.email));
-
-                    if (progress != null && progress.levelId != null && progress.subLevel != null) {
-                      await ref.read(userControllerProvider.notifier).sync(progress.levelId!, progress.subLevel!);
-                    }
-
-                    setState(() {
-                      _isLoading = false;
-                    });
-
-                    if (!context.mounted) return;
-
-                    showSnackBar(
-                      context,
-                      type: isSuccess ? SnackBarType.success : SnackBarType.error,
-                      message: ref
-                          .read(langControllerProvider.notifier)
-                          .choose(
-                            hindi: isSuccess ? 'डेटा सफलतापूर्वक अपडेट हो गया' : 'डेटा अपडेट नहीं हो सका।',
-                            hinglish: isSuccess ? 'Data update ho gaya' : 'Data update nahin ho saka',
-                          ),
-                    );
-                  },
-                ),
-              IconButton(
-                onPressed: () {
-                  context.push(isLoggedIn ? Routes.profile : Routes.signIn);
-                },
-                icon: Icon(isLoggedIn ? Icons.account_circle : Icons.person_add),
+          child: AnimatedOpacity(
+            duration: const Duration(milliseconds: 300),
+            opacity: showAppBar ? 1.0 : 0.0,
+            child: AppBar(
+              title: Text(
+                isFirstLogin
+                    ? langController.choose(hindi: 'स्वागत है', hinglish: 'Welcome')
+                    : langController.choose(hindi: 'वापस app में स्वागत है!', hinglish: 'Welcome Back!'),
               ),
-            ],
+              actions: [
+                if (needsReload || syncFailed)
+                  LoadingRefreshIcon(
+                    isLoading: _isLoading,
+                    onTap: () async {
+                      setState(() {
+                        _isLoading = true;
+                      });
+
+                      final initializeService = await ref.read(initializeServiceProvider.future);
+
+                      final isSuccess = await initializeService.initialApiCall();
+
+                      if (syncFailed) {
+                        await ref
+                            .read(userControllerProvider.notifier)
+                            .sync(currentUser?.levelId ?? '', currentUser?.subLevel ?? 0);
+                      }
+
+                      final progress = SharedPref.get(PrefKey.currProgress(userEmail: currentUser?.email));
+
+                      if (progress != null && progress.levelId != null && progress.subLevel != null) {
+                        await ref.read(userControllerProvider.notifier).sync(progress.levelId!, progress.subLevel!);
+                      }
+
+                      setState(() {
+                        _isLoading = false;
+                      });
+
+                      if (!context.mounted) return;
+
+                      showSnackBar(
+                        context,
+                        type: isSuccess ? SnackBarType.success : SnackBarType.error,
+                        message: ref
+                            .read(langControllerProvider.notifier)
+                            .choose(
+                              hindi: isSuccess ? 'डेटा सफलतापूर्वक अपडेट हो गया' : 'डेटा अपडेट नहीं हो सका।',
+                              hinglish: isSuccess ? 'Data update ho gaya' : 'Data update nahin ho saka',
+                            ),
+                      );
+                    },
+                  ),
+                IconButton(
+                  onPressed: () {
+                    context.push(isLoggedIn ? Routes.profile : Routes.signIn);
+                  },
+                  icon: Icon(isLoggedIn ? Icons.account_circle : Icons.person_add),
+                ),
+              ],
+            ),
           ),
         ),
       ],

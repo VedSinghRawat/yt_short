@@ -132,10 +132,10 @@ class ApiService {
           final data = response.data as Map<String, dynamic>;
           message = data['message'];
         } catch (e) {
-          developer.log('Error in ApiService.call: $e');
           message = 'Something went wrong';
         }
 
+        developer.log('Error in ApiService.call: $message');
         throw APIError(message: message, trace: StackTrace.current);
       }
 

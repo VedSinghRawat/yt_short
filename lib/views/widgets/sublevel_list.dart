@@ -138,8 +138,11 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
         itemCount: widget.sublevels.length + 1,
         scrollDirection: Axis.vertical,
         onPageChanged: (index) async {
-          _bounceController.stop();
-          _bounceController.reset();
+          try {
+            _bounceController.dispose();
+          } catch (e) {
+            Console.log(e.toString());
+          }
           setState(() {
             _showAnimation = false;
           });
