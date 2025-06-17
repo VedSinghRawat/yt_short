@@ -13,8 +13,8 @@ import 'package:myapp/views/widgets/loader.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:flutter/foundation.dart';
-import 'dialogue_list.dart';
 import 'video_progress_bar.dart';
+import 'package:myapp/views/widgets/sublevel_video_player/dialogue_popup.dart';
 
 class SublevelVideoPlayer extends ConsumerStatefulWidget {
   final Function(VideoPlayerController controller, Function(Duration) seek)? onControllerInitialized;
@@ -455,74 +455,17 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
                 ],
               ),
             ),
-            if (_showDialogueArea && _displayableDialogues.isNotEmpty)
-              Container(
-                width: double.infinity,
-                height: MediaQuery.of(context).size.height,
-                padding: const EdgeInsets.only(top: kToolbarHeight),
-                decoration: const BoxDecoration(
-                  color: Colors.black,
-                  boxShadow: [
-                    BoxShadow(color: Color.fromRGBO(255, 255, 255, 0.2), blurRadius: 12.0, spreadRadius: 4.0),
-                  ],
-                ),
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Column(
-                      children: [
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                          decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary),
-                          child: Text(
-                            'Dialogues',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onPrimary,
-                              fontSize: 22,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                        DialogueList(dialogues: _displayableDialogues),
-                      ],
-                    ),
-                    // Close button
-                    Positioned(
-                      right: 8,
-                      top: 8,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          boxShadow: [
-                            BoxShadow(color: Colors.grey[400]!.withValues(alpha: .2), blurRadius: 10, spreadRadius: 2),
-                          ],
-                          border: Border.all(color: Colors.grey[400]!, width: 1.9),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: Material(
-                            color: Theme.of(context).scaffoldBackgroundColor,
-                            child: InkWell(
-                              onTap: () {
-                                setState(() {
-                                  _showDialogueArea = false;
-                                });
-                                play();
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.all(4.0),
-                                child: Icon(Icons.close_rounded, size: 20, color: Colors.grey[400]),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+
+            DialoguePopup(
+              visible: _showDialogueArea && _displayableDialogues.isNotEmpty,
+              dialogues: _displayableDialogues,
+              onClose: () {
+                setState(() {
+                  _showDialogueArea = false;
+                });
+                play();
+              },
+            ),
           ],
         ),
       ),
