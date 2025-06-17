@@ -43,9 +43,11 @@ class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
           top: showAppBar ? 0 : -kToolbarHeight,
           left: 0,
           right: 0,
+          curve: Curves.easeInOut,
           child: AnimatedOpacity(
             duration: const Duration(milliseconds: 300),
             opacity: showAppBar ? 1.0 : 0.0,
+            curve: Curves.easeInOutCubic,
             child: AppBar(
               title: Text(
                 isFirstLogin

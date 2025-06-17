@@ -459,10 +459,10 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
               Container(
                 width: double.infinity,
                 height: MediaQuery.of(context).size.height,
-                padding: const EdgeInsets.only(top: 50),
-                decoration: BoxDecoration(
+                padding: const EdgeInsets.only(top: kToolbarHeight),
+                decoration: const BoxDecoration(
                   color: Colors.black,
-                  boxShadow: const [
+                  boxShadow: [
                     BoxShadow(color: Color.fromRGBO(255, 255, 255, 0.2), blurRadius: 12.0, spreadRadius: 4.0),
                   ],
                 ),
@@ -485,7 +485,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
                             textAlign: TextAlign.center,
                           ),
                         ),
-                        Expanded(child: DialogueList(dialogues: _displayableDialogues)),
+                        DialogueList(dialogues: _displayableDialogues),
                       ],
                     ),
                     // Close button
