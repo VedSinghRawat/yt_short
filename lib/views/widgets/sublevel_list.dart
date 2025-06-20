@@ -194,9 +194,6 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
             return const Loader();
           }
 
-          final positionText = '${sublevel.level}-${sublevel.index}';
-          Console.log('positionText is $positionText');
-
           return Stack(
             children: [
               AnimatedPositioned(
@@ -210,10 +207,9 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
                   children: [
                     Center(
                       child: sublevel.when(
-                        video: (video) => SublevelVideoPlayer(key: Key(positionText), subLevel: sublevel),
+                        video: (video) => SublevelVideoPlayer(subLevel: sublevel),
                         speechExercise:
                             (speechExercise) => SpeechExerciseScreen(
-                              key: Key(positionText),
                               exercise: speechExercise,
                               goToNext: () {
                                 ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);

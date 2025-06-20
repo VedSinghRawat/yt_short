@@ -19,11 +19,8 @@ part 'auth_controller.g.dart';
 
 @freezed
 class AuthControllerState with _$AuthControllerState {
-  const factory AuthControllerState({
-    @Default(false) bool loading,
-    @Default(null) String? error,
-    @Default(false) bool loginInThisSession,
-  }) = _AuthControllerState;
+  const factory AuthControllerState({@Default(false) bool loading, @Default(null) String? error}) =
+      _AuthControllerState;
 }
 
 @Riverpod(keepAlive: true)
@@ -31,7 +28,7 @@ class AuthController extends _$AuthController {
   bool _isProcessing = false;
 
   @override
-  AuthControllerState build() => const AuthControllerState(loading: false, loginInThisSession: false);
+  AuthControllerState build() => const AuthControllerState(loading: false);
 
   Future<void> signInWithGoogle(BuildContext context) async {
     if (_isProcessing) return;
@@ -131,8 +128,6 @@ class AuthController extends _$AuthController {
       } else if (progress != null) {
         SharedPref.store(PrefKey.currProgress(userEmail: user.email), progress);
       }
-
-      state = state.copyWith(loginInThisSession: true);
     } catch (e, stackTrace) {
       developer.log('Error in AuthController.signInWithGoogle', error: e.toString(), stackTrace: stackTrace);
       final userController = ref.read(userControllerProvider.notifier);

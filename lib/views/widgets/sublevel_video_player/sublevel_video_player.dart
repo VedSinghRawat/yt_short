@@ -4,8 +4,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
-import 'package:myapp/controllers/user/user_controller.dart';
-import 'package:myapp/core/console.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/services/api/api_service.dart';
@@ -379,10 +377,6 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
   Widget build(BuildContext context) {
     final bool isPlayerReady = _controller?.value.isInitialized ?? false;
     final progress = SharedPref.get(PrefKey.currProgress());
-
-    Console.log(
-      'uMaxLevel is ${progress?.maxLevel}, uMaxSubLevel is ${progress?.maxSubLevel}, widget.subLevel.level is ${widget.subLevel.level}, widget.subLevel.index is ${widget.subLevel.index}',
-    );
 
     return VisibilityDetector(
       key: Key(widget.subLevel.id + widget.subLevel.index.toString()),

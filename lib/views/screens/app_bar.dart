@@ -7,7 +7,6 @@ import 'package:myapp/services/initialize/initialize_service.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/views/widgets/loading_refresh_icon.dart';
-import 'package:myapp/controllers/auth/auth_controller.dart';
 import 'package:myapp/controllers/user/user_controller.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
 
@@ -28,13 +27,12 @@ class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
   Widget build(BuildContext context) {
     final currentUser = ref.watch(userControllerProvider.select((state) => state.currentUser));
     final syncFailed = ref.watch(userControllerProvider.select((state) => state.syncFailed));
-    final isFirstLogin = ref.watch(authControllerProvider.select((state) => state.loginInThisSession));
-    final langController = ref.watch(langControllerProvider.notifier);
 
     final isLoggedIn = SharedPref.get(PrefKey.user) != null;
     final needsReload = currentUser?.email.isEmpty ?? true && isLoggedIn;
 
     final showAppBar = ref.watch(sublevelControllerProvider.select((state) => state.showAppBar));
+    final progress = SharedPref.get(PrefKey.currProgress());
 
     return Stack(
       children: [
@@ -49,11 +47,7 @@ class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
             opacity: showAppBar ? 1.0 : 0.0,
             curve: Curves.easeInOutCubic,
             child: AppBar(
-              title: Text(
-                isFirstLogin
-                    ? langController.choose(hindi: 'स्वागत है', hinglish: 'Welcome')
-                    : langController.choose(hindi: 'वापस app में स्वागत है!', hinglish: 'Welcome Back!'),
-              ),
+              title: Text('Level ${progress?.level ?? 1} Sublevel ${progress?.subLevel ?? 1}'),
               actions: [
                 if (needsReload || syncFailed)
                   LoadingRefreshIcon(
