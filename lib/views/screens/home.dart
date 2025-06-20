@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/controllers/level/level_controller.dart';
-import 'package:myapp/core/console.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/utils.dart';
@@ -45,7 +44,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     bool isAdmin,
     int? doneToday,
   ) {
-    Console.log('isAdmin is $isAdmin');
     if (isAdmin) return false;
 
     final levelAfter = !hasLocalProgress || isLevelAfter(level, subLevel, maxLevel, maxSubLevel);
