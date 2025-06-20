@@ -4,6 +4,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
+import 'package:myapp/controllers/user/user_controller.dart';
+import 'package:myapp/core/console.dart';
+import 'package:myapp/core/utils.dart';
 import 'package:myapp/services/api/api_service.dart';
 import 'package:myapp/services/path/path_service.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
@@ -374,6 +377,13 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
   @override
   Widget build(BuildContext context) {
     final bool isPlayerReady = _controller?.value.isInitialized ?? false;
+    final [uMaxLevel, uMaxSubLevel] = ref.watch(
+      userControllerProvider.select((s) => [s.currentUser?.maxLevel ?? 0, s.currentUser?.maxSubLevel ?? 0]),
+    );
+
+    Console.log(
+      'uMaxLevel is $uMaxLevel, uMaxSubLevel is $uMaxSubLevel, widget.subLevel.level is ${widget.subLevel.level}, widget.subLevel.index is ${widget.subLevel.index}',
+    );
 
     return VisibilityDetector(
       key: Key(widget.subLevel.id + widget.subLevel.index.toString()),
@@ -424,7 +434,9 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
                           right: 100,
                           bottom: 16,
                           child: Visibility(
-                            visible: ref.watch(sublevelControllerProvider.select((s) => s.hasFinishedVideo)),
+                            visible:
+                                ref.watch(sublevelControllerProvider.select((s) => s.hasFinishedVideo)) ||
+                                isLevelAfter(uMaxLevel, uMaxSubLevel, widget.subLevel.level, widget.subLevel.index),
                             child: IconButton(
                               icon: const Icon(Icons.forward_5, color: Colors.white, size: 30),
                               onPressed: _seekForward,

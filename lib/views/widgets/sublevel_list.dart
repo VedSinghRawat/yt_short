@@ -28,11 +28,10 @@ class SublevelsList extends ConsumerStatefulWidget {
   ConsumerState<SublevelsList> createState() => _SublevelsListState();
 }
 
-class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTickerProviderStateMixin {
+class _SublevelsListState extends ConsumerState<SublevelsList> {
   late PageController _pageController;
-  late AnimationController _bounceController;
-  late Animation<double> _bounceAnimation;
   bool _showAnimation = false;
+  bool _showScrollIndicator = false;
   Timer? _animationTimer;
 
   void _jumpToPage(Duration timeStamp) async {
@@ -59,14 +58,46 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
   }
 
   void _startAnimationTimer() {
-    _showAnimation = true;
     _animationTimer?.cancel();
-    _animationTimer = Timer(const Duration(milliseconds: 3750), () {
+
+    setState(() {
+      _showScrollIndicator = true;
+    });
+
+    // Create bouncing effect by toggling animation state multiple times
+    int bounceCount = 0;
+    const maxBounces = 6; // 3 complete bounces (up-down cycles)
+
+    Timer.periodic(const Duration(milliseconds: 700), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
+      setState(() {
+        _showAnimation = !_showAnimation;
+      });
+
+      bounceCount++;
+      if (bounceCount >= maxBounces) {
+        timer.cancel();
+        // Ensure animation ends in the normal position
+        if (mounted) {
+          setState(() {
+            _showAnimation = false;
+            _showScrollIndicator = false;
+          });
+        }
+      }
+    });
+
+    // Store the timer reference for cleanup
+    _animationTimer = Timer(const Duration(milliseconds: 5000), () {
       if (mounted) {
         setState(() {
           _showAnimation = false;
+          _showScrollIndicator = false;
         });
-        _bounceController.dispose();
         _animationTimer?.cancel();
       }
     });
@@ -76,12 +107,6 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
   void initState() {
     super.initState();
     _pageController = PageController();
-    _bounceController = AnimationController(duration: const Duration(milliseconds: 1000), vsync: this);
-
-    _bounceAnimation = Tween<double>(
-      begin: 0.0,
-      end: 30.0,
-    ).animate(CurvedAnimation(parent: _bounceController, curve: Curves.easeInOut));
 
     WidgetsBinding.instance.addPostFrameCallback(_jumpToPage);
   }
@@ -96,7 +121,6 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
 
   @override
   void dispose() {
-    _bounceController.dispose();
     _animationTimer?.cancel();
     _pageController.dispose();
     super.dispose();
@@ -118,10 +142,6 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
 
       if (next) {
         _startAnimationTimer();
-        _bounceController.repeat(reverse: true);
-      } else {
-        _bounceController.stop();
-        _bounceController.reset();
       }
     });
 
@@ -138,13 +158,9 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
         itemCount: widget.sublevels.length + 1,
         scrollDirection: Axis.vertical,
         onPageChanged: (index) async {
-          try {
-            _bounceController.dispose();
-          } catch (e) {
-            Console.log(e.toString());
-          }
           setState(() {
             _showAnimation = false;
+            _showScrollIndicator = false;
           });
           await widget.onVideoChange?.call(index, _pageController);
         },
@@ -179,12 +195,17 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
           }
 
           final positionText = '${sublevel.level}-${sublevel.index}';
+          Console.log('positionText is $positionText');
 
-          return AnimatedBuilder(
-            animation: _bounceAnimation,
-            builder: (context, child) {
-              return Transform.translate(
-                offset: Offset(0, _showAnimation ? -_bounceAnimation.value : 0),
+          return Stack(
+            children: [
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 1000),
+                curve: Curves.easeInOut,
+                top: _showAnimation ? -30 : 0,
+                left: 0,
+                right: 0,
+                bottom: _showAnimation ? 30 : 0,
                 child: Stack(
                   children: [
                     Center(
@@ -206,12 +227,12 @@ class _SublevelsListState extends ConsumerState<SublevelsList> with SingleTicker
                       ),
                     ),
 
-                    if (_showAnimation)
+                    if (_showScrollIndicator)
                       const Positioned(bottom: 40, left: 0, right: 0, child: Center(child: ScrollIndicator())),
                   ],
                 ),
-              );
-            },
+              ),
+            ],
           );
         },
       ),
