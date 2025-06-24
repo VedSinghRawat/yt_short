@@ -4,7 +4,12 @@ class APIError {
 
   APIError({required this.message, this.trace});
 
-  static APIError fromJson(Map<String, dynamic> json, {StackTrace? trace}) {
+  factory APIError.fromJson(Map<String, dynamic> json, {StackTrace? trace}) {
     return APIError(message: json['err'], trace: trace);
+  }
+
+  @override
+  String toString() {
+    return 'APIError(message: $message, trace: $trace)';
   }
 }

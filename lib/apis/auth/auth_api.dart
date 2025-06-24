@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:myapp/core/error/api_error.dart';
 import 'package:myapp/services/api/api_service.dart';
 import 'package:myapp/services/googleSignIn/google_sign_in.dart';
 import 'package:myapp/core/shared_pref.dart';
@@ -30,6 +31,10 @@ class AuthAPI implements IAuthAPI {
     }
 
     final auth = await account.authentication;
+
+    if (auth.idToken == null) {
+      throw APIError(message: 'Google Sign In failed. No id token.');
+    }
 
     await _apiService.setToken(auth.idToken ?? '');
 
