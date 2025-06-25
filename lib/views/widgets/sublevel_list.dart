@@ -33,6 +33,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
   bool _showAnimation = false;
   bool _showScrollIndicator = false;
   Timer? _animationTimer;
+  Timer? _bounceTimer;
 
   void _jumpToPage(Duration timeStamp) async {
     final userEmail = ref.read(userControllerProvider).currentUser?.email;
@@ -59,6 +60,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
 
   void _startAnimationTimer() {
     _animationTimer?.cancel();
+    _bounceTimer?.cancel();
 
     setState(() {
       _showScrollIndicator = true;
@@ -68,7 +70,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
     int bounceCount = 0;
     const maxBounces = 6; // 3 complete bounces (up-down cycles)
 
-    Timer.periodic(const Duration(milliseconds: 700), (timer) {
+    _bounceTimer = Timer.periodic(const Duration(milliseconds: 700), (timer) {
       if (!mounted) {
         timer.cancel();
         return;
@@ -122,6 +124,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
   @override
   void dispose() {
     _animationTimer?.cancel();
+    _bounceTimer?.cancel();
     _pageController.dispose();
     super.dispose();
   }
@@ -171,6 +174,8 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
         itemCount: widget.sublevels.length + 1,
         scrollDirection: Axis.vertical,
         onPageChanged: (index) async {
+          _animationTimer?.cancel();
+          _bounceTimer?.cancel();
           setState(() {
             _showAnimation = false;
             _showScrollIndicator = false;
