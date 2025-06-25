@@ -306,6 +306,7 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
               ),
             ],
           ),
+
           CloseButton(onClose: widget.onClose),
         ],
       ),
