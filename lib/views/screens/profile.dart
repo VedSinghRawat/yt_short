@@ -26,7 +26,7 @@ class ProfileScreen extends ConsumerWidget {
     final authController = ref.read(authControllerProvider.notifier);
     final authLoading = ref.watch(authControllerProvider.select((state) => state.loading));
     final userController = ref.read(userControllerProvider.notifier);
-    final langController = ref.watch(langControllerProvider.notifier);
+    final langController = ref.read(langControllerProvider.notifier);
 
     // Combine loading states
     final isLoading = authLoading || userLoading;
@@ -132,20 +132,20 @@ class ProfileScreen extends ConsumerWidget {
                             onChanged:
                                 userLoading // Disable dropdown while loading
                                     ? null
-                                    : (PrefLang? newValue) {
-                                      if (newValue != null && newValue != user.prefLang) {
-                                        userController.updatePrefLang(newValue).then((success) {
-                                          if (!success && context.mounted) {
-                                            showSnackBar(
-                                              context,
-                                              message: langController.choose(
-                                                hindi: 'भाषा नहीं बदल सके',
-                                                hinglish: 'Bhasa nahin badal sake',
-                                              ),
-                                              type: SnackBarType.error,
-                                            );
-                                          }
-                                        });
+                                    : (PrefLang? newValue) async {
+                                      if (newValue == null || newValue == user.prefLang) return;
+
+                                      try {
+                                        await userController.updatePrefLang(newValue);
+                                      } catch (e) {
+                                        showSnackBar(
+                                          context,
+                                          message: langController.choose(
+                                            hindi: 'भाषा नहीं बदल सके',
+                                            hinglish: 'Bhasa nahin badal sake',
+                                          ),
+                                          type: SnackBarType.error,
+                                        );
                                       }
                                     },
                           ),

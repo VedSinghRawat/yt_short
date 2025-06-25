@@ -29,7 +29,7 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
-    final langController = ref.watch(langControllerProvider.notifier);
+    final langController = ref.read(langControllerProvider.notifier);
 
     if (authState.loading) {
       final text = langController.choose(hindi: 'आपका खाता लिंक हो रहा है...', hinglish: 'Linking your account...');
@@ -54,7 +54,7 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
   }
 
   Widget _buildErrorUI(String error) {
-    final langController = ref.watch(langControllerProvider.notifier);
+    final langController = ref.read(langControllerProvider.notifier);
     final headingText = langController.choose(hindi: 'सिंक फेल हो गया', hinglish: 'Sync failed');
 
     return Column(
@@ -96,7 +96,7 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
   }
 
   Widget _buildSuccessUI() {
-    final langController = ref.watch(langControllerProvider.notifier);
+    final langController = ref.read(langControllerProvider.notifier);
 
     final headingText = langController.choose(hindi: 'सिंक सफल हो गया', hinglish: 'You\'re all set!');
     final buttonText = langController.choose(hindi: 'आगे बढ़ें ', hinglish: 'Continue');

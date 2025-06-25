@@ -3,7 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'lang_controller.g.dart';
 
-@riverpod
+@Riverpod(keepAlive: true)
 class LangController extends _$LangController {
   @override
   PrefLang build() {

@@ -110,7 +110,7 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                             children: [
                               Text(
                                 ref
-                                    .watch(langControllerProvider.notifier)
+                                    .read(langControllerProvider.notifier)
                                     .choose(hindi: 'नीचे दिया वाक्य बोलें:', hinglish: 'Niche diya vakya bole:'),
                                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
                               ),
@@ -221,7 +221,7 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                                         const SizedBox(width: 8),
                                         Text(
                                           ref
-                                              .watch(langControllerProvider.notifier)
+                                              .read(langControllerProvider.notifier)
                                               .choose(
                                                 hindi: speechState.isPlayingAudio ? 'सुन रहे हैं...' : 'सुनें',
                                                 hinglish: speechState.isPlayingAudio ? 'Sun rahe hain...' : 'Sune',
@@ -250,7 +250,7 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                             children: [
                               Text(
                                 ref
-                                    .watch(langControllerProvider.notifier)
+                                    .read(langControllerProvider.notifier)
                                     .choose(hindi: 'आपने कहा:', hinglish: 'Aapne kaha:'),
                                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
                               ),

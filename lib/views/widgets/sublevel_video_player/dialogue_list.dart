@@ -165,10 +165,10 @@ class _DialogueListState extends ConsumerState<DialogueList> {
                         color: Colors.transparent,
                         alignment: Alignment.center,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
+                        constraints: const BoxConstraints(maxWidth: 380),
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.center,
-                          spacing: 45.0,
                           children: [
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16.0),
