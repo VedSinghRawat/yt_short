@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/controllers/speech/speech_controller.dart';
-import 'package:lottie/lottie.dart';
 
 class RecognizerButton extends ConsumerStatefulWidget {
   final VoidCallback onContinue;
@@ -106,16 +106,10 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
                                 fontWeight: FontWeight.bold,
                               ),
                             )
-                            : speechState.isListening
-                            ? Lottie.asset('assets/gifs/active_mic.json')
-                            : Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Theme.of(context).colorScheme.secondary,
-                                border: Border.all(color: Theme.of(context).colorScheme.onSecondary, width: 2),
-                              ),
-                              child: Icon(Icons.mic_none, color: Theme.of(context).colorScheme.onSecondary, size: 40),
+                            : SvgPicture.asset(
+                              'assets/svgs/mic-${speechState.isListening ? 'on' : 'off'}.svg',
+                              width: 80,
+                              height: 80,
                             ),
                   ),
                 ),
