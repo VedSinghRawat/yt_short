@@ -13,7 +13,6 @@ abstract class IAuthAPI {
   Future<UserDTO?> signInWithGoogle();
   Future<void> signOut();
   Future<void> syncCyId();
-  Future<UserDTO?> resetProfile();
 }
 
 class AuthAPI implements IAuthAPI {
@@ -62,15 +61,6 @@ class AuthAPI implements IAuthAPI {
     );
 
     SharedPref.store(PrefKey.cyId, ''); // set cyId to empty string to indicate that it has been synced
-  }
-
-  @override
-  Future<UserDTO?> resetProfile() async {
-    final response = await _apiService.call(
-      params: const ApiParams(endpoint: '/user/reset-profile', method: ApiMethod.get),
-    );
-
-    return UserDTO.fromJson(response.data['user']);
   }
 }
 

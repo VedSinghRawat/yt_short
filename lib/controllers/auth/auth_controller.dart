@@ -2,7 +2,6 @@ import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:myapp/controllers/activityLog/activity_log.controller.dart';
-import 'package:myapp/views/widgets/show_confirmation_dialog.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/views/screens/sign_in_screen.dart';
@@ -219,49 +218,5 @@ class AuthController extends _$AuthController {
 
     _isProcessing = false;
     state = state.copyWith(loading: false);
-  }
-
-  Future<bool> resetProfile(BuildContext context) async {
-    if (_isProcessing) return false;
-
-    _isProcessing = true;
-    state = state.copyWith(loading: true);
-
-    final userController = ref.read(userControllerProvider.notifier);
-    final user = ref.read(userControllerProvider).currentUser;
-
-    if (user == null) {
-      _isProcessing = false;
-      state = state.copyWith(loading: false);
-      return false;
-    }
-
-    final confirmed = await showConfirmationDialog(context, question: 'Are you sure you want to reset your profile?');
-
-    if (!confirmed) {
-      _isProcessing = false;
-      state = state.copyWith(loading: false);
-      return false;
-    }
-
-    final resetResult = await authService.resetProfile();
-
-    bool success = false;
-    resetResult.fold(
-      (error) {
-        state = state.copyWith(error: error.message);
-        if (context.mounted) {
-          showSnackBar(context, message: error.message, type: SnackBarType.error);
-        }
-      },
-      (userDTO) {
-        userController.updateCurrentUser(userDTO);
-        success = true;
-      },
-    );
-
-    _isProcessing = false;
-    state = state.copyWith(loading: false);
-    return success;
   }
 }

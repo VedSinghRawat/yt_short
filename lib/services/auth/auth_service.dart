@@ -53,22 +53,6 @@ class AuthService {
       return left(APIError(message: e.toString(), trace: StackTrace.current));
     }
   }
-
-  FutureEither<UserDTO> resetProfile() async {
-    try {
-      final userDTO = await authAPI.resetProfile();
-
-      if (userDTO == null) {
-        return left(APIError(message: 'Reset profile failed', trace: StackTrace.current));
-      }
-
-      return right(userDTO);
-    } on DioException catch (e) {
-      return left(APIError(message: parseError(e.type, lang), trace: e.stackTrace));
-    } catch (e) {
-      return left(APIError(message: e.toString(), trace: StackTrace.current));
-    }
-  }
 }
 
 @riverpod

@@ -1,6 +1,6 @@
 name: myapp
-description: 'A new Flutter project.'
-publish_to: 'none'
+description: "A new Flutter project."
+publish_to: "none"
 
 version: 0.0.1
 
@@ -37,6 +37,7 @@ dependencies:
   archive: ^4.0.7
   chewie: ^1.11.1
   lottie: ^3.3.1
+  flutter_svg: ^2.2.0
 
 dev_dependencies:
   flutter_test:
@@ -53,6 +54,7 @@ flutter:
   assets:
     - assets/img/
     - assets/animations/
+    - assets/svgs/
     - .env
     - .env.prod
 

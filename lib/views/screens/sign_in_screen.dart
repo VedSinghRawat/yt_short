@@ -11,6 +11,14 @@ import 'package:myapp/controllers/user/user_controller.dart';
 import 'package:myapp/models/models.dart';
 import '../../controllers/auth/auth_controller.dart';
 import '../widgets/custom_app_bar.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+
+final Widget googleLogo = SvgPicture.asset(
+  'assets/svgs/google-logo.svg',
+  semanticsLabel: 'Google Logo',
+  width: 26,
+  height: 26,
+);
 
 class SignInScreen extends ConsumerWidget {
   const SignInScreen({super.key});
@@ -76,16 +84,7 @@ class SignInScreen extends ConsumerWidget {
                                   context.go(Routes.home);
                                 }
                               },
-                      icon: Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: Image.network(
-                          'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png',
-                          height: 36,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(Icons.login);
-                          },
-                        ),
-                      ),
+                      icon: Padding(padding: const EdgeInsets.only(right: 8.0), child: googleLogo),
                       label: const Text('Sign in with Google'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).colorScheme.primary,

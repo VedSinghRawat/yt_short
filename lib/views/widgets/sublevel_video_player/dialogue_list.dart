@@ -173,6 +173,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16.0),
                               child: SizedBox(
+                                width: MediaQuery.of(context).size.width * 0.7,
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   crossAxisAlignment: CrossAxisAlignment.center,

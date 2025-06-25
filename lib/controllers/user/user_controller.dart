@@ -1,11 +1,14 @@
+import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:myapp/apis/user/user_api.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/controllers/level/level_controller.dart';
+import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/models.dart';
 import 'package:myapp/models/user/user.dart';
+import 'package:myapp/views/widgets/show_confirmation_dialog.dart';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -41,6 +44,7 @@ class UserControllerState with _$UserControllerState {
 class UserController extends _$UserController {
   late final userAPI = ref.watch(userAPIProvider);
   late final langProvider = ref.read(langControllerProvider.notifier);
+  late final lang = ref.watch(langControllerProvider);
 
   @override
   UserControllerState build() => const UserControllerState();
@@ -89,5 +93,39 @@ class UserController extends _$UserController {
 
     state = state.copyWith(loading: false);
     return true;
+  }
+
+  Future<bool> resetProfile(BuildContext context) async {
+    try {
+      if (state.loading) return false;
+
+      state = state.copyWith(loading: true);
+
+      final user = state.currentUser;
+
+      if (user == null) {
+        return false;
+      }
+
+      final confirmed = await showConfirmationDialog(context, question: 'Are you sure you want to reset your profile?');
+
+      if (!confirmed) {
+        return false;
+      }
+
+      final resetResult = await userAPI.resetProfile();
+
+      updateCurrentUser(resetResult);
+
+      return true;
+    } catch (e) {
+      if (!context.mounted) return false;
+
+      showSnackBar(context, message: e.toString(), type: SnackBarType.error);
+
+      return false;
+    } finally {
+      state = state.copyWith(loading: false);
+    }
   }
 }
