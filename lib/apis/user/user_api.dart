@@ -8,7 +8,7 @@ part 'user_api.g.dart';
 
 abstract class IUserAPI {
   Future<UserDTO> sync(String levelId, int subLevel);
-  Future<UserDTO?> resetProfile();
+  Future<UserDTO?> resetProfile(String email);
   Future<UserDTO> updateProfile({required PrefLang prefLang});
 }
 
@@ -58,9 +58,9 @@ class UserAPI implements IUserAPI {
   }
 
   @override
-  Future<UserDTO> resetProfile() async {
+  Future<UserDTO> resetProfile(String email) async {
     final response = await _apiService.call(
-      params: const ApiParams(endpoint: '/user/reset-profile', method: ApiMethod.get),
+      params: ApiParams(endpoint: '/user/reset', method: ApiMethod.post, body: {'email': email}),
     );
 
     return UserDTO.fromJson(response.data['user']);

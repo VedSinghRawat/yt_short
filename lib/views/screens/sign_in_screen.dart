@@ -16,8 +16,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 final Widget googleLogo = SvgPicture.asset(
   'assets/svgs/google-logo.svg',
   semanticsLabel: 'Google Logo',
-  width: 26,
-  height: 26,
+  width: 20,
+  height: 20,
 );
 
 class SignInScreen extends ConsumerWidget {

@@ -121,12 +121,12 @@ class InitializeService {
       final initialData = await initializeAPI.initialize(version);
 
       if (initialData.user != null) {
-        final u = userController.updateCurrentUser(initialData.user!);
+        final u = userController.userFromDTO(initialData.user!);
         // Store doneToday from API user
         await SharedPref.store(PrefKey.doneToday, initialData.user!.doneToday);
 
         // Store last logged in email
-        await SharedPref.store(PrefKey.user, u);
+        await userController.updateCurrentUser(u);
         return true;
       }
 

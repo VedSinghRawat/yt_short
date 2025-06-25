@@ -49,7 +49,7 @@ class UserController extends _$UserController {
   @override
   UserControllerState build() => const UserControllerState();
 
-  User updateCurrentUser(UserDTO userDTO) {
+  User userFromDTO(UserDTO userDTO) {
     final orderedIds = ref.read(levelControllerProvider).orderedIds;
 
     final maxLevelIndex = orderedIds?.indexOf(userDTO.maxLevelId) ?? -1;
@@ -60,11 +60,16 @@ class UserController extends _$UserController {
 
     final user = User.fromUserDTO(userDTO, userLevel, userMaxLevel);
 
+    return user;
+  }
+
+  Future<User> updateCurrentUser(User user) async {
     if (user.prefLang != null) {
       langProvider.changeLanguage(user.prefLang!);
     }
 
     state = state.copyWith(currentUser: user);
+    await SharedPref.store(PrefKey.user, user);
 
     return user;
   }
@@ -78,7 +83,7 @@ class UserController extends _$UserController {
   Future<bool> sync(String levelId, int subLevel) async {
     final user = await userAPI.sync(levelId, subLevel);
 
-    updateCurrentUser(user);
+    await updateCurrentUser(userFromDTO(user));
     state = state.copyWith(syncFailed: false);
     return true;
   }
@@ -89,7 +94,7 @@ class UserController extends _$UserController {
     state = state.copyWith(loading: true);
 
     final updatedUserDTO = await userAPI.updateProfile(prefLang: newLang);
-    updateCurrentUser(updatedUserDTO);
+    await updateCurrentUser(userFromDTO(updatedUserDTO));
 
     state = state.copyWith(loading: false);
     return true;
@@ -113,9 +118,20 @@ class UserController extends _$UserController {
         return false;
       }
 
-      final resetResult = await userAPI.resetProfile();
+      final resetResult = await userAPI.resetProfile(user.email);
+      final newUser = userFromDTO(resetResult);
 
-      updateCurrentUser(resetResult);
+      final progress = Progress(
+        level: newUser.level,
+        subLevel: newUser.subLevel,
+        levelId: newUser.levelId,
+        maxLevel: newUser.maxLevel,
+        maxSubLevel: newUser.maxSubLevel,
+      );
+
+      await SharedPref.store(PrefKey.currProgress(userEmail: newUser.email), progress);
+
+      await updateCurrentUser(newUser);
 
       return true;
     } catch (e) {

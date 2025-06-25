@@ -128,6 +128,19 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(userControllerProvider.select((value) => value.currentUser), (previous, next) {
+      if (next == null) return;
+      //  if profile is reset, jump to first sublevel
+      final progress = SharedPref.get(PrefKey.currProgress());
+      final currentIndex = _pageController.page?.round() ?? 0;
+
+      if (progress?.level == 1 &&
+          progress?.subLevel == 1 &&
+          !(widget.sublevels[currentIndex].level == 1 && widget.sublevels[currentIndex].index == 0)) {
+        _jumpToPage(Duration.zero);
+      }
+    });
+
     ref.listen(sublevelControllerProvider.select((value) => value.hasFinishedVideo), (previous, next) {
       final progress = SharedPref.get(PrefKey.currProgress());
 

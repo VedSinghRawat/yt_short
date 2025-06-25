@@ -37,7 +37,7 @@ class AuthController extends _$AuthController {
 
     final signInResult = await authService.signInWithGoogle();
 
-    signInResult.fold(
+    await signInResult.fold(
       (error) {
         state = state.copyWith(error: error.message);
         if (context.mounted) {
@@ -49,7 +49,7 @@ class AuthController extends _$AuthController {
           bool needsLanguagePrompt = userDTO.prefLang == null;
 
           // Update user model *before* potentially showing dialog
-          final user = userController.updateCurrentUser(userDTO);
+          final user = userController.userFromDTO(userDTO);
 
           await SharedPref.store(PrefKey.doneToday, user.doneToday);
 
@@ -131,7 +131,7 @@ class AuthController extends _$AuthController {
 
           // Continue with existing logic (progress check, etc.)
           final progress = SharedPref.get(PrefKey.currProgress());
-          await SharedPref.store(PrefKey.user, user);
+          await userController.updateCurrentUser(user);
 
           final level = progress?.maxLevel ?? 1;
           final subLevel = progress?.maxSubLevel ?? 1;
@@ -139,7 +139,7 @@ class AuthController extends _$AuthController {
           if (context.mounted && (user.maxLevel > level || (user.maxLevel == level && user.maxSubLevel > subLevel))) {
             await showLevelChangeConfirmationDialog(context, user, ref);
           } else if (progress != null) {
-            SharedPref.store(PrefKey.currProgress(userEmail: user.email), progress);
+            await SharedPref.store(PrefKey.currProgress(userEmail: user.email), progress);
           }
         } catch (e, stackTrace) {
           developer.log('Error in AuthController.signInWithGoogle', error: e.toString(), stackTrace: stackTrace);
