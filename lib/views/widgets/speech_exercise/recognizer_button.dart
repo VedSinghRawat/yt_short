@@ -107,7 +107,7 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
                               ),
                             )
                             : speechState.isListening
-                            ? Lottie.asset('assets/animations/active_mic.json', height: 120, width: 120)
+                            ? Lottie.asset('assets/gifs/active_mic.json')
                             : Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
