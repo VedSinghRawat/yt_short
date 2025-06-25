@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/path/path_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
@@ -149,7 +150,7 @@ class Speech extends _$Speech {
 
     final audioFile = PathService.sublevelAudio(levelId, id);
 
-    await audioPlayer.setFilePath(audioFile);
+    await audioPlayer.setFilePath('${FileService.documentsDirectory.path}$audioFile');
 
     state = state.copyWith(isPlayingAudio: true);
 
