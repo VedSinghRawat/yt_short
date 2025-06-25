@@ -3,11 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:myapp/controllers/dialogue/dialogue_controller.dart';
+import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/path/path_service.dart';
-import 'package:myapp/controllers/user/user_controller.dart';
-import 'package:myapp/models/user/user.dart';
 
 class DialogueList extends ConsumerStatefulWidget {
   final List<SubDialogue> dialogues;
@@ -123,9 +122,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
       return const SizedBox.shrink();
     }
 
-    final prefLang = ref.watch(
-      userControllerProvider.select((state) => state.currentUser?.prefLang ?? PrefLang.hinglish),
-    );
+    final langController = ref.read(langControllerProvider.notifier);
 
     final dialogueMap = ref.watch(dialogueControllerProvider.select((state) => state.dialogues));
 
@@ -170,39 +167,33 @@ class _DialogueListState extends ConsumerState<DialogueList> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                              child: SizedBox(
-                                width: MediaQuery.of(context).size.width * 0.7,
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      dialogue.text,
-                                      style: TextStyle(
-                                        fontSize: textFontSize,
-                                        color: Colors.white,
-                                        fontWeight: textFontWeight,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    if (dialogue.hindiText.isNotEmpty && dialogue.hinglishText.isNotEmpty)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 8),
-                                        child: Text(
-                                          prefLang == PrefLang.hindi ? dialogue.hindiText : dialogue.hinglishText,
-                                          style: TextStyle(
-                                            fontSize: textFontSize * 0.8,
-                                            color: Colors.white70,
-                                            fontWeight: FontWeight.normal,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ),
-                                  ],
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Text(
+                                  dialogue.text,
+                                  style: TextStyle(
+                                    fontSize: textFontSize,
+                                    color: Colors.white,
+                                    fontWeight: textFontWeight,
+                                  ),
+                                  textAlign: TextAlign.center,
                                 ),
-                              ),
+
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Text(
+                                    langController.choose(hindi: dialogue.hindiText, hinglish: dialogue.hinglishText),
+                                    style: TextStyle(
+                                      fontSize: textFontSize * 0.8,
+                                      color: Colors.white70,
+                                      fontWeight: FontWeight.normal,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ],
                             ),
 
                             GestureDetector(
