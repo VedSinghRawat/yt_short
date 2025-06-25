@@ -60,7 +60,6 @@ class DialogueService {
               final audioFile = FileService.getFile(PathService.dialogueAudio(file.name.replaceAll('.mp3', '')));
               await audioFile.parent.create(recursive: true);
               await audioFile.writeAsBytes(file.content as List<int>);
-              Console.log('Successfully extracted audio for dialogue $file.name');
             }
           }),
         );
