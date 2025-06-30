@@ -23,19 +23,106 @@ final Widget googleLogo = SvgPicture.asset(
 class SignInScreen extends ConsumerWidget {
   const SignInScreen({super.key});
 
+  Future<void> _handlePostSignIn(BuildContext context, WidgetRef ref) async {
+    final user = ref.read(userControllerProvider).currentUser;
+    if (user == null) return;
+    // Continue with existing logic (progress check, etc.)
+    final progress = SharedPref.get(PrefKey.currProgress());
+
+    final level = progress?.maxLevel ?? 1;
+    final subLevel = progress?.maxSubLevel ?? 1;
+
+    if (context.mounted && (user.maxLevel > level || (user.maxLevel == level && user.maxSubLevel > subLevel))) {
+      final result = await showConfirmationDialog(
+        context,
+        question: ref
+            .read(langControllerProvider.notifier)
+            .choose(
+              hindi:
+                  'आप पहले से Level ${user.maxLevel}, Sublevel ${user.maxSubLevel} पर हैं। क्या आप वहीं से आगे बढ़ना चाहेंगे?',
+              hinglish:
+                  'Aap already Level ${user.maxLevel}, Sublevel ${user.maxSubLevel} par hain. Kya aap wahan se continue karna chahenge?',
+            ),
+
+        yesButtonStyle: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+
+      await SharedPref.store(
+        PrefKey.currProgress(userEmail: user.email),
+        Progress(
+          level: result ? user.maxLevel : null,
+          subLevel: result ? user.maxSubLevel : null,
+          maxLevel: user.maxLevel,
+          maxSubLevel: user.maxSubLevel,
+          levelId: result ? user.levelId : null,
+        ),
+      );
+    } else if (progress != null) {
+      await SharedPref.store(PrefKey.currProgress(userEmail: user.email), progress);
+    }
+  }
+
+  Future<void> showLanguagePreferenceDialog(BuildContext context, WidgetRef ref) async {
+    final chosenLang = await showDialog<PrefLang>(
+      context: context,
+      barrierDismissible: false, // User must choose
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: Theme.of(dialogContext).colorScheme.outline.withValues(alpha: 0.2), width: 2.0),
+          ),
+          title: const Text('आपकी पसंदीदा भाषा क्या है? / Aapki pasandida bhasha kya hai?'),
+          content: const Text(
+            'वह भाषा चुनें जिसमें आप सबसे अधिक सहज हैं। / Vo bhasha chunen jis mein aap sabse adhik sahaj hain.',
+          ),
+          actions: <Widget>[
+            TextButton(
+              style: TextButton.styleFrom(
+                backgroundColor: Theme.of(dialogContext).colorScheme.primary,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  side: BorderSide(color: Theme.of(dialogContext).colorScheme.onPrimary),
+                ),
+              ),
+              onPressed: () => Navigator.of(dialogContext).pop(PrefLang.hindi),
+              child: Text(
+                'हिन्दी',
+                style: TextStyle(color: Theme.of(dialogContext).colorScheme.onSecondary, fontWeight: FontWeight.bold),
+              ),
+            ),
+            TextButton(
+              style: TextButton.styleFrom(
+                backgroundColor: Theme.of(dialogContext).colorScheme.secondary,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  side: BorderSide(color: Theme.of(dialogContext).colorScheme.onSecondary),
+                ),
+              ),
+              onPressed: () => Navigator.of(dialogContext).pop(PrefLang.hinglish),
+              child: Text(
+                'Hinglish',
+                style: TextStyle(color: Theme.of(dialogContext).colorScheme.onSecondary, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    final finalLang = chosenLang ?? PrefLang.hinglish;
+    await ref.read(userControllerProvider.notifier).updatePrefLang(finalLang);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isLoading = ref.watch(authControllerProvider.select((state) => state.loading));
-
-    final user = ref.watch(userControllerProvider).currentUser;
-
-    if (user != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (context.mounted) {
-          context.go(Routes.home);
-        }
-      });
-    }
 
     return Scaffold(
       appBar: CustomAppBar(title: 'Sign In', ignoreInteractions: isLoading),
@@ -84,9 +171,24 @@ class SignInScreen extends ConsumerWidget {
                           isLoading
                               ? null
                               : () async {
-                                await ref.read(authControllerProvider.notifier).signInWithGoogle(context);
+                                final needsLanguagePrompt =
+                                    await ref.read(authControllerProvider.notifier).signInWithGoogle();
 
                                 if (!context.mounted) return;
+
+                                if (ref.read(userControllerProvider).currentUser == null) {
+                                  return;
+                                }
+
+                                if (needsLanguagePrompt) {
+                                  await showLanguagePreferenceDialog(context, ref);
+                                }
+
+                                await _handlePostSignIn(context, ref);
+
+                                if (context.mounted) {
+                                  context.go(Routes.home);
+                                }
                               },
                       icon: Padding(padding: const EdgeInsets.only(right: 8.0), child: googleLogo),
                       label: const Text('Sign in with Google'),
@@ -109,35 +211,4 @@ class SignInScreen extends ConsumerWidget {
       ),
     );
   }
-}
-
-showLevelChangeConfirmationDialog(BuildContext context, User user, Ref ref) async {
-  final result = await showConfirmationDialog(
-    context,
-    question: ref
-        .read(langControllerProvider.notifier)
-        .choose(
-          hindi:
-              'आप पहले से Level ${user.maxLevel}, Sublevel ${user.maxSubLevel} पर हैं। क्या आप वहीं से आगे बढ़ना चाहेंगे?',
-          hinglish:
-              'Aap already Level ${user.maxLevel}, Sublevel ${user.maxSubLevel} par hain. Kya aap wahan se continue karna chahenge?',
-        ),
-
-    yesButtonStyle: ElevatedButton.styleFrom(
-      backgroundColor: Theme.of(context).colorScheme.primary,
-      foregroundColor: Theme.of(context).colorScheme.onPrimary,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    ),
-  );
-
-  await SharedPref.store(
-    PrefKey.currProgress(userEmail: user.email),
-    Progress(
-      level: result ? user.maxLevel : null,
-      subLevel: result ? user.maxSubLevel : null,
-      maxLevel: user.maxLevel,
-      maxSubLevel: user.maxSubLevel,
-      levelId: result ? user.levelId : null,
-    ),
-  );
 }
