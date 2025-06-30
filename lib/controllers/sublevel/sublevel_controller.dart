@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:myapp/controllers/level/level_controller.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 import 'package:myapp/services/api/api_service.dart';
 import 'package:myapp/services/path/path_service.dart';
@@ -24,7 +23,6 @@ class SublevelControllerState with _$SublevelControllerState {
 
 @Riverpod(keepAlive: true)
 class SublevelController extends _$SublevelController {
-  late final levelState = ref.watch(levelControllerProvider);
   late final subLevelService = ref.watch(subLevelServiceProvider);
 
   @override

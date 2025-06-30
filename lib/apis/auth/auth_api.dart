@@ -47,7 +47,7 @@ class AuthAPI implements IAuthAPI {
   @override
   Future<void> signOut() async {
     await _googleSignIn.signOut();
-    _apiService.setToken('');
+    await _apiService.setToken('');
   }
 
   @override
@@ -60,7 +60,7 @@ class AuthAPI implements IAuthAPI {
       params: ApiParams(endpoint: '/user/sync-cy-id', method: ApiMethod.post, body: {'cyId': cyId}),
     );
 
-    SharedPref.store(PrefKey.cyId, ''); // set cyId to empty string to indicate that it has been synced
+    await SharedPref.store(PrefKey.cyId, ''); // set cyId to empty string to indicate that it has been synced
   }
 }
 

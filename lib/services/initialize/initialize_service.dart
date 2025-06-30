@@ -108,7 +108,7 @@ class InitializeService {
       final context = navigatorKey.currentContext;
 
       if (context != null && context.mounted) {
-        appLinkSubscription?.cancel();
+        await appLinkSubscription?.cancel();
         await GoRouter.of(context).push(Routes.deepLinking);
       }
     });

@@ -7,8 +7,7 @@ class DialoguePopup extends StatelessWidget {
   final List<SubDialogue> dialogues;
   final VoidCallback onClose;
 
-  const DialoguePopup({Key? key, required this.visible, required this.dialogues, required this.onClose})
-    : super(key: key);
+  const DialoguePopup({super.key, required this.visible, required this.dialogues, required this.onClose});
 
   @override
   Widget build(BuildContext context) {

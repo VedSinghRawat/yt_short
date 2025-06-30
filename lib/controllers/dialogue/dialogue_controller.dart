@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:myapp/controllers/lang/lang_controller.dart';
+import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/dialogues/dialogues.dart';
 import 'package:myapp/services/dialogue/dialogue_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -35,7 +37,9 @@ class DialogueController extends _$DialogueController {
 
     final dialogue = dialogueEither.fold<Dialogue?>(
       (error) {
-        state = state.copyWith(error: 'Failed to get dialogue $id: ${error.message}');
+        final lang = ref.read(langControllerProvider);
+        final message = parseError(error.dioExceptionType, lang);
+        state = state.copyWith(error: 'Failed to get dialogue $id: $message');
         return null;
       },
       (dialogueDTO) {
@@ -59,7 +63,13 @@ class DialogueController extends _$DialogueController {
         ..update(zipNum.toString(), (value) => true, ifAbsent: () => true),
     );
 
-    dialogueService.downloadDialogueZip(zipNum);
+    final result = await dialogueService.downloadDialogueZip(zipNum);
+
+    result.fold((error) {
+      final lang = ref.read(langControllerProvider);
+      final message = parseError(error.dioExceptionType, lang);
+      state = state.copyWith(error: 'Failed to download dialogue data: $message');
+    }, (_) => null);
 
     state = state.copyWith(
       downloadingByZipNum: {...state.downloadingByZipNum}..update(zipNum.toString(), (value) => false),

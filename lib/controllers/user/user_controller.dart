@@ -74,10 +74,10 @@ class UserController extends _$UserController {
     return user;
   }
 
-  void removeCurrentUser() {
+  Future<void> removeCurrentUser() async {
     state = state.copyWith(currentUser: null);
 
-    SharedPref.removeValue(PrefKey.user);
+    await SharedPref.removeValue(PrefKey.user);
   }
 
   Future<bool> sync(String levelId, int subLevel) async {
@@ -88,8 +88,8 @@ class UserController extends _$UserController {
     return true;
   }
 
-  Future<bool> updatePrefLang(PrefLang newLang) async {
-    if (state.currentUser == null) return false;
+  Future<void> updatePrefLang(PrefLang newLang) async {
+    if (state.currentUser == null) return;
 
     state = state.copyWith(loading: true);
 
@@ -97,7 +97,6 @@ class UserController extends _$UserController {
     await updateCurrentUser(userFromDTO(updatedUserDTO));
 
     state = state.copyWith(loading: false);
-    return true;
   }
 
   Future<bool> resetProfile(BuildContext context) async {

@@ -12,7 +12,7 @@ class ObstructiveErrorState with _$ObstructiveErrorState {
   const factory ObstructiveErrorState({String? content, @Default(false) bool closable}) = _ObstructiveErrorState;
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 class ObstructiveErrorController extends _$ObstructiveErrorController {
   @override
   ObstructiveErrorState build() => const ObstructiveErrorState();

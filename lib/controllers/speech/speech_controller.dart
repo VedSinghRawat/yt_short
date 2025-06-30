@@ -26,7 +26,7 @@ class SpeechState with _$SpeechState {
   }) = _SpeechState;
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 class Speech extends _$Speech {
   late final stt.SpeechToText _speech;
   List<String> _targetWords = [];

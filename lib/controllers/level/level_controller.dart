@@ -1,4 +1,4 @@
-import 'dart:math' as Math;
+import 'dart:math' as math;
 import 'package:dio/dio.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:myapp/constants.dart';
@@ -7,7 +7,6 @@ import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
 import 'package:myapp/controllers/user/user_controller.dart';
 import 'package:myapp/core/console.dart';
-import 'package:myapp/core/error/api_error.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 import 'package:myapp/services/level/level_service.dart';
@@ -34,7 +33,6 @@ class LevelControllerState with _$LevelControllerState {
 @Riverpod(keepAlive: true)
 class LevelController extends _$LevelController {
   late final levelService = ref.watch(levelServiceProvider);
-  late final prefLang = ref.watch(langControllerProvider);
   late final userState = ref.watch(userControllerProvider);
   late final subLevelController = ref.watch(sublevelControllerProvider.notifier);
   late final dialogueController = ref.watch(dialogueControllerProvider.notifier);
@@ -53,7 +51,7 @@ class LevelController extends _$LevelController {
 
     final level = levelDTOEither.fold(
       (l) {
-        Console.error(APIError(message: l.message), StackTrace.current);
+        Console.error(l, StackTrace.current);
         state = state.copyWith(error: l.message);
         return null;
       },
@@ -137,9 +135,9 @@ class LevelController extends _$LevelController {
   }
 
   List<String> _getSurroundingLevelIds(int currIndex, List<String?> orderedIds) {
-    final startBefore = Math.max(0, currIndex - AppConstants.kMaxBeforeLevels);
-    final endAfter = Math.min(orderedIds.length, currIndex + AppConstants.kMaxAfterLevels + 1);
-    final startAfter = Math.min(orderedIds.length, currIndex + 1);
+    final startBefore = math.max(0, currIndex - AppConstants.kMaxBeforeLevels);
+    final endAfter = math.min(orderedIds.length, currIndex + AppConstants.kMaxAfterLevels + 1);
+    final startAfter = math.min(orderedIds.length, currIndex + 1);
 
     return orderedIds
         .sublist(startBefore, currIndex)

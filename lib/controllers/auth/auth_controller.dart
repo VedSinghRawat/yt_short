@@ -143,7 +143,7 @@ class AuthController extends _$AuthController {
           }
         } catch (e, stackTrace) {
           developer.log('Error in AuthController.signInWithGoogle', error: e.toString(), stackTrace: stackTrace);
-          userController.removeCurrentUser();
+          await userController.removeCurrentUser();
           if (context.mounted) {
             showSnackBar(context, message: e.toString(), type: SnackBarType.error);
           }
@@ -202,14 +202,14 @@ class AuthController extends _$AuthController {
 
       final signOutResult = await authService.signOut();
 
-      signOutResult.fold(
+      await signOutResult.fold(
         (error) {
           if (context.mounted) {
             showSnackBar(context, message: error.message, type: SnackBarType.error);
           }
         },
-        (_) {
-          userController.removeCurrentUser();
+        (_) async {
+          await userController.removeCurrentUser();
         },
       );
 

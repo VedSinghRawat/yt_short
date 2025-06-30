@@ -27,6 +27,16 @@ class SignInScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isLoading = ref.watch(authControllerProvider.select((state) => state.loading));
 
+    final user = ref.watch(userControllerProvider).currentUser;
+
+    if (user != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          context.go(Routes.home);
+        }
+      });
+    }
+
     return Scaffold(
       appBar: CustomAppBar(title: 'Sign In', ignoreInteractions: isLoading),
       body: Center(
@@ -77,12 +87,6 @@ class SignInScreen extends ConsumerWidget {
                                 await ref.read(authControllerProvider.notifier).signInWithGoogle(context);
 
                                 if (!context.mounted) return;
-
-                                final user = ref.read(userControllerProvider).currentUser;
-
-                                if (user != null) {
-                                  context.go(Routes.home);
-                                }
                               },
                       icon: Padding(padding: const EdgeInsets.only(right: 8.0), child: googleLogo),
                       label: const Text('Sign in with Google'),

@@ -1,11 +1,8 @@
 import 'dart:convert';
-import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:myapp/apis/level/level_api.dart';
-import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/core/error/api_error.dart';
-import 'package:myapp/models/user/user.dart';
 import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/path/path_service.dart';
 import 'package:myapp/core/utils.dart';
@@ -16,9 +13,8 @@ part 'level_service.g.dart';
 
 class LevelService {
   final ILevelApi levelApi;
-  final PrefLang lang;
 
-  LevelService(this.levelApi, this.lang);
+  LevelService(this.levelApi);
 
   Future<bool> videoExists(String levelId, String id) async {
     final file = FileService.getFile(PathService.sublevelVideo(levelId, id));
@@ -51,7 +47,7 @@ class LevelService {
     final localLevel = await getLocalLevel(id);
 
     if (localLevel == null) {
-      return left(APIError(message: parseError(DioExceptionType.connectionError, lang), trace: StackTrace.current));
+      return left(APIError(message: 'Level not found', trace: StackTrace.current));
     }
 
     return right(localLevel);
@@ -61,6 +57,5 @@ class LevelService {
 @riverpod
 LevelService levelService(Ref ref) {
   final levelApi = ref.watch(levelApiProvider);
-  final lang = ref.watch(langControllerProvider);
-  return LevelService(levelApi, lang);
+  return LevelService(levelApi);
 }

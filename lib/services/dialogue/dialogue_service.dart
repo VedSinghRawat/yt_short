@@ -4,10 +4,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:myapp/apis/dialogue/dialogue_api.dart';
-import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/core/error/api_error.dart';
 import 'package:myapp/core/utils.dart';
-import 'package:myapp/models/user/user.dart';
 import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/path/path_service.dart';
 import 'package:myapp/models/dialogues/dialogues.dart';
@@ -17,9 +15,8 @@ part 'dialogue_service.g.dart';
 
 class DialogueService {
   final IDialogueApi dialogueAPI;
-  final PrefLang lang;
 
-  DialogueService(this.dialogueAPI, this.lang);
+  DialogueService(this.dialogueAPI);
 
   FutureEither<DialogueDTO> get(String id) async {
     final dialogue = await dialogueAPI.get(id);
@@ -33,7 +30,9 @@ class DialogueService {
     }
 
     final file = FileService.getFile(PathService.dialogueJson(id));
-    if (!await file.exists()) return left(APIError(message: parseError(DioExceptionType.connectionError, lang)));
+    if (!await file.exists()) {
+      return left(APIError(message: 'Dialogue not found locally', dioExceptionType: DioExceptionType.connectionError));
+    }
 
     final content = await file.readAsString();
     final jsonMap = jsonDecode(content) as Map<String, dynamic>;
@@ -63,12 +62,14 @@ class DialogueService {
           }),
         );
       } catch (e) {
-        return left(APIError(message: parseError(DioExceptionType.badResponse, lang)));
+        return left(APIError(message: 'Failed to decode zip archive', dioExceptionType: DioExceptionType.badResponse));
       }
 
       return right(null);
     } catch (e) {
-      return left(APIError(message: parseError(DioExceptionType.connectionError, lang)));
+      return left(
+        APIError(message: 'Failed to download dialogue zip', dioExceptionType: DioExceptionType.connectionError),
+      );
     }
   }
 
@@ -81,6 +82,5 @@ class DialogueService {
 @riverpod
 DialogueService dialogueService(Ref ref) {
   final dialogueAPI = ref.watch(dialogueApiProvider);
-  final lang = ref.watch(langControllerProvider);
-  return DialogueService(dialogueAPI, lang);
+  return DialogueService(dialogueAPI);
 }
