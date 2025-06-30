@@ -73,7 +73,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
         _lastPosition = _controller!.value.position;
       }
       await pause();
-      _controller?.dispose();
+      await _controller?.dispose();
       _controller = null;
       if (mounted) {
         setState(() {
@@ -82,13 +82,13 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
       }
     } else if (state == AppLifecycleState.resumed) {
       if (_controller == null) {
-        _initializeVideoPlayerController();
+        await _initializeVideoPlayerController();
       } else if (_controller != null &&
           _controller!.value.isInitialized &&
           !_controller!.value.isPlaying &&
           !widget.stayPause &&
           _isVisible) {
-        play();
+        await play();
       }
     }
   }
@@ -158,7 +158,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
       if (_controller!.value.position >= _controller!.value.duration) {
         await seek(Duration.zero);
       }
-      play();
+      await play();
     }
 
     final newIcon = wasPlaying ? Icons.pause : Icons.play_arrow;
@@ -469,11 +469,11 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
             DialoguePopup(
               visible: _showDialogueArea && _displayableDialogues.isNotEmpty,
               dialogues: _displayableDialogues,
-              onClose: () {
+              onClose: () async {
                 setState(() {
                   _showDialogueArea = false;
                 });
-                play();
+                await play();
               },
             ),
           ],

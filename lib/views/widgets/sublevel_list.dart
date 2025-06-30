@@ -161,6 +161,19 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
       }
     });
 
+    ref.listen(sublevelControllerProvider.select((value) => value.showAppBar), (previous, isPaused) {
+      if (isPaused) {
+        _animationTimer?.cancel();
+        _bounceTimer?.cancel();
+        if (mounted) {
+          setState(() {
+            _showAnimation = false;
+            _showScrollIndicator = false;
+          });
+        }
+      }
+    });
+
     return RefreshIndicator(
       onRefresh: () async {
         if (widget.sublevels[0].level == 1 && widget.sublevels[0].index == 0) return;
