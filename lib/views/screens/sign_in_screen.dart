@@ -5,6 +5,7 @@ import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
+import 'package:myapp/views/widgets/language_preference_dialog.dart';
 import 'package:myapp/views/widgets/loader.dart';
 import 'package:myapp/views/widgets/show_confirmation_dialog.dart';
 import 'package:myapp/controllers/user/user_controller.dart';
@@ -71,48 +72,7 @@ class SignInScreen extends ConsumerWidget {
       context: context,
       barrierDismissible: false, // User must choose
       builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: Theme.of(dialogContext).colorScheme.outline.withValues(alpha: 0.2), width: 2.0),
-          ),
-          title: const Text('आपकी पसंदीदा भाषा क्या है? / Aapki pasandida bhasha kya hai?'),
-          content: const Text(
-            'वह भाषा चुनें जिसमें आप सबसे अधिक सहज हैं। / Vo bhasha chunen jis mein aap sabse adhik sahaj hain.',
-          ),
-          actions: <Widget>[
-            TextButton(
-              style: TextButton.styleFrom(
-                backgroundColor: Theme.of(dialogContext).colorScheme.primary,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(color: Theme.of(dialogContext).colorScheme.onPrimary),
-                ),
-              ),
-              onPressed: () => Navigator.of(dialogContext).pop(PrefLang.hindi),
-              child: Text(
-                'हिन्दी',
-                style: TextStyle(color: Theme.of(dialogContext).colorScheme.onSecondary, fontWeight: FontWeight.bold),
-              ),
-            ),
-            TextButton(
-              style: TextButton.styleFrom(
-                backgroundColor: Theme.of(dialogContext).colorScheme.secondary,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(color: Theme.of(dialogContext).colorScheme.onSecondary),
-                ),
-              ),
-              onPressed: () => Navigator.of(dialogContext).pop(PrefLang.hinglish),
-              child: Text(
-                'Hinglish',
-                style: TextStyle(color: Theme.of(dialogContext).colorScheme.onSecondary, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        );
+        return const LanguagePreferenceDialog();
       },
     );
 
