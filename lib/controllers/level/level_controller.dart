@@ -63,7 +63,7 @@ class LevelController extends _$LevelController {
 
         for (var subLevelDTO in r.sub_levels) {
           subLevelController.set(subLevelDTO, level.id, i++, index != null ? index + 1 : 1);
-          dialogueIds.addAll(subLevelDTO.dialogues.map((d) => d.id));
+          dialogueIds.addAll(subLevelDTO.dialogues?.map((d) => d.id) ?? []);
         }
 
         return level;

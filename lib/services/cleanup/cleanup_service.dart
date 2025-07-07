@@ -72,7 +72,7 @@ class StorageCleanupService {
         levelById[levelId] = level;
 
         for (var sub in level.sub_levels) {
-          for (var dialogue in sub.dialogues) {
+          for (var dialogue in sub.dialogues ?? []) {
             final filename = dialogue.id;
 
             if (sublevelIdsByDialogueFilename[filename] == null) {

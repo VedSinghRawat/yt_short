@@ -238,7 +238,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
                   children: [
                     Center(
                       child: sublevel.when(
-                        video: (video) => SublevelVideoPlayer(subLevel: sublevel),
+                        video: (video) => SublevelVideoPlayer(subLevel: video),
                         speechExercise:
                             (speechExercise) => SpeechExerciseScreen(
                               exercise: speechExercise,

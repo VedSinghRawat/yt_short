@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/utils.dart';
+import 'package:myapp/models/video/video.dart';
 import 'package:myapp/services/api/api_service.dart';
 import 'package:myapp/services/path/path_service.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
@@ -21,7 +22,7 @@ import 'package:myapp/views/widgets/sublevel_video_player/dialogue_popup.dart';
 class SublevelVideoPlayer extends ConsumerStatefulWidget {
   final Function(VideoPlayerController controller, Function(Duration) seek)? onControllerInitialized;
   final bool stayPause;
-  final SubLevel subLevel;
+  final Video subLevel;
 
   const SublevelVideoPlayer({super.key, this.onControllerInitialized, this.stayPause = false, required this.subLevel});
 

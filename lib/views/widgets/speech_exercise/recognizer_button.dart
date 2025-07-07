@@ -7,6 +7,7 @@ import 'package:myapp/controllers/speech/speech_controller.dart';
 
 class RecognizerButton extends ConsumerStatefulWidget {
   final VoidCallback onContinue;
+
   const RecognizerButton({super.key, required this.onContinue});
 
   @override

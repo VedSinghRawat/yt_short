@@ -30,15 +30,7 @@ class SubLevel with _$SubLevel {
     return subLevelDTO.when(
       speechExercise:
           (dto) => SubLevel.speechExercise(
-            SpeechExercise(
-              level: level,
-              index: index,
-              levelId: levelId,
-              text: dto.text,
-              pauseAt: dto.pauseAt,
-              id: dto.id,
-              dialogues: dto.dialogues,
-            ),
+            SpeechExercise(level: level, index: index, levelId: levelId, text: dto.text, id: dto.id),
           ),
       video:
           (dto) =>
@@ -55,8 +47,7 @@ class SubLevel with _$SubLevel {
 
   String get id => when(speechExercise: (speechExercise) => speechExercise.id, video: (video) => video.id);
 
-  List<SubDialogue> get dialogues =>
-      when(speechExercise: (speechExercise) => speechExercise.dialogues, video: (video) => video.dialogues);
+  List<SubDialogue>? get dialogues => when(speechExercise: (speechExercise) => null, video: (video) => video.dialogues);
 
   bool get isVideo => this is _Video;
 
@@ -85,6 +76,5 @@ class SubLevelDTO with _$SubLevelDTO {
 
   String get id => when(speechExercise: (speechExercise) => speechExercise.id, video: (video) => video.id);
 
-  List<SubDialogue> get dialogues =>
-      when(speechExercise: (speechExercise) => speechExercise.dialogues, video: (video) => video.dialogues);
+  List<SubDialogue>? get dialogues => when(speechExercise: (speechExercise) => null, video: (video) => video.dialogues);
 }
