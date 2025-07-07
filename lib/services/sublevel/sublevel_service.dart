@@ -1,6 +1,6 @@
+import 'dart:developer' as developer;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/apis/sublevel/sublevel_api.dart';
-import 'package:myapp/core/console.dart';
 import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/level/level_service.dart';
 import 'package:myapp/services/path/path_service.dart';
@@ -31,7 +31,7 @@ class SubLevelService {
         await FileService.store(audioPath, audioData);
       }
     } catch (e) {
-      Console.log('Error saving video file for ${subLevelDTO.id}: $e');
+      developer.log(e.toString(), name: 'SubLevelService');
     }
   }
 }

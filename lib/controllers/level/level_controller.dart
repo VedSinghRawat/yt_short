@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'dart:math' as math;
 import 'package:dio/dio.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -6,7 +7,6 @@ import 'package:myapp/controllers/dialogue/dialogue_controller.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
 import 'package:myapp/controllers/user/user_controller.dart';
-import 'package:myapp/core/console.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 import 'package:myapp/services/level/level_service.dart';
@@ -51,7 +51,7 @@ class LevelController extends _$LevelController {
 
     final level = levelDTOEither.fold(
       (l) {
-        Console.error(l, StackTrace.current);
+        developer.log(l.message, name: 'LevelController');
         state = state.copyWith(error: l.message);
         return null;
       },

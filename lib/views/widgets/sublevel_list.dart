@@ -1,9 +1,8 @@
 import 'package:flutter/gestures.dart';
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
-import 'package:myapp/core/console.dart';
-import 'package:myapp/core/error/api_error.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/views/widgets/loader.dart';
@@ -206,7 +205,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
           if ((isLastSublevel || sublevel == null) && !isLoading) {
             final error = ref.watch(sublevelControllerProvider).error;
 
-            Console.error(APIError(message: 'sublevel error is $error $index'), StackTrace.current);
+            developer.log('sublevel error is $error $index', name: 'SublevelsList');
 
             if (error == null) {
               return const Loader();

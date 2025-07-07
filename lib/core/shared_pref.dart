@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:fpdart/fpdart.dart';
-import 'package:myapp/core/console.dart';
-import 'package:myapp/core/error/api_error.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/activity_log/activity_log.dart';
@@ -99,8 +97,7 @@ class SharedPref {
 
       return result as ST;
     } catch (e) {
-      Console.error(APIError(message: e.toString()), StackTrace.current);
-
+      developer.log(e.toString(), name: 'SharedPref');
       rethrow;
     }
   }
@@ -127,8 +124,7 @@ class SharedPref {
 
       await _pref.setString(destructedKey.key, validVal);
     } catch (e) {
-      Console.error(APIError(message: e.toString()), StackTrace.current);
-
+      developer.log(e.toString(), name: 'SharedPref');
       rethrow;
     }
   }
