@@ -3,14 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/controllers/speech/speech_controller.dart';
-import 'package:myapp/core/console.dart';
 import 'package:myapp/views/widgets/speech_exercise/recognizer_button.dart';
 
 class SpeechExerciseCard extends ConsumerStatefulWidget {
   final String text;
   final VoidCallback onContinue;
   final String levelId;
-  final String audioFilename;
+  final String id;
   final VoidCallback? onClose;
 
   const SpeechExerciseCard({
@@ -18,7 +17,7 @@ class SpeechExerciseCard extends ConsumerStatefulWidget {
     required this.text,
     required this.onContinue,
     required this.levelId,
-    required this.audioFilename,
+    required this.id,
     this.onClose,
   });
 
@@ -37,8 +36,6 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
 
     // Split text by new lines to maintain line structure
     final lines = text.split('\n');
-
-    Console.log('Processing text: $text');
 
     for (var line in lines) {
       List<String> lineWords = [];
@@ -62,11 +59,11 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
       // Card became visible - initialize speech controller
       _isVisible = true;
 
-      if (ref.read(speechProvider).currentExerciseId == widget.audioFilename) return;
+      if (ref.read(speechProvider).currentExerciseId == widget.id) return;
 
       // Process text and initialize speech controller
       _processText(widget.text);
-      ref.read(speechProvider.notifier).setTargetWords(_flatWords, widget.audioFilename);
+      ref.read(speechProvider.notifier).setTargetWords(_flatWords, widget.id);
     } else if (!isVisible && _isVisible) {
       _isVisible = false;
     }
@@ -105,7 +102,7 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
     }
 
     return VisibilityDetector(
-      key: Key(widget.audioFilename),
+      key: Key(widget.id),
       onVisibilityChanged: _onVisibilityChanged,
       child: SafeArea(
         child: Column(
@@ -221,7 +218,7 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(30),
                                 onTap: () {
-                                  ref.read(speechProvider.notifier).playAudio(widget.levelId, widget.audioFilename);
+                                  ref.read(speechProvider.notifier).playAudio(widget.levelId, widget.id);
                                 },
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),

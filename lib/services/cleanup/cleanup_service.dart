@@ -72,15 +72,19 @@ class StorageCleanupService {
         levelById[levelId] = level;
 
         for (var sub in level.sub_levels) {
-          for (var dialogue in sub.dialogues ?? []) {
-            final filename = dialogue.id;
+          sub.whenOrNull(
+            video: (v) {
+              for (var dialogue in v.dialogues) {
+                final filename = dialogue.id;
 
-            if (sublevelIdsByDialogueFilename[filename] == null) {
-              sublevelIdsByDialogueFilename[filename] = {};
-            }
+                if (sublevelIdsByDialogueFilename[filename] == null) {
+                  sublevelIdsByDialogueFilename[filename] = {};
+                }
 
-            sublevelIdsByDialogueFilename[filename]!.add(sub.id);
-          }
+                sublevelIdsByDialogueFilename[filename]!.add(sub.id);
+              }
+            },
+          );
         }
       }),
     );

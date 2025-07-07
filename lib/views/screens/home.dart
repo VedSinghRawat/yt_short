@@ -51,7 +51,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     if (isDailyLimitReached(doneToday)) return true;
 
-    final hasFinishedVideo = ref.read(sublevelControllerProvider).hasFinishedVideo;
+    final hasFinishedVideo = ref.read(sublevelControllerProvider).hasFinishedSublevel;
     if (hasFinishedVideo) return false;
 
     showSnackBar(
@@ -224,7 +224,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return;
     }
 
-    ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(false);
+    ref.read(sublevelControllerProvider.notifier).setHasFinishedSublevel(false);
 
     // Sync the local progress
     await syncLocalProgress(level, sublevelIndex, sublevel.levelId, localMaxLevel, localMaxSubLevel, userEmail);

@@ -126,7 +126,7 @@ class Speech extends _$Speech {
     }
 
     if (newWordMarking.every((mark) => mark == true)) {
-      ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
+      ref.read(sublevelControllerProvider.notifier).setHasFinishedSublevel(true);
     }
 
     state = state.copyWith(recognizedWords: newRecognizedWords, wordMarking: newWordMarking);

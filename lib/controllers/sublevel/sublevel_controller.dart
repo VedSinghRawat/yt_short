@@ -15,7 +15,7 @@ class SublevelControllerState with _$SublevelControllerState {
 
   const factory SublevelControllerState({
     Set<SubLevel>? sublevels,
-    @Default(false) bool hasFinishedVideo,
+    @Default(false) bool hasFinishedSublevel,
     String? error,
     @Default(false) bool showAppBar,
   }) = _SublevelControllerState;
@@ -39,7 +39,7 @@ class SublevelController extends _$SublevelController {
 
   void setVideoPlayingError(String e) => state = state.copyWith(error: e);
 
-  void setHasFinishedVideo(bool to) => state = state.copyWith(hasFinishedVideo: to);
+  void setHasFinishedSublevel(bool to) => state = state.copyWith(hasFinishedSublevel: to);
 
   Future<void> downloadData(SubLevelDTO subLevelDTO, String levelId) async {
     try {

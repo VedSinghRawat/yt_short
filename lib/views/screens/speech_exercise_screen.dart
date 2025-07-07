@@ -19,7 +19,7 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
     return SpeechExerciseCard(
       key: UniqueKey(),
       levelId: widget.exercise.levelId,
-      audioFilename: widget.exercise.id,
+      id: widget.exercise.id,
       text: widget.exercise.text,
       onContinue: widget.goToNext,
     );

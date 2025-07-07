@@ -47,8 +47,6 @@ class SubLevel with _$SubLevel {
 
   String get id => when(speechExercise: (speechExercise) => speechExercise.id, video: (video) => video.id);
 
-  List<SubDialogue>? get dialogues => when(speechExercise: (speechExercise) => null, video: (video) => video.dialogues);
-
   bool get isVideo => this is _Video;
 
   bool get isSpeechExercise => this is _SpeechExercise;
@@ -75,6 +73,4 @@ class SubLevelDTO with _$SubLevelDTO {
   }
 
   String get id => when(speechExercise: (speechExercise) => speechExercise.id, video: (video) => video.id);
-
-  List<SubDialogue>? get dialogues => when(speechExercise: (speechExercise) => null, video: (video) => video.dialogues);
 }

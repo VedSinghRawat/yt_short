@@ -13,24 +13,22 @@ import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
 import 'package:myapp/views/screens/error_page.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 import 'package:myapp/views/widgets/loader.dart';
-import 'package:video_player/video_player.dart';
+import 'package:video_player/video_player.dart' show VideoPlayerController, VideoPlayerValue, VideoPlayer;
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:flutter/foundation.dart';
 import 'video_progress_bar.dart';
-import 'package:myapp/views/widgets/sublevel_video_player/dialogue_popup.dart';
+import 'package:myapp/views/widgets/video_player/dialogue_popup.dart';
 
-class SublevelVideoPlayer extends ConsumerStatefulWidget {
-  final Function(VideoPlayerController controller, Function(Duration) seek)? onControllerInitialized;
-  final bool stayPause;
-  final Video subLevel;
+class VideoPlayerScreen extends ConsumerStatefulWidget {
+  final Video video;
 
-  const SublevelVideoPlayer({super.key, this.onControllerInitialized, this.stayPause = false, required this.subLevel});
+  const VideoPlayerScreen({super.key, required this.video});
 
   @override
-  ConsumerState<SublevelVideoPlayer> createState() => _SublevelVideoPlayerState();
+  ConsumerState<VideoPlayerScreen> createState() => _SublevelVideoPlayerState();
 }
 
-class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with WidgetsBindingObserver {
+class _SublevelVideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBindingObserver {
   VideoPlayerController? _controller;
   Duration? _lastPosition;
   String? error;
@@ -87,7 +85,6 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
       } else if (_controller != null &&
           _controller!.value.isInitialized &&
           !_controller!.value.isPlaying &&
-          !widget.stayPause &&
           _isVisible) {
         await play();
       }
@@ -105,7 +102,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
     if (value.hasError && error == null) {
       developer.log('error in video player ${value.errorDescription}');
       if (mounted) {
-        ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
+        ref.read(sublevelControllerProvider.notifier).setHasFinishedSublevel(true);
 
         setState(() {
           error = '$errorText: ${value.errorDescription ?? "Unknown error"}';
@@ -141,8 +138,8 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
 
     isFinished = shouldBeFinished;
 
-    if (isFinished && !ref.read(sublevelControllerProvider).hasFinishedVideo) {
-      ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
+    if (isFinished && !ref.read(sublevelControllerProvider).hasFinishedSublevel) {
+      ref.read(sublevelControllerProvider.notifier).setHasFinishedSublevel(true);
       _controller?.removeListener(_listener);
     }
   }
@@ -209,7 +206,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
 
     if (isVisible) {
       _controller!.addListener(_listener);
-      if (!_controller!.value.isPlaying && error == null && !widget.stayPause && _controller!.value.isInitialized) {
+      if (!_controller!.value.isPlaying && error == null && _controller!.value.isInitialized) {
         await _controller!.play();
       }
     } else {
@@ -265,14 +262,14 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
     _controller = null;
 
     try {
-      String localPath = PathService.sublevelVideo(widget.subLevel.levelId, widget.subLevel.id);
+      String localPath = PathService.sublevelVideo(widget.video.levelId, widget.video.id);
 
       final urls =
           [BaseUrl.cloudflare, BaseUrl.s3]
               .map(
                 (url) => ref
                     .read(sublevelControllerProvider.notifier)
-                    .getVideoUrl(widget.subLevel.levelId, widget.subLevel.id, url),
+                    .getVideoUrl(widget.video.levelId, widget.video.id, url),
               )
               .toList();
 
@@ -300,13 +297,11 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
         _lastPosition = null;
       }
 
-      if (_isVisible && !widget.stayPause && _controller!.value.isInitialized) {
+      if (_isVisible && _controller!.value.isInitialized) {
         await play();
       }
-
-      widget.onControllerInitialized?.call(_controller!, seek);
     } catch (e) {
-      developer.log('Error initializing video player ${widget.subLevel.id}', error: e.toString());
+      developer.log('Error initializing video player ${widget.video.id}', error: e.toString());
 
       _controller?.removeListener(_listener);
 
@@ -332,7 +327,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
     if (!mounted) return;
     final currentSeconds = currentPosition.inSeconds.toDouble();
 
-    final newDialogues = widget.subLevel.dialogues.where((d) => d.time <= currentSeconds).toList();
+    final newDialogues = widget.video.dialogues.where((d) => d.time <= currentSeconds).toList();
     newDialogues.sort((a, b) => b.time.compareTo(a.time));
 
     if (listEquals(_displayableDialogues, newDialogues)) return;
@@ -380,7 +375,7 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
     final progress = SharedPref.get(PrefKey.currProgress());
 
     return VisibilityDetector(
-      key: Key(widget.subLevel.id + widget.subLevel.index.toString()),
+      key: Key(widget.video.id + widget.video.index.toString()),
       onVisibilityChanged: _onVisibilityChanged,
       child: SafeArea(
         child: Stack(
@@ -429,12 +424,12 @@ class _SublevelVideoPlayerState extends ConsumerState<SublevelVideoPlayer> with 
                           bottom: 16,
                           child: Visibility(
                             visible:
-                                ref.watch(sublevelControllerProvider.select((s) => s.hasFinishedVideo)) ||
+                                ref.watch(sublevelControllerProvider.select((s) => s.hasFinishedSublevel)) ||
                                 isLevelAfter(
                                   progress?.maxLevel ?? 1,
                                   progress?.maxSubLevel ?? 1,
-                                  widget.subLevel.level,
-                                  widget.subLevel.index,
+                                  widget.video.level,
+                                  widget.video.index,
                                 ),
                             child: IconButton(
                               icon: const Icon(Icons.forward_5, color: Colors.white, size: 30),

@@ -8,7 +8,7 @@ import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/views/widgets/loader.dart';
 import 'package:myapp/views/widgets/scroll_indicator.dart';
-import 'package:myapp/views/widgets/sublevel_video_player/sublevel_video_player.dart';
+import 'package:myapp/views/widgets/video_player/video_player_screen.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
 import 'package:myapp/views/screens/error_page.dart';
 import 'package:myapp/views/screens/speech_exercise_screen.dart';
@@ -144,7 +144,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
       }
     });
 
-    ref.listen(sublevelControllerProvider.select((value) => value.hasFinishedVideo), (previous, next) {
+    ref.listen(sublevelControllerProvider.select((value) => value.hasFinishedSublevel), (previous, next) {
       final progress = SharedPref.get(PrefKey.currProgress());
 
       if (!isLevelEqual(
@@ -238,12 +238,12 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
                   children: [
                     Center(
                       child: sublevel.when(
-                        video: (video) => SublevelVideoPlayer(subLevel: video),
+                        video: (video) => VideoPlayerScreen(video: video),
                         speechExercise:
                             (speechExercise) => SpeechExerciseScreen(
                               exercise: speechExercise,
                               goToNext: () {
-                                ref.read(sublevelControllerProvider.notifier).setHasFinishedVideo(true);
+                                ref.read(sublevelControllerProvider.notifier).setHasFinishedSublevel(true);
                                 _pageController.animateToPage(
                                   index + 1,
                                   duration: const Duration(milliseconds: 300),
