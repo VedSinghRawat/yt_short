@@ -56,16 +56,17 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
   }
 
   void _onVisibilityChanged(VisibilityInfo info) {
-    final isVisible = info.visibleFraction > 0.5; // Consider visible if more than 50% is visible
+    final isVisible = info.visibleFraction > 0.3; // Consider visible if more than 50% is visible
 
     if (isVisible && !_isVisible) {
       // Card became visible - initialize speech controller
-      Console.log('Exercise card became visible: ${widget.audioFilename}');
       _isVisible = true;
+
+      if (ref.read(speechProvider).currentExerciseId == widget.audioFilename) return;
 
       // Process text and initialize speech controller
       _processText(widget.text);
-      ref.read(speechProvider.notifier).setTargetWords(_flatWords);
+      ref.read(speechProvider.notifier).setTargetWords(_flatWords, widget.audioFilename);
     } else if (!isVisible && _isVisible) {
       _isVisible = false;
     }

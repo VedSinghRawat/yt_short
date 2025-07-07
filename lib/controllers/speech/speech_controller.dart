@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
-import 'package:myapp/core/console.dart';
 import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/path/path_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -23,12 +22,13 @@ class SpeechState with _$SpeechState {
     @Default([]) List<String> recognizedWords,
     @Default([]) List<bool?> wordMarking,
     @Default(false) bool isPlayingAudio,
+    @Default('') String currentExerciseId,
     @Default(0) int offset,
     String? errorMessage,
   }) = _SpeechState;
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 class Speech extends _$Speech {
   late final stt.SpeechToText _speech;
   List<String> _targetWords = [];
@@ -44,12 +44,13 @@ class Speech extends _$Speech {
     return const SpeechState();
   }
 
-  void setTargetWords(List<String> words) {
+  void setTargetWords(List<String> words, String exerciseId) {
     _targetWords = words;
     state = SpeechState(
       recognizedWords: List.filled(words.length, ''),
       wordMarking: List.filled(words.length, null),
       offset: 0,
+      currentExerciseId: exerciseId,
     );
   }
 
@@ -114,7 +115,6 @@ class Speech extends _$Speech {
     }
 
     for (int i = 0; i < newRecognizedWords.where((word) => word.isNotEmpty).length; i++) {
-      Console.log(_targetWords.toString());
       if (i >= _targetWords.length) break;
       String formattedTargetWord = _formatWord(_targetWords[i]);
       String formattedRecognizedWord = _formatWord(newRecognizedWords[i]);
@@ -186,8 +186,6 @@ class Speech extends _$Speech {
     // Clear all state
     _targetWords = [];
     state = const SpeechState();
-
-    Console.log('Speech controller state cleared');
   }
 
   Future<void> _showMicPermissionDeniedDialog(BuildContext context) async {
