@@ -9,6 +9,7 @@ part 'sublevel_api.g.dart';
 abstract class ISubLevelAPI {
   Future<Uint8List?> getVideo(String levelId, String id);
   Future<Uint8List?> getAudio(String levelId, String id);
+  Future<Uint8List?> getImage(String levelId, String id);
 }
 
 class SubLevelAPI implements ISubLevelAPI {
@@ -19,7 +20,7 @@ class SubLevelAPI implements ISubLevelAPI {
   @override
   Future<Uint8List?> getVideo(String levelId, String id) async {
     final response = await apiService.getCloudStorageData(
-      endpoint: PathService.sublevelVideo(levelId, id),
+      endpoint: PathService.sublevelAsset(levelId, id, AssetType.video),
       responseType: ResponseType.bytes,
     );
 
@@ -29,7 +30,17 @@ class SubLevelAPI implements ISubLevelAPI {
   @override
   Future<Uint8List?> getAudio(String levelId, String id) async {
     final response = await apiService.getCloudStorageData(
-      endpoint: PathService.sublevelAudio(levelId, id),
+      endpoint: PathService.sublevelAsset(levelId, id, AssetType.audio),
+      responseType: ResponseType.bytes,
+    );
+
+    return response?.data;
+  }
+
+  @override
+  Future<Uint8List?> getImage(String levelId, String id) async {
+    final response = await apiService.getCloudStorageData(
+      endpoint: PathService.sublevelAsset(levelId, id, AssetType.image),
       responseType: ResponseType.bytes,
     );
 

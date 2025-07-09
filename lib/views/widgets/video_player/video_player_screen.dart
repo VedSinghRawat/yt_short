@@ -11,7 +11,7 @@ import 'package:myapp/services/api/api_service.dart';
 import 'package:myapp/services/path/path_service.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
 import 'package:myapp/views/screens/error_page.dart';
-import 'package:myapp/models/sublevel/sublevel.dart';
+
 import 'package:myapp/views/widgets/loader.dart';
 import 'package:video_player/video_player.dart' show VideoPlayerController, VideoPlayerValue, VideoPlayer;
 import 'package:visibility_detector/visibility_detector.dart';
@@ -42,7 +42,7 @@ class _SublevelVideoPlayerState extends ConsumerState<VideoPlayerScreen> with Wi
   int? _lastTimeRemaining;
   bool _showDialogueArea = false;
 
-  List<SubDialogue> _displayableDialogues = [];
+  List<VideoDialogue> _displayableDialogues = [];
 
   @override
   void initState() {
@@ -262,7 +262,7 @@ class _SublevelVideoPlayerState extends ConsumerState<VideoPlayerScreen> with Wi
     _controller = null;
 
     try {
-      String localPath = PathService.sublevelVideo(widget.video.levelId, widget.video.id);
+      String localPath = PathService.sublevelAsset(widget.video.levelId, widget.video.id, AssetType.video);
 
       final urls =
           [BaseUrl.cloudflare, BaseUrl.s3]

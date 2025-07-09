@@ -11,7 +11,7 @@ Future<void> handlePermissionDenied(BuildContext context, String errorMessage, {
 
     if (!context.mounted) return;
 
-    showDialog(
+    await showDialog(
       context: context,
       builder:
           (context) => AlertDialog(

@@ -20,7 +20,7 @@ class DialogueApi implements IDialogueApi {
 
   @override
   Future<DialogueDTO?> get(String id) async {
-    final response = await apiService.getCloudStorageData(endpoint: PathService.dialogueJson(id));
+    final response = await apiService.getCloudStorageData(endpoint: PathService.dialogueAsset(id, AssetType.data));
 
     if (response == null) return null;
 

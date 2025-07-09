@@ -18,17 +18,29 @@ class SubLevelService {
 
   Future<void> downloadData(SubLevelDTO subLevelDTO, String levelId) async {
     final videoData = await subLevelAPI.getVideo(levelId, subLevelDTO.id);
-    final audioData = subLevelDTO.isSpeechExercise ? await subLevelAPI.getAudio(levelId, subLevelDTO.id) : null;
+    final audioData =
+        (subLevelDTO.isSpeechExercise || subLevelDTO.isArrangeExercise)
+            ? await subLevelAPI.getAudio(levelId, subLevelDTO.id)
+            : null;
+    final imageData =
+        (subLevelDTO.isArrangeExercise || subLevelDTO.isFillExercise)
+            ? await subLevelAPI.getImage(levelId, subLevelDTO.id)
+            : null;
 
     try {
       if (videoData != null) {
-        final videoPath = PathService.sublevelVideo(levelId, subLevelDTO.id);
+        final videoPath = PathService.sublevelAsset(levelId, subLevelDTO.id, AssetType.video);
         await FileService.store(videoPath, videoData);
       }
 
       if (audioData != null) {
-        final audioPath = PathService.sublevelAudio(levelId, subLevelDTO.id);
+        final audioPath = PathService.sublevelAsset(levelId, subLevelDTO.id, AssetType.audio);
         await FileService.store(audioPath, audioData);
+      }
+
+      if (imageData != null) {
+        final imagePath = PathService.sublevelAsset(levelId, subLevelDTO.id, AssetType.image);
+        await FileService.store(imagePath, imageData);
       }
     } catch (e) {
       developer.log(e.toString(), name: 'SubLevelService');

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:myapp/models/sublevel/sublevel.dart';
+import 'package:myapp/models/video/video.dart';
 import 'dialogue_list.dart';
 
 class DialoguePopup extends StatelessWidget {
   final bool visible;
-  final List<SubDialogue> dialogues;
+  final List<VideoDialogue> dialogues;
   final VoidCallback onClose;
 
   const DialoguePopup({super.key, required this.visible, required this.dialogues, required this.onClose});

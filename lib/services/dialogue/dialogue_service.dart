@@ -22,14 +22,14 @@ class DialogueService {
     final dialogue = await dialogueAPI.get(id);
 
     if (dialogue != null) {
-      final file = FileService.getFile(PathService.dialogueJson(id));
+      final file = FileService.getFile(PathService.dialogueAsset(id, AssetType.data));
       await file.parent.create(recursive: true);
       await file.writeAsString(jsonEncode(dialogue.toJson()));
 
       return right(dialogue);
     }
 
-    final file = FileService.getFile(PathService.dialogueJson(id));
+    final file = FileService.getFile(PathService.dialogueAsset(id, AssetType.data));
     if (!await file.exists()) {
       return left(APIError(message: 'Dialogue not found locally', dioExceptionType: DioExceptionType.connectionError));
     }
@@ -55,7 +55,9 @@ class DialogueService {
         await Future.wait(
           archive.files.map((file) async {
             if (file.isFile && file.name.contains('.mp3')) {
-              final audioFile = FileService.getFile(PathService.dialogueAudio(file.name.replaceAll('.mp3', '')));
+              final audioFile = FileService.getFile(
+                PathService.dialogueAsset(file.name.replaceAll('.mp3', ''), AssetType.audio),
+              );
               await audioFile.parent.create(recursive: true);
               await audioFile.writeAsBytes(file.content as List<int>);
             }
@@ -74,7 +76,7 @@ class DialogueService {
   }
 
   bool isDialogueDownloaded(String dialogueId) {
-    final file = FileService.getFile(PathService.dialogueAudio(dialogueId));
+    final file = FileService.getFile(PathService.dialogueAsset(dialogueId, AssetType.audio));
     return file.existsSync();
   }
 }

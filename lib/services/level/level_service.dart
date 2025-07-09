@@ -17,7 +17,7 @@ class LevelService {
   LevelService(this.levelApi);
 
   Future<bool> videoExists(String levelId, String id) async {
-    final file = FileService.getFile(PathService.sublevelVideo(levelId, id));
+    final file = FileService.getFile(PathService.sublevelAsset(levelId, id, AssetType.video));
     return file.exists();
   }
 

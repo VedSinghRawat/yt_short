@@ -121,27 +121,48 @@ class StorageCleanupService {
 
         // Delete videos one by one and update size
         for (var (index, sub) in level.sub_levels.indexed) {
-          final videoPath = PathService.sublevelVideo(levelId, sub.id);
+          final videoPath = PathService.sublevelAsset(levelId, sub.id, AssetType.video);
           final videoFile = File(videoPath);
           if (!await videoFile.exists()) continue;
 
           final videoSize = await videoFile.length();
 
           toBeDeletedPaths[levelId]!.add(videoPath);
-          etagsToClean.add(PathService.sublevelVideo(levelId, videoPath.split('/').last.replaceAll('.mp4', '')));
+          etagsToClean.add(
+            PathService.sublevelAsset(levelId, videoPath.split('/').last.replaceAll('.mp4', ''), AssetType.video),
+          );
 
           totalSize -= videoSize;
 
-          if (sub.isSpeechExercise) {
-            final audioPath = PathService.sublevelAudio(levelId, sub.id);
+          // Handle audio files for speech exercises and drag-drop exercises
+          if (sub.isSpeechExercise || sub.isArrangeExercise) {
+            final audioPath = PathService.sublevelAsset(levelId, sub.id, AssetType.audio);
             final audioFile = File(audioPath);
             if (await audioFile.exists()) {
               final audioSize = await audioFile.length();
               toBeDeletedPaths[levelId]!.add(audioPath);
 
-              etagsToClean.add(PathService.sublevelVideo(levelId, audioPath.split('/').last.replaceAll('.mp3', '')));
+              etagsToClean.add(
+                PathService.sublevelAsset(levelId, audioPath.split('/').last.replaceAll('.mp3', ''), AssetType.audio),
+              );
 
               totalSize -= audioSize;
+            }
+          }
+
+          // Handle image files for drag-drop exercises and fill exercises
+          if (sub.isArrangeExercise || sub.isFillExercise) {
+            final imagePath = PathService.sublevelAsset(levelId, sub.id, AssetType.image);
+            final imageFile = File(imagePath);
+            if (await imageFile.exists()) {
+              final imageSize = await imageFile.length();
+              toBeDeletedPaths[levelId]!.add(imagePath);
+
+              etagsToClean.add(
+                PathService.sublevelAsset(levelId, imagePath.split('/').last.replaceAll('.jpg', ''), AssetType.image),
+              );
+
+              totalSize -= imageSize;
             }
           }
 

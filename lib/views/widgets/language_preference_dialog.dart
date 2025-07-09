@@ -26,7 +26,7 @@ class _LanguagePreferenceDialogState extends State<LanguagePreferenceDialog> {
     return AlertDialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Theme.of(context).colorScheme.outline.withOpacity(0.2), width: 2.0),
+        side: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2), width: 2.0),
       ),
       title: SizedBox(child: Text(_titleText)),
       content: SizedBox(
@@ -49,8 +49,8 @@ class _LanguagePreferenceDialogState extends State<LanguagePreferenceDialog> {
                   height: 50,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(25),
-                    color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
-                    border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3), width: 2),
+                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                    border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3), width: 2),
                   ),
                   child: Stack(
                     children: [
@@ -95,7 +95,7 @@ class _LanguagePreferenceDialogState extends State<LanguagePreferenceDialog> {
                             color: Theme.of(context).colorScheme.primary,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
+                                color: Colors.black.withValues(alpha: 0.2),
                                 blurRadius: 4,
                                 offset: const Offset(0, 2),
                               ),

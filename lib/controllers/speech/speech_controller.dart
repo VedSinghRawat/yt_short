@@ -155,7 +155,7 @@ class Speech extends _$Speech {
       return;
     }
 
-    final audioFile = PathService.sublevelAudio(levelId, id);
+    final audioFile = PathService.sublevelAsset(levelId, id, AssetType.audio);
 
     await audioPlayer.setFilePath('${FileService.documentsDirectory.path}$audioFile');
 

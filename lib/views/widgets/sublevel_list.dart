@@ -11,6 +11,8 @@ import 'package:myapp/views/widgets/video_player/video_player_screen.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
 import 'package:myapp/views/screens/error_page.dart';
 import 'package:myapp/views/screens/speech_exercise_screen.dart';
+import 'package:myapp/views/screens/arrange_exercise_screen.dart';
+import 'package:myapp/views/screens/fill_exercise_screen.dart';
 import 'package:myapp/controllers/user/user_controller.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
@@ -241,6 +243,30 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
                         speechExercise:
                             (speechExercise) => SpeechExerciseScreen(
                               exercise: speechExercise,
+                              goToNext: () {
+                                ref.read(sublevelControllerProvider.notifier).setHasFinishedSublevel(true);
+                                _pageController.animateToPage(
+                                  index + 1,
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeInOut,
+                                );
+                              },
+                            ),
+                        arrangeExercise:
+                            (arrangeExercise) => ArrangeExerciseScreen(
+                              exercise: arrangeExercise,
+                              goToNext: () {
+                                ref.read(sublevelControllerProvider.notifier).setHasFinishedSublevel(true);
+                                _pageController.animateToPage(
+                                  index + 1,
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeInOut,
+                                );
+                              },
+                            ),
+                        fillExercise:
+                            (fillExercise) => FillExerciseScreen(
+                              exercise: fillExercise,
                               goToNext: () {
                                 ref.read(sublevelControllerProvider.notifier).setHasFinishedSublevel(true);
                                 _pageController.animateToPage(

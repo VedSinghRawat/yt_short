@@ -34,7 +34,7 @@ class SublevelController extends _$SublevelController {
   }
 
   String getVideoUrl(String levelId, String id, BaseUrl baseUrl) {
-    return '${baseUrl.url}${PathService.sublevelVideo(levelId, id)}';
+    return '${baseUrl.url}${PathService.sublevelAsset(levelId, id, AssetType.video)}';
   }
 
   void setVideoPlayingError(String e) => state = state.copyWith(error: e);

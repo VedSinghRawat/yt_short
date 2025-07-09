@@ -4,12 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:myapp/controllers/dialogue/dialogue_controller.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
-import 'package:myapp/models/sublevel/sublevel.dart';
+import 'package:myapp/models/video/video.dart';
+import 'package:myapp/models/dialogues/dialogues.dart';
 import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/path/path_service.dart';
 
 class DialogueList extends ConsumerStatefulWidget {
-  final List<SubDialogue> dialogues;
+  final List<VideoDialogue> dialogues;
 
   const DialogueList({super.key, required this.dialogues});
 
@@ -64,7 +65,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
     try {
       await _audioPlayer.stop();
 
-      final localAudioFilePath = PathService.dialogueAudio(audioFilename);
+      final localAudioFilePath = PathService.dialogueAsset(audioFilename, AssetType.audio);
 
       // Check if file exists before attempting to play
       final file = FileService.getFile(localAudioFilePath);
@@ -126,7 +127,8 @@ class _DialogueListState extends ConsumerState<DialogueList> {
 
     final dialogueMap = ref.watch(dialogueControllerProvider.select((state) => state.dialogues));
 
-    final dialogues = widget.dialogues.map((e) => dialogueMap[e.id]!);
+    final dialogues =
+        widget.dialogues.map((e) => dialogueMap[e.id]).where((dialogue) => dialogue != null).cast<Dialogue>().toList();
 
     return LayoutBuilder(
       builder: (context, constraints) {
