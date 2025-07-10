@@ -9,6 +9,7 @@ import 'package:myapp/views/widgets/loader.dart';
 import 'package:myapp/views/widgets/scroll_indicator.dart';
 import 'package:myapp/views/widgets/video_player/video_player_screen.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
+import 'package:myapp/controllers/ui/ui_controller.dart';
 import 'package:myapp/views/screens/error_page.dart';
 import 'package:myapp/views/screens/speech_exercise_screen.dart';
 import 'package:myapp/views/screens/arrange_exercise_screen.dart';
@@ -162,8 +163,8 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
       }
     });
 
-    ref.listen(sublevelControllerProvider.select((value) => value.showAppBar), (previous, isPaused) {
-      if (isPaused) {
+    ref.listen(uIControllerProvider.select((value) => value.isAppBarVisible), (previous, isVisible) {
+      if (isVisible) {
         _animationTimer?.cancel();
         _bounceTimer?.cancel();
         if (mounted) {

@@ -5,6 +5,8 @@ import 'package:myapp/models/arrange_exercise/arrange_exercise.dart';
 import 'package:myapp/services/path/path_service.dart';
 import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
+import 'package:myapp/views/screens/app_bar.dart';
+import 'package:myapp/controllers/ui/ui_controller.dart';
 
 class ArrangeExerciseScreen extends ConsumerStatefulWidget {
   final ArrangeExercise exercise;
@@ -17,16 +19,18 @@ class ArrangeExerciseScreen extends ConsumerStatefulWidget {
 }
 
 class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
-  late List<String> words;
-  List<String> currentOrder = []; // Current order of all words
+  List<String> currentOrder = [];
 
   @override
   void initState() {
     super.initState();
-    // Split the correct sentence into words and convert to lowercase
-    words = widget.exercise.text.trim().toLowerCase().split(' ');
-    // Shuffle the words for initial order
-    currentOrder = List.from(words)..shuffle();
+    currentOrder = widget.exercise.text.trim().toLowerCase().split(' ');
+    currentOrder.shuffle();
+
+    // Show app bar when this screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(uIControllerProvider.notifier).setIsAppBarVisible(true);
+    });
   }
 
   @override
@@ -65,8 +69,8 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
         SnackBar(
           content: Text(
             langController.choose(
-              hindi: 'बिल्कुल सही नहीं है। फिर से कोशिश करें!',
-              hinglish: 'Not quite right. Try again!',
+              hindi: 'आपके वाक्य में कुछ ग़लत है, फिर से कोशिश करें',
+              hinglish: 'Aapke sentence mein kuch galat hai, firse koshish kare',
             ),
           ),
           backgroundColor: Colors.red,
@@ -119,6 +123,7 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
 
     return Scaffold(
       backgroundColor: Colors.black,
+      appBar: const HomeScreenAppBar(),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),

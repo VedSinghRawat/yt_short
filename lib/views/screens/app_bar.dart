@@ -8,7 +8,7 @@ import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/views/widgets/loading_refresh_icon.dart';
 import 'package:myapp/controllers/user/user_controller.dart';
-import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
+import 'package:myapp/controllers/ui/ui_controller.dart';
 
 class HomeScreenAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
   const HomeScreenAppBar({super.key});
@@ -31,20 +31,20 @@ class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
     final isLoggedIn = SharedPref.get(PrefKey.user) != null;
     final needsReload = currentUser?.email.isEmpty ?? true && isLoggedIn;
 
-    final showAppBar = ref.watch(sublevelControllerProvider.select((state) => state.showAppBar));
+    final isAppBarVisible = ref.watch(uIControllerProvider.select((state) => state.isAppBarVisible));
     final progress = SharedPref.get(PrefKey.currProgress());
 
     return Stack(
       children: [
         AnimatedPositioned(
           duration: const Duration(milliseconds: 300),
-          top: showAppBar ? 0 : -kToolbarHeight,
+          top: isAppBarVisible ? 0 : -kToolbarHeight,
           left: 0,
           right: 0,
           curve: Curves.easeInOut,
           child: AnimatedOpacity(
             duration: const Duration(milliseconds: 300),
-            opacity: showAppBar ? 1.0 : 0.0,
+            opacity: isAppBarVisible ? 1.0 : 0.0,
             curve: Curves.easeInOutCubic,
             child: AppBar(
               title: Text('Level ${progress?.level ?? 1} Sublevel ${progress?.subLevel ?? 1}'),

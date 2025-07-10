@@ -10,6 +10,7 @@ import 'package:myapp/models/video/video.dart';
 import 'package:myapp/services/api/api_service.dart';
 import 'package:myapp/services/path/path_service.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
+import 'package:myapp/controllers/ui/ui_controller.dart';
 import 'package:myapp/views/screens/error_page.dart';
 
 import 'package:myapp/views/widgets/loader.dart';
@@ -196,7 +197,7 @@ class _SublevelVideoPlayerState extends ConsumerState<VideoPlayerScreen> with Wi
       _showDialogueArea = value;
     });
 
-    ref.read(sublevelControllerProvider.notifier).setShowAppBar(value);
+    ref.read(uIControllerProvider.notifier).setIsAppBarVisible(value);
   }
 
   Future<void> _handleVisibility(bool isVisible) async {
