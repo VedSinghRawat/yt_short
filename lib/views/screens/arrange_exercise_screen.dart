@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:myapp/models/arrange_exercise/arrange_exercise.dart';
+import 'package:myapp/services/path/path_service.dart';
+import 'package:myapp/services/file/file_service.dart';
+import 'package:myapp/controllers/lang/lang_controller.dart';
 
 class ArrangeExerciseScreen extends ConsumerStatefulWidget {
   final ArrangeExercise exercise;
@@ -13,8 +17,345 @@ class ArrangeExerciseScreen extends ConsumerStatefulWidget {
 }
 
 class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
+  late List<String> words;
+  List<String> currentOrder = []; // Current order of all words
+
+  @override
+  void initState() {
+    super.initState();
+    // Split the correct sentence into words and convert to lowercase
+    words = widget.exercise.text.trim().toLowerCase().split(' ');
+    // Shuffle the words for initial order
+    currentOrder = List.from(words)..shuffle();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  void _onReorder(int oldIndex, int newIndex) {
+    setState(() {
+      final String word = currentOrder.removeAt(oldIndex);
+
+      // If dropping at the end position, insert at the end
+      if (newIndex >= currentOrder.length) {
+        currentOrder.add(word);
+      } else {
+        // Adjust index if needed for standard reordering
+        if (newIndex > oldIndex) {
+          newIndex -= 1;
+        }
+        currentOrder.insert(newIndex, word);
+      }
+    });
+  }
+
+  void _checkAnswer() {
+    final userAnswer = currentOrder.join(' ').toLowerCase().trim();
+    final correctAnswer = widget.exercise.text.toLowerCase().trim();
+    final langController = ref.read(langControllerProvider.notifier);
+
+    if (userAnswer == correctAnswer) {
+      // Correct answer - proceed to next
+      widget.goToNext();
+    } else {
+      // Show error feedback
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            langController.choose(
+              hindi: 'बिल्कुल सही नहीं है। फिर से कोशिश करें!',
+              hinglish: 'Not quite right. Try again!',
+            ),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _playHint() async {
+    final langController = ref.read(langControllerProvider.notifier);
+
+    try {
+      // TODO: Implement audio playback when audio file is available
+      // For now, just show text hint
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            langController.choose(
+              hindi: 'सुझाव: "${widget.exercise.text}"',
+              hinglish: 'Hint: "${widget.exercise.text}"',
+            ),
+          ),
+          backgroundColor: Colors.blue,
+        ),
+      );
+    } catch (e) {
+      // Fallback to showing text hint if audio fails
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              langController.choose(
+                hindi: 'सुझाव: "${widget.exercise.text}"',
+                hinglish: 'Hint: "${widget.exercise.text}"',
+              ),
+            ),
+            backgroundColor: Colors.blue,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: SafeArea(child: Column(children: [Text(widget.exercise.text)])));
+    final audioPath = PathService.sublevelAsset(widget.exercise.levelId, widget.exercise.id, AssetType.audio);
+    final imagePath = PathService.sublevelAsset(widget.exercise.levelId, widget.exercise.id, AssetType.image);
+    final theme = Theme.of(context);
+    final langController = ref.read(langControllerProvider.notifier);
+
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              // Header with title and instructions
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16.0),
+                decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(12)),
+                child: Column(
+                  children: [
+                    Text(
+                      langController.choose(hindi: 'वाक्य व्यवस्था', hinglish: 'Arrange Exercise'),
+                      style: TextStyle(color: theme.colorScheme.onPrimary, fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      langController.choose(
+                        hindi: 'नीचे दिए गए शब्दों को खींच कर छवि के हिसाब से सही वाक्य बनाएं।',
+                        hinglish: 'Niche diye gye words ko kheech kar image ke hisaab se sahi vakya banaye.',
+                      ),
+                      style: TextStyle(
+                        color: theme.colorScheme.onPrimary.withOpacity(0.9),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Image with fixed height (30% of screen)
+              Container(
+                height: MediaQuery.of(context).size.height * 0.3, // 30% of screen height
+                width: double.infinity,
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: Colors.grey[800]),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.asset(
+                    imagePath,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: Colors.grey[800]),
+                        child: const Center(child: Icon(Icons.image, size: 40, color: Colors.grey)),
+                      );
+                    },
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Text above word container
+
+              // Reorderable word container (size based on content)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10.0),
+                decoration: BoxDecoration(
+                  color: Colors.grey[900],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[700]!, width: 2),
+                ),
+                child: ReorderableWrap(spacing: 8, runSpacing: 8, onReorder: _onReorder, words: currentOrder),
+              ),
+
+              const Spacer(), // Push buttons to bottom
+              // Action buttons
+              Row(
+                children: [
+                  // Check button
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _checkAnswer,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.colorScheme.primary,
+                        foregroundColor: theme.colorScheme.onPrimary,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                      ),
+                      child: Text(langController.choose(hindi: 'जांचें', hinglish: 'Check')),
+                    ),
+                  ),
+
+                  const SizedBox(width: 16),
+
+                  // Hint button
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _playHint,
+                      icon: const Icon(Icons.volume_up),
+                      label: Text(langController.choose(hindi: 'सुझाव', hinglish: 'Hint')),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: theme.colorScheme.primary,
+                        side: BorderSide(color: theme.colorScheme.primary, width: 2),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
+}
+
+// Custom ReorderableWrap widget since Flutter doesn't have one built-in
+class ReorderableWrap extends StatelessWidget {
+  final List<String> words;
+  final Function(int, int) onReorder;
+  final double spacing;
+  final double runSpacing;
+
+  const ReorderableWrap({
+    super.key,
+    required this.words,
+    required this.onReorder,
+    this.spacing = 0.0,
+    this.runSpacing = 0.0,
+  });
+
+  Widget _buildWordBlock(String word, {bool isPlaceholder = false}) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: isPlaceholder ? Colors.grey[500]!.withOpacity(0.5) : Colors.grey[300],
+        borderRadius: BorderRadius.circular(8),
+        border: isPlaceholder ? Border.all(color: Colors.grey[400]!, width: 1, style: BorderStyle.solid) : null,
+        boxShadow:
+            isPlaceholder
+                ? null
+                : [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2))],
+      ),
+      child: Text(
+        word,
+        style: TextStyle(
+          color: isPlaceholder ? Colors.grey[600] : Colors.black,
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    List<Widget> children = [];
+
+    // Add all word widgets
+    children.addAll(
+      words.asMap().entries.map((entry) {
+        int index = entry.key;
+        String word = entry.value;
+
+        return Draggable<DragData>(
+          data: DragData(index: index, word: word),
+          feedback: Transform.scale(
+            scale: 1.1,
+            child: Material(elevation: 8, borderRadius: BorderRadius.circular(8), child: _buildWordBlock(word)),
+          ),
+          childWhenDragging: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey[600]!, width: 1),
+            ),
+            child: Text(word, style: TextStyle(color: Colors.grey[700], fontSize: 16, fontWeight: FontWeight.w300)),
+          ),
+          child: DragTarget<DragData>(
+            onAccept: (dragData) {
+              if (dragData.index != index) {
+                onReorder(dragData.index, index);
+              }
+            },
+            builder: (context, candidateData, rejectedData) {
+              // Show placeholder of the dragged word at drop position
+              if (candidateData.isNotEmpty) {
+                final draggedWord = candidateData.first!.word;
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildWordBlock(draggedWord, isPlaceholder: true),
+                    const SizedBox(width: 8),
+                    _buildWordBlock(word),
+                  ],
+                );
+              }
+              return _buildWordBlock(word);
+            },
+          ),
+        );
+      }),
+    );
+
+    // Add a drop target at the end for last position
+    children.add(
+      DragTarget<DragData>(
+        onAccept: (dragData) {
+          // Move to last position (words.length would be the new last index)
+          onReorder(dragData.index, words.length);
+        },
+        builder: (context, candidateData, rejectedData) {
+          if (candidateData.isNotEmpty) {
+            final draggedWord = candidateData.first!.word;
+            return Padding(
+              padding: const EdgeInsets.only(left: 8.0),
+              child: _buildWordBlock(draggedWord, isPlaceholder: true),
+            );
+          }
+          // Invisible drop zone when not dragging
+          return const SizedBox(width: 20, height: 44);
+        },
+      ),
+    );
+
+    return Wrap(spacing: spacing, runSpacing: runSpacing, children: children);
+  }
+}
+
+// Data class for drag and drop
+class DragData {
+  final int index;
+  final String word;
+
+  DragData({required this.index, required this.word});
 }
