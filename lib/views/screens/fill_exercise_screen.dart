@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/models/fill_exercise/fill_exercise.dart';
+import 'package:myapp/views/widgets/app_bar.dart';
+import 'package:myapp/controllers/ui/ui_controller.dart';
 
 class FillExerciseScreen extends ConsumerStatefulWidget {
   final FillExercise exercise;
@@ -24,6 +26,11 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
     for (int i = 0; i < widget.exercise.options.length; i++) {
       _optionKeys.add(GlobalKey());
     }
+
+    // Show app bar when this screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(uIControllerProvider.notifier).setIsAppBarVisible(true);
+    });
   }
 
   List<String> _getSentenceParts() {
@@ -42,6 +49,7 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
 
     return Scaffold(
       backgroundColor: Colors.black,
+      appBar: const HomeScreenAppBar(),
       body: SafeArea(
         child: Stack(
           children: [
@@ -166,7 +174,7 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
               final isSelected = selectedOption == index;
 
               return AnimatedPositioned(
-                duration: const Duration(milliseconds: 600),
+                duration: const Duration(milliseconds: 400),
                 curve: Curves.easeInOut,
                 left: _getOptionPosition(index, isSelected)['left'],
                 top: _getOptionPosition(index, isSelected)['top'],
@@ -228,7 +236,7 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
         // Position the word in the middle of the blank area, ABOVE the orange line
         // Container structure: 8px padding + 24px SizedBox + 8px padding + 3px border
         // Position in the center of the 24px SizedBox area
-        final wordPositionY = blankPosition.dy - 42; // Top padding + center of blank area
+        final wordPositionY = blankPosition.dy - 100; // Top padding + center of blank area
 
         // Get actual size of the word block if possible
         double wordWidth = 100; // fallback
