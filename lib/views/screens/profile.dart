@@ -171,10 +171,13 @@ class ProfileScreen extends ConsumerWidget {
                               isLoading
                                   ? null
                                   : () async {
+                                    final scaffoldMessenger = ScaffoldMessenger.of(context);
                                     final success = await userController.resetProfile(context);
 
                                     if (context.mounted && success) {
-                                      showSnackBar(context, message: 'Profile reset successfully');
+                                      scaffoldMessenger.showSnackBar(
+                                        const SnackBar(content: Text('Profile reset successfully')),
+                                      );
                                     }
                                   },
                         ),

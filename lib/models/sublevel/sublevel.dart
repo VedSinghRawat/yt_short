@@ -32,7 +32,16 @@ class SubLevel with _$SubLevel {
           ),
       fillExercise:
           (dto) => SubLevel.fillExercise(
-            FillExercise(level: level, index: index, levelId: levelId, text: dto.text, id: dto.id),
+            FillExercise(
+              level: level,
+              index: index,
+              levelId: levelId,
+              text: dto.text,
+              id: dto.id,
+              blankIndex: 1, // Default value - can be updated when backend provides this
+              options: dto.options,
+              correctOption: dto.correctOption,
+            ),
           ),
     );
   }

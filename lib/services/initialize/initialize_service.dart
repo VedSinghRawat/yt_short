@@ -109,7 +109,9 @@ class InitializeService {
 
       if (context != null && context.mounted) {
         await appLinkSubscription?.cancel();
-        await GoRouter.of(context).push(Routes.deepLinking);
+        if (context.mounted) {
+          await GoRouter.of(context).push(Routes.deepLinking);
+        }
       }
     });
   }

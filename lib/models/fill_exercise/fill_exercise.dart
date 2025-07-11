@@ -12,6 +12,9 @@ class FillExercise with _$FillExercise {
     required int level,
     required int index,
     required String levelId,
+    required int blankIndex,
+    required List<String> options,
+    required int correctOption,
   }) = _FillExercise;
 
   factory FillExercise.fromJson(Map<String, dynamic> json) => _$FillExerciseFromJson(json);

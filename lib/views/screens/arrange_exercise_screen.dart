@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:myapp/models/arrange_exercise/arrange_exercise.dart';
 import 'package:myapp/services/path/path_service.dart';
-import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/views/screens/app_bar.dart';
 import 'package:myapp/controllers/ui/ui_controller.dart';
@@ -116,7 +114,6 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final audioPath = PathService.sublevelAsset(widget.exercise.levelId, widget.exercise.id, AssetType.audio);
     final imagePath = PathService.sublevelAsset(widget.exercise.levelId, widget.exercise.id, AssetType.image);
     final theme = Theme.of(context);
     final langController = ref.read(langControllerProvider.notifier);
@@ -147,7 +144,7 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
                         hinglish: 'Niche diye gye words ko kheech kar image ke hisaab se sahi vakya banaye.',
                       ),
                       style: TextStyle(
-                        color: theme.colorScheme.onPrimary.withOpacity(0.9),
+                        color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
@@ -261,13 +258,13 @@ class ReorderableWrap extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 4),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: isPlaceholder ? Colors.grey[500]!.withOpacity(0.5) : Colors.grey[300],
+        color: isPlaceholder ? Colors.grey[500]!.withValues(alpha: 0.5) : Colors.grey[300],
         borderRadius: BorderRadius.circular(8),
         border: isPlaceholder ? Border.all(color: Colors.grey[400]!, width: 1, style: BorderStyle.solid) : null,
         boxShadow:
             isPlaceholder
                 ? null
-                : [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2))],
+                : [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 4, offset: const Offset(0, 2))],
       ),
       child: Text(
         word,
@@ -307,9 +304,9 @@ class ReorderableWrap extends StatelessWidget {
             child: Text(word, style: TextStyle(color: Colors.grey[700], fontSize: 16, fontWeight: FontWeight.w300)),
           ),
           child: DragTarget<DragData>(
-            onAccept: (dragData) {
-              if (dragData.index != index) {
-                onReorder(dragData.index, index);
+            onAcceptWithDetails: (details) {
+              if (details.data.index != index) {
+                onReorder(details.data.index, index);
               }
             },
             builder: (context, candidateData, rejectedData) {
@@ -335,9 +332,9 @@ class ReorderableWrap extends StatelessWidget {
     // Add a drop target at the end for last position
     children.add(
       DragTarget<DragData>(
-        onAccept: (dragData) {
+        onAcceptWithDetails: (details) {
           // Move to last position (words.length would be the new last index)
-          onReorder(dragData.index, words.length);
+          onReorder(details.data.index, words.length);
         },
         builder: (context, candidateData, rejectedData) {
           if (candidateData.isNotEmpty) {

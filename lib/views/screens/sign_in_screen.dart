@@ -131,6 +131,7 @@ class SignInScreen extends ConsumerWidget {
                           isLoading
                               ? null
                               : () async {
+                                final router = GoRouter.of(context);
                                 final needsLanguagePrompt =
                                     await ref.read(authControllerProvider.notifier).signInWithGoogle();
 
@@ -147,7 +148,7 @@ class SignInScreen extends ConsumerWidget {
                                 await _handlePostSignIn(context, ref);
 
                                 if (context.mounted) {
-                                  context.go(Routes.home);
+                                  router.go(Routes.home);
                                 }
                               },
                       icon: Padding(padding: const EdgeInsets.only(right: 8.0), child: googleLogo),
