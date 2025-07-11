@@ -75,6 +75,17 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
     );
   }
 
+  double _getWidestOptionWidth() {
+    double maxWidth = 0;
+    for (String option in widget.exercise.options) {
+      final size = _calculateTextSize(option);
+      if (size.width > maxWidth) {
+        maxWidth = size.width;
+      }
+    }
+    return maxWidth + 20;
+  }
+
   Map<String, double> _getOptionPosition(int index, bool isSelected) =>
       isSelected ? _getBlankPosition() : _getOriginalOptionPosition(index);
 
@@ -187,7 +198,7 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                           ),
                         Container(
                           key: _blankKey,
-                          constraints: const BoxConstraints(minWidth: 100),
+                          constraints: BoxConstraints(minWidth: _getWidestOptionWidth()),
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                           decoration: const BoxDecoration(
                             border: Border(bottom: BorderSide(color: Colors.orange, width: 3)),
