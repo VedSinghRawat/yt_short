@@ -5,7 +5,7 @@ import 'package:myapp/core/router/router.dart';
 import 'package:myapp/services/initialize/initialize_service.dart';
 import 'package:myapp/views/widgets/loader.dart';
 import 'package:myapp/controllers/level/level_controller.dart';
-import 'package:myapp/views/screens/error_page.dart';
+import 'package:myapp/views/screens/error_screen.dart';
 
 class InitializeScreen extends ConsumerWidget {
   const InitializeScreen({super.key});

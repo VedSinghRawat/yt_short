@@ -6,7 +6,7 @@ import 'package:myapp/controllers/level/level_controller.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/utils.dart';
-import 'package:myapp/views/screens/app_bar.dart';
+import 'package:myapp/views/widgets/app_bar.dart';
 import 'package:myapp/views/widgets/loader.dart';
 import 'package:myapp/controllers/activityLog/activity_log.controller.dart';
 import 'package:myapp/models/activity_log/activity_log.dart';

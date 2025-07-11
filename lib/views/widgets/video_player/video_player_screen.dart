@@ -11,7 +11,7 @@ import 'package:myapp/services/api/api_service.dart';
 import 'package:myapp/services/path/path_service.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
 import 'package:myapp/controllers/ui/ui_controller.dart';
-import 'package:myapp/views/screens/error_page.dart';
+import 'package:myapp/views/screens/error_screen.dart';
 
 import 'package:myapp/views/widgets/loader.dart';
 import 'package:video_player/video_player.dart' show VideoPlayerController, VideoPlayerValue, VideoPlayer;

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:myapp/views/screens/deep_linking.dart';
+import 'package:myapp/views/screens/deep_linking_screen.dart';
 import 'package:myapp/services/initialize/initialize_service.dart';
 import 'package:myapp/views/widgets/obstructive_error_wrapper.dart';
 import 'package:myapp/views/screens/sign_in_screen.dart';
 import 'package:myapp/views/screens/initialize_screen.dart';
-import 'package:myapp/views/screens/profile.dart';
+import 'package:myapp/views/screens/profile_screen.dart';
 import 'package:myapp/views/screens/fill_exercise_screen.dart';
 import 'package:myapp/models/fill_exercise/fill_exercise.dart';
 

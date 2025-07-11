@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/models/arrange_exercise/arrange_exercise.dart';
 import 'package:myapp/services/path/path_service.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
-import 'package:myapp/views/screens/app_bar.dart';
+import 'package:myapp/views/widgets/app_bar.dart';
 import 'package:myapp/controllers/ui/ui_controller.dart';
 
 class ArrangeExerciseScreen extends ConsumerStatefulWidget {
