@@ -41,7 +41,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                     index: 1,
                     levelId: 'level_1',
                     blankIndex: 1,
-                    options: ['go', 'goes', 'going'],
+                    options: ['go', 'goes', 'going', 'something', 'else', 'over', 'here'],
                     correctOption: 0,
                   ),
                   goToNext: () {

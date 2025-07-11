@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/models/fill_exercise/fill_exercise.dart';
@@ -18,18 +20,33 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
   int? selectedOption;
   final GlobalKey _blankKey = GlobalKey();
   final List<GlobalKey> _optionKeys = [];
+  final List<GlobalKey> _placeholderKeys = [];
+  final GlobalKey _optionsAreaKey = GlobalKey();
+  bool hasInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    // Initialize option keys
+    // Initialize option keys and placeholder keys
     for (int i = 0; i < widget.exercise.options.length; i++) {
       _optionKeys.add(GlobalKey());
+      _placeholderKeys.add(GlobalKey());
     }
 
     // Show app bar when this screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(uIControllerProvider.notifier).setIsAppBarVisible(true);
+
+      // Small delay to ensure all widgets are fully rendered
+      Future.delayed(const Duration(milliseconds: 100), () {
+        setState(() {});
+      });
+
+      Future.delayed(const Duration(milliseconds: 300), () {
+        setState(() {
+          hasInitialized = true;
+        });
+      });
     });
   }
 
@@ -41,6 +58,81 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
       return [words.sublist(0, blankIndex).join(' '), words.sublist(blankIndex + 1).join(' ')];
     }
     return [widget.exercise.text, ''];
+  }
+
+  Size _calculateTextSize(String text) {
+    final textPainter = TextPainter(
+      text: TextSpan(text: text, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
+      maxLines: 1,
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+
+    // Add padding (24px horizontal + 12px vertical padding from the container)
+    return Size(
+      textPainter.width + 48, // 24px padding on each side
+      textPainter.height + 24, // 12px padding on top and bottom
+    );
+  }
+
+  Map<String, double> _getOptionPosition(int index, bool isSelected) =>
+      isSelected ? _getBlankPosition() : _getOriginalOptionPosition(index);
+
+  Map<String, double> _getBlankPosition() {
+    try {
+      if (_blankKey.currentContext != null && selectedOption != null) {
+        final RenderBox blankBox = _blankKey.currentContext!.findRenderObject() as RenderBox;
+        final blankPosition = blankBox.localToGlobal(Offset.zero);
+        final blankSize = blankBox.size;
+
+        // Get the actual size of the selected word
+        final selectedText = widget.exercise.options[selectedOption!];
+        final wordSize = _calculateTextSize(selectedText);
+
+        // Center the word horizontally within the blank space
+        final blankCenterX = blankPosition.dx + (blankSize.width / 2);
+        final wordPositionX = blankCenterX - (wordSize.width / 2);
+
+        // Position the word vertically centered in the blank area
+        // The blank container has 8px padding top/bottom, so center it within that space
+        final blankCenterY = blankPosition.dy + (blankSize.height / 2);
+        final wordPositionY = blankCenterY - (wordSize.height / 2);
+
+        return {'left': wordPositionX, 'top': wordPositionY - 100};
+      }
+    } catch (e) {
+      developer.log('Error calculating blank position: $e');
+    }
+
+    // Fallback calculation
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    if (selectedOption != null) {
+      final wordSize = _calculateTextSize(widget.exercise.options[selectedOption!]);
+      return {'left': (screenWidth / 2) - (wordSize.width / 2), 'top': screenHeight * 0.45};
+    }
+
+    return {'left': screenWidth * 0.5 - 50, 'top': screenHeight * 0.45};
+  }
+
+  Map<String, double> _getOriginalOptionPosition(int index) {
+    try {
+      // Get the position directly from the placeholder's GlobalKey
+      if (_placeholderKeys[index].currentContext != null) {
+        final RenderBox placeholderBox = _placeholderKeys[index].currentContext!.findRenderObject() as RenderBox;
+        final position = placeholderBox.localToGlobal(Offset.zero);
+        return {'left': position.dx, 'top': position.dy - 80};
+      }
+    } catch (e) {
+      developer.log('Error getting placeholder position: $e');
+    }
+
+    // Fallback calculation
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    return {'left': (screenWidth / 2) - 50, 'top': screenHeight * 0.65};
   }
 
   @override
@@ -114,15 +206,15 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                   const SizedBox(height: 40),
 
                   // Multiple choice options area (empty space for positioning)
-                  SizedBox(
-                    height: 60,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  Container(
+                    key: _optionsAreaKey,
+                    child: Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 18.0,
+                      runSpacing: 18.0,
                       children: List.generate(widget.exercise.options.length, (index) {
-                        return SizedBox(
-                          width: 100, // Reserve space for each option
-                          key: ValueKey('option_space_$index'),
-                        );
+                        final textSize = _calculateTextSize(widget.exercise.options[index]);
+                        return SizedBox(width: textSize.width, height: textSize.height, key: _placeholderKeys[index]);
                       }),
                     ),
                   ),
@@ -137,20 +229,16 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                       onPressed:
                           selectedOption != null
                               ? () {
-                                // Check if the selected option is correct
-                                if (selectedOption == widget.exercise.correctOption) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Correct! Well done!'), backgroundColor: Colors.green),
-                                  );
-                                  widget.goToNext();
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Incorrect. Try again!'), backgroundColor: Colors.red),
-                                  );
-                                  setState(() {
-                                    selectedOption = null;
-                                  });
-                                }
+                                final isCorrect = selectedOption == widget.exercise.correctOption;
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(isCorrect ? 'Correct! Well done!' : 'Incorrect. Try again!'),
+                                    backgroundColor: isCorrect ? Colors.green : Colors.red,
+                                  ),
+                                );
+
+                                isCorrect ? widget.goToNext() : setState(() => selectedOption = null);
                               }
                               : null,
                       style: ElevatedButton.styleFrom(
@@ -178,29 +266,33 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                 curve: Curves.easeInOut,
                 left: _getOptionPosition(index, isSelected)['left'],
                 top: _getOptionPosition(index, isSelected)['top'],
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      selectedOption = selectedOption == index ? null : index;
-                    });
-                  },
-                  child: Container(
-                    key: _optionKeys[index],
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-                    decoration: BoxDecoration(
-                      color: isSelected ? Colors.orange : Colors.grey[700],
-                      borderRadius: BorderRadius.circular(25),
-                      boxShadow:
-                          isSelected
-                              ? [BoxShadow(color: Colors.orange.withOpacity(0.5), blurRadius: 8, spreadRadius: 2)]
-                              : null,
-                    ),
-                    child: Text(
-                      widget.exercise.options[index],
-                      style: TextStyle(
-                        color: isSelected ? Colors.white : Colors.grey[300],
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
+                child: AnimatedOpacity(
+                  opacity: hasInitialized ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 400),
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        selectedOption = selectedOption == index ? null : index;
+                      });
+                    },
+                    child: Container(
+                      key: _optionKeys[index],
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                      decoration: BoxDecoration(
+                        color: isSelected ? Colors.orange : Colors.grey[700],
+                        borderRadius: BorderRadius.circular(25),
+                        boxShadow:
+                            isSelected
+                                ? [BoxShadow(color: Colors.orange.withOpacity(0.5), blurRadius: 8, spreadRadius: 2)]
+                                : null,
+                      ),
+                      child: Text(
+                        widget.exercise.options[index],
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : Colors.grey[300],
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ),
@@ -211,81 +303,5 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
         ),
       ),
     );
-  }
-
-  Map<String, double> _getOptionPosition(int index, bool isSelected) {
-    if (isSelected) {
-      // Position the selected option in the blank area
-      return _getBlankPosition();
-    } else {
-      // Position in the original options row
-      return _getOriginalOptionPosition(index);
-    }
-  }
-
-  Map<String, double> _getBlankPosition() {
-    try {
-      if (_blankKey.currentContext != null && selectedOption != null) {
-        final RenderBox blankBox = _blankKey.currentContext!.findRenderObject() as RenderBox;
-        final blankPosition = blankBox.localToGlobal(Offset.zero);
-        final blankSize = blankBox.size;
-
-        // Get horizontal center of the blank container
-        final blankCenterX = blankPosition.dx + (blankSize.width / 2);
-
-        // Position the word in the middle of the blank area, ABOVE the orange line
-        // Container structure: 8px padding + 24px SizedBox + 8px padding + 3px border
-        // Position in the center of the 24px SizedBox area
-        final wordPositionY = blankPosition.dy - 100; // Top padding + center of blank area
-
-        // Get actual size of the word block if possible
-        double wordWidth = 100; // fallback
-
-        if (_optionKeys.length > selectedOption! && _optionKeys[selectedOption!].currentContext != null) {
-          try {
-            final RenderBox wordBox = _optionKeys[selectedOption!].currentContext!.findRenderObject() as RenderBox;
-            wordWidth = wordBox.size.width;
-          } catch (e) {
-            // Keep fallback values
-          }
-        }
-
-        // Position the word higher above the orange line
-        return {'left': blankCenterX - (wordWidth / 2), 'top': wordPositionY};
-      }
-    } catch (e) {
-      // Fallback if widget not rendered yet
-    }
-
-    // Fallback calculation
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-
-    return {'left': screenWidth * 0.5 - 50, 'top': screenHeight * 0.45};
-  }
-
-  Map<String, double> _getOriginalOptionPosition(int index) {
-    // Calculate position in the options area
-    final screenWidth = MediaQuery.of(context).size.width;
-    final padding = 16.0; // Account for screen padding
-    final availableWidth = screenWidth - (padding * 2);
-
-    // Calculate positions based on the number of options
-    final optionSpacing = availableWidth / widget.exercise.options.length;
-    final left = padding + (optionSpacing * index) + (optionSpacing / 2) - 50; // Center each option
-
-    // Try to get the actual vertical position of the options area
-    double top;
-    try {
-      final screenHeight = MediaQuery.of(context).size.height;
-      top = screenHeight * 0.65; // Approximate options area position
-    } catch (e) {
-      top = 400; // Fallback
-    }
-
-    return {
-      'left': left.clamp(0, screenWidth - 100), // Ensure it stays on screen
-      'top': top,
-    };
   }
 }
