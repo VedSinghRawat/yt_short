@@ -9,6 +9,7 @@ import 'package:myapp/views/widgets/loader.dart';
 import 'package:myapp/controllers/auth/auth_controller.dart';
 import 'package:myapp/controllers/user/user_controller.dart';
 import 'package:myapp/models/user/user.dart';
+import 'package:myapp/controllers/ui/ui_controller.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -22,7 +23,7 @@ class ProfileScreen extends ConsumerWidget {
     final user = userState.currentUser ?? localUser;
 
     final userLoading = userState.loading;
-    final progress = SharedPref.get(PrefKey.currProgress(userEmail: user?.email));
+    final progress = ref.watch(uIControllerProvider.select((state) => state.currentProgress));
     final authController = ref.read(authControllerProvider.notifier);
     final authLoading = ref.watch(authControllerProvider.select((state) => state.loading));
     final userController = ref.read(userControllerProvider.notifier);

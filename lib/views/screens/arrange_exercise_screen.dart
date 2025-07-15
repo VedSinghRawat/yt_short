@@ -1,10 +1,12 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:myapp/models/arrange_exercise/arrange_exercise.dart';
+import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/path/path_service.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
-import 'package:myapp/views/widgets/app_bar.dart';
-import 'package:myapp/controllers/ui/ui_controller.dart';
 
 class ArrangeExerciseScreen extends ConsumerStatefulWidget {
   final ArrangeExercise exercise;
@@ -18,21 +20,19 @@ class ArrangeExerciseScreen extends ConsumerStatefulWidget {
 
 class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
   List<String> currentOrder = [];
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  bool _isPlayingAudio = false;
 
   @override
   void initState() {
     super.initState();
     currentOrder = widget.exercise.text.trim().toLowerCase().split(' ');
     currentOrder.shuffle();
-
-    // Show app bar when this screen loads
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(uIControllerProvider.notifier).setIsAppBarVisible(true);
-    });
   }
 
   @override
   void dispose() {
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -81,35 +81,74 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
     final langController = ref.read(langControllerProvider.notifier);
 
     try {
-      // TODO: Implement audio playback when audio file is available
-      // For now, just show text hint
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            langController.choose(
-              hindi: 'सुझाव: "${widget.exercise.text}"',
-              hinglish: 'Hint: "${widget.exercise.text}"',
-            ),
-          ),
-          backgroundColor: Colors.blue,
-        ),
-      );
+      // Stop current audio if playing
+      if (_audioPlayer.playing) {
+        await _audioPlayer.stop();
+        setState(() {
+          _isPlayingAudio = false;
+        });
+        return;
+      }
+
+      // Get the audio file path
+      final audioPath = PathService.sublevelAsset(widget.exercise.levelId, widget.exercise.id, AssetType.audio);
+      final audioFile = FileService.getFile(audioPath);
+
+      // Check if audio file exists
+      if (await audioFile.exists()) {
+        // Set the audio file path and play
+        await _audioPlayer.setFilePath(audioFile.path);
+
+        setState(() {
+          _isPlayingAudio = true;
+        });
+
+        // Play the audio and wait for completion
+        await _audioPlayer
+            .play()
+            .then((_) {
+              if (mounted) {
+                setState(() {
+                  _isPlayingAudio = false;
+                });
+              }
+            })
+            .catchError((error) {
+              developer.log("Error during audio playback: $error");
+              if (mounted) {
+                setState(() {
+                  _isPlayingAudio = false;
+                });
+                // Show fallback text hint
+                _showTextHint(langController);
+              }
+            });
+      } else {
+        // Audio file doesn't exist, show text hint
+        developer.log("Audio file not found: $audioPath");
+        _showTextHint(langController);
+      }
     } catch (e) {
+      developer.log("Error setting up audio playback: $e");
       // Fallback to showing text hint if audio fails
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              langController.choose(
-                hindi: 'सुझाव: "${widget.exercise.text}"',
-                hinglish: 'Hint: "${widget.exercise.text}"',
-              ),
-            ),
-            backgroundColor: Colors.blue,
-          ),
-        );
+        setState(() {
+          _isPlayingAudio = false;
+        });
+        _showTextHint(langController);
       }
     }
+  }
+
+  void _showTextHint(dynamic langController) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          langController.choose(hindi: 'सुझाव: "${widget.exercise.text}"', hinglish: 'Hint: "${widget.exercise.text}"'),
+        ),
+        backgroundColor: Colors.blue,
+      ),
+    );
   }
 
   @override
@@ -119,11 +158,9 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
     final langController = ref.read(langControllerProvider.notifier);
 
     return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: const HomeScreenAppBar(),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.fromLTRB(16, kToolbarHeight + 16, 16, 16),
           child: Column(
             children: [
               // Header with title and instructions
@@ -163,10 +200,11 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
                 decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: Colors.grey[800]),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                  child: Image.asset(
-                    imagePath,
+                  child: Image.file(
+                    FileService.getFile(imagePath),
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
+                      developer.log('error is $error, $imagePath');
                       return Container(
                         decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: Colors.grey[800]),
                         child: const Center(child: Icon(Icons.image, size: 40, color: Colors.grey)),
@@ -215,16 +253,25 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
 
                   // Hint button
                   Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _playHint,
-                      icon: const Icon(Icons.volume_up),
-                      label: Text(langController.choose(hindi: 'सुझाव', hinglish: 'Hint')),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: theme.colorScheme.primary,
-                        side: BorderSide(color: theme.colorScheme.primary, width: 2),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      transform: Matrix4.identity()..scale(_isPlayingAudio ? 1.05 : 1.0),
+                      child: OutlinedButton.icon(
+                        onPressed: _playHint,
+                        icon: Icon(_isPlayingAudio ? Icons.stop : Icons.volume_up),
+                        label: Text(
+                          _isPlayingAudio
+                              ? langController.choose(hindi: 'बज रहा है', hinglish: 'Playing')
+                              : langController.choose(hindi: 'सुझाव', hinglish: 'Hint'),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: _isPlayingAudio ? Colors.green : theme.colorScheme.primary,
+                          backgroundColor: _isPlayingAudio ? Colors.white : null,
+                          side: BorderSide(color: _isPlayingAudio ? Colors.green : theme.colorScheme.primary, width: 2),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                        ),
                       ),
                     ),
                   ),

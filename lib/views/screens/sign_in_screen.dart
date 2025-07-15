@@ -11,6 +11,7 @@ import 'package:myapp/views/widgets/show_confirmation_dialog.dart';
 import 'package:myapp/controllers/user/user_controller.dart';
 import 'package:myapp/models/models.dart';
 import '../../controllers/auth/auth_controller.dart';
+import 'package:myapp/controllers/ui/ui_controller.dart';
 import '../widgets/custom_app_bar.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -28,7 +29,7 @@ class SignInScreen extends ConsumerWidget {
     final user = ref.read(userControllerProvider).currentUser;
     if (user == null) return;
     // Continue with existing logic (progress check, etc.)
-    final progress = SharedPref.get(PrefKey.currProgress());
+    final progress = ref.read(uIControllerProvider).currentProgress;
 
     final level = progress?.maxLevel ?? 1;
     final subLevel = progress?.maxSubLevel ?? 1;
@@ -63,7 +64,7 @@ class SignInScreen extends ConsumerWidget {
         ),
       );
     } else if (progress != null) {
-      await SharedPref.store(PrefKey.currProgress(userEmail: user.email), progress);
+      await ref.read(uIControllerProvider.notifier).storeProgress(progress, userEmail: user.email);
     }
   }
 

@@ -6,6 +6,7 @@ import 'package:myapp/constants.dart';
 import 'package:myapp/controllers/dialogue/dialogue_controller.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
+import 'package:myapp/controllers/ui/ui_controller.dart';
 import 'package:myapp/controllers/user/user_controller.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
@@ -80,7 +81,7 @@ class LevelController extends _$LevelController {
         if (dialogue == null) return;
         await dialogueController.downloadData(dialogue.zipNum);
       }),
-      ...sublevelDTOs.map((subLevelDTO) => subLevelController.downloadData(subLevelDTO, level.id)),
+      ...sublevelDTOs.map((subLevelDTO) => subLevelController.getAssets(subLevelDTO, level.id)),
     ]);
   }
 
@@ -110,8 +111,8 @@ class LevelController extends _$LevelController {
     }
 
     state = state.copyWith(error: null);
-    final user = ref.read(userControllerProvider);
-    String currUserLevelId = user.levelId ?? orderedIds.first;
+    final progress = ref.read(uIControllerProvider).currentProgress;
+    String currUserLevelId = progress?.levelId ?? orderedIds.first;
 
     final loading = state.loadingByLevelId;
     if (loading[currUserLevelId] == null) {

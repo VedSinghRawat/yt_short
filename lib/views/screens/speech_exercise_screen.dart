@@ -15,13 +15,25 @@ class SpeechExerciseScreen extends ConsumerStatefulWidget {
 
 class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
   @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return SpeechExerciseCard(
-      key: UniqueKey(),
-      levelId: widget.exercise.levelId,
-      id: widget.exercise.id,
-      text: widget.exercise.text,
-      onContinue: widget.goToNext,
+    return Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, kToolbarHeight + 16, 16, 16),
+          child: SpeechExerciseCard(
+            key: UniqueKey(),
+            levelId: widget.exercise.levelId,
+            id: widget.exercise.id,
+            text: widget.exercise.text,
+            onContinue: widget.goToNext,
+          ),
+        ),
+      ),
     );
   }
 }

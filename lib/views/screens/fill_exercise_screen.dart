@@ -2,9 +2,8 @@ import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/models/fill_exercise/fill_exercise.dart';
-import 'package:myapp/views/widgets/app_bar.dart';
-import 'package:myapp/controllers/ui/ui_controller.dart';
 
 class FillExerciseScreen extends ConsumerStatefulWidget {
   final FillExercise exercise;
@@ -33,10 +32,7 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
       _placeholderKeys.add(GlobalKey());
     }
 
-    // Show app bar when this screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(uIControllerProvider.notifier).setIsAppBarVisible(true);
-
       // Small delay to ensure all widgets are fully rendered
       Future.delayed(const Duration(milliseconds: 100), () {
         setState(() {});
@@ -149,26 +145,49 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
   @override
   Widget build(BuildContext context) {
     final sentenceParts = _getSentenceParts();
+    final theme = Theme.of(context);
+    final langController = ref.read(langControllerProvider.notifier);
 
     return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: const HomeScreenAppBar(),
       body: SafeArea(
         child: Stack(
           children: [
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.fromLTRB(16, kToolbarHeight + 16, 16, 16),
               child: Column(
                 children: [
                   // Hindi header
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                    decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(12)),
-                    child: const Text(
-                      'नीचे दिए गए वाक्य में खाली जगह भरें',
-                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w500),
-                      textAlign: TextAlign.center,
+                    padding: const EdgeInsets.all(16.0),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          langController.choose(hindi: 'रिक्त स्थान भरें', hinglish: 'Fill in the Blank'),
+                          style: TextStyle(
+                            color: theme.colorScheme.onPrimary,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          langController.choose(
+                            hindi: 'छवि के हिसाब से सही शब्द चुनकर रिक्त स्थान भरें।',
+                            hinglish: 'Image ke hisaab se sahi word se blank ko fill karein.',
+                          ),
+                          style: TextStyle(
+                            color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
                   ),
 

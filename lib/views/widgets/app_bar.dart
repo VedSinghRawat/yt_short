@@ -32,7 +32,8 @@ class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
     final needsReload = currentUser?.email.isEmpty ?? true && isLoggedIn;
 
     final isAppBarVisible = ref.watch(uIControllerProvider.select((state) => state.isAppBarVisible));
-    final progress = SharedPref.get(PrefKey.currProgress());
+
+    final progress = ref.watch(uIControllerProvider.select((state) => state.currentProgress));
 
     return Stack(
       children: [
@@ -67,7 +68,7 @@ class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
                             .sync(currentUser?.levelId ?? '', currentUser?.subLevel ?? 0);
                       }
 
-                      final progress = SharedPref.get(PrefKey.currProgress(userEmail: currentUser?.email));
+                      final progress = ref.read(uIControllerProvider).currentProgress;
 
                       if (progress != null && progress.levelId != null && progress.subLevel != null) {
                         await ref.read(userControllerProvider.notifier).sync(progress.levelId!, progress.subLevel!);

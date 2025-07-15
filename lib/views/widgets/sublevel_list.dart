@@ -3,7 +3,6 @@ import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
-import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/views/widgets/loader.dart';
 import 'package:myapp/views/widgets/scroll_indicator.dart';
@@ -40,7 +39,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
   void _jumpToPage(Duration timeStamp) async {
     final userEmail = ref.read(userControllerProvider).currentUser?.email;
 
-    final progress = SharedPref.get(PrefKey.currProgress(userEmail: userEmail));
+    final progress = ref.read(uIControllerProvider).currentProgress;
 
     final jumpTo = widget.sublevels.indexWhere(
       (sublevel) => (sublevel.index == progress?.subLevel && sublevel.level == progress?.level),
@@ -54,10 +53,16 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
 
     _pageController.jumpToPage(jumpTo);
 
-    await SharedPref.copyWith(
-      PrefKey.currProgress(userEmail: userEmail),
-      Progress(level: jumpSublevel.level, subLevel: jumpSublevel.index),
+    // Set initial app bar visibility based on sublevel type
+    jumpSublevel.when(
+      video: (video) => ref.read(uIControllerProvider.notifier).setIsAppBarVisible(false),
+      speechExercise: (speechExercise) => ref.read(uIControllerProvider.notifier).setIsAppBarVisible(true),
+      arrangeExercise: (arrangeExercise) => ref.read(uIControllerProvider.notifier).setIsAppBarVisible(true),
+      fillExercise: (fillExercise) => ref.read(uIControllerProvider.notifier).setIsAppBarVisible(true),
     );
+
+    final progressUpdate = Progress(level: jumpSublevel.level, subLevel: jumpSublevel.index);
+    await ref.read(uIControllerProvider.notifier).storeProgress(progressUpdate, userEmail: userEmail);
   }
 
   void _startAnimationTimer() {
@@ -107,6 +112,11 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
     });
   }
 
+  void _goNextSublevel(int index) {
+    ref.read(sublevelControllerProvider.notifier).setHasFinishedSublevel(true);
+    _pageController.animateToPage(index + 1, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -136,7 +146,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
     ref.listen(userControllerProvider.select((value) => value.currentUser), (previous, next) {
       if (next == null) return;
       //  if profile is reset, jump to first sublevel
-      final progress = SharedPref.get(PrefKey.currProgress());
+      final progress = ref.read(uIControllerProvider).currentProgress;
       final currentIndex = _pageController.page?.round() ?? 0;
 
       if (progress?.level == 1 &&
@@ -147,19 +157,27 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
     });
 
     ref.listen(sublevelControllerProvider.select((value) => value.hasFinishedSublevel), (previous, next) {
-      final progress = SharedPref.get(PrefKey.currProgress());
+      final progress = ref.read(uIControllerProvider).currentProgress;
 
       if (!isLevelEqual(
-        progress?.level ?? 0,
-        progress?.subLevel ?? 0,
-        progress?.maxLevel ?? 0,
-        progress?.maxSubLevel ?? 0,
-      )) {
+            progress?.level ?? 0,
+            progress?.subLevel ?? 0,
+            progress?.maxLevel ?? 0,
+            progress?.maxSubLevel ?? 0,
+          ) ||
+          !next)
         return;
-      }
 
-      if (next) {
-        _startAnimationTimer();
+      // Only show animation if the current sublevel is a video
+      final currentIndex = _pageController.page?.round() ?? 0;
+      if (currentIndex < widget.sublevels.length) {
+        final currentSublevel = widget.sublevels[currentIndex];
+        currentSublevel.when(
+          video: (video) => _startAnimationTimer(), // Only start animation for video
+          speechExercise: (speechExercise) => {}, // No animation for speech exercise
+          arrangeExercise: (arrangeExercise) => {}, // No animation for arrange exercise
+          fillExercise: (fillExercise) => {}, // No animation for fill exercise
+        );
       }
     });
 
@@ -195,6 +213,18 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
             _showAnimation = false;
             _showScrollIndicator = false;
           });
+
+          // Control app bar visibility based on sublevel type
+          if (index < widget.sublevels.length) {
+            final sublevel = widget.sublevels[index];
+            sublevel.when(
+              video: (video) => ref.read(uIControllerProvider.notifier).setIsAppBarVisible(false),
+              speechExercise: (speechExercise) => ref.read(uIControllerProvider.notifier).setIsAppBarVisible(true),
+              arrangeExercise: (arrangeExercise) => ref.read(uIControllerProvider.notifier).setIsAppBarVisible(true),
+              fillExercise: (fillExercise) => ref.read(uIControllerProvider.notifier).setIsAppBarVisible(true),
+            );
+          }
+
           await widget.onVideoChange?.call(index, _pageController);
         },
         itemBuilder: (context, index) {
@@ -242,41 +272,16 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
                       child: sublevel.when(
                         video: (video) => VideoPlayerScreen(video: video),
                         speechExercise:
-                            (speechExercise) => SpeechExerciseScreen(
-                              exercise: speechExercise,
-                              goToNext: () {
-                                ref.read(sublevelControllerProvider.notifier).setHasFinishedSublevel(true);
-                                _pageController.animateToPage(
-                                  index + 1,
-                                  duration: const Duration(milliseconds: 300),
-                                  curve: Curves.easeInOut,
-                                );
-                              },
-                            ),
+                            (speechExercise) =>
+                                SpeechExerciseScreen(exercise: speechExercise, goToNext: () => _goNextSublevel(index)),
                         arrangeExercise:
                             (arrangeExercise) => ArrangeExerciseScreen(
                               exercise: arrangeExercise,
-                              goToNext: () {
-                                ref.read(sublevelControllerProvider.notifier).setHasFinishedSublevel(true);
-                                _pageController.animateToPage(
-                                  index + 1,
-                                  duration: const Duration(milliseconds: 300),
-                                  curve: Curves.easeInOut,
-                                );
-                              },
+                              goToNext: () => _goNextSublevel(index),
                             ),
                         fillExercise:
-                            (fillExercise) => FillExerciseScreen(
-                              exercise: fillExercise,
-                              goToNext: () {
-                                ref.read(sublevelControllerProvider.notifier).setHasFinishedSublevel(true);
-                                _pageController.animateToPage(
-                                  index + 1,
-                                  duration: const Duration(milliseconds: 300),
-                                  curve: Curves.easeInOut,
-                                );
-                              },
-                            ),
+                            (fillExercise) =>
+                                FillExerciseScreen(exercise: fillExercise, goToNext: () => _goNextSublevel(index)),
                       ),
                     ),
 

@@ -1,7 +1,7 @@
 enum AssetType {
   video('video.mp4'),
   audio('audio.mp3'),
-  image('image.jpg'),
+  image('image.webp'),
   data('data.json');
 
   const AssetType(this.filename);

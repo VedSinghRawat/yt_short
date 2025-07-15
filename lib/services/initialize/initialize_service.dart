@@ -13,6 +13,7 @@ import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/controllers/level/level_controller.dart';
 import 'package:myapp/controllers/user/user_controller.dart';
+import 'package:myapp/controllers/ui/ui_controller.dart';
 import 'dart:developer' as developer;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -59,18 +60,20 @@ class InitializeService {
       final apiLastModified = apiUser != null ? DateTime.parse(apiUser.modified).millisecondsSinceEpoch : 0;
       final localIsNewer = localLastModified > apiLastModified && currProgress?.levelId != null;
 
-      localIsNewer
-          ? await userController.sync(currProgress!.levelId!, currProgress.subLevel!)
-          : await SharedPref.copyWith(
-            PrefKey.currProgress(userEmail: apiUser?.email),
-            Progress(
-              level: apiUser?.level,
-              levelId: apiUser?.levelId,
-              maxLevel: apiUser?.maxLevel,
-              maxSubLevel: apiUser?.maxSubLevel,
-              subLevel: apiUser?.subLevel,
-            ),
-          );
+      if (localIsNewer) {
+        await userController.sync(currProgress!.levelId!, currProgress.subLevel!);
+      } else {
+        final progress = Progress(
+          level: apiUser?.level,
+          levelId: apiUser?.levelId,
+          maxLevel: apiUser?.maxLevel,
+          maxSubLevel: apiUser?.maxSubLevel,
+          subLevel: apiUser?.subLevel,
+        );
+
+        final uiController = ref.read(uIControllerProvider.notifier);
+        await uiController.storeProgress(progress, userEmail: apiUser?.email);
+      }
 
       await SharedPref.store(PrefKey.isFirstLaunch, false);
     } catch (e, stackTrace) {

@@ -9,6 +9,7 @@ import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/models.dart';
 import 'package:myapp/models/user/user.dart';
 import 'package:myapp/views/widgets/show_confirmation_dialog.dart';
+import 'package:myapp/controllers/ui/ui_controller.dart';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -24,20 +25,6 @@ class UserControllerState with _$UserControllerState {
   }) = _UserControllerState;
 
   const UserControllerState._();
-
-  Progress? get progress => SharedPref.get(PrefKey.currProgress(userEmail: currentUser?.email));
-
-  int get level {
-    return progress?.level ?? currentUser?.level ?? 1;
-  }
-
-  int get subLevel {
-    return progress?.subLevel ?? currentUser?.subLevel ?? 1;
-  }
-
-  String? get levelId {
-    return progress?.levelId ?? currentUser?.levelId;
-  }
 }
 
 @Riverpod(keepAlive: true)
@@ -128,7 +115,9 @@ class UserController extends _$UserController {
         maxSubLevel: newUser.maxSubLevel,
       );
 
-      await SharedPref.store(PrefKey.currProgress(userEmail: newUser.email), progress);
+      // Update progress through UI controller
+      final uiController = ref.read(uIControllerProvider.notifier);
+      await uiController.storeProgress(progress, userEmail: newUser.email);
 
       await updateCurrentUser(newUser);
 

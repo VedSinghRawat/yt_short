@@ -16,34 +16,26 @@ class SubLevelService {
 
   final ISubLevelAPI subLevelAPI;
 
-  Future<void> downloadData(SubLevelDTO subLevelDTO, String levelId) async {
-    final videoData = await subLevelAPI.getVideo(levelId, subLevelDTO.id);
-    final audioData =
-        (subLevelDTO.isSpeechExercise || subLevelDTO.isArrangeExercise)
-            ? await subLevelAPI.getAudio(levelId, subLevelDTO.id)
-            : null;
-    final imageData =
-        (subLevelDTO.isArrangeExercise || subLevelDTO.isFillExercise)
-            ? await subLevelAPI.getImage(levelId, subLevelDTO.id)
-            : null;
+  Future<void> getAssets(SubLevelDTO subLevelDTO, String levelId) async {
+    final assetTypes = {
+      AssetType.video: subLevelDTO.isVideo,
+      AssetType.audio: subLevelDTO.isSpeechExercise || subLevelDTO.isArrangeExercise,
+      AssetType.image: subLevelDTO.isArrangeExercise || subLevelDTO.isFillExercise,
+    };
 
     try {
-      if (videoData != null) {
-        final videoPath = PathService.sublevelAsset(levelId, subLevelDTO.id, AssetType.video);
-        await FileService.store(videoPath, videoData);
-      }
+      for (final type in assetTypes.keys) {
+        if (assetTypes[type] == false) continue;
 
-      if (audioData != null) {
-        final audioPath = PathService.sublevelAsset(levelId, subLevelDTO.id, AssetType.audio);
-        await FileService.store(audioPath, audioData);
-      }
+        final data = await subLevelAPI.getAsset(levelId, subLevelDTO.id, type);
+        if (data == null) continue;
 
-      if (imageData != null) {
-        final imagePath = PathService.sublevelAsset(levelId, subLevelDTO.id, AssetType.image);
-        await FileService.store(imagePath, imageData);
+        final path = PathService.sublevelAsset(levelId, subLevelDTO.id, type);
+        if (type == AssetType.image) developer.log('storing asset to $path');
+        await FileService.store(path, data);
       }
     } catch (e) {
-      developer.log(e.toString(), name: 'SubLevelService');
+      developer.log(e.toString());
     }
   }
 }

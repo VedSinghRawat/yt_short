@@ -4,13 +4,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
-import 'package:myapp/core/shared_pref.dart';
+import 'package:myapp/controllers/ui/ui_controller.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/video/video.dart';
 import 'package:myapp/services/api/api_service.dart';
 import 'package:myapp/services/path/path_service.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
-import 'package:myapp/controllers/ui/ui_controller.dart';
 import 'package:myapp/views/screens/error_screen.dart';
 
 import 'package:myapp/views/widgets/loader.dart';
@@ -26,10 +25,10 @@ class VideoPlayerScreen extends ConsumerStatefulWidget {
   const VideoPlayerScreen({super.key, required this.video});
 
   @override
-  ConsumerState<VideoPlayerScreen> createState() => _SublevelVideoPlayerState();
+  ConsumerState<VideoPlayerScreen> createState() => _VideoPlayerState();
 }
 
-class _SublevelVideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBindingObserver {
+class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBindingObserver {
   VideoPlayerController? _controller;
   Duration? _lastPosition;
   String? error;
@@ -217,7 +216,9 @@ class _SublevelVideoPlayerState extends ConsumerState<VideoPlayerScreen> with Wi
       _controller!.removeListener(_listener);
     }
 
-    setDialogueAreaAndAppBar(false);
+    setState(() {
+      _showDialogueArea = false;
+    });
   }
 
   void _onVisibilityChanged(VisibilityInfo info) {
@@ -373,7 +374,7 @@ class _SublevelVideoPlayerState extends ConsumerState<VideoPlayerScreen> with Wi
   @override
   Widget build(BuildContext context) {
     final bool isPlayerReady = _controller?.value.isInitialized ?? false;
-    final progress = SharedPref.get(PrefKey.currProgress());
+    final progress = ref.watch(uIControllerProvider.select((state) => state.currentProgress));
 
     return VisibilityDetector(
       key: Key(widget.video.id + widget.video.index.toString()),

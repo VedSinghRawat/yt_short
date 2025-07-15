@@ -14,6 +14,7 @@ import 'package:myapp/models/sublevel/sublevel.dart';
 import '../../controllers/sublevel/sublevel_controller.dart';
 import '../widgets/sublevel_list.dart';
 import '../../controllers/user/user_controller.dart';
+import '../../controllers/ui/ui_controller.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -174,17 +175,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   ) async {
     final isCurrLevelAfter = isLevelAfter(level, sublevelIndex, localMaxLevel, localMaxSubLevel);
 
-    // Update the user's current progress in shared preferences
-    await SharedPref.copyWith(
-      PrefKey.currProgress(userEmail: userEmail),
-      Progress(
-        level: level,
-        subLevel: sublevelIndex,
-        levelId: levelId,
-        maxLevel: isCurrLevelAfter ? level : localMaxLevel,
-        maxSubLevel: isCurrLevelAfter ? sublevelIndex : localMaxSubLevel,
-      ),
+    // Update the user's current progress using UI controller
+    final progress = Progress(
+      level: level,
+      subLevel: sublevelIndex,
+      levelId: levelId,
+      maxLevel: isCurrLevelAfter ? level : localMaxLevel,
+      maxSubLevel: isCurrLevelAfter ? sublevelIndex : localMaxSubLevel,
     );
+
+    await ref.read(uIControllerProvider.notifier).storeProgress(progress, userEmail: userEmail);
   }
 
   Future<void> onVideoChange(int index, PageController controller) async {
@@ -203,7 +203,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final userEmail = user?.email;
 
-    final localProgress = SharedPref.get(PrefKey.currProgress(userEmail: userEmail));
+    final localProgress = ref.read(uIControllerProvider).currentProgress;
 
     final localMaxLevel = localProgress?.maxLevel ?? 0;
     final localMaxSubLevel = localProgress?.maxSubLevel ?? 0;

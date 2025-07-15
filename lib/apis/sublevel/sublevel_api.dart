@@ -7,9 +7,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'sublevel_api.g.dart';
 
 abstract class ISubLevelAPI {
-  Future<Uint8List?> getVideo(String levelId, String id);
-  Future<Uint8List?> getAudio(String levelId, String id);
-  Future<Uint8List?> getImage(String levelId, String id);
+  Future<Uint8List?> getAsset(String levelId, String id, AssetType type);
 }
 
 class SubLevelAPI implements ISubLevelAPI {
@@ -18,29 +16,9 @@ class SubLevelAPI implements ISubLevelAPI {
   final ApiService apiService;
 
   @override
-  Future<Uint8List?> getVideo(String levelId, String id) async {
+  Future<Uint8List?> getAsset(String levelId, String id, AssetType type) async {
     final response = await apiService.getCloudStorageData(
-      endpoint: PathService.sublevelAsset(levelId, id, AssetType.video),
-      responseType: ResponseType.bytes,
-    );
-
-    return response?.data;
-  }
-
-  @override
-  Future<Uint8List?> getAudio(String levelId, String id) async {
-    final response = await apiService.getCloudStorageData(
-      endpoint: PathService.sublevelAsset(levelId, id, AssetType.audio),
-      responseType: ResponseType.bytes,
-    );
-
-    return response?.data;
-  }
-
-  @override
-  Future<Uint8List?> getImage(String levelId, String id) async {
-    final response = await apiService.getCloudStorageData(
-      endpoint: PathService.sublevelAsset(levelId, id, AssetType.image),
+      endpoint: PathService.sublevelAsset(levelId, id, type),
       responseType: ResponseType.bytes,
     );
 

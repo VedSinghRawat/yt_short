@@ -3,12 +3,12 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/views/screens/deep_linking_screen.dart';
 import 'package:myapp/services/initialize/initialize_service.dart';
+import 'package:myapp/views/screens/home_screen.dart';
+import 'package:myapp/views/widgets/auth/auth_wrapper.dart';
 import 'package:myapp/views/widgets/obstructive_error_wrapper.dart';
 import 'package:myapp/views/screens/sign_in_screen.dart';
 import 'package:myapp/views/screens/initialize_screen.dart';
 import 'package:myapp/views/screens/profile_screen.dart';
-import 'package:myapp/views/screens/fill_exercise_screen.dart';
-import 'package:myapp/models/fill_exercise/fill_exercise.dart';
 
 class Routes {
   static const home = '/home';
@@ -29,29 +29,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
 
         routes: [
-          // Home route now points to fill exercise screen for testing
-          GoRoute(
-            path: Routes.home,
-            builder:
-                (context, state) => FillExerciseScreen(
-                  exercise: const FillExercise(
-                    id: 'mock_exercise_1',
-                    text: 'I to school.',
-                    level: 1,
-                    index: 1,
-                    levelId: 'level_1',
-                    blankIndex: 1,
-                    options: ['go', 'goes', 'going', 'something', 'else', 'over', 'here'],
-                    correctOption: 0,
-                  ),
-                  goToNext: () {
-                    // Mock next action - could navigate to another screen or show success
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Great! Exercise completed!'), backgroundColor: Colors.green),
-                    );
-                  },
-                ),
-          ),
+          GoRoute(path: Routes.home, builder: (context, state) => const AuthWrapper(child: HomeScreen())),
 
           GoRoute(path: Routes.signIn, builder: (context, state) => const SignInScreen()),
 

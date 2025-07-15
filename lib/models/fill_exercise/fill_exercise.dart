@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:flutter/foundation.dart';
+import 'package:myapp/models/sublevel/sublevel.dart';
 
 part 'fill_exercise.g.dart';
 part 'fill_exercise.freezed.dart';
@@ -27,6 +28,7 @@ class FillExerciseDTO with _$FillExerciseDTO {
     required String text,
     required List<String> options,
     required int correctOption,
+    required SubLevelType type,
   }) = _FillExerciseDTO;
 
   factory FillExerciseDTO.fromJson(Map<String, dynamic> json) => _$FillExerciseDTOFromJson(json);

@@ -34,7 +34,9 @@ class FileService {
   }
 
   static Future<void> store(String path, Uint8List data, {bool cache = false}) async {
-    final file = File((cache ? cacheDirectory : documentsDirectory).path + path);
+    final filePath = (cache ? cacheDirectory : documentsDirectory).path + path;
+    if (filePath.endsWith('webp')) developer.log('storing file to $filePath');
+    final file = File(filePath);
 
     await file.parent.create(recursive: true);
 

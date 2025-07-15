@@ -40,11 +40,11 @@ class SublevelController extends _$SublevelController {
 
   void setHasFinishedSublevel(bool to) => state = state.copyWith(hasFinishedSublevel: to);
 
-  Future<void> downloadData(SubLevelDTO subLevelDTO, String levelId) async {
+  Future<void> getAssets(SubLevelDTO subLevelDTO, String levelId) async {
     try {
-      await subLevelService.downloadData(subLevelDTO, levelId);
+      await subLevelService.getAssets(subLevelDTO, levelId);
     } catch (e) {
-      state = state.copyWith(error: 'Failed to download sublevel data: $e');
+      state = state.copyWith(error: 'Failed to get sublevel assets: $e');
     }
   }
 }

@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:flutter/foundation.dart';
+import 'package:myapp/models/sublevel/sublevel.dart';
 
 part 'arrange_exercise.g.dart';
 part 'arrange_exercise.freezed.dart';
@@ -19,7 +20,8 @@ class ArrangeExercise with _$ArrangeExercise {
 
 @freezed
 class ArrangeExerciseDTO with _$ArrangeExerciseDTO {
-  const factory ArrangeExerciseDTO({required String id, required String text}) = _ArrangeExerciseDTO;
+  const factory ArrangeExerciseDTO({required String id, required String text, required SubLevelType type}) =
+      _ArrangeExerciseDTO;
 
   factory ArrangeExerciseDTO.fromJson(Map<String, dynamic> json) => _$ArrangeExerciseDTOFromJson(json);
 }
