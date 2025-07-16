@@ -166,8 +166,9 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
             progress?.maxLevel ?? 0,
             progress?.maxSubLevel ?? 0,
           ) ||
-          !next)
+          !next) {
         return;
+      }
 
       // Only show animation if the current sublevel is a video
       final currentIndex = _pageController.page?.round() ?? 0;
@@ -274,12 +275,16 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
                       child: sublevel.when(
                         video: (video) => VideoPlayerScreen(video: video),
                         speechExercise:
-                            (speechExercise) =>
-                                SpeechExerciseScreen(exercise: speechExercise, goToNext: () => _goNextSublevel(index)),
+                            (speechExercise) => SpeechExerciseScreen(
+                              exercise: speechExercise,
+                              goToNext: () => _goNextSublevel(index),
+                              isVisible: _currentPageIndex == index,
+                            ),
                         arrangeExercise:
                             (arrangeExercise) => ArrangeExerciseScreen(
                               exercise: arrangeExercise,
                               goToNext: () => _goNextSublevel(index),
+                              isVisible: _currentPageIndex == index,
                             ),
                         fillExercise:
                             (fillExercise) => FillExerciseScreen(

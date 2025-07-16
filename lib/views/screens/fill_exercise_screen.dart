@@ -40,8 +40,16 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
   void didUpdateWidget(FillExerciseScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
 
+    // Check if isVisible changed from true to false (user scrolled away)
+    if (oldWidget.isVisible && !widget.isVisible) {
+      // Reset all user interactions
+      setState(() {
+        selectedOption = null;
+        hasInitialized = false;
+      });
+    }
     // Check if isVisible changed from false to true
-    if (!oldWidget.isVisible && widget.isVisible) {
+    else if (!oldWidget.isVisible && widget.isVisible) {
       _runPostFrameCallback();
     }
   }
@@ -54,7 +62,7 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
         });
       }
 
-      Future.delayed(const Duration(milliseconds: 400), () {
+      Future.delayed(const Duration(milliseconds: 700), () {
         if (mounted) {
           setState(() {
             hasInitialized = true;
@@ -110,16 +118,12 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
         final blankPosition = blankBox.localToGlobal(Offset.zero);
         final blankSize = blankBox.size;
 
-        // Get the actual size of the selected word
         final selectedText = widget.exercise.options[selectedOption!];
         final wordSize = _calculateTextSize(selectedText);
 
-        // Center the word horizontally within the blank space
         final blankCenterX = blankPosition.dx + (blankSize.width / 2);
         final wordPositionX = blankCenterX - (wordSize.width / 2);
 
-        // Position the word vertically centered in the blank area
-        // The blank container has 8px padding top/bottom, so center it within that space
         final blankCenterY = blankPosition.dy + (blankSize.height / 2);
         final wordPositionY = blankCenterY - (wordSize.height / 2);
 
@@ -292,7 +296,6 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
             ...List.generate(widget.exercise.options.length, (index) {
               final isSelected = selectedOption == index;
               final position = _getOptionPosition(index, isSelected);
-              developer.log('position: $position');
 
               return AnimatedPositioned(
                 duration: const Duration(milliseconds: 400),
@@ -316,7 +319,13 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                         borderRadius: BorderRadius.circular(25),
                         boxShadow:
                             isSelected
-                                ? [BoxShadow(color: Colors.orange.withOpacity(0.5), blurRadius: 8, spreadRadius: 2)]
+                                ? [
+                                  BoxShadow(
+                                    color: Colors.orange.withValues(alpha: 0.5),
+                                    blurRadius: 8,
+                                    spreadRadius: 2,
+                                  ),
+                                ]
                                 : null,
                       ),
                       child: Text(

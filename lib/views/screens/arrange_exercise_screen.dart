@@ -11,8 +11,9 @@ import 'package:myapp/controllers/lang/lang_controller.dart';
 class ArrangeExerciseScreen extends ConsumerStatefulWidget {
   final ArrangeExercise exercise;
   final VoidCallback goToNext;
+  final bool isVisible;
 
-  const ArrangeExerciseScreen({super.key, required this.exercise, required this.goToNext});
+  const ArrangeExerciseScreen({super.key, required this.exercise, required this.goToNext, required this.isVisible});
 
   @override
   ConsumerState<ArrangeExerciseScreen> createState() => _ArrangeExerciseScreenState();
@@ -44,6 +45,29 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
         _isPlayingAudio = false;
       });
     });
+  }
+
+  @override
+  void didUpdateWidget(ArrangeExerciseScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // Check if isVisible changed from true to false (user scrolled away)
+    if (oldWidget.isVisible && !widget.isVisible) {
+      // Reset all user interactions
+      setState(() {
+        currentOrder = widget.exercise.text.trim().toLowerCase().split(' ');
+        currentOrder.shuffle();
+        _isCorrect = false;
+      });
+
+      // Stop any playing audio
+      if (_isPlayingAudio) {
+        _audioPlayer.stop();
+        setState(() {
+          _isPlayingAudio = false;
+        });
+      }
+    }
   }
 
   @override
