@@ -35,6 +35,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
   bool _showScrollIndicator = false;
   Timer? _animationTimer;
   Timer? _bounceTimer;
+  int _currentPageIndex = 0;
 
   void _jumpToPage(Duration timeStamp) async {
     final userEmail = ref.read(userControllerProvider).currentUser?.email;
@@ -212,6 +213,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
           setState(() {
             _showAnimation = false;
             _showScrollIndicator = false;
+            _currentPageIndex = index;
           });
 
           // Control app bar visibility based on sublevel type
@@ -280,8 +282,11 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
                               goToNext: () => _goNextSublevel(index),
                             ),
                         fillExercise:
-                            (fillExercise) =>
-                                FillExerciseScreen(exercise: fillExercise, goToNext: () => _goNextSublevel(index)),
+                            (fillExercise) => FillExerciseScreen(
+                              exercise: fillExercise,
+                              goToNext: () => _goNextSublevel(index),
+                              isVisible: _currentPageIndex == index,
+                            ),
                       ),
                     ),
 

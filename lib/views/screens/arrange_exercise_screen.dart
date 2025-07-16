@@ -31,7 +31,6 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
     currentOrder.shuffle();
 
     _audioPlayer.playerStateStream.listen((state) {
-      developer.log('audio player state: $state');
       if (!mounted) return;
 
       final shouldStop =

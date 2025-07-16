@@ -8,8 +8,9 @@ import 'package:myapp/models/fill_exercise/fill_exercise.dart';
 class FillExerciseScreen extends ConsumerStatefulWidget {
   final FillExercise exercise;
   final VoidCallback goToNext;
+  final bool isVisible;
 
-  const FillExerciseScreen({super.key, required this.exercise, required this.goToNext});
+  const FillExerciseScreen({super.key, required this.exercise, required this.goToNext, required this.isVisible});
 
   @override
   ConsumerState<FillExerciseScreen> createState() => _FillExerciseScreenState();
@@ -32,16 +33,33 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
       _placeholderKeys.add(GlobalKey());
     }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Small delay to ensure all widgets are fully rendered
-      Future.delayed(const Duration(milliseconds: 100), () {
-        setState(() {});
-      });
+    _runPostFrameCallback();
+  }
 
-      Future.delayed(const Duration(milliseconds: 300), () {
+  @override
+  void didUpdateWidget(FillExerciseScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // Check if isVisible changed from false to true
+    if (!oldWidget.isVisible && widget.isVisible) {
+      _runPostFrameCallback();
+    }
+  }
+
+  void _runPostFrameCallback() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
         setState(() {
-          hasInitialized = true;
+          hasInitialized = false;
         });
+      }
+
+      Future.delayed(const Duration(milliseconds: 400), () {
+        if (mounted) {
+          setState(() {
+            hasInitialized = true;
+          });
+        }
       });
     });
   }
@@ -105,22 +123,13 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
         final blankCenterY = blankPosition.dy + (blankSize.height / 2);
         final wordPositionY = blankCenterY - (wordSize.height / 2);
 
-        return {'left': wordPositionX, 'top': wordPositionY - 100};
+        return {'left': wordPositionX, 'top': wordPositionY - 42};
       }
     } catch (e) {
       developer.log('Error calculating blank position: $e');
     }
 
-    // Fallback calculation
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-
-    if (selectedOption != null) {
-      final wordSize = _calculateTextSize(widget.exercise.options[selectedOption!]);
-      return {'left': (screenWidth / 2) - (wordSize.width / 2), 'top': screenHeight * 0.45};
-    }
-
-    return {'left': screenWidth * 0.5 - 50, 'top': screenHeight * 0.45};
+    return {'left': 0, 'top': 0};
   }
 
   Map<String, double> _getOriginalOptionPosition(int index) {
@@ -129,17 +138,12 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
       if (_placeholderKeys[index].currentContext != null) {
         final RenderBox placeholderBox = _placeholderKeys[index].currentContext!.findRenderObject() as RenderBox;
         final position = placeholderBox.localToGlobal(Offset.zero);
-        return {'left': position.dx, 'top': position.dy - 80};
+        return {'left': position.dx, 'top': position.dy};
       }
     } catch (e) {
       developer.log('Error getting placeholder position: $e');
     }
-
-    // Fallback calculation
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-
-    return {'left': (screenWidth / 2) - 50, 'top': screenHeight * 0.65};
+    return {'left': 0, 'top': 0};
   }
 
   @override
@@ -201,36 +205,33 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                     child: Center(child: Icon(Icons.image, size: 60, color: Colors.grey[600])),
                   ),
 
-                  const Spacer(),
+                  const SizedBox(height: 64),
 
                   // Sentence with blank
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Wrap(
-                      alignment: WrapAlignment.center,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        if (sentenceParts[0].isNotEmpty)
-                          Text(
-                            '${sentenceParts[0]} ',
-                            style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w400),
-                          ),
-                        Container(
-                          key: _blankKey,
-                          constraints: BoxConstraints(minWidth: _getWidestOptionWidth()),
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                          decoration: const BoxDecoration(
-                            border: Border(bottom: BorderSide(color: Colors.orange, width: 3)),
-                          ),
-                          child: const SizedBox(height: 24), // Empty space for the blank
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      if (sentenceParts[0].isNotEmpty)
+                        Text(
+                          '${sentenceParts[0]} ',
+                          style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w400),
                         ),
-                        if (sentenceParts[1].isNotEmpty)
-                          Text(
-                            ' ${sentenceParts[1]}',
-                            style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w400),
-                          ),
-                      ],
-                    ),
+                      Container(
+                        key: _blankKey,
+                        constraints: BoxConstraints(minWidth: _getWidestOptionWidth()),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                        decoration: const BoxDecoration(
+                          border: Border(bottom: BorderSide(color: Colors.orange, width: 3)),
+                        ),
+                        child: const SizedBox(height: 24), // Empty space for the blank
+                      ),
+                      if (sentenceParts[1].isNotEmpty)
+                        Text(
+                          ' ${sentenceParts[1]}',
+                          style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w400),
+                        ),
+                    ],
                   ),
 
                   const SizedBox(height: 40),
@@ -290,12 +291,14 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
             // Animated positioned option buttons
             ...List.generate(widget.exercise.options.length, (index) {
               final isSelected = selectedOption == index;
+              final position = _getOptionPosition(index, isSelected);
+              developer.log('position: $position');
 
               return AnimatedPositioned(
                 duration: const Duration(milliseconds: 400),
                 curve: Curves.easeInOut,
-                left: _getOptionPosition(index, isSelected)['left'],
-                top: _getOptionPosition(index, isSelected)['top'],
+                left: position['left'],
+                top: position['top'],
                 child: AnimatedOpacity(
                   opacity: hasInitialized ? 1.0 : 0.0,
                   duration: const Duration(milliseconds: 400),
