@@ -22,12 +22,29 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
   List<String> currentOrder = [];
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isPlayingAudio = false;
+  bool _isCorrect = false;
 
   @override
   void initState() {
     super.initState();
     currentOrder = widget.exercise.text.trim().toLowerCase().split(' ');
     currentOrder.shuffle();
+
+    _audioPlayer.playerStateStream.listen((state) {
+      developer.log('audio player state: $state');
+      if (!mounted) return;
+
+      final shouldStop =
+          state.processingState == ProcessingState.completed ||
+          state.processingState == ProcessingState.idle ||
+          !state.playing;
+
+      if (!(shouldStop && _isPlayingAudio)) return;
+
+      setState(() {
+        _isPlayingAudio = false;
+      });
+    });
   }
 
   @override
@@ -59,8 +76,9 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
     final langController = ref.read(langControllerProvider.notifier);
 
     if (userAnswer == correctAnswer) {
-      // Correct answer - proceed to next
-      widget.goToNext();
+      setState(() {
+        _isCorrect = true;
+      });
     } else {
       // Show error feedback
       ScaffoldMessenger.of(context).showSnackBar(
@@ -78,11 +96,9 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
   }
 
   Future<void> _playHint() async {
-    final langController = ref.read(langControllerProvider.notifier);
-
     try {
       // Stop current audio if playing
-      if (_audioPlayer.playing) {
+      if (_isPlayingAudio) {
         await _audioPlayer.stop();
         setState(() {
           _isPlayingAudio = false;
@@ -94,61 +110,22 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
       final audioPath = PathService.sublevelAsset(widget.exercise.levelId, widget.exercise.id, AssetType.audio);
       final audioFile = FileService.getFile(audioPath);
 
-      // Check if audio file exists
-      if (await audioFile.exists()) {
-        // Set the audio file path and play
-        await _audioPlayer.setFilePath(audioFile.path);
+      // Set the audio file path and play
+      await _audioPlayer.setFilePath(audioFile.path);
 
-        setState(() {
-          _isPlayingAudio = true;
-        });
+      setState(() {
+        _isPlayingAudio = true;
+      });
 
-        // Play the audio and wait for completion
-        await _audioPlayer
-            .play()
-            .then((_) {
-              if (mounted) {
-                setState(() {
-                  _isPlayingAudio = false;
-                });
-              }
-            })
-            .catchError((error) {
-              developer.log("Error during audio playback: $error");
-              if (mounted) {
-                setState(() {
-                  _isPlayingAudio = false;
-                });
-                // Show fallback text hint
-                _showTextHint(langController);
-              }
-            });
-      } else {
-        // Audio file doesn't exist, show text hint
-        developer.log("Audio file not found: $audioPath");
-        _showTextHint(langController);
-      }
+      await _audioPlayer.play();
     } catch (e) {
       developer.log("Error setting up audio playback: $e");
-      // Fallback to showing text hint if audio fails
       if (mounted) {
         setState(() {
           _isPlayingAudio = false;
         });
-        _showTextHint(langController);
       }
     }
-  }
-
-  void _showTextHint(dynamic langController) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          langController.choose(hindi: 'सुझाव: "${widget.exercise.text}"', hinglish: 'Hint: "${widget.exercise.text}"'),
-        ),
-        backgroundColor: Colors.blue,
-      ),
-    );
   }
 
   @override
@@ -216,8 +193,6 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
 
               const SizedBox(height: 20),
 
-              // Text above word container
-
               // Reorderable word container (size based on content)
               Container(
                 width: double.infinity,
@@ -227,56 +202,79 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.grey[700]!, width: 2),
                 ),
-                child: ReorderableWrap(spacing: 8, runSpacing: 8, onReorder: _onReorder, words: currentOrder),
+                child: ReorderableWrap(spacing: 6, runSpacing: 12, onReorder: _onReorder, words: currentOrder),
               ),
 
               const Spacer(), // Push buttons to bottom
-              // Action buttons
-              Row(
-                children: [
-                  // Check button
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _checkAnswer,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: theme.colorScheme.primary,
-                        foregroundColor: theme.colorScheme.onPrimary,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                      ),
-                      child: Text(langController.choose(hindi: 'जांचें', hinglish: 'Check')),
-                    ),
-                  ),
 
-                  const SizedBox(width: 16),
-
-                  // Hint button
-                  Expanded(
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      transform: Matrix4.identity()..scale(_isPlayingAudio ? 1.05 : 1.0),
-                      child: OutlinedButton.icon(
-                        onPressed: _playHint,
-                        icon: Icon(_isPlayingAudio ? Icons.stop : Icons.volume_up),
-                        label: Text(
-                          _isPlayingAudio
-                              ? langController.choose(hindi: 'बज रहा है', hinglish: 'Playing')
-                              : langController.choose(hindi: 'सुझाव', hinglish: 'Hint'),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: _isPlayingAudio ? Colors.green : theme.colorScheme.primary,
-                          backgroundColor: _isPlayingAudio ? Colors.white : null,
-                          side: BorderSide(color: _isPlayingAudio ? Colors.green : theme.colorScheme.primary, width: 2),
+              _isCorrect
+                  ? Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: widget.goToNext,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green[400],
+                          foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                         ),
+                        child: Text(langController.choose(hindi: 'आगे बढ़ें', hinglish: 'Continue')),
                       ),
                     ),
+                  )
+                  : Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _checkAnswer,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: theme.colorScheme.primary,
+                            foregroundColor: theme.colorScheme.onPrimary,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                          ),
+                          child: Text(langController.choose(hindi: 'जांचें', hinglish: 'Check')),
+                        ),
+                      ),
+
+                      const SizedBox(width: 16),
+
+                      Expanded(
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          transform: Matrix4.identity()..scale(_isPlayingAudio ? 1.05 : 1.0),
+                          child: ElevatedButton.icon(
+                            onPressed: _playHint,
+                            icon: Icon(_isPlayingAudio ? Icons.stop : Icons.volume_up),
+                            label: Text(
+                              _isPlayingAudio
+                                  ? langController.choose(hindi: 'बज रहा है', hinglish: 'Playing')
+                                  : langController.choose(hindi: 'सुझाव', hinglish: 'Hint'),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  _isPlayingAudio
+                                      ? theme.colorScheme.secondary
+                                      : theme.colorScheme.secondary.withValues(alpha: 0.2),
+                              foregroundColor:
+                                  _isPlayingAudio ? theme.colorScheme.onSecondary : theme.colorScheme.onSurface,
+                              side:
+                                  _isPlayingAudio
+                                      ? null
+                                      : BorderSide(color: theme.colorScheme.secondary.withValues(alpha: 0.5), width: 1),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
             ],
           ),
         ),
@@ -302,7 +300,7 @@ class ReorderableWrap extends StatelessWidget {
 
   Widget _buildWordBlock(String word, {bool isPlaceholder = false}) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 4),
+      margin: const EdgeInsets.symmetric(horizontal: 2),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: isPlaceholder ? Colors.grey[500]!.withValues(alpha: 0.5) : Colors.grey[300],
@@ -340,16 +338,7 @@ class ReorderableWrap extends StatelessWidget {
             scale: 1.1,
             child: Material(elevation: 8, borderRadius: BorderRadius.circular(8), child: _buildWordBlock(word)),
           ),
-          childWhenDragging: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey[600]!, width: 1),
-            ),
-            child: Text(word, style: TextStyle(color: Colors.grey[700], fontSize: 16, fontWeight: FontWeight.w300)),
-          ),
+          childWhenDragging: const SizedBox.shrink(),
           child: DragTarget<DragData>(
             onAcceptWithDetails: (details) {
               if (details.data.index != index) {
@@ -357,14 +346,15 @@ class ReorderableWrap extends StatelessWidget {
               }
             },
             builder: (context, candidateData, rejectedData) {
-              // Show placeholder of the dragged word at drop position
+              // Show placeholder word next to the original word
               if (candidateData.isNotEmpty) {
                 final draggedWord = candidateData.first!.word;
                 return Row(
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     _buildWordBlock(draggedWord, isPlaceholder: true),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 2),
                     _buildWordBlock(word),
                   ],
                 );
@@ -386,18 +376,24 @@ class ReorderableWrap extends StatelessWidget {
         builder: (context, candidateData, rejectedData) {
           if (candidateData.isNotEmpty) {
             final draggedWord = candidateData.first!.word;
-            return Padding(
-              padding: const EdgeInsets.only(left: 8.0),
+            return Container(
+              margin: const EdgeInsets.only(left: 4),
               child: _buildWordBlock(draggedWord, isPlaceholder: true),
             );
           }
-          // Invisible drop zone when not dragging
-          return const SizedBox(width: 20, height: 44);
+          // Larger invisible drop zone when not dragging
+          return const SizedBox(width: 80, height: 44);
         },
       ),
     );
 
-    return Wrap(spacing: spacing, runSpacing: runSpacing, children: children);
+    return Wrap(
+      spacing: spacing,
+      runSpacing: runSpacing,
+      alignment: WrapAlignment.start,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: children,
+    );
   }
 }
 
