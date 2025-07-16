@@ -35,7 +35,7 @@ Future<bool> showConfirmationDialog(
                   backgroundColor: Colors.redAccent,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-            child: const Text('Yes'),
+            child: const Text('Yes', style: TextStyle(color: Colors.white)),
           ),
         ],
       );

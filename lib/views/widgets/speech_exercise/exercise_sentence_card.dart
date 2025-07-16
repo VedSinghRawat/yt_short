@@ -115,21 +115,6 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                 children: [
                   Column(
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.only(left: 12.0, bottom: 8.0), // Outer padding
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text(
-                              ref
-                                  .read(langControllerProvider.notifier)
-                                  .choose(hindi: 'नीचे दिया वाक्य बोलें:', hinglish: 'Niche diya vakya bole:'),
-                              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
-                      ),
                       Stack(
                         children: [
                           Padding(
@@ -137,16 +122,9 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                             child: Container(
                               width: double.infinity,
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.primary,
-                                borderRadius: BorderRadius.circular(15.0),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.white.withValues(alpha: .25),
-                                    spreadRadius: 2,
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
+                                color: Colors.grey[800],
+                                borderRadius: BorderRadius.circular(12.0),
+                                border: Border.all(color: Colors.grey[700]!, width: 2),
                               ),
                               child: Padding(
                                 padding: const EdgeInsets.only(bottom: 44.0, top: 24.0, left: 18.0),
@@ -196,6 +174,7 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                                                     style: TextStyle(
                                                       fontSize: 24,
                                                       fontWeight: fontWeight,
+                                                      color: Colors.grey[300],
                                                       textBaseline: TextBaseline.alphabetic,
                                                     ),
                                                   ),
@@ -210,8 +189,8 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                             ),
                           ),
                           Positioned(
-                            bottom: 20,
-                            right: 20,
+                            bottom: 24,
+                            right: 24,
                             child: Material(
                               color: Theme.of(context).colorScheme.secondary,
                               borderRadius: BorderRadius.circular(30),
@@ -238,8 +217,8 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                                               hindi: speechState.isPlayingAudio ? 'सुन रहे हैं...' : 'सुनें',
                                               hinglish: speechState.isPlayingAudio ? 'Sun rahe hain...' : 'Sune',
                                             ),
-                                        style: TextStyle(
-                                          color: Theme.of(context).colorScheme.onSecondary,
+                                        style: const TextStyle(
+                                          color: Colors.white,
                                           fontWeight: FontWeight.w600,
                                           fontSize: 12,
                                         ),
@@ -256,21 +235,6 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                       const SizedBox(height: 24),
 
                       Padding(
-                        padding: const EdgeInsets.only(left: 12.0, bottom: 8.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Text(
-                              ref
-                                  .read(langControllerProvider.notifier)
-                                  .choose(hindi: 'आपने कहा:', hinglish: 'Aapne kaha:'),
-                              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
                         child: Container(
                           width: double.infinity,
@@ -278,27 +242,18 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                           decoration: BoxDecoration(
                             color:
                                 !speechNotifier.isTestCompleted
-                                    ? Theme.of(context).colorScheme.primary
+                                    ? Colors.grey[900]
                                     : speechNotifier.isPassed
                                     ? Colors.green[400]
                                     : Colors.red[400],
-                            borderRadius: BorderRadius.circular(15.0),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
-                                spreadRadius: 1,
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
+                            borderRadius: BorderRadius.circular(12.0),
+                            border:
+                                !speechNotifier.isTestCompleted ? Border.all(color: Colors.grey[700]!, width: 2) : null,
                           ),
                           child: Text(
                             '${textToShow.join(' ')}${_flatWords.length == textToShow.length ? '.' : ''}',
                             style: recognizedWordStyle.copyWith(
-                              color:
-                                  !speechNotifier.isTestCompleted
-                                      ? Theme.of(context).colorScheme.onPrimary
-                                      : Colors.white,
+                              color: !speechNotifier.isTestCompleted ? Colors.grey[300] : Colors.white,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -330,22 +285,37 @@ class Header extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-        decoration: BoxDecoration(color: theme.colorScheme.primary),
-        child: Text(
-          'Speech Exercise',
-          style: theme.textTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.onPrimary,
-            fontSize: 28,
+    return Consumer(
+      builder: (context, ref, child) {
+        final langController = ref.read(langControllerProvider.notifier);
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16.0),
+          decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(12)),
+          child: Column(
+            children: [
+              Text(
+                langController.choose(hindi: 'स्पीच एक्सरसाइज़', hinglish: 'Speech Exercise'),
+                style: TextStyle(color: theme.colorScheme.onPrimary, fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                langController.choose(
+                  hindi: 'नीचे दिया गया वाक्य सही उच्चारण के साथ बोलें।',
+                  hinglish: 'Niche diya gaya vakya sahi ucharan ke saath bole.',
+                ),
+                style: TextStyle(
+                  color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
-          textAlign: TextAlign.center,
-        ),
-      ),
+        );
+      },
     );
   }
 }
