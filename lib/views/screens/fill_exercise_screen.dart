@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/models/fill_exercise/fill_exercise.dart';
+import 'package:myapp/services/file/file_service.dart';
+import 'package:myapp/services/path/path_service.dart';
 
 class FillExerciseScreen extends ConsumerStatefulWidget {
   final FillExercise exercise;
@@ -23,6 +25,7 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
   final List<GlobalKey> _placeholderKeys = [];
   final GlobalKey _optionsAreaKey = GlobalKey();
   bool hasInitialized = false;
+  bool _isCorrect = false;
 
   @override
   void initState() {
@@ -46,6 +49,7 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
       setState(() {
         selectedOption = null;
         hasInitialized = false;
+        _isCorrect = false;
       });
     }
     // Check if isVisible changed from false to true
@@ -150,6 +154,34 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
     return {'left': 0, 'top': 0};
   }
 
+  void _checkAnswer() {
+    final langController = ref.read(langControllerProvider.notifier);
+
+    if (selectedOption == widget.exercise.correctOption) {
+      setState(() {
+        _isCorrect = true;
+      });
+    } else {
+      // Show error feedback
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            langController.choose(
+              hindi: 'गलत उत्तर है, फिर से कोशिश करें',
+              hinglish: 'Galat uttar hai, firse koshish kare',
+            ),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+
+      // Reset selection
+      setState(() {
+        selectedOption = null;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final sentenceParts = _getSentenceParts();
@@ -201,12 +233,29 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
 
                   const SizedBox(height: 20),
 
-                  // Content area placeholder
+                  // Image with fixed height (30% of screen)
                   Container(
+                    height: MediaQuery.of(context).size.height * 0.3, // 30% of screen height
                     width: double.infinity,
-                    height: 200,
-                    decoration: BoxDecoration(color: Colors.grey[800], borderRadius: BorderRadius.circular(12)),
-                    child: Center(child: Icon(Icons.image, size: 60, color: Colors.grey[600])),
+                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: Colors.grey[800]),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.file(
+                        FileService.getFile(
+                          PathService.sublevelAsset(widget.exercise.levelId, widget.exercise.id, AssetType.image),
+                        ),
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          developer.log(
+                            'error is $error, ${PathService.sublevelAsset(widget.exercise.levelId, widget.exercise.id, AssetType.image)}',
+                          );
+                          return Container(
+                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: Colors.grey[800]),
+                            child: const Center(child: Icon(Icons.image, size: 40, color: Colors.grey)),
+                          );
+                        },
+                      ),
+                    ),
                   ),
 
                   const SizedBox(height: 64),
@@ -256,36 +305,43 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
 
                   const Spacer(),
 
-                  // Check button
-                  Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.symmetric(horizontal: 20),
-                    child: ElevatedButton(
-                      onPressed:
-                          selectedOption != null
-                              ? () {
-                                final isCorrect = selectedOption == widget.exercise.correctOption;
-
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(isCorrect ? 'Correct! Well done!' : 'Incorrect. Try again!'),
-                                    backgroundColor: isCorrect ? Colors.green : Colors.red,
-                                  ),
-                                );
-
-                                isCorrect ? widget.goToNext() : setState(() => selectedOption = null);
-                              }
-                              : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        disabledBackgroundColor: Colors.grey[600],
+                  // Check/Continue button
+                  _isCorrect
+                      ? Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: widget.goToNext,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green[400],
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                            ),
+                            child: Text(langController.choose(hindi: 'आगे बढ़ें', hinglish: 'Continue')),
+                          ),
+                        ),
+                      )
+                      : Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: selectedOption != null ? _checkAnswer : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: theme.colorScheme.primary,
+                              foregroundColor: theme.colorScheme.onPrimary,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                              disabledBackgroundColor: Colors.grey[600],
+                            ),
+                            child: Text(langController.choose(hindi: 'जांचें', hinglish: 'Check')),
+                          ),
+                        ),
                       ),
-                      child: const Text('Check', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
-                    ),
-                  ),
 
                   const SizedBox(height: 20),
                 ],
