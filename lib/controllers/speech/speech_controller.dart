@@ -132,7 +132,7 @@ class Speech extends _$Speech {
     state = state.copyWith(recognizedWords: newRecognizedWords, wordMarking: newWordMarking);
   }
 
-  bool get isPassed => state.wordMarking.every((mark) => mark == true);
+  bool get isPassed => state.wordMarking.isNotEmpty && state.wordMarking.every((mark) => mark == true);
 
   bool get isFailed => state.wordMarking.contains(false);
 
