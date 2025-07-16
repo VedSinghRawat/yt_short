@@ -28,83 +28,102 @@ class _LanguagePreferenceDialogState extends State<LanguagePreferenceDialog> {
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2), width: 2.0),
       ),
-      title: SizedBox(child: Text(_titleText)),
+      title: SizedBox(height: 60, child: Text(_titleText)),
       content: SizedBox(
+        height: 140,
         width: 300,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(child: Text(_contentText)),
+            SizedBox(height: 50, child: Text(_contentText)),
             const SizedBox(height: 24),
             Center(
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _selectedLang = _selectedLang == PrefLang.hindi ? PrefLang.hinglish : PrefLang.hindi;
-                  });
-                },
-                child: Container(
-                  width: 200,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(25),
-                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
-                    border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3), width: 2),
-                  ),
-                  child: Stack(
-                    children: [
-                      // Fixed text labels
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Center(
-                              child: Text(
-                                'हिन्दी',
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onSurface,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+              child: Container(
+                width: 200,
+                height: 50,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(25),
+                  color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+                  border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3), width: 2),
+                ),
+                child: Stack(
+                  children: [
+                    // Animated sliding background (behind text)
+                    AnimatedPositioned(
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeInOut,
+                      left: _selectedLang == PrefLang.hindi ? 2 : 98,
+                      top: 2,
+                      child: Container(
+                        width: 96,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(23),
+                          color: Theme.of(context).colorScheme.primary,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
                             ),
-                          ),
-                          Expanded(
-                            child: Center(
-                              child: Text(
-                                'Hinglish',
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onSurface,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      // Sliding orange pill that covers the unselected option
-                      AnimatedPositioned(
-                        duration: const Duration(milliseconds: 200),
-                        curve: Curves.easeInOut,
-                        left: _selectedLang == PrefLang.hindi ? 98 : 2, // Opposite of selection
-                        top: 2,
-                        child: Container(
-                          width: 96,
-                          height: 46,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(23),
-                            color: Theme.of(context).colorScheme.primary,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.2),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                    // Fixed text labels (on top of background)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedLang = PrefLang.hindi;
+                              });
+                            },
+                            child: Container(
+                              height: 50,
+                              child: Center(
+                                child: Text(
+                                  'हिन्दी',
+                                  style: TextStyle(
+                                    color:
+                                        _selectedLang == PrefLang.hindi
+                                            ? Theme.of(context).colorScheme.onPrimary
+                                            : Theme.of(context).colorScheme.onSurface,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedLang = PrefLang.hinglish;
+                              });
+                            },
+                            child: Container(
+                              height: 50,
+                              child: Center(
+                                child: Text(
+                                  'Hinglish',
+                                  style: TextStyle(
+                                    color:
+                                        _selectedLang == PrefLang.hinglish
+                                            ? Theme.of(context).colorScheme.onPrimary
+                                            : Theme.of(context).colorScheme.onSurface,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),
