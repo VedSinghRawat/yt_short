@@ -7,6 +7,7 @@ import 'package:myapp/models/arrange_exercise/arrange_exercise.dart';
 import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/path/path_service.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
+import 'package:reorderables/reorderables.dart';
 
 class ArrangeExerciseScreen extends ConsumerStatefulWidget {
   final ArrangeExercise exercise;
@@ -79,17 +80,7 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
   void _onReorder(int oldIndex, int newIndex) {
     setState(() {
       final String word = currentOrder.removeAt(oldIndex);
-
-      // If dropping at the end position, insert at the end
-      if (newIndex >= currentOrder.length) {
-        currentOrder.add(word);
-      } else {
-        // Adjust index if needed for standard reordering
-        if (newIndex > oldIndex) {
-          newIndex -= 1;
-        }
-        currentOrder.insert(newIndex, word);
-      }
+      currentOrder.insert(newIndex, word);
     });
   }
 
@@ -151,6 +142,19 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
     }
   }
 
+  Widget _buildWordBlock(String word) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.grey[300],
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2))],
+      ),
+      child: Text(word, style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w500)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final imagePath = PathService.sublevelAsset(widget.exercise.levelId, widget.exercise.id, AssetType.image);
@@ -181,7 +185,7 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
                         hinglish: 'Niche diye gye words ko kheech kar image ke hisaab se sahi vakya banaye.',
                       ),
                       style: TextStyle(
-                        color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
+                        color: theme.colorScheme.onPrimary.withOpacity(0.9),
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
@@ -225,7 +229,12 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.grey[700]!, width: 2),
                 ),
-                child: ReorderableWrap(spacing: 6, runSpacing: 12, onReorder: _onReorder, words: currentOrder),
+                child: ReorderableWrap(
+                  spacing: 6,
+                  runSpacing: 12,
+                  onReorder: _onReorder,
+                  children: currentOrder.map((word) => _buildWordBlock(word)).toList(),
+                ),
               ),
 
               const Spacer(), // Push buttons to bottom
@@ -282,13 +291,13 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
                               backgroundColor:
                                   _isPlayingAudio
                                       ? theme.colorScheme.secondary
-                                      : theme.colorScheme.secondary.withValues(alpha: 0.2),
+                                      : theme.colorScheme.secondary.withOpacity(0.2),
                               foregroundColor:
                                   _isPlayingAudio ? theme.colorScheme.onSecondary : theme.colorScheme.onSurface,
                               side:
                                   _isPlayingAudio
                                       ? null
-                                      : BorderSide(color: theme.colorScheme.secondary.withValues(alpha: 0.5), width: 1),
+                                      : BorderSide(color: theme.colorScheme.secondary.withOpacity(0.5), width: 1),
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
@@ -304,126 +313,4 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
       ),
     );
   }
-}
-
-// Custom ReorderableWrap widget since Flutter doesn't have one built-in
-class ReorderableWrap extends StatelessWidget {
-  final List<String> words;
-  final Function(int, int) onReorder;
-  final double spacing;
-  final double runSpacing;
-
-  const ReorderableWrap({
-    super.key,
-    required this.words,
-    required this.onReorder,
-    this.spacing = 0.0,
-    this.runSpacing = 0.0,
-  });
-
-  Widget _buildWordBlock(String word, {bool isPlaceholder = false}) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 2),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: isPlaceholder ? Colors.grey[500]!.withValues(alpha: 0.5) : Colors.grey[300],
-        borderRadius: BorderRadius.circular(8),
-        border: isPlaceholder ? Border.all(color: Colors.grey[400]!, width: 1, style: BorderStyle.solid) : null,
-        boxShadow:
-            isPlaceholder
-                ? null
-                : [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 4, offset: const Offset(0, 2))],
-      ),
-      child: Text(
-        word,
-        style: TextStyle(
-          color: isPlaceholder ? Colors.grey[600] : Colors.black,
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    List<Widget> children = [];
-
-    // Add all word widgets
-    children.addAll(
-      words.asMap().entries.map((entry) {
-        int index = entry.key;
-        String word = entry.value;
-
-        return Draggable<DragData>(
-          data: DragData(index: index, word: word),
-          feedback: Transform.scale(
-            scale: 1.1,
-            child: Material(elevation: 8, borderRadius: BorderRadius.circular(8), child: _buildWordBlock(word)),
-          ),
-          childWhenDragging: const SizedBox.shrink(),
-          child: DragTarget<DragData>(
-            onAcceptWithDetails: (details) {
-              if (details.data.index != index) {
-                onReorder(details.data.index, index);
-              }
-            },
-            builder: (context, candidateData, rejectedData) {
-              // Show placeholder word next to the original word
-              if (candidateData.isNotEmpty) {
-                final draggedWord = candidateData.first!.word;
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    _buildWordBlock(draggedWord, isPlaceholder: true),
-                    const SizedBox(width: 2),
-                    _buildWordBlock(word),
-                  ],
-                );
-              }
-              return _buildWordBlock(word);
-            },
-          ),
-        );
-      }),
-    );
-
-    // Add a drop target at the end for last position
-    children.add(
-      DragTarget<DragData>(
-        onAcceptWithDetails: (details) {
-          // Move to last position (words.length would be the new last index)
-          onReorder(details.data.index, words.length);
-        },
-        builder: (context, candidateData, rejectedData) {
-          if (candidateData.isNotEmpty) {
-            final draggedWord = candidateData.first!.word;
-            return Container(
-              margin: const EdgeInsets.only(left: 4),
-              child: _buildWordBlock(draggedWord, isPlaceholder: true),
-            );
-          }
-          // Larger invisible drop zone when not dragging
-          return const SizedBox(width: 80, height: 44);
-        },
-      ),
-    );
-
-    return Wrap(
-      spacing: spacing,
-      runSpacing: runSpacing,
-      alignment: WrapAlignment.start,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: children,
-    );
-  }
-}
-
-// Data class for drag and drop
-class DragData {
-  final int index;
-  final String word;
-
-  DragData({required this.index, required this.word});
 }
