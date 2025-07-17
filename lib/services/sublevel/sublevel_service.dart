@@ -31,7 +31,6 @@ class SubLevelService {
         if (data == null) continue;
 
         final path = PathService.sublevelAsset(levelId, subLevelDTO.id, type);
-        if (type == AssetType.image) developer.log('storing asset to $path');
         await FileService.store(path, data);
       }
     } catch (e) {

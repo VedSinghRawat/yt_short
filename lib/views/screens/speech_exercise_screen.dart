@@ -25,12 +25,9 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
   void didUpdateWidget(SpeechExerciseScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // Check if isVisible changed from true to false (user scrolled away)
     if (oldWidget.isVisible && !widget.isVisible) {
-      // Clear speech controller state when user scrolls away
-      // Delay the modification to avoid modifying provider during widget lifecycle
       Future(() {
-        ref.read(speechProvider.notifier).clearState();
+        ref.read(speechProvider(targetWords: widget.exercise.text.split(' ')).notifier).resetState();
       });
     }
   }

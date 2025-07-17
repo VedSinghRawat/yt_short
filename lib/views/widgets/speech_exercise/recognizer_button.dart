@@ -1,37 +1,52 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/controllers/speech/speech_controller.dart';
+import 'package:myapp/constants.dart';
 
 class RecognizerButton extends ConsumerStatefulWidget {
   final VoidCallback onContinue;
+  final List<String> targetWords;
 
-  const RecognizerButton({super.key, required this.onContinue});
+  const RecognizerButton({super.key, required this.onContinue, required this.targetWords});
 
   @override
   ConsumerState<RecognizerButton> createState() => _RecognizerButtonState();
 }
 
 class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
+  late final speechProv = speechProvider(targetWords: widget.targetWords);
+
   Future<void> _handleButtonPress() async {
-    final speechNotifier = ref.read(speechProvider.notifier);
+    final speechNotifier = ref.read(speechProv.notifier);
+    final speechState = ref.read(speechProv);
+    developer.log('speechState: ${speechState.errorMessage}');
+
+    // Check if we need to show reset button
+    if (speechState.errorMessage == AppConstants.kResetStateError) {
+      speechNotifier.resetState();
+      return;
+    }
+
     try {
       if (speechNotifier.isPassed) {
         await speechNotifier.stopListening();
-        speechNotifier.reset();
+        speechNotifier.resetState();
         widget.onContinue();
         return;
       }
 
       if (speechNotifier.isFailed) {
-        speechNotifier.reset();
+        speechNotifier.resetState();
         await speechNotifier.startListening(context);
         return;
       }
 
-      final speechState = ref.read(speechProvider);
+      final speechState = ref.read(speechProv);
       if (speechState.isListening || speechNotifier.isTestCompleted) {
         await speechNotifier.stopListening();
         return;
@@ -60,8 +75,11 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
 
   @override
   Widget build(BuildContext context) {
-    final speechState = ref.watch(speechProvider);
-    final speechNotifier = ref.read(speechProvider.notifier);
+    final speechState = ref.watch(speechProv);
+    final speechNotifier = ref.read(speechProv.notifier);
+
+    // Check if we should show reset button
+    final shouldShowResetButton = speechState.errorMessage == AppConstants.kResetStateError;
 
     return Column(
       children: [
@@ -93,7 +111,9 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
                   ),
                   child: Center(
                     child:
-                        speechNotifier.isTestCompleted
+                        shouldShowResetButton
+                            ? const Icon(Icons.refresh, size: 80, color: Colors.redAccent)
+                            : speechNotifier.isTestCompleted
                             ? Text(
                               ref
                                   .read(langControllerProvider.notifier)
@@ -123,14 +143,23 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
           Padding(
             padding: const EdgeInsets.only(top: 12),
             child: Text(
-              ref
-                  .read(langControllerProvider.notifier)
-                  .choose(
-                    hindi: speechState.isListening ? 'सुन रहे है...' : 'बोलने से पहले टैप करें',
-                    hinglish: speechState.isListening ? 'Listening...' : 'Bolne se pehle tap karein',
-                  ),
+              shouldShowResetButton
+                  ? ref
+                      .read(langControllerProvider.notifier)
+                      .choose(hindi: 'कुछ एरर आ गया है, रीसेट करें', hinglish: 'Kuch error agya hai, reset karien')
+                  : ref
+                      .read(langControllerProvider.notifier)
+                      .choose(
+                        hindi: speechState.isListening ? 'सुन रहे है...' : 'बोलने से पहले टैप करें',
+                        hinglish: speechState.isListening ? 'Listening...' : 'Bolne se pehle tap karein',
+                      ),
               style: TextStyle(
-                color: speechState.isListening ? Colors.green : Theme.of(context).colorScheme.secondary,
+                color:
+                    shouldShowResetButton
+                        ? Colors.orange
+                        : speechState.isListening
+                        ? Colors.green
+                        : Theme.of(context).colorScheme.secondary,
                 fontSize: 18,
               ),
             ),

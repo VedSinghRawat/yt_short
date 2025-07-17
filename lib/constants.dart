@@ -87,4 +87,6 @@ class AppConstants {
 
   static const int kMaxAfterLevels = 2;
   static const int kMaxBeforeLevels = 1;
+
+  static const String kResetStateError = 'resetStateError';
 }

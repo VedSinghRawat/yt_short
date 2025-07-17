@@ -53,10 +53,10 @@ class _LanguagePreferenceDialogState extends State<LanguagePreferenceDialog> {
                       duration: const Duration(milliseconds: 250),
                       curve: Curves.easeInOut,
                       left: _selectedLang == PrefLang.hindi ? 2 : 98,
-                      top: 2,
+                      top: 4,
                       child: Container(
-                        width: 96,
-                        height: 46,
+                        width: 92,
+                        height: 38,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(23),
                           color: Theme.of(context).colorScheme.primary,

@@ -1,6 +1,9 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:myapp/constants.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
 import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/path/path_service.dart';
@@ -22,43 +25,59 @@ class SpeechState with _$SpeechState {
     @Default([]) List<String> recognizedWords,
     @Default([]) List<bool?> wordMarking,
     @Default(false) bool isPlayingAudio,
-    @Default('') String currentExerciseId,
     @Default(0) int offset,
+    required List<String> targetWords,
     String? errorMessage,
   }) = _SpeechState;
 }
 
 @Riverpod(keepAlive: true)
 class Speech extends _$Speech {
-  late final stt.SpeechToText _speech;
-  List<String> _targetWords = [];
+  stt.SpeechToText? _speech;
   final audioPlayer = AudioPlayer();
   late final langProvider = ref.read(langControllerProvider.notifier);
 
-  @override
-  SpeechState build() {
-    _speech = stt.SpeechToText();
-
-    ref.onDispose(clearState);
-
-    return const SpeechState();
+  stt.SpeechToText get _speechInstance {
+    _speech ??= stt.SpeechToText();
+    return _speech!;
   }
 
-  void setTargetWords(List<String> words, String exerciseId) {
-    _targetWords = words;
-    state = SpeechState(
-      recognizedWords: List.filled(words.length, ''),
-      wordMarking: List.filled(words.length, null),
+  bool get isPassed => state.wordMarking.isNotEmpty && state.wordMarking.every((mark) => mark == true);
+
+  bool get isFailed => state.wordMarking.contains(false);
+
+  bool get isTestCompleted => isPassed || isFailed;
+
+  @override
+  SpeechState build({required List<String> targetWords}) {
+    return SpeechState(
+      recognizedWords: List.filled(targetWords.length, ''),
+      wordMarking: List.filled(targetWords.length, null),
       offset: 0,
-      currentExerciseId: exerciseId,
+      targetWords: targetWords,
     );
   }
 
-  Future<void> initialize() async {
-    final available = await _speech.initialize(
+  void resetState() {
+    developer.log('resetState');
+    state = SpeechState(
+      recognizedWords: List.filled(state.targetWords.length, ''),
+      wordMarking: List.filled(state.targetWords.length, null),
+      offset: 0,
+      targetWords: targetWords,
+    );
+
+    cancelListening();
+    if (audioPlayer.playing) {
+      audioPlayer.stop();
+    }
+  }
+
+  Future<void> initializeRecognizer() async {
+    final available = await _speechInstance.initialize(
       onStatus: _handleStatus,
       finalTimeout: const Duration(seconds: 15),
-      onError: _handleError,
+      onError: (error) => _handleError(error.errorMsg.toString()),
     );
 
     state = state.copyWith(isAvailable: available);
@@ -70,13 +89,14 @@ class Speech extends _$Speech {
     }
   }
 
-  void _handleError(dynamic error) {
-    state = state.copyWith(errorMessage: error.errorMsg.toString(), isListening: false);
+  void _handleError(String error) {
+    cancelListening();
+    state = state.copyWith(errorMessage: error, isListening: false);
   }
 
   Future<void> startListening(BuildContext context) async {
     if (!state.isAvailable) {
-      await initialize();
+      await initializeRecognizer();
     }
 
     if (!state.isAvailable && context.mounted) {
@@ -84,12 +104,16 @@ class Speech extends _$Speech {
       throw Exception('Microphone permission denied');
     }
 
-    await _speech.listen(
-      pauseFor: const Duration(minutes: 1),
-      listenFor: const Duration(minutes: 1),
-      onResult: _handleResult,
-      listenOptions: stt.SpeechListenOptions(partialResults: true, listenMode: stt.ListenMode.dictation),
-    );
+    try {
+      await _speechInstance.listen(
+        pauseFor: const Duration(minutes: 1),
+        listenFor: const Duration(minutes: 1),
+        onResult: _handleResult,
+        listenOptions: stt.SpeechListenOptions(partialResults: true, listenMode: stt.ListenMode.dictation),
+      );
+    } catch (e) {
+      developer.log('error: $e');
+    }
 
     state = state.copyWith(isListening: true);
   }
@@ -99,6 +123,11 @@ class Speech extends _$Speech {
   }
 
   void _handleResult(SpeechRecognitionResult result) {
+    if (state.targetWords.isEmpty) {
+      _handleError(AppConstants.kResetStateError);
+      return;
+    }
+
     List<String> currRecognizedWords = result.recognizedWords.split(' ').where((word) => word.isNotEmpty).toList();
 
     if (currRecognizedWords.isEmpty) {
@@ -110,13 +139,13 @@ class Speech extends _$Speech {
     var newWordMarking = List<bool?>.from(state.wordMarking);
 
     for (var i = 0; i < currRecognizedWords.length; i++) {
-      if (i + state.offset >= _targetWords.length) break;
+      if (i + state.offset >= state.targetWords.length) break;
       newRecognizedWords[i + state.offset] = currRecognizedWords[i];
     }
 
     for (int i = 0; i < newRecognizedWords.where((word) => word.isNotEmpty).length; i++) {
-      if (i >= _targetWords.length) break;
-      String formattedTargetWord = _formatWord(_targetWords[i]);
+      if (i >= state.targetWords.length) break;
+      String formattedTargetWord = _formatWord(state.targetWords[i]);
       String formattedRecognizedWord = _formatWord(newRecognizedWords[i]);
       newWordMarking[i] = formattedTargetWord == formattedRecognizedWord;
     }
@@ -128,23 +157,16 @@ class Speech extends _$Speech {
     if (newWordMarking.every((mark) => mark == true)) {
       ref.read(sublevelControllerProvider.notifier).setHasFinishedSublevel(true);
     }
-
     state = state.copyWith(recognizedWords: newRecognizedWords, wordMarking: newWordMarking);
   }
 
-  bool get isPassed => state.wordMarking.isNotEmpty && state.wordMarking.every((mark) => mark == true);
-
-  bool get isFailed => state.wordMarking.contains(false);
-
-  bool get isTestCompleted => isPassed || isFailed;
-
   Future<void> stopListening() async {
-    await _speech.stop();
+    await _speechInstance.stop();
     state = state.copyWith(isListening: false);
   }
 
   Future<void> cancelListening() async {
-    await _speech.cancel();
+    await _speechInstance.cancel();
     state = state.copyWith(isListening: false);
   }
 
@@ -166,26 +188,6 @@ class Speech extends _$Speech {
 
       await audioPlayer.stop();
     });
-  }
-
-  void reset() {
-    state = SpeechState(
-      recognizedWords: List.filled(_targetWords.length, ''),
-      wordMarking: List.filled(_targetWords.length, null),
-      offset: 0,
-    );
-  }
-
-  void clearState() {
-    // Stop any ongoing speech recognition and audio playback
-    cancelListening();
-    if (audioPlayer.playing) {
-      audioPlayer.stop();
-    }
-
-    // Clear all state
-    _targetWords = [];
-    state = const SpeechState();
   }
 
   Future<void> _showMicPermissionDeniedDialog(BuildContext context) async {

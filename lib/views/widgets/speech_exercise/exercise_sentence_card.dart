@@ -29,6 +29,7 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
   late List<List<String>> _words;
   late List<String> _flatWords;
   bool _isVisible = false;
+  late final speechProv = speechProvider(targetWords: _flatWords);
 
   void _processText(String text) {
     _words = [];
@@ -59,11 +60,9 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
       // Card became visible - initialize speech controller
       _isVisible = true;
 
-      if (ref.read(speechProvider).currentExerciseId == widget.id) return;
-
       // Process text and initialize speech controller
       _processText(widget.text);
-      ref.read(speechProvider.notifier).setTargetWords(_flatWords, widget.id);
+      ref.read(speechProv.notifier).resetState();
     } else if (!isVisible && _isVisible) {
       _isVisible = false;
     }
@@ -77,8 +76,8 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
 
   @override
   Widget build(BuildContext context) {
-    final speechState = ref.watch(speechProvider);
-    final speechNotifier = ref.read(speechProvider.notifier);
+    final speechState = ref.watch(speechProv);
+    final speechNotifier = ref.read(speechProv.notifier);
 
     // Match font sizes and line heights to keep total vertical space in sync
     const double recognizedWordFontSize = 24;
@@ -197,7 +196,7 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(30),
                                 onTap: () {
-                                  ref.read(speechProvider.notifier).playAudio(widget.levelId, widget.id);
+                                  ref.read(speechProv.notifier).playAudio(widget.levelId, widget.id);
                                 },
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
@@ -269,7 +268,7 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
 
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-              child: RecognizerButton(onContinue: widget.onContinue),
+              child: RecognizerButton(onContinue: widget.onContinue, targetWords: _flatWords),
             ),
           ],
         ),
