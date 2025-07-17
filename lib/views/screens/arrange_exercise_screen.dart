@@ -29,8 +29,7 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
   @override
   void initState() {
     super.initState();
-    currentOrder = widget.exercise.text.trim().toLowerCase().split(' ');
-    currentOrder.shuffle();
+    _initializeAndShuffleWords();
 
     _audioPlayer.playerStateStream.listen((state) {
       if (!mounted) return;
@@ -56,8 +55,7 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
     if (oldWidget.isVisible && !widget.isVisible) {
       // Reset all user interactions
       setState(() {
-        currentOrder = widget.exercise.text.trim().toLowerCase().split(' ');
-        currentOrder.shuffle();
+        _initializeAndShuffleWords();
         _isCorrect = false;
       });
 
@@ -75,6 +73,24 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
   void dispose() {
     _audioPlayer.dispose();
     super.dispose();
+  }
+
+  void _initializeAndShuffleWords() {
+    final originalWords = widget.exercise.text.trim().toLowerCase().split(' ');
+    currentOrder = List.from(originalWords);
+
+    // Only shuffle if there are multiple unique words to avoid infinite loops
+    final canBeDifferent = currentOrder.toSet().length > 1;
+
+    if (canBeDifferent) {
+      do {
+        currentOrder.shuffle();
+      } while (currentOrder.join(' ') == originalWords.join(' '));
+    } else {
+      // For single-word sentences or sentences with all same words (e.g., "a a a"),
+      // shuffling won't produce a different order.
+      currentOrder.shuffle();
+    }
   }
 
   void _onReorder(int oldIndex, int newIndex) {
