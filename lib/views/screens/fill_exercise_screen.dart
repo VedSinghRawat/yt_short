@@ -131,7 +131,7 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
         final blankCenterY = blankPosition.dy + (blankSize.height / 2);
         final wordPositionY = blankCenterY - (wordSize.height / 2);
 
-        return {'left': wordPositionX, 'top': wordPositionY - 42};
+        return {'left': wordPositionX, 'top': wordPositionY - 64};
       }
     } catch (e) {
       developer.log('Error calculating blank position: $e');
@@ -146,7 +146,7 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
       if (_placeholderKeys[index].currentContext != null) {
         final RenderBox placeholderBox = _placeholderKeys[index].currentContext!.findRenderObject() as RenderBox;
         final position = placeholderBox.localToGlobal(Offset.zero);
-        return {'left': position.dx, 'top': position.dy};
+        return {'left': position.dx, 'top': position.dy - 52};
       }
     } catch (e) {
       developer.log('Error getting placeholder position: $e');
