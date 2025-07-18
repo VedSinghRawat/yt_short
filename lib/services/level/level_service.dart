@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:developer' as developer;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:myapp/apis/level/level_api.dart';
@@ -40,7 +39,6 @@ class LevelService {
     if (level != null) {
       final file = FileService.getFile(PathService.levelJson(level.id));
       await file.parent.create(recursive: true);
-      developer.log('Writing level to file: ${level.toJson()}');
       await file.writeAsString(jsonEncode(level.toJson()));
 
       return right(level);

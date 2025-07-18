@@ -13,7 +13,7 @@ import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
 import 'package:myapp/views/screens/error_screen.dart';
 
 import 'package:myapp/views/widgets/loader.dart';
-import 'package:video_player/video_player.dart' show VideoPlayerController, VideoPlayerValue, VideoPlayer;
+import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:flutter/foundation.dart';
 import 'video_progress_bar.dart';
@@ -382,86 +382,82 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
       child: SafeArea(
         child: Stack(
           children: [
-            Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Stack(
-                    alignment: Alignment.center,
-                    children: [
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    if (error != null)
+                      Center(child: Padding(padding: const EdgeInsets.all(8.0), child: ErrorPage(text: error!)))
+                    else if (isPlayerReady && _controller != null)
                       GestureDetector(
                         onTap: _changePlayingState,
                         child: AspectRatio(
-                          aspectRatio: _controller?.value.aspectRatio ?? 16 / 9,
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              if (error != null)
-                                Center(
-                                  child: Padding(padding: const EdgeInsets.all(8.0), child: ErrorPage(text: error!)),
-                                )
-                              else if (isPlayerReady && _controller != null)
-                                VideoPlayer(_controller!)
-                              else
-                                const Loader(),
-                            ],
-                          ),
+                          aspectRatio: _controller?.value.aspectRatio ?? 9 / 16,
+                          child: Stack(alignment: Alignment.center, children: [VideoPlayer(_controller!)]),
                         ),
+                      )
+                    else
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width,
+                        height: MediaQuery.of(context).size.width * 16 / 9,
+                        child: const Center(child: Loader()),
                       ),
 
-                      if (isPlayerReady) ...[
-                        PlayPauseButton(showPlayPauseIcon: _showPlayPauseIcon, iconData: _iconData),
+                    if (isPlayerReady) ...[
+                      PlayPauseButton(showPlayPauseIcon: _showPlayPauseIcon, iconData: _iconData),
 
-                        Positioned(
-                          left: 100,
-                          bottom: 16,
+                      Positioned(
+                        left: 100,
+                        bottom: 16,
+                        child: IconButton(
+                          icon: const Icon(Icons.replay_5, color: Colors.white, size: 30),
+                          onPressed: _seekBackward,
+                          style: IconButton.styleFrom(backgroundColor: Colors.black.withValues(alpha: .3)),
+                        ),
+                      ),
+                      Positioned(
+                        right: 100,
+                        bottom: 16,
+                        child: Visibility(
+                          visible:
+                              ref.watch(sublevelControllerProvider.select((s) => s.hasFinishedSublevel)) ||
+                              isLevelAfter(
+                                progress?.maxLevel ?? 1,
+                                progress?.maxSubLevel ?? 1,
+                                widget.video.level,
+                                widget.video.index,
+                              ),
                           child: IconButton(
-                            icon: const Icon(Icons.replay_5, color: Colors.white, size: 30),
-                            onPressed: _seekBackward,
+                            icon: const Icon(Icons.forward_5, color: Colors.white, size: 30),
+                            onPressed: _seekForward,
                             style: IconButton.styleFrom(backgroundColor: Colors.black.withValues(alpha: .3)),
                           ),
                         ),
-                        Positioned(
-                          right: 100,
-                          bottom: 16,
-                          child: Visibility(
-                            visible:
-                                ref.watch(sublevelControllerProvider.select((s) => s.hasFinishedSublevel)) ||
-                                isLevelAfter(
-                                  progress?.maxLevel ?? 1,
-                                  progress?.maxSubLevel ?? 1,
-                                  widget.video.level,
-                                  widget.video.index,
-                                ),
-                            child: IconButton(
-                              icon: const Icon(Icons.forward_5, color: Colors.white, size: 30),
-                              onPressed: _seekForward,
-                              style: IconButton.styleFrom(backgroundColor: Colors.black.withValues(alpha: .3)),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ],
-                  ),
-                  if (isPlayerReady)
-                    ValueListenableBuilder<VideoPlayerValue>(
-                      valueListenable: _controller!,
-                      builder: (context, value, child) {
-                        if (value.duration > Duration.zero) {
-                          return VideoProgressBar(
-                            durationMs: value.duration.inMilliseconds,
-                            currentPositionMs: value.position.inMilliseconds,
-                            isPlaying: value.isPlaying,
-                          );
-                        } else {
-                          return const SizedBox(height: 10);
-                        }
-                      },
-                    )
-                  else
-                    const SizedBox(height: 10),
-                ],
-              ),
+                  ],
+                ),
+
+                if (isPlayerReady)
+                  ValueListenableBuilder<VideoPlayerValue>(
+                    valueListenable: _controller!,
+                    builder: (context, value, child) {
+                      if (value.duration > Duration.zero) {
+                        return VideoProgressBar(
+                          durationMs: value.duration.inMilliseconds,
+                          currentPositionMs: value.position.inMilliseconds,
+                          isPlaying: value.isPlaying,
+                        );
+                      } else {
+                        return const SizedBox(height: 10);
+                      }
+                    },
+                  )
+                else
+                  const VideoProgressBar(durationMs: 1, currentPositionMs: 0, isPlaying: false),
+              ],
             ),
 
             DialoguePopup(

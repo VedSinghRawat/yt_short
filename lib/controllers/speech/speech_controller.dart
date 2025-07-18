@@ -59,7 +59,6 @@ class Speech extends _$Speech {
   }
 
   void resetState() {
-    developer.log('resetState');
     state = SpeechState(
       recognizedWords: List.filled(state.targetWords.length, ''),
       wordMarking: List.filled(state.targetWords.length, null),
