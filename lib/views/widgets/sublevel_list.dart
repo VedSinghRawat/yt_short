@@ -37,7 +37,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
   Timer? _bounceTimer;
   int _currentPageIndex = 0;
 
-  void _jumpToPage(Duration timeStamp) async {
+  Future<void> _jumpToPage() async {
     final userEmail = ref.read(userControllerProvider).currentUser?.email;
 
     final progress = ref.read(uIControllerProvider).currentProgress;
@@ -123,7 +123,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
     super.initState();
     _pageController = PageController();
 
-    WidgetsBinding.instance.addPostFrameCallback(_jumpToPage);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _jumpToPage());
   }
 
   @override
@@ -131,7 +131,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.sublevels.length == widget.sublevels.length) return;
 
-    WidgetsBinding.instance.addPostFrameCallback(_jumpToPage);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _jumpToPage());
   }
 
   @override
@@ -153,7 +153,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
       if (progress?.level == 1 &&
           progress?.subLevel == 1 &&
           !(widget.sublevels[currentIndex].level == 1 && widget.sublevels[currentIndex].index == 0)) {
-        _jumpToPage(Duration.zero);
+        _jumpToPage();
       }
     });
 

@@ -144,22 +144,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> syncActivityLogs() async {
-    // Check if enough time has passed since the last sync
     final lastSync = SharedPref.get(PrefKey.lastSync) ?? 0;
 
     final now = DateTime.now().millisecondsSinceEpoch;
     final diff = now - lastSync;
     if (diff < AppConstants.kMinProgressSyncingDiffInMillis) return;
 
-    // If the user is logged in, sync their progress with the server
-    // Sync any pending activity logs with the server
     final activityLogs = SharedPref.get(PrefKey.activityLogs);
 
     if (activityLogs == null || activityLogs.isEmpty) return;
 
     await ref.read(activityLogControllerProvider.notifier).syncActivityLogs(activityLogs);
 
-    // Clear the activity logs and update the last sync time
     await SharedPref.removeValue(PrefKey.activityLogs);
 
     await SharedPref.store(PrefKey.lastSync, DateTime.now().millisecondsSinceEpoch);
@@ -190,15 +186,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> onVideoChange(int index, PageController controller) async {
     if (!mounted || _sortedSublevels == null) return;
 
-    // If the index is greater than the length of the cached sublevels, fetch the sublevels and return
     if (await handleFetchSublevels(index)) return;
 
-    // Get the sublevel, level, and sublevel for the current index
     final sublevel = _sortedSublevels![index];
     final level = sublevel.level;
     final sublevelIndex = sublevel.index;
 
-    // Get the user's email
     final user = ref.read(userControllerProvider).currentUser;
 
     final userEmail = user?.email;
@@ -210,7 +203,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final isLocalLevelAfter = isLevelAfter(level, sublevelIndex, user?.maxLevel ?? 0, user?.maxSubLevel ?? 0);
 
-    // Check if video change should be cancelled
     if (cancelVideoChange(
       isLocalLevelAfter ? localMaxLevel : user?.maxLevel ?? 0,
       isLocalLevelAfter ? localMaxSubLevel : user?.maxSubLevel ?? 0,
@@ -226,23 +218,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     ref.read(sublevelControllerProvider.notifier).setHasFinishedSublevel(false);
 
-    // Sync the local progress
     await syncLocalProgress(level, sublevelIndex, sublevel.levelId, localMaxLevel, localMaxSubLevel, userEmail);
 
     final lastLoggedInEmail = SharedPref.get(PrefKey.user)?.email;
 
     if (lastLoggedInEmail == null) return;
 
-    // If the user is logged in, add an activity log entry
     await SharedPref.pushValue(
       PrefKey.activityLogs,
       ActivityLog(subLevel: sublevelIndex, levelId: sublevel.levelId, userEmail: userEmail ?? lastLoggedInEmail),
     );
 
-    // Sync the progress with db if the user moves to a new level
     await syncProgress(index, _sortedSublevels!, userEmail, sublevelIndex, user?.maxLevel ?? 0);
 
-    // Sync the last sync time with the server
     await syncActivityLogs();
   }
 
@@ -281,7 +269,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     return Scaffold(
-      // appBar: const HomeScreenAppBar(),
       body: Stack(
         children: [
           SublevelsList(loadingIds: loadingLevelIds, sublevels: _sortedSublevels!, onVideoChange: onVideoChange),

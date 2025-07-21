@@ -113,6 +113,7 @@ class UserController extends _$UserController {
         levelId: newUser.levelId,
         maxLevel: newUser.maxLevel,
         maxSubLevel: newUser.maxSubLevel,
+        modified: DateTime.parse(newUser.modified).millisecondsSinceEpoch,
       );
 
       // Update progress through UI controller
