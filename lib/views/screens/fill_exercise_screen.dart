@@ -125,11 +125,10 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
 
       final selectedTextSize = _calculateTextSize(widget.exercise.options[selectedOption!]);
 
-      developer.log('blankPosition $blankPosition selectedTextSize $selectedTextSize');
-
+      final dynamicPadding = MediaQuery.of(context).size.height * 0.01;
       return {
         'left': blankPosition.dx + (blankBox.size.width / 2) - (selectedTextSize.width / 2),
-        'top': blankPosition.dy - selectedTextSize.height - 10,
+        'top': blankPosition.dy - selectedTextSize.height - dynamicPadding,
       };
     } catch (e) {
       developer.log('Error getting blank position: $e');
