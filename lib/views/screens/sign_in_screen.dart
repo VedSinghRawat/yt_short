@@ -83,7 +83,9 @@ class SignInScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isLoading = ref.watch(authControllerProvider.select((state) => state.loading));
+    final isLoading =
+        ref.watch(authControllerProvider.select((state) => state.loading)) ||
+        ref.watch(userControllerProvider.select((state) => state.loading));
 
     return Scaffold(
       appBar: CustomAppBar(title: 'Sign In', ignoreInteractions: isLoading),
@@ -133,6 +135,7 @@ class SignInScreen extends ConsumerWidget {
                               ? null
                               : () async {
                                 final router = GoRouter.of(context);
+
                                 final needsLanguagePrompt =
                                     await ref.read(authControllerProvider.notifier).signInWithGoogle();
 
@@ -146,11 +149,11 @@ class SignInScreen extends ConsumerWidget {
                                   await showLanguagePreferenceDialog(context, ref);
                                 }
 
+                                if (!context.mounted) return;
+
                                 await _handlePostSignIn(context, ref);
 
-                                if (context.mounted) {
-                                  router.go(Routes.home);
-                                }
+                                router.go(Routes.home);
                               },
                       icon: Padding(padding: const EdgeInsets.only(right: 8.0), child: googleLogo),
                       label: const Text('Sign in with Google'),

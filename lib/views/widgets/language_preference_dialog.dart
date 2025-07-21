@@ -75,12 +75,13 @@ class _LanguagePreferenceDialogState extends State<LanguagePreferenceDialog> {
                       children: [
                         Expanded(
                           child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
                             onTap: () {
                               setState(() {
                                 _selectedLang = PrefLang.hindi;
                               });
                             },
-                            child: Container(
+                            child: SizedBox(
                               height: 50,
                               child: Center(
                                 child: Text(
@@ -99,12 +100,13 @@ class _LanguagePreferenceDialogState extends State<LanguagePreferenceDialog> {
                         ),
                         Expanded(
                           child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
                             onTap: () {
                               setState(() {
                                 _selectedLang = PrefLang.hinglish;
                               });
                             },
-                            child: Container(
+                            child: SizedBox(
                               height: 50,
                               child: Center(
                                 child: Text(
