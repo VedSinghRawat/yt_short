@@ -89,16 +89,16 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
 
   Size _calculateTextSize(String text) {
     final textPainter = TextPainter(
-      text: TextSpan(text: text, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
+      text: TextSpan(text: text, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
       maxLines: 1,
       textDirection: TextDirection.ltr,
     );
     textPainter.layout();
 
-    // Add padding (24px horizontal + 12px vertical padding from the container)
+    // Add padding (16px horizontal + 10px vertical padding from the container)
     return Size(
-      textPainter.width + 48, // 24px padding on each side
-      textPainter.height + 24, // 12px padding on top and bottom
+      textPainter.width + 32, // 16px padding on each side
+      textPainter.height + 20, // 10px padding on top and bottom
     );
   }
 
@@ -236,10 +236,7 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
 
                   const SizedBox(height: 20),
 
-                  // Image with fixed height (30% of screen)
                   Container(
-                    height: MediaQuery.of(context).size.height * 0.3, // 30% of screen height
-                    width: double.infinity,
                     decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: Colors.grey[800]),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(16),
@@ -261,7 +258,7 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 64),
+                  const SizedBox(height: 32),
 
                   // Sentence with blank
                   Wrap(
@@ -276,16 +273,16 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                       Container(
                         key: _blankKey,
                         constraints: BoxConstraints(minWidth: _getWidestOptionWidth()),
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                         decoration: const BoxDecoration(
                           border: Border(bottom: BorderSide(color: Colors.orange, width: 3)),
                         ),
-                        child: const SizedBox(height: 24), // Empty space for the blank
+                        child: const SizedBox(height: 20), // Reduced height for the blank
                       ),
                       if (sentenceParts[1].isNotEmpty)
                         Text(
                           ' ${sentenceParts[1]}',
-                          style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w400),
+                          style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w400),
                         ),
                     ],
                   ),
@@ -297,8 +294,8 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                     key: _optionsAreaKey,
                     child: Wrap(
                       alignment: WrapAlignment.center,
-                      spacing: 18.0,
-                      runSpacing: 18.0,
+                      spacing: 16.0,
+                      runSpacing: 16.0,
                       children: List.generate(widget.exercise.options.length, (index) {
                         final textSize = _calculateTextSize(widget.exercise.options[index]);
                         return SizedBox(width: textSize.width, height: textSize.height, key: _placeholderKeys[index]);
@@ -346,7 +343,7 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                         ),
                       ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 12),
                 ],
               ),
             ),
@@ -372,10 +369,10 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                     },
                     child: Container(
                       key: _optionKeys[index],
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                       decoration: BoxDecoration(
                         color: isSelected ? Colors.orange : Colors.grey[700],
-                        borderRadius: BorderRadius.circular(25),
+                        borderRadius: BorderRadius.circular(12),
                         boxShadow:
                             isSelected
                                 ? [
