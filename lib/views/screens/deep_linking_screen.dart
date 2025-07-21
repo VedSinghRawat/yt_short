@@ -29,6 +29,7 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
+    ref.watch(langControllerProvider); // Watch for language changes
     final langController = ref.read(langControllerProvider.notifier);
 
     if (authState.loading) {

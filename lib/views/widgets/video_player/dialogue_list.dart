@@ -123,6 +123,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
       return const SizedBox.shrink();
     }
 
+    ref.watch(langControllerProvider); // Watch for language changes
     final langController = ref.read(langControllerProvider.notifier);
 
     final dialogueMap = ref.watch(dialogueControllerProvider.select((state) => state.dialogues));

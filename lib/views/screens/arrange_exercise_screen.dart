@@ -173,6 +173,7 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(langControllerProvider); // Watch for language changes
     final imagePath = PathService.sublevelAsset(widget.exercise.levelId, widget.exercise.id, AssetType.image);
     final theme = Theme.of(context);
     final langController = ref.read(langControllerProvider.notifier);
@@ -191,7 +192,9 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
                 child: Column(
                   children: [
                     Text(
-                      langController.choose(hindi: 'वाक्य व्यवस्था', hinglish: 'Arrange Exercise'),
+                      ref
+                          .read(langControllerProvider.notifier)
+                          .choose(hindi: 'वाक्य व्यवस्था', hinglish: 'Arrange Exercise'),
                       style: TextStyle(color: theme.colorScheme.onPrimary, fontSize: 20, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),

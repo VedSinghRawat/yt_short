@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:developer' as developer;
 import 'package:go_router/go_router.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/core/router/router.dart';
@@ -16,12 +17,12 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final userState = ref.watch(userControllerProvider);
-    final localUser = SharedPref.get(PrefKey.user);
     final theme = Theme.of(context); // Get theme data
+    final userState = ref.watch(userControllerProvider);
+    ref.watch(langControllerProvider); // Watch for language changes
+    final localUser = SharedPref.get(PrefKey.user);
 
     final user = userState.currentUser ?? localUser;
-
     final userLoading = userState.loading;
     final progress = ref.watch(uIControllerProvider.select((state) => state.currentProgress));
     final authController = ref.read(authControllerProvider.notifier);
@@ -131,12 +132,13 @@ class ProfileScreen extends ConsumerWidget {
                                   );
                                 }).toList(),
                             onChanged:
-                                userLoading // Disable dropdown while loading
+                                userLoading
                                     ? null
                                     : (PrefLang? newValue) async {
                                       if (newValue == null || newValue == user.prefLang) return;
 
                                       try {
+                                        developer.log('updatePrefLang: $newValue');
                                         await userController.updatePrefLang(newValue);
                                       } catch (e) {
                                         showSnackBar(

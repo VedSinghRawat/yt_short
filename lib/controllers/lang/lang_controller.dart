@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:myapp/models/user/user.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -11,6 +13,7 @@ class LangController extends _$LangController {
   }
 
   void changeLanguage(PrefLang newLang) {
+    developer.log('changeLanguage: $newLang');
     state = newLang;
   }
 

@@ -184,6 +184,7 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(langControllerProvider); // Watch for language changes
     final sentenceParts = _getSentenceParts();
     final theme = Theme.of(context);
     final langController = ref.read(langControllerProvider.notifier);

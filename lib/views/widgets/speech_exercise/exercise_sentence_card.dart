@@ -286,6 +286,7 @@ class Header extends StatelessWidget {
 
     return Consumer(
       builder: (context, ref, child) {
+        ref.watch(langControllerProvider); // Watch for language changes
         final langController = ref.read(langControllerProvider.notifier);
 
         return Container(
