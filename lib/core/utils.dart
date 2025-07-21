@@ -56,7 +56,6 @@ void showSnackBar(
   );
 }
 
-// check if levelA is after levelB if levelA is after levelB then return true
 bool isLevelAfter(int levelA, int subLevelA, int levelB, int subLevelB) {
   return levelA > levelB || (levelA == levelB && subLevelA > subLevelB);
 }
@@ -113,4 +112,11 @@ bool hasToJson<T>(T o) {
   } on NoSuchMethodError {
     return false;
   }
+}
+
+String choose({required String hindi, required String hinglish, required PrefLang lang}) {
+  return switch (lang) {
+    PrefLang.hindi => hindi,
+    PrefLang.hinglish => hinglish,
+  };
 }

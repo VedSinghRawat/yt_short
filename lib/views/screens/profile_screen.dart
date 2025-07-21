@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:developer' as developer;
 import 'package:go_router/go_router.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/core/router/router.dart';
@@ -16,18 +17,17 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final userState = ref.watch(userControllerProvider);
-    final localUser = SharedPref.get(PrefKey.user);
     final theme = Theme.of(context); // Get theme data
+    final userState = ref.watch(userControllerProvider);
+    final currentLang = ref.watch(langControllerProvider); // Watch for language changes
+    final localUser = SharedPref.get(PrefKey.user);
 
     final user = userState.currentUser ?? localUser;
-
     final userLoading = userState.loading;
     final progress = ref.watch(uIControllerProvider.select((state) => state.currentProgress));
     final authController = ref.read(authControllerProvider.notifier);
     final authLoading = ref.watch(authControllerProvider.select((state) => state.loading));
     final userController = ref.read(userControllerProvider.notifier);
-    final langController = ref.read(langControllerProvider.notifier);
 
     // Combine loading states
     final isLoading = authLoading || userLoading;
@@ -36,7 +36,7 @@ class ProfileScreen extends ConsumerWidget {
       children: [
         Scaffold(
           appBar: AppBar(
-            title: Text(langController.choose(hindi: 'प्रोफाइल', hinglish: 'Profile')),
+            title: Text(choose(hindi: 'प्रोफाइल', hinglish: 'Profile', lang: currentLang)),
             elevation: 0,
             actions: [
               if (user != null)
@@ -113,7 +113,7 @@ class ProfileScreen extends ConsumerWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            langController.choose(hindi: 'भाषा', hinglish: 'Language'),
+                            choose(hindi: 'भाषा', hinglish: 'Language', lang: currentLang),
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
@@ -131,22 +131,26 @@ class ProfileScreen extends ConsumerWidget {
                                   );
                                 }).toList(),
                             onChanged:
-                                userLoading // Disable dropdown while loading
+                                userLoading
                                     ? null
                                     : (PrefLang? newValue) async {
                                       if (newValue == null || newValue == user.prefLang) return;
 
                                       try {
+                                        developer.log('updatePrefLang: $newValue');
                                         await userController.updatePrefLang(newValue);
                                       } catch (e) {
-                                        showSnackBar(
-                                          context,
-                                          message: langController.choose(
-                                            hindi: 'भाषा नहीं बदल सके',
-                                            hinglish: 'Bhasa nahin badal sake',
-                                          ),
-                                          type: SnackBarType.error,
-                                        );
+                                        if (context.mounted) {
+                                          showSnackBar(
+                                            context,
+                                            message: choose(
+                                              hindi: 'भाषा नहीं बदल सके',
+                                              hinglish: 'Bhasa nahin badal sake',
+                                              lang: currentLang,
+                                            ),
+                                            type: SnackBarType.error,
+                                          );
+                                        }
                                       }
                                     },
                           ),
@@ -158,9 +162,7 @@ class ProfileScreen extends ConsumerWidget {
                         child: ElevatedButton.icon(
                           icon: const Icon(Icons.restart_alt),
                           label: Text(
-                            ref
-                                .read(langControllerProvider.notifier)
-                                .choose(hindi: 'प्रोफाइल रीसेट करें', hinglish: 'Reset Profile'),
+                            choose(hindi: 'प्रोफाइल रीसेट करें', hinglish: 'Reset Profile', lang: currentLang),
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: theme.colorScheme.error,
@@ -214,7 +216,7 @@ class ProfileScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              ref.read(langControllerProvider.notifier).choose(hindi: hindiTitle, hinglish: hinglishTitle),
+              choose(hindi: hindiTitle, hinglish: hinglishTitle, lang: ref.read(langControllerProvider)),
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.secondary),
             ),
             Divider(
@@ -237,7 +239,7 @@ class ProfileScreen extends ConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            ref.read(langControllerProvider.notifier).choose(hindi: labelHindi, hinglish: labelHinglish),
+            choose(hindi: labelHindi, hinglish: labelHinglish, lang: ref.read(langControllerProvider)),
             style: TextStyle(fontSize: 16, color: theme.colorScheme.onPrimary, fontWeight: FontWeight.w700),
           ),
           Text(value, style: TextStyle(fontSize: 16, color: theme.colorScheme.onPrimary, fontWeight: FontWeight.w500)),

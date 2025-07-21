@@ -1,10 +1,12 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/core/router/router.dart';
-import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
+import 'package:myapp/core/utils.dart';
 import 'package:myapp/views/widgets/language_preference_dialog.dart';
 import 'package:myapp/views/widgets/loader.dart';
 import 'package:myapp/views/widgets/show_confirmation_dialog.dart';
@@ -28,44 +30,48 @@ class SignInScreen extends ConsumerWidget {
   Future<void> _handlePostSignIn(BuildContext context, WidgetRef ref) async {
     final user = ref.read(userControllerProvider).currentUser;
     if (user == null) return;
-    // Continue with existing logic (progress check, etc.)
     final progress = ref.read(uIControllerProvider).currentProgress;
+    final uiController = ref.read(uIControllerProvider.notifier);
 
     final level = progress?.maxLevel ?? 1;
     final subLevel = progress?.maxSubLevel ?? 1;
 
-    if (context.mounted && (user.maxLevel > level || (user.maxLevel == level && user.maxSubLevel > subLevel))) {
-      final result = await showConfirmationDialog(
-        context,
-        question: ref
-            .read(langControllerProvider.notifier)
-            .choose(
-              hindi:
-                  'आप पहले से Level ${user.maxLevel}, Sublevel ${user.maxSubLevel} पर हैं। क्या आप वहीं से आगे बढ़ना चाहेंगे?',
-              hinglish:
-                  'Aap already Level ${user.maxLevel}, Sublevel ${user.maxSubLevel} par hain. Kya aap wahan se continue karna chahenge?',
-            ),
+    developer.log(
+      'level: $level, subLevel: $subLevel, user.maxLevel: ${user.maxLevel}, user.maxSubLevel: ${user.maxSubLevel}',
+    );
 
-        yesButtonStyle: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          foregroundColor: Theme.of(context).colorScheme.onPrimary,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
-
-      await SharedPref.store(
-        PrefKey.currProgress(userEmail: user.email),
-        Progress(
-          level: result ? user.maxLevel : null,
-          subLevel: result ? user.maxSubLevel : null,
-          maxLevel: user.maxLevel,
-          maxSubLevel: user.maxSubLevel,
-          levelId: result ? user.levelId : null,
-        ),
-      );
-    } else if (progress != null) {
-      await ref.read(uIControllerProvider.notifier).storeProgress(progress, userEmail: user.email);
+    if (isLevelAfter(level, subLevel, user.maxLevel, user.maxSubLevel) ||
+        isLevelEqual(level, subLevel, user.maxLevel, user.maxSubLevel)) {
+      return;
     }
+
+    final result = await showConfirmationDialog(
+      context,
+      question: choose(
+        hindi:
+            'आप पहले से Level ${user.maxLevel}, Sublevel ${user.maxSubLevel} पर हैं। क्या आप वहीं से आगे बढ़ना चाहेंगे?',
+        hinglish:
+            'Aap already Level ${user.maxLevel}, Sublevel ${user.maxSubLevel} par hain. Kya aap wahan se continue karna chahenge?',
+        lang: ref.read(langControllerProvider),
+      ),
+
+      yesButtonStyle: ElevatedButton.styleFrom(
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+
+    await uiController.storeProgress(
+      Progress(
+        level: result ? user.maxLevel : level,
+        subLevel: result ? user.maxSubLevel : subLevel,
+        maxLevel: user.maxLevel,
+        maxSubLevel: user.maxSubLevel,
+        levelId: result ? user.levelId : null,
+      ),
+      userEmail: user.email,
+    );
   }
 
   Future<void> showLanguagePreferenceDialog(BuildContext context, WidgetRef ref) async {
@@ -145,13 +151,13 @@ class SignInScreen extends ConsumerWidget {
                                   return;
                                 }
 
-                                if (needsLanguagePrompt) {
+                                if (needsLanguagePrompt && context.mounted) {
                                   await showLanguagePreferenceDialog(context, ref);
                                 }
 
-                                if (!context.mounted) return;
-
-                                await _handlePostSignIn(context, ref);
+                                if (context.mounted) {
+                                  await _handlePostSignIn(context, ref);
+                                }
 
                                 router.go(Routes.home);
                               },

@@ -69,6 +69,7 @@ class InitializeService {
           maxLevel: apiUser?.maxLevel,
           maxSubLevel: apiUser?.maxSubLevel,
           subLevel: apiUser?.subLevel,
+          modified: apiUser != null ? DateTime.parse(apiUser.modified).millisecondsSinceEpoch : null,
         );
 
         final uiController = ref.read(uIControllerProvider.notifier);

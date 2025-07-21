@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:myapp/controllers/dialogue/dialogue_controller.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
+import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/video/video.dart';
 import 'package:myapp/models/dialogues/dialogues.dart';
 import 'package:myapp/services/file/file_service.dart';
@@ -123,7 +124,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
       return const SizedBox.shrink();
     }
 
-    final langController = ref.read(langControllerProvider.notifier);
+    ref.watch(langControllerProvider); // Watch for language changes
 
     final dialogueMap = ref.watch(dialogueControllerProvider.select((state) => state.dialogues));
 
@@ -186,7 +187,11 @@ class _DialogueListState extends ConsumerState<DialogueList> {
                                 Padding(
                                   padding: const EdgeInsets.only(top: 8),
                                   child: Text(
-                                    langController.choose(hindi: dialogue.hindiText, hinglish: dialogue.hinglishText),
+                                    choose(
+                                      hindi: dialogue.hindiText,
+                                      hinglish: dialogue.hinglishText,
+                                      lang: ref.read(langControllerProvider),
+                                    ),
                                     style: TextStyle(
                                       fontSize: textFontSize * 0.8,
                                       color: Colors.white70,

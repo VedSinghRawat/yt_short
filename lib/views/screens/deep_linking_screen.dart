@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/core/router/router.dart';
+import 'package:myapp/core/utils.dart';
 import 'package:myapp/views/widgets/loader.dart';
 import 'package:myapp/controllers/auth/auth_controller.dart';
 
@@ -29,16 +30,16 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
-    final langController = ref.read(langControllerProvider.notifier);
+    final currentLang = ref.watch(langControllerProvider); // Watch for language changes
 
     if (authState.loading) {
-      final text = langController.choose(hindi: 'आपका खाता लिंक हो रहा है...', hinglish: 'Linking your account...');
+      final text = choose(hindi: 'आपका खाता लिंक हो रहा है...', hinglish: 'Linking your account...', lang: currentLang);
 
       return Scaffold(body: Center(child: Loader(text: text)));
     }
 
     return Scaffold(
-      backgroundColor: Colors.black.withValues(alpha: .5),
+      backgroundColor: Colors.black.withValues(alpha: 0.5),
       body: Center(
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 32),
@@ -54,8 +55,8 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
   }
 
   Widget _buildErrorUI(String error) {
-    final langController = ref.read(langControllerProvider.notifier);
-    final headingText = langController.choose(hindi: 'सिंक फेल हो गया', hinglish: 'Sync failed');
+    final currentLang = ref.read(langControllerProvider);
+    final headingText = choose(hindi: 'सिंक फेल हो गया', hinglish: 'Sync failed', lang: currentLang);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -96,10 +97,10 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
   }
 
   Widget _buildSuccessUI() {
-    final langController = ref.read(langControllerProvider.notifier);
+    final currentLang = ref.read(langControllerProvider);
 
-    final headingText = langController.choose(hindi: 'सिंक सफल हो गया', hinglish: 'You\'re all set!');
-    final buttonText = langController.choose(hindi: 'आगे बढ़ें ', hinglish: 'Continue');
+    final headingText = choose(hindi: 'सिंक सफल हो गया', hinglish: 'You\'re all set!', lang: currentLang);
+    final buttonText = choose(hindi: 'आगे बढ़ें ', hinglish: 'Continue', lang: currentLang);
 
     return Column(
       mainAxisSize: MainAxisSize.min,

@@ -83,12 +83,11 @@ class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
                       showSnackBar(
                         context,
                         type: isSuccess ? SnackBarType.success : SnackBarType.error,
-                        message: ref
-                            .read(langControllerProvider.notifier)
-                            .choose(
-                              hindi: isSuccess ? 'डेटा सफलतापूर्वक अपडेट हो गया' : 'डेटा अपडेट नहीं हो सका।',
-                              hinglish: isSuccess ? 'Data update ho gaya' : 'Data update nahin ho saka',
-                            ),
+                        message: choose(
+                          hindi: isSuccess ? 'डेटा सफलतापूर्वक अपडेट हो गया' : 'डेटा अपडेट नहीं हो सका।',
+                          hinglish: isSuccess ? 'Data update ho gaya' : 'Data update nahin ho saka',
+                          lang: ref.read(langControllerProvider),
+                        ),
                       );
                     },
                   ),

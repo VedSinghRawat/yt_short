@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
+import 'package:myapp/core/utils.dart';
 import 'package:myapp/controllers/speech/speech_controller.dart';
 import 'package:myapp/views/widgets/speech_exercise/recognizer_button.dart';
 
@@ -210,12 +211,11 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                                       ),
                                       const SizedBox(width: 8),
                                       Text(
-                                        ref
-                                            .read(langControllerProvider.notifier)
-                                            .choose(
-                                              hindi: speechState.isPlayingAudio ? 'सुन रहे हैं...' : 'सुनें',
-                                              hinglish: speechState.isPlayingAudio ? 'Sun rahe hain...' : 'Sune',
-                                            ),
+                                        choose(
+                                          hindi: speechState.isPlayingAudio ? 'सुन रहे हैं...' : 'सुनें',
+                                          hinglish: speechState.isPlayingAudio ? 'Sun rahe hain...' : 'Sune',
+                                          lang: ref.read(langControllerProvider),
+                                        ),
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.w600,
@@ -286,7 +286,7 @@ class Header extends StatelessWidget {
 
     return Consumer(
       builder: (context, ref, child) {
-        final langController = ref.read(langControllerProvider.notifier);
+        ref.watch(langControllerProvider); // Watch for language changes
 
         return Container(
           width: double.infinity,
@@ -295,14 +295,15 @@ class Header extends StatelessWidget {
           child: Column(
             children: [
               Text(
-                langController.choose(hindi: 'स्पीच एक्सरसाइज़', hinglish: 'Speech Exercise'),
+                choose(hindi: 'स्पीच एक्सरसाइज़', hinglish: 'Speech Exercise', lang: ref.read(langControllerProvider)),
                 style: TextStyle(color: theme.colorScheme.onPrimary, fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text(
-                langController.choose(
+                choose(
                   hindi: 'नीचे दिया गया वाक्य सही उच्चारण के साथ बोलें।',
                   hinglish: 'Niche diya gaya vakya sahi ucharan ke saath bole.',
+                  lang: ref.read(langControllerProvider),
                 ),
                 style: TextStyle(
                   color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),

@@ -13,11 +13,4 @@ class LangController extends _$LangController {
   void changeLanguage(PrefLang newLang) {
     state = newLang;
   }
-
-  String choose({required String hindi, required String hinglish}) {
-    return switch (state) {
-      PrefLang.hindi => hindi,
-      PrefLang.hinglish => hinglish,
-    };
-  }
 }
