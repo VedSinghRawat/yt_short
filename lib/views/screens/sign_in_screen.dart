@@ -47,14 +47,13 @@ class SignInScreen extends ConsumerWidget {
 
     final result = await showConfirmationDialog(
       context,
-      question: ref
-          .read(langControllerProvider.notifier)
-          .choose(
-            hindi:
-                'आप पहले से Level ${user.maxLevel}, Sublevel ${user.maxSubLevel} पर हैं। क्या आप वहीं से आगे बढ़ना चाहेंगे?',
-            hinglish:
-                'Aap already Level ${user.maxLevel}, Sublevel ${user.maxSubLevel} par hain. Kya aap wahan se continue karna chahenge?',
-          ),
+      question: choose(
+        hindi:
+            'आप पहले से Level ${user.maxLevel}, Sublevel ${user.maxSubLevel} पर हैं। क्या आप वहीं से आगे बढ़ना चाहेंगे?',
+        hinglish:
+            'Aap already Level ${user.maxLevel}, Sublevel ${user.maxSubLevel} par hain. Kya aap wahan se continue karna chahenge?',
+        lang: ref.read(langControllerProvider),
+      ),
 
       yesButtonStyle: ElevatedButton.styleFrom(
         backgroundColor: Theme.of(context).colorScheme.primary,
@@ -149,11 +148,13 @@ class SignInScreen extends ConsumerWidget {
                                   return;
                                 }
 
-                                if (needsLanguagePrompt) {
+                                if (needsLanguagePrompt && context.mounted) {
                                   await showLanguagePreferenceDialog(context, ref);
                                 }
 
-                                await _handlePostSignIn(context, ref);
+                                if (context.mounted) {
+                                  await _handlePostSignIn(context, ref);
+                                }
 
                                 if (context.mounted) {
                                   router.go(Routes.home);

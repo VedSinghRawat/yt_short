@@ -80,7 +80,7 @@ class _LanguagePreferenceDialogState extends State<LanguagePreferenceDialog> {
                                 _selectedLang = PrefLang.hindi;
                               });
                             },
-                            child: Container(
+                            child: SizedBox(
                               height: 50,
                               child: Center(
                                 child: Text(
@@ -104,7 +104,7 @@ class _LanguagePreferenceDialogState extends State<LanguagePreferenceDialog> {
                                 _selectedLang = PrefLang.hinglish;
                               });
                             },
-                            child: Container(
+                            child: SizedBox(
                               height: 50,
                               child: Center(
                                 child: Text(

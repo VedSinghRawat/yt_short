@@ -63,12 +63,11 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
   void _showRecognizerError() {
     showSnackBar(
       context,
-      message: ref
-          .read(langControllerProvider.notifier)
-          .choose(
-            hindi: 'कुछ गलत हो गया, कृपया फिर से कोशिश करें',
-            hinglish: 'Kuchh galat ho gaya, kripya dobara kosis karein',
-          ),
+      message: choose(
+        hindi: 'कुछ गलत हो गया, कृपया फिर से कोशिश करें',
+        hinglish: 'Kuchh galat ho gaya, kripya dobara kosis karein',
+        lang: ref.read(langControllerProvider),
+      ),
       type: SnackBarType.error,
     );
   }
@@ -115,12 +114,11 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
                             ? const Icon(Icons.refresh, size: 80, color: Colors.redAccent)
                             : speechNotifier.isTestCompleted
                             ? Text(
-                              ref
-                                  .read(langControllerProvider.notifier)
-                                  .choose(
-                                    hindi: speechNotifier.isPassed ? 'आगे बढ़े' : 'पुनः प्रयास करें',
-                                    hinglish: speechNotifier.isPassed ? 'Aage badhe' : 'Dobara kare',
-                                  ),
+                              choose(
+                                hindi: speechNotifier.isPassed ? 'आगे बढ़े' : 'पुनः प्रयास करें',
+                                hinglish: speechNotifier.isPassed ? 'Aage badhe' : 'Dobara kare',
+                                lang: ref.read(langControllerProvider),
+                              ),
                               style: TextStyle(
                                 color: speechNotifier.isPassed ? Colors.green.shade400 : Colors.red.shade400,
                                 fontSize: 20,
@@ -144,15 +142,16 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
             padding: const EdgeInsets.only(top: 12),
             child: Text(
               shouldShowResetButton
-                  ? ref
-                      .read(langControllerProvider.notifier)
-                      .choose(hindi: 'कुछ एरर आ गया है, रीसेट करें', hinglish: 'Kuch error agya hai, reset karien')
-                  : ref
-                      .read(langControllerProvider.notifier)
-                      .choose(
-                        hindi: speechState.isListening ? 'सुन रहे है...' : 'बोलने से पहले टैप करें',
-                        hinglish: speechState.isListening ? 'Listening...' : 'Bolne se pehle tap karein',
-                      ),
+                  ? choose(
+                    hindi: 'कुछ एरर आ गया है, रीसेट करें',
+                    hinglish: 'Kuch error agya hai, reset karien',
+                    lang: ref.read(langControllerProvider),
+                  )
+                  : choose(
+                    hindi: speechState.isListening ? 'सुन रहे है...' : 'बोलने से पहले टैप करें',
+                    hinglish: speechState.isListening ? 'Listening...' : 'Bolne se pehle tap karein',
+                    lang: ref.read(langControllerProvider),
+                  ),
               style: TextStyle(
                 color:
                     shouldShowResetButton

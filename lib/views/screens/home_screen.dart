@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants.dart';
+import 'package:myapp/controllers/activityLog/activity_log.controller.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/controllers/level/level_controller.dart';
+import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
+import 'package:myapp/controllers/ui/ui_controller.dart';
+import 'package:myapp/controllers/user/user_controller.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/utils.dart';
-import 'package:myapp/views/widgets/app_bar.dart';
-import 'package:myapp/views/widgets/loader.dart';
-import 'package:myapp/controllers/activityLog/activity_log.controller.dart';
 import 'package:myapp/models/activity_log/activity_log.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
-import '../../controllers/sublevel/sublevel_controller.dart';
-import '../widgets/sublevel_list.dart';
-import '../../controllers/user/user_controller.dart';
-import '../../controllers/ui/ui_controller.dart';
+import 'package:myapp/views/widgets/app_bar.dart';
+import 'package:myapp/views/widgets/loader.dart';
+import 'package:myapp/views/widgets/sublevel_list.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -57,12 +57,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     showSnackBar(
       context,
-      message: ref
-          .read(langControllerProvider.notifier)
-          .choose(
-            hindi: 'कृपया आगे बढ़ने से पहले वर्तमान वीडियो पूरा करें',
-            hinglish: 'Kripya aage badne se pehle current video ko complete karein',
-          ),
+      message: choose(
+        hindi: 'कृपया आगे बढ़ने से पहले वर्तमान वीडियो पूरा करें',
+        hinglish: 'Kripya aage badne se pehle current video ko complete karein',
+        lang: ref.read(langControllerProvider),
+      ),
       type: SnackBarType.error,
     );
 
@@ -80,18 +79,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     showSnackBar(
       context,
-      message: ref
-          .read(langControllerProvider.notifier)
-          .choose(
-            hinglish:
-                isDoneTodayNull
-                    ? 'Connection fail ho gaya hai, kripya upar right corner mein diye gaye reload icon par click karein.'
-                    : 'Aap har din sirf ${AppConstants.kMaxLevelCompletionsPerDay} levels complete kar sakte hain.',
-            hindi:
-                isDoneTodayNull
-                    ? 'कनेक्शन नहीं हो पाया, ऊपर दाएँ कोने में रीलोड वाले आइकन पर क्लिक करें।'
-                    : 'आप हर दिन सिर्फ ${AppConstants.kMaxLevelCompletionsPerDay} लेवल पूरा कर सकते हैं।',
-          ),
+      message: choose(
+        hinglish:
+            isDoneTodayNull
+                ? 'Connection fail ho gaya hai, kripya upar right corner mein diye gaye reload icon par click karein.'
+                : 'Aap har din sirf ${AppConstants.kMaxLevelCompletionsPerDay} levels complete kar sakte hain.',
+        hindi:
+            isDoneTodayNull
+                ? 'कनेक्शन नहीं हो पाया, ऊपर दाएँ कोने में रीलोड वाले आइकन पर क्लिक करें।'
+                : 'आप हर दिन सिर्फ ${AppConstants.kMaxLevelCompletionsPerDay} लेवल पूरा कर सकते हैं।',
+        lang: ref.read(langControllerProvider),
+      ),
       type: SnackBarType.error,
     );
 

@@ -7,6 +7,7 @@ import 'package:myapp/models/arrange_exercise/arrange_exercise.dart';
 import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/path/path_service.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
+import 'package:myapp/core/utils.dart';
 import 'package:reorderables/reorderables.dart';
 
 class ArrangeExerciseScreen extends ConsumerStatefulWidget {
@@ -51,9 +52,7 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
   void didUpdateWidget(ArrangeExerciseScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // Check if isVisible changed from true to false (user scrolled away)
     if (oldWidget.isVisible && !widget.isVisible) {
-      // Reset all user interactions
       setState(() {
         _initializeAndShuffleWords();
         _isCorrect = false;
@@ -79,7 +78,6 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
     final originalWords = widget.exercise.text.trim().toLowerCase().split(' ');
     currentOrder = List.from(originalWords);
 
-    // Only shuffle if there are multiple unique words to avoid infinite loops
     final canBeDifferent = currentOrder.toSet().length > 1;
 
     if (canBeDifferent) {
@@ -87,8 +85,6 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
         currentOrder.shuffle();
       } while (currentOrder.join(' ') == originalWords.join(' '));
     } else {
-      // For single-word sentences or sentences with all same words (e.g., "a a a"),
-      // shuffling won't produce a different order.
       currentOrder.shuffle();
     }
   }
@@ -103,7 +99,7 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
   void _checkAnswer() {
     final userAnswer = currentOrder.join(' ').toLowerCase().trim();
     final correctAnswer = widget.exercise.text.toLowerCase().trim();
-    final langController = ref.read(langControllerProvider.notifier);
+    final currentLang = ref.read(langControllerProvider);
 
     if (userAnswer == correctAnswer) {
       setState(() {
@@ -114,9 +110,10 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            langController.choose(
+            choose(
               hindi: 'आपके वाक्य में कुछ ग़लत है, फिर से कोशिश करें',
               hinglish: 'Aapke sentence mein kuch galat hai, firse koshish kare',
+              lang: currentLang,
             ),
           ),
           backgroundColor: Colors.red,
@@ -136,11 +133,9 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
         return;
       }
 
-      // Get the audio file path
       final audioPath = PathService.sublevelAsset(widget.exercise.levelId, widget.exercise.id, AssetType.audio);
       final audioFile = FileService.getFile(audioPath);
 
-      // Set the audio file path and play
       await _audioPlayer.setFilePath(audioFile.path);
 
       setState(() {
@@ -165,18 +160,17 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
       decoration: BoxDecoration(
         color: Colors.grey[300],
         borderRadius: BorderRadius.circular(8),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 4, offset: const Offset(0, 2))],
       ),
-      child: Text(word, style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w500)),
+      child: Text(word, style: const TextStyle(color: Colors.black, fontSize: 24, fontWeight: FontWeight.w500)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    ref.watch(langControllerProvider); // Watch for language changes
+    final currentLang = ref.watch(langControllerProvider); // Watch for language changes
     final imagePath = PathService.sublevelAsset(widget.exercise.levelId, widget.exercise.id, AssetType.image);
     final theme = Theme.of(context);
-    final langController = ref.read(langControllerProvider.notifier);
 
     return Scaffold(
       body: SafeArea(
@@ -192,19 +186,18 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
                 child: Column(
                   children: [
                     Text(
-                      ref
-                          .read(langControllerProvider.notifier)
-                          .choose(hindi: 'वाक्य व्यवस्था', hinglish: 'Arrange Exercise'),
+                      choose(hindi: 'वाक्य व्यवस्था', hinglish: 'Arrange Exercise', lang: currentLang),
                       style: TextStyle(color: theme.colorScheme.onPrimary, fontSize: 20, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      langController.choose(
+                      choose(
                         hindi: 'नीचे दिए गए शब्दों को खींच कर छवि के हिसाब से सही वाक्य बनाएं।',
-                        hinglish: 'Niche diye gye words ko kheech kar image ke hisaab se sahi vakya banaye.',
+                        hinglish: 'Niche diye gye words ko kheench kar image ke hisaab se sahi vakya banaye.',
+                        lang: currentLang,
                       ),
                       style: TextStyle(
-                        color: theme.colorScheme.onPrimary.withOpacity(0.9),
+                        color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
@@ -272,7 +265,7 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                         ),
-                        child: Text(langController.choose(hindi: 'आगे बढ़ें', hinglish: 'Continue')),
+                        child: Text(choose(hindi: 'आगे बढ़ें', hinglish: 'Continue', lang: currentLang)),
                       ),
                     ),
                   )
@@ -288,7 +281,7 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                           ),
-                          child: Text(langController.choose(hindi: 'जांचें', hinglish: 'Check')),
+                          child: Text(choose(hindi: 'जांचें', hinglish: 'Check', lang: currentLang)),
                         ),
                       ),
 
@@ -303,20 +296,20 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
                             icon: Icon(_isPlayingAudio ? Icons.stop : Icons.volume_up),
                             label: Text(
                               _isPlayingAudio
-                                  ? langController.choose(hindi: 'बज रहा है', hinglish: 'Playing')
-                                  : langController.choose(hindi: 'सुझाव', hinglish: 'Hint'),
+                                  ? choose(hindi: 'बज रहा है', hinglish: 'Playing', lang: currentLang)
+                                  : choose(hindi: 'सुझाव', hinglish: 'Hint', lang: currentLang),
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor:
                                   _isPlayingAudio
                                       ? theme.colorScheme.secondary
-                                      : theme.colorScheme.secondary.withOpacity(0.2),
+                                      : theme.colorScheme.secondary.withValues(alpha: 0.2),
                               foregroundColor:
                                   _isPlayingAudio ? theme.colorScheme.onSecondary : theme.colorScheme.onSurface,
                               side:
                                   _isPlayingAudio
                                       ? null
-                                      : BorderSide(color: theme.colorScheme.secondary.withOpacity(0.5), width: 1),
+                                      : BorderSide(color: theme.colorScheme.secondary.withValues(alpha: 0.5), width: 1),
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),

@@ -318,12 +318,11 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
     }
   }
 
-  String get errorText => ref
-      .read(langControllerProvider.notifier)
-      .choose(
-        hindi: 'वीडियो शुरू नहीं हो पाया, कृपया थोड़ी देर बाद फिर से कोशिश करें।',
-        hinglish: 'Video start nahi ho paya, kripya thodi der baad try karein.',
-      );
+  String get errorText => choose(
+    hindi: 'वीडियो शुरू नहीं हो पाया, कृपया थोड़ी देर बाद फिर से कोशिश करें।',
+    hinglish: 'Video start nahi ho paya, kripya thodi der baad try karein.',
+    lang: ref.read(langControllerProvider),
+  );
 
   void _updateDisplayableDialogues(Duration currentPosition) {
     if (!mounted) return;

@@ -250,9 +250,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
             return ErrorPage(
               onRefresh: () => widget.onVideoChange?.call(index, _pageController),
               text: error,
-              buttonText: ref
-                  .read(langControllerProvider.notifier)
-                  .choose(hindi: 'पुनः प्रयास करें', hinglish: 'Retry'),
+              buttonText: choose(hindi: 'पुनः प्रयास करें', hinglish: 'Retry', lang: ref.read(langControllerProvider)),
             );
           }
 

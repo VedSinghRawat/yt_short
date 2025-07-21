@@ -2,6 +2,7 @@ import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:myapp/core/utils.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:myapp/constants.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
@@ -192,11 +193,12 @@ class Speech extends _$Speech {
   Future<void> _showMicPermissionDeniedDialog(BuildContext context) async {
     await handlePermissionDenied(
       context,
-      langProvider.choose(
+      choose(
         hindi:
             'माइक्रोफोन की अनुमति नहीं दी गई है। कृपया ऐप सेटिंग्स में जाकर अनुमति दें ताकि आप यह सुविधा इस्तेमाल कर सकें।',
         hinglish:
             'Microphone ki permission deny ho gayi hai. Kripya app settings mein jaakar permission allow karein taaki yeh feature use kar saken',
+        lang: ref.read(langControllerProvider),
       ),
       permission: Permission.microphone,
     );

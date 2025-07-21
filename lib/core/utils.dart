@@ -113,3 +113,10 @@ bool hasToJson<T>(T o) {
     return false;
   }
 }
+
+String choose({required String hindi, required String hinglish, required PrefLang lang}) {
+  return switch (lang) {
+    PrefLang.hindi => hindi,
+    PrefLang.hinglish => hinglish,
+  };
+}
