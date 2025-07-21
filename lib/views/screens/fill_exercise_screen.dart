@@ -118,24 +118,21 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
 
   Map<String, double> _getBlankPosition() {
     try {
-      if (_blankKey.currentContext != null && selectedOption != null) {
-        final RenderBox blankBox = _blankKey.currentContext!.findRenderObject() as RenderBox;
-        final blankPosition = blankBox.localToGlobal(Offset.zero);
-        final blankSize = blankBox.size;
+      if (_blankKey.currentContext == null) return {'left': 0, 'top': 0};
 
-        final selectedText = widget.exercise.options[selectedOption!];
-        final wordSize = _calculateTextSize(selectedText);
+      final RenderBox blankBox = _blankKey.currentContext!.findRenderObject() as RenderBox;
+      final blankPosition = blankBox.localToGlobal(Offset.zero);
 
-        final blankCenterX = blankPosition.dx + (blankSize.width / 2);
-        final wordPositionX = blankCenterX - (wordSize.width / 2);
+      final selectedTextSize = _calculateTextSize(widget.exercise.options[selectedOption!]);
 
-        final blankCenterY = blankPosition.dy + (blankSize.height / 2);
-        final wordPositionY = blankCenterY - (wordSize.height / 2);
+      developer.log('blankPosition $blankPosition selectedTextSize $selectedTextSize');
 
-        return {'left': wordPositionX, 'top': wordPositionY - 64};
-      }
+      return {
+        'left': blankPosition.dx + (blankBox.size.width / 2) - (selectedTextSize.width / 2),
+        'top': blankPosition.dy - selectedTextSize.height - 10,
+      };
     } catch (e) {
-      developer.log('Error calculating blank position: $e');
+      developer.log('Error getting blank position: $e');
     }
 
     return {'left': 0, 'top': 0};
