@@ -26,7 +26,7 @@ class LevelControllerState with _$LevelControllerState {
   const factory LevelControllerState({
     List<String>? orderedIds,
     // true when loading, false when loaded, null when not tried to load/fetch
-    @Default({}) Map<String, bool> loadingByLevelId,
+    @Default({}) Map<String, bool> loadingById,
     String? error,
   }) = _LevelControllerState;
 }
@@ -42,9 +42,7 @@ class LevelController extends _$LevelController {
   LevelControllerState build() => const LevelControllerState();
 
   Future<void> getLevel(String id) async {
-    state = state.copyWith(
-      loadingByLevelId: {...state.loadingByLevelId}..update(id, (value) => true, ifAbsent: () => true),
-    );
+    state = state.copyWith(loadingById: {...state.loadingById}..update(id, (value) => true, ifAbsent: () => true));
 
     final levelDTOEither = await levelService.getLevel(id, ref);
     List<SubLevelDTO> sublevelDTOs = [];
@@ -71,7 +69,7 @@ class LevelController extends _$LevelController {
       },
     );
 
-    state = state.copyWith(loadingByLevelId: {...state.loadingByLevelId}..update(id, (value) => false));
+    state = state.copyWith(loadingById: {...state.loadingById}..update(id, (value) => false));
 
     if (level == null) return;
 
@@ -114,7 +112,7 @@ class LevelController extends _$LevelController {
     final progress = ref.read(uIControllerProvider).currentProgress;
     String currUserLevelId = progress?.levelId ?? orderedIds.first;
 
-    final loading = state.loadingByLevelId;
+    final loading = state.loadingById;
     if (loading[currUserLevelId] == null) {
       await getLevel(currUserLevelId);
     }

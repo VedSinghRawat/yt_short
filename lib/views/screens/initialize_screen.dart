@@ -25,7 +25,7 @@ class InitializeScreen extends ConsumerWidget {
         body: ErrorPage(
           text: levelState.error.toString(),
           buttonText: "Retry",
-          onRefresh: () async {
+          onButtonClick: () async {
             await ref.read(levelControllerProvider.notifier).getOrderedIds();
           },
         ),

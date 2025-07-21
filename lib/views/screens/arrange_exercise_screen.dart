@@ -162,7 +162,7 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 4, offset: const Offset(0, 2))],
       ),
-      child: Text(word, style: const TextStyle(color: Colors.black, fontSize: 24, fontWeight: FontWeight.w500)),
+      child: Text(word, style: const TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.w500)),
     );
   }
 

@@ -250,7 +250,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final loadingLevelIds = ref.watch(levelControllerProvider.select((state) => state.loadingByLevelId));
+    final loadingLevelIds = ref.watch(levelControllerProvider.select((state) => state.loadingById));
     final sublevels = ref.watch(sublevelControllerProvider.select((state) => state.sublevels));
 
     if (sublevels == null) {
@@ -269,7 +269,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          SublevelsList(loadingIds: loadingLevelIds, sublevels: _sortedSublevels!, onVideoChange: onVideoChange),
+          SublevelsList(loadingById: loadingLevelIds, sublevels: _sortedSublevels!, onSublevelChange: onVideoChange),
           const HomeScreenAppBar(),
         ],
       ),

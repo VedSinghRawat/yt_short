@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
+import 'package:myapp/controllers/level/level_controller.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/views/widgets/loader.dart';
 import 'package:myapp/views/widgets/scroll_indicator.dart';
@@ -20,10 +21,10 @@ import 'dart:async';
 
 class SublevelsList extends ConsumerStatefulWidget {
   final List<SubLevel> sublevels;
-  final Map<String, bool> loadingIds;
-  final Future<void> Function(int index, PageController controller)? onVideoChange;
+  final Map<String, bool> loadingById;
+  final Future<void> Function(int index, PageController controller)? onSublevelChange;
 
-  const SublevelsList({super.key, required this.sublevels, this.onVideoChange, required this.loadingIds});
+  const SublevelsList({super.key, required this.sublevels, this.onSublevelChange, required this.loadingById});
 
   @override
   ConsumerState<SublevelsList> createState() => _SublevelsListState();
@@ -116,6 +117,33 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
   void _goNextSublevel(int index) {
     ref.read(sublevelControllerProvider.notifier).setHasFinishedSublevel(true);
     _pageController.animateToPage(index + 1, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+  }
+
+  bool _isLoadingRelevantLevels(WidgetRef ref) {
+    // If we have no sublevels, any loading is relevant
+    if (widget.sublevels.isEmpty) return widget.loadingById.isNotEmpty;
+
+    final levelState = ref.read(levelControllerProvider);
+    final orderedIds = levelState.orderedIds;
+
+    // If we don't have orderedIds, fall back to checking any loading
+    if (orderedIds == null) return widget.loadingById.isNotEmpty;
+
+    final lastLoadedLevelId = widget.sublevels.last.levelId;
+    final lastLoadedIndex = orderedIds.indexOf(lastLoadedLevelId);
+
+    // If we can't find the last loaded level in orderedIds, fall back to checking any loading
+    if (lastLoadedIndex == -1) return widget.loadingById.isNotEmpty;
+
+    // Check if we're loading any levels after the last loaded level
+    for (int i = lastLoadedIndex + 1; i < orderedIds.length; i++) {
+      final levelId = orderedIds[i];
+      if (widget.loadingById[levelId] == true) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   @override
@@ -228,27 +256,104 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
             );
           }
 
-          await widget.onVideoChange?.call(index, _pageController);
+          await widget.onSublevelChange?.call(index, _pageController);
         },
         itemBuilder: (context, index) {
           final sublevel = widget.sublevels.length > index ? widget.sublevels[index] : null;
 
-          final isLastSublevel = index == widget.sublevels.length;
-
           final isLoading =
-              sublevel == null ? widget.loadingIds.isNotEmpty : (widget.loadingIds[sublevel.levelId] ?? true);
+              sublevel == null ? _isLoadingRelevantLevels(ref) : (widget.loadingById[sublevel.levelId] ?? true);
 
-          if ((isLastSublevel || sublevel == null) && !isLoading) {
+          if (sublevel == null && !isLoading) {
+            final levelState = ref.read(levelControllerProvider);
+            final orderedIds = levelState.orderedIds;
+            final lastAvailableLevelId = orderedIds?.last;
+
+            final lastLoadedLevelId = widget.sublevels.isNotEmpty ? widget.sublevels.last.levelId : null;
+
+            final isAtLastAvailableLevel =
+                lastAvailableLevelId != null && lastLoadedLevelId != null && lastLoadedLevelId == lastAvailableLevelId;
+
+            if (isAtLastAvailableLevel) {
+              return ErrorPage(
+                onButtonClick: () async {
+                  // Show loading feedback
+                  showSnackBar(
+                    context,
+                    message: choose(
+                      hindi: 'नए लेवल्स चेक कर रहे हैं...',
+                      hinglish: 'Naye levels check kar rahe hain...',
+                      lang: ref.read(langControllerProvider),
+                    ),
+                    type: SnackBarType.info,
+                  );
+
+                  try {
+                    final levelController = ref.read(levelControllerProvider.notifier);
+                    final currentOrderedIds = ref.read(levelControllerProvider).orderedIds?.length ?? 0;
+
+                    await levelController.getOrderedIds();
+                    await levelController.fetchLevels();
+
+                    final newOrderedIds = ref.read(levelControllerProvider).orderedIds?.length ?? 0;
+
+                    if (newOrderedIds > currentOrderedIds) {
+                      showSnackBar(
+                        context,
+                        message: choose(
+                          hindi: 'नए लेवल्स मिल गए! 🎉',
+                          hinglish: 'Naye levels mil gaye! 🎉',
+                          lang: ref.read(langControllerProvider),
+                        ),
+                        type: SnackBarType.success,
+                      );
+                    } else {
+                      showSnackBar(
+                        context,
+                        message: choose(
+                          hindi: 'अभी कोई नए लेवल्स नहीं हैं',
+                          hinglish: 'Abhi koi naye levels nahi hain',
+                          lang: ref.read(langControllerProvider),
+                        ),
+                        type: SnackBarType.info,
+                      );
+                    }
+
+                    await widget.onSublevelChange?.call(index, _pageController);
+                  } catch (e) {
+                    showSnackBar(
+                      context,
+                      message: choose(
+                        hindi: 'कुछ गलत हुआ। कृपया बाद में कोशिश करें।',
+                        hinglish: 'Kuch galat hua. Kripya baad mein koshish karein.',
+                        lang: ref.read(langControllerProvider),
+                      ),
+                      type: SnackBarType.error,
+                    );
+                  }
+                },
+                text: choose(
+                  hindi: 'अभी इतने ही लेवल्स हैं। कुछ समय बाद नीचे दिए गए बटन पर क्लिक करके चेक करें।',
+                  hinglish:
+                      'Abhi itne he levels hai. Kuch time baad niche diye gye button par click karke check karein.',
+                  lang: ref.read(langControllerProvider),
+                ),
+                buttonText: choose(
+                  hindi: 'अगला लेवल लोड करें',
+                  hinglish: 'Agla level load karein',
+                  lang: ref.read(langControllerProvider),
+                ),
+              );
+            }
+
             final error = ref.watch(sublevelControllerProvider).error;
-
-            developer.log('sublevel error is $error $index', name: 'SublevelsList');
 
             if (error == null) {
               return const Loader();
             }
 
             return ErrorPage(
-              onRefresh: () => widget.onVideoChange?.call(index, _pageController),
+              onButtonClick: () => widget.onSublevelChange?.call(index, _pageController),
               text: error,
               buttonText: choose(hindi: 'पुनः प्रयास करें', hinglish: 'Retry', lang: ref.read(langControllerProvider)),
             );
