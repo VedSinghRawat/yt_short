@@ -121,7 +121,7 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
                               ),
                               style: TextStyle(
                                 color: speechNotifier.isPassed ? Colors.green.shade400 : Colors.red.shade400,
-                                fontSize: 20,
+                                fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
                             )

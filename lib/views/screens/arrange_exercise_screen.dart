@@ -111,7 +111,7 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
         SnackBar(
           content: Text(
             choose(
-              hindi: 'आपके वाक्य में कुछ ग़लत है, फिर से कोशिश करें',
+              hindi: 'आपके वाक्य में कुछ गलत है, फिर से कोशिश करें',
               hinglish: 'Aapke sentence mein kuch galat hai, firse koshish kare',
               lang: currentLang,
             ),
@@ -155,6 +155,7 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
 
   Widget _buildWordBlock(String word) {
     return Container(
+      key: ValueKey(word),
       margin: const EdgeInsets.symmetric(horizontal: 2),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -244,6 +245,7 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
                 child: ReorderableWrap(
                   spacing: 6,
                   runSpacing: 12,
+                  needsLongPressDraggable: false,
                   onReorder: _onReorder,
                   children: currentOrder.map((word) => _buildWordBlock(word)).toList(),
                 ),
@@ -293,10 +295,11 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
                           transform: Matrix4.identity()..scale(_isPlayingAudio ? 1.05 : 1.0),
                           child: ElevatedButton.icon(
                             onPressed: _playHint,
+
                             icon: Icon(_isPlayingAudio ? Icons.stop : Icons.volume_up),
                             label: Text(
                               _isPlayingAudio
-                                  ? choose(hindi: 'बज रहा है', hinglish: 'Playing', lang: currentLang)
+                                  ? choose(hindi: 'ध्वनि चल रही है', hinglish: 'Playing', lang: currentLang)
                                   : choose(hindi: 'सुझाव', hinglish: 'Hint', lang: currentLang),
                             ),
                             style: ElevatedButton.styleFrom(

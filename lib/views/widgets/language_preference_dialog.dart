@@ -75,6 +75,7 @@ class _LanguagePreferenceDialogState extends State<LanguagePreferenceDialog> {
                       children: [
                         Expanded(
                           child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
                             onTap: () {
                               setState(() {
                                 _selectedLang = PrefLang.hindi;
@@ -99,6 +100,7 @@ class _LanguagePreferenceDialogState extends State<LanguagePreferenceDialog> {
                         ),
                         Expanded(
                           child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
                             onTap: () {
                               setState(() {
                                 _selectedLang = PrefLang.hinglish;
