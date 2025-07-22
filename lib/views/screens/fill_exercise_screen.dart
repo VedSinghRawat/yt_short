@@ -6,7 +6,7 @@ import 'package:myapp/models/fill_exercise/fill_exercise.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:visibility_detector/visibility_detector.dart';
-import 'package:myapp/views/widgets/sub_level_image.dart';
+import 'package:myapp/views/widgets/sublevel_image.dart';
 
 class FillExerciseScreen extends ConsumerStatefulWidget {
   final FillExercise exercise;
@@ -70,8 +70,8 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
     final words = widget.exercise.text.split(' ');
     final blankIndex = widget.exercise.blankIndex;
 
-    if (blankIndex >= 0 && blankIndex < words.length) {
-      return [words.sublist(0, blankIndex).join(' '), words.sublist(blankIndex + 1).join(' ')];
+    if (blankIndex >= 0 && blankIndex <= words.length) {
+      return [words.sublist(0, blankIndex).join(' '), words.sublist(blankIndex).join(' ')];
     }
     return [widget.exercise.text, ''];
   }
@@ -180,7 +180,7 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
           key: ValueKey(widget.exercise.id),
           onVisibilityChanged: (visibility) {
             if (!hasInitialized && visibility.visibleFraction != 1 || !mounted) return;
-            developer.log('setting hasInitialized to ${visibility.visibleFraction == 1}');
+
             setState(() {
               hasInitialized = visibility.visibleFraction == 1;
             });
@@ -264,7 +264,7 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                         if (sentenceParts[1].isNotEmpty)
                           Text(
                             ' ${sentenceParts[1]}',
-                            style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w400),
+                            style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w400),
                           ),
                       ],
                     ),

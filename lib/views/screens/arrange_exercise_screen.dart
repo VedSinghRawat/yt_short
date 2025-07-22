@@ -8,7 +8,7 @@ import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/path/path_service.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/core/utils.dart';
-import 'package:myapp/views/widgets/sub_level_image.dart';
+import 'package:myapp/views/widgets/sublevel_image.dart';
 import 'package:reorderables/reorderables.dart';
 
 class ArrangeExerciseScreen extends ConsumerStatefulWidget {
@@ -118,6 +118,7 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
             ),
           ),
           backgroundColor: Colors.red,
+          duration: const Duration(seconds: 1),
         ),
       );
     }

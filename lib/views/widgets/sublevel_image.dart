@@ -14,10 +14,11 @@ class SubLevelImage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final height = MediaQuery.of(context).size.height * 0.35;
     return Image.file(
       FileService.getFile(PathService.sublevelAsset(levelId, sublevelId, AssetType.image)),
       fit: BoxFit.cover,
-      height: MediaQuery.of(context).size.height * 0.35,
+      height: height,
       errorBuilder: (context, error, stackTrace) {
         final urls =
             [BaseUrl.cloudflare, BaseUrl.s3]
@@ -31,10 +32,20 @@ class SubLevelImage extends ConsumerWidget {
         return Image.network(
           urls[0],
           fit: BoxFit.cover,
+          height: height,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return const Center(child: CircularProgressIndicator(color: Colors.white));
+          },
           errorBuilder: (context, error, stackTrace) {
             return Image.network(
               urls[1],
               fit: BoxFit.cover,
+              height: height,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return const Center(child: CircularProgressIndicator(color: Colors.white));
+              },
               errorBuilder: (context, error, stackTrace) {
                 developer.log('error is $error, $urls');
                 return const Center(child: Icon(Icons.image, size: 40, color: Colors.grey));
