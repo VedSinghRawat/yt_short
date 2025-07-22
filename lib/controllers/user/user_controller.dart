@@ -1,6 +1,6 @@
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:myapp/apis/user/user_api.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
@@ -8,6 +8,7 @@ import 'package:myapp/controllers/level/level_controller.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/models.dart';
 import 'package:myapp/models/user/user.dart';
+import 'package:myapp/services/user/user_service.dart';
 import 'package:myapp/views/widgets/show_confirmation_dialog.dart';
 import 'package:myapp/controllers/ui/ui_controller.dart';
 
@@ -29,9 +30,7 @@ class UserControllerState with _$UserControllerState {
 
 @Riverpod(keepAlive: true)
 class UserController extends _$UserController {
-  late final userAPI = ref.watch(userAPIProvider);
-  late final langProvider = ref.read(langControllerProvider.notifier);
-  late final lang = ref.watch(langControllerProvider);
+  late final userService = ref.read(userServiceProvider);
 
   @override
   UserControllerState build() => const UserControllerState();
@@ -52,6 +51,7 @@ class UserController extends _$UserController {
 
   Future<User> updateCurrentUser(User user) async {
     if (user.prefLang != null) {
+      final langProvider = ref.read(langControllerProvider.notifier);
       langProvider.changeLanguage(user.prefLang!);
     }
 
@@ -68,11 +68,20 @@ class UserController extends _$UserController {
   }
 
   Future<bool> sync(String levelId, int subLevel) async {
-    final user = await userAPI.sync(levelId, subLevel);
+    final result = await userService.sync(levelId, subLevel);
 
-    await updateCurrentUser(userFromDTO(user));
-    state = state.copyWith(syncFailed: false);
-    return true;
+    return result.fold(
+      (error) {
+        developer.log('Error syncing user progress: ${error.message}', error: error.trace);
+        state = state.copyWith(syncFailed: true);
+        return false;
+      },
+      (userDTO) async {
+        await updateCurrentUser(userFromDTO(userDTO));
+        state = state.copyWith(syncFailed: false);
+        return true;
+      },
+    );
   }
 
   Future<void> updatePrefLang(PrefLang newLang) async {
@@ -80,10 +89,18 @@ class UserController extends _$UserController {
 
     state = state.copyWith(loading: true);
 
-    final updatedUserDTO = await userAPI.updateProfile(prefLang: newLang);
-    await updateCurrentUser(userFromDTO(updatedUserDTO));
+    final result = await userService.updateProfile(prefLang: newLang);
 
-    state = state.copyWith(loading: false);
+    await result.fold(
+      (error) {
+        developer.log('Error updating user preference language: ${error.message}', error: error.trace);
+        state = state.copyWith(loading: false);
+      },
+      (updatedUserDTO) async {
+        await updateCurrentUser(userFromDTO(updatedUserDTO));
+        state = state.copyWith(loading: false);
+      },
+    );
   }
 
   Future<bool> resetProfile(BuildContext context) async {
@@ -104,8 +121,24 @@ class UserController extends _$UserController {
         return false;
       }
 
-      final resetResult = await userAPI.resetProfile(user.email);
-      final newUser = userFromDTO(resetResult);
+      final resetResult = await userService.resetProfile(user.email);
+
+      final newUser = resetResult.fold<User?>(
+        (error) {
+          developer.log('Error resetting user profile: ${error.message}', error: error.trace);
+          if (context.mounted) {
+            showSnackBar(context, message: error.message, type: SnackBarType.error);
+          }
+          return null;
+        },
+        (userDTO) {
+          return userFromDTO(userDTO);
+        },
+      );
+
+      if (newUser == null) {
+        return false;
+      }
 
       final progress = Progress(
         level: newUser.level,

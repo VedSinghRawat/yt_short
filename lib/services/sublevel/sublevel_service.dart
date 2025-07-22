@@ -1,6 +1,10 @@
-import 'dart:developer' as developer;
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:myapp/apis/sublevel/sublevel_api.dart';
+import 'package:myapp/controllers/lang/lang_controller.dart';
+import 'package:myapp/core/error/api_error.dart';
+import 'package:myapp/core/utils.dart';
 import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/level/level_service.dart';
 import 'package:myapp/services/path/path_service.dart';
@@ -10,13 +14,13 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'sublevel_service.g.dart';
 
 class SubLevelService {
-  final LevelService levelService;
-
-  SubLevelService(this.subLevelAPI, this.levelService);
-
   final ISubLevelAPI subLevelAPI;
+  final LevelService levelService;
+  final PrefLang lang;
 
-  Future<void> getAssets(SubLevelDTO subLevelDTO, String levelId) async {
+  SubLevelService(this.subLevelAPI, this.levelService, this.lang);
+
+  FutureEither<void> getAssets(SubLevelDTO subLevelDTO, String levelId) async {
     final assetTypes = {
       AssetType.video: subLevelDTO.isVideo,
       AssetType.audio: subLevelDTO.isSpeechExercise || subLevelDTO.isArrangeExercise,
@@ -33,15 +37,19 @@ class SubLevelService {
         final path = PathService.sublevelAsset(levelId, subLevelDTO.id, type);
         await FileService.store(path, data);
       }
+      return right(null);
+    } on DioException catch (e) {
+      return left(APIError(message: parseError(e.type, lang), trace: e.stackTrace, dioExceptionType: e.type));
     } catch (e) {
-      developer.log(e.toString());
+      return left(APIError(message: e.toString(), trace: StackTrace.current));
     }
   }
 }
 
 @riverpod
 SubLevelService subLevelService(Ref ref) {
-  final subLevelAPI = ref.watch(subLevelAPIProvider);
-  final levelService = ref.watch(levelServiceProvider);
-  return SubLevelService(subLevelAPI, levelService);
+  final subLevelAPI = ref.read(subLevelAPIProvider);
+  final levelService = ref.read(levelServiceProvider);
+  final lang = ref.read(langControllerProvider);
+  return SubLevelService(subLevelAPI, levelService, lang);
 }

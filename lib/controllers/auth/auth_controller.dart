@@ -21,7 +21,7 @@ class AuthControllerState with _$AuthControllerState {
 @Riverpod(keepAlive: true)
 class AuthController extends _$AuthController {
   bool _isProcessing = false;
-  late final authService = ref.watch(authServiceProvider);
+  late final authService = ref.read(authServiceProvider);
 
   @override
   AuthControllerState build() => const AuthControllerState(loading: false);

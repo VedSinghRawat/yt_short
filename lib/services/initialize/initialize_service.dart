@@ -148,9 +148,9 @@ class InitializeService {
 Future<InitializeService> initializeService(Ref ref) async {
   final service = InitializeService(
     ref: ref,
-    initializeAPI: ref.watch(initializeAPIProvider),
-    levelController: ref.watch(levelControllerProvider.notifier),
-    userController: ref.watch(userControllerProvider.notifier),
+    initializeAPI: ref.read(initializeAPIProvider),
+    levelController: ref.read(levelControllerProvider.notifier),
+    userController: ref.read(userControllerProvider.notifier),
   );
 
   await service.initialize();

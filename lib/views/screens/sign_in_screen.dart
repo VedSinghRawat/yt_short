@@ -1,5 +1,3 @@
-import 'dart:developer' as developer;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -35,10 +33,6 @@ class SignInScreen extends ConsumerWidget {
 
     final level = progress?.maxLevel ?? 1;
     final subLevel = progress?.maxSubLevel ?? 1;
-
-    developer.log(
-      'level: $level, subLevel: $subLevel, user.maxLevel: ${user.maxLevel}, user.maxSubLevel: ${user.maxSubLevel}',
-    );
 
     if (isLevelAfter(level, subLevel, user.maxLevel, user.maxSubLevel) ||
         isLevelEqual(level, subLevel, user.maxLevel, user.maxSubLevel)) {

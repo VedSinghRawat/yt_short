@@ -139,12 +139,12 @@ class ApiService {
   Future<Response<T>?> getCloudStorageData<T>({required String endpoint, ResponseType? responseType}) async {
     try {
       return await _getCloudData<T>(endpoint: endpoint, baseUrl: BaseUrl.cloudflare, responseType: responseType);
-    } on DioException catch (e) {
-      if (e.type != DioExceptionType.unknown && e.type != DioExceptionType.badResponse) {
-        rethrow;
+    } catch (e) {
+      try {
+        return await _getCloudData(endpoint: endpoint, baseUrl: BaseUrl.s3, responseType: responseType);
+      } catch (e) {
+        return null;
       }
-
-      return await _getCloudData(endpoint: endpoint, baseUrl: BaseUrl.s3);
     }
   }
 

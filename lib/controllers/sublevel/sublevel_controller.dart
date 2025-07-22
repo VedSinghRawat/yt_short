@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
@@ -22,7 +23,7 @@ class SublevelControllerState with _$SublevelControllerState {
 
 @Riverpod(keepAlive: true)
 class SublevelController extends _$SublevelController {
-  late final subLevelService = ref.watch(subLevelServiceProvider);
+  late final subLevelService = ref.read(subLevelServiceProvider);
 
   @override
   SublevelControllerState build() => const SublevelControllerState();
@@ -41,10 +42,16 @@ class SublevelController extends _$SublevelController {
   void setHasFinishedSublevel(bool to) => state = state.copyWith(hasFinishedSublevel: to);
 
   Future<void> getAssets(SubLevelDTO subLevelDTO, String levelId) async {
-    try {
-      await subLevelService.getAssets(subLevelDTO, levelId);
-    } catch (e) {
-      state = state.copyWith(error: 'Failed to get sublevel assets: $e');
-    }
+    final result = await subLevelService.getAssets(subLevelDTO, levelId);
+
+    result.fold(
+      (error) {
+        developer.log('Error getting sublevel assets: ${error.message}', error: error.trace);
+        state = state.copyWith(error: 'Failed to get sublevel assets: ${error.message}');
+      },
+      (_) {
+        // Success - no action needed
+      },
+    );
   }
 }

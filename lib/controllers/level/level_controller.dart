@@ -7,14 +7,12 @@ import 'package:myapp/controllers/dialogue/dialogue_controller.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
 import 'package:myapp/controllers/ui/ui_controller.dart';
-import 'package:myapp/controllers/user/user_controller.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 import 'package:myapp/services/level/level_service.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/level/level.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:myapp/apis/level/level_api.dart';
 
 part 'level_controller.freezed.dart';
 part 'level_controller.g.dart';
@@ -33,10 +31,9 @@ class LevelControllerState with _$LevelControllerState {
 
 @Riverpod(keepAlive: true)
 class LevelController extends _$LevelController {
-  late final levelService = ref.watch(levelServiceProvider);
-  late final userState = ref.watch(userControllerProvider);
-  late final subLevelController = ref.watch(sublevelControllerProvider.notifier);
-  late final dialogueController = ref.watch(dialogueControllerProvider.notifier);
+  late final levelService = ref.read(levelServiceProvider);
+  late final subLevelController = ref.read(sublevelControllerProvider.notifier);
+  late final dialogueController = ref.read(dialogueControllerProvider.notifier);
 
   @override
   LevelControllerState build() => const LevelControllerState();
@@ -44,7 +41,7 @@ class LevelController extends _$LevelController {
   Future<void> getLevel(String id) async {
     state = state.copyWith(loadingById: {...state.loadingById}..update(id, (value) => true, ifAbsent: () => true));
 
-    final levelDTOEither = await levelService.getLevel(id, ref);
+    final levelDTOEither = await levelService.getLevel(id);
     List<SubLevelDTO> sublevelDTOs = [];
     Set<String> dialogueIds = {};
 
@@ -84,24 +81,35 @@ class LevelController extends _$LevelController {
   }
 
   Future<void> getOrderedIds() async {
-    List<String>? res;
+    final result = await levelService.getOrderedIds();
 
-    try {
-      res = await ref.read(levelApiProvider).getOrderedIds();
-      if (res != null) {
-        await SharedPref.store(PrefKey.orderedIds, res);
-      } else {
-        res = SharedPref.get(PrefKey.orderedIds);
-      }
-    } on DioException catch (e) {
-      state = state.copyWith(error: parseError(e.type, ref.read(langControllerProvider)));
-    }
-
-    state = state.copyWith(orderedIds: res);
+    await result.fold(
+      (error) {
+        state = state.copyWith(error: error.message);
+        // Try to load from local storage as fallback
+        final localIds = SharedPref.get(PrefKey.orderedIds);
+        if (localIds != null) {
+          state = state.copyWith(orderedIds: localIds);
+        }
+      },
+      (orderedIds) async {
+        if (orderedIds != null) {
+          // New data received, store it
+          await SharedPref.store(PrefKey.orderedIds, orderedIds);
+          state = state.copyWith(orderedIds: orderedIds);
+        } else {
+          // 304 Not Modified - load from local storage
+          final localIds = SharedPref.get(PrefKey.orderedIds);
+          if (localIds != null) {
+            state = state.copyWith(orderedIds: localIds);
+          }
+        }
+      },
+    );
   }
 
   Future<void> fetchLevels() async {
-    final orderedIds = ref.read(levelControllerProvider.notifier).state.orderedIds;
+    final orderedIds = state.orderedIds;
 
     if (orderedIds == null) {
       state = state.copyWith(error: parseError(DioExceptionType.unknown, ref.read(langControllerProvider)));

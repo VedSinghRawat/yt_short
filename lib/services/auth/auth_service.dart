@@ -57,7 +57,7 @@ class AuthService {
 
 @riverpod
 AuthService authService(Ref ref) {
-  final authAPI = ref.watch(authAPIProvider);
-  final lang = ref.watch(langControllerProvider);
+  final authAPI = ref.read(authAPIProvider);
+  final lang = ref.read(langControllerProvider);
   return AuthService(authAPI, lang);
 }

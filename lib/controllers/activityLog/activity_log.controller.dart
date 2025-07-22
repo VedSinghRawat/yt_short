@@ -1,6 +1,7 @@
+import 'dart:developer' as developer;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:myapp/apis/activityLog/activity_log_api.dart';
 import 'package:myapp/models/activity_log/activity_log.dart';
+import 'package:myapp/services/activityLog/activity_log_service.dart';
 
 class ActivityLogControllerState {
   final bool loading;
@@ -13,22 +14,28 @@ class ActivityLogControllerState {
 }
 
 class ActivityLogController extends StateNotifier<ActivityLogControllerState> {
-  final IActivityLogAPI activityLogAPI;
+  final ActivityLogService activityLogService;
 
-  ActivityLogController(this.activityLogAPI) : super(ActivityLogControllerState());
+  ActivityLogController(this.activityLogService) : super(ActivityLogControllerState());
 
   Future<void> syncActivityLogs(List<ActivityLog> activityLogs) async {
-    try {
-      state = state.copyWith(loading: true);
-      await activityLogAPI.syncActivityLogs(activityLogs);
-      state = state.copyWith(loading: false);
-    } catch (e) {
-      state = state.copyWith(loading: false);
-    }
+    state = state.copyWith(loading: true);
+
+    final result = await activityLogService.syncActivityLogs(activityLogs);
+
+    result.fold(
+      (error) {
+        developer.log('Error syncing activity logs: ${error.message}', error: error.trace);
+        state = state.copyWith(loading: false);
+      },
+      (_) {
+        state = state.copyWith(loading: false);
+      },
+    );
   }
 }
 
 final activityLogControllerProvider = StateNotifierProvider<ActivityLogController, ActivityLogControllerState>((ref) {
-  final activityLogAPI = ref.read(activityLogAPIProvider);
-  return ActivityLogController(activityLogAPI);
+  final activityLogService = ref.read(activityLogServiceProvider);
+  return ActivityLogController(activityLogService);
 });

@@ -23,7 +23,7 @@ class DialogueControllerState with _$DialogueControllerState {
 
 @Riverpod(keepAlive: true)
 class DialogueController extends _$DialogueController {
-  late final DialogueService dialogueService = ref.watch(dialogueServiceProvider);
+  late final DialogueService dialogueService = ref.read(dialogueServiceProvider);
 
   @override
   DialogueControllerState build() => const DialogueControllerState();

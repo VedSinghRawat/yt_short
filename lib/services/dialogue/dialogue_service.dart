@@ -83,6 +83,6 @@ class DialogueService {
 
 @riverpod
 DialogueService dialogueService(Ref ref) {
-  final dialogueAPI = ref.watch(dialogueApiProvider);
+  final dialogueAPI = ref.read(dialogueApiProvider);
   return DialogueService(dialogueAPI);
 }

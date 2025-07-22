@@ -198,7 +198,7 @@ class StorageCleanupService {
 
 @riverpod
 StorageCleanupService storageCleanupService(Ref ref) {
-  final levelService = ref.watch(levelServiceProvider);
-  final levelController = ref.watch(levelControllerProvider);
+  final levelService = ref.read(levelServiceProvider);
+  final levelController = ref.read(levelControllerProvider);
   return StorageCleanupService(levelService, levelController);
 }

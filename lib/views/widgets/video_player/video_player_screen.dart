@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:developer' as developer;
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
@@ -8,6 +7,7 @@ import 'package:myapp/controllers/ui/ui_controller.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/video/video.dart';
 import 'package:myapp/services/api/api_service.dart';
+import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/path/path_service.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
 import 'package:myapp/views/screens/error_screen.dart';
@@ -275,7 +275,7 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
               )
               .toList();
 
-      final file = File(localPath);
+      final file = FileService.getFile(localPath);
 
       if (await file.exists()) {
         _controller = VideoPlayerController.file(file);
