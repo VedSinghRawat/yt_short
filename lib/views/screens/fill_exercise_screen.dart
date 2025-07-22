@@ -20,6 +20,16 @@ class FillExerciseScreen extends ConsumerStatefulWidget {
 }
 
 class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
+  // Padding constants for text elements
+  static const double _textHorizontalPadding = 16.0;
+  static const double _textVerticalPadding = 10.0;
+  static const double _optionButtonHorizontalPadding = 18.0;
+  static const double _optionButtonVerticalPadding = 6.0;
+  static const double _additionalWidthPadding = 20.0;
+  static const double _blankHorizontalPadding = 8.0;
+  static const double _blankVerticalPadding = 6.0;
+  static const double _positionAdjustment = 6.0;
+
   int? selectedOption;
   final GlobalKey _blankKey = GlobalKey();
   final List<GlobalKey> _optionKeys = [];
@@ -95,10 +105,10 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
     );
     textPainter.layout();
 
-    // Add padding (16px horizontal + 10px vertical padding from the container)
+    // Add padding using constants
     return Size(
-      textPainter.width + 32, // 16px padding on each side
-      textPainter.height + 20, // 10px padding on top and bottom
+      textPainter.width + (_textHorizontalPadding * 2), // horizontal padding on each side
+      textPainter.height + (_textVerticalPadding * 2), // vertical padding on top and bottom
     );
   }
 
@@ -110,7 +120,7 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
         maxWidth = size.width;
       }
     }
-    return maxWidth + 20;
+    return maxWidth + _additionalWidthPadding;
   }
 
   Map<String, double> _getOptionPosition(int index, bool isSelected) =>
@@ -125,10 +135,9 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
 
       final selectedTextSize = _calculateTextSize(widget.exercise.options[selectedOption!]);
 
-      final dynamicPadding = MediaQuery.of(context).size.height * 0.01;
       return {
-        'left': blankPosition.dx + (blankBox.size.width / 2) - (selectedTextSize.width / 2),
-        'top': blankPosition.dy - selectedTextSize.height - dynamicPadding,
+        'left': blankPosition.dx + blankBox.size.width / 2 - selectedTextSize.width / 2 - _positionAdjustment,
+        'top': blankPosition.dy - selectedTextSize.height * 1.5 - _positionAdjustment,
       };
     } catch (e) {
       developer.log('Error getting blank position: $e');
@@ -269,7 +278,10 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                       Container(
                         key: _blankKey,
                         constraints: BoxConstraints(minWidth: _getWidestOptionWidth()),
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: _blankHorizontalPadding,
+                          vertical: _blankVerticalPadding,
+                        ),
                         decoration: const BoxDecoration(
                           border: Border(bottom: BorderSide(color: Colors.orange, width: 3)),
                         ),
@@ -290,8 +302,8 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                     key: _optionsAreaKey,
                     child: Wrap(
                       alignment: WrapAlignment.center,
-                      spacing: 16.0,
-                      runSpacing: 16.0,
+                      spacing: 20.0,
+                      runSpacing: 14.0,
                       children: List.generate(widget.exercise.options.length, (index) {
                         final textSize = _calculateTextSize(widget.exercise.options[index]);
                         return SizedBox(width: textSize.width, height: textSize.height, key: _placeholderKeys[index]);
@@ -365,7 +377,10 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                     },
                     child: Container(
                       key: _optionKeys[index],
-                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: _optionButtonVerticalPadding,
+                        horizontal: _optionButtonHorizontalPadding,
+                      ),
                       decoration: BoxDecoration(
                         color: isSelected ? Colors.orange : Colors.grey[700],
                         borderRadius: BorderRadius.circular(12),
