@@ -38,7 +38,7 @@ class SubLevel with _$SubLevel {
               levelId: levelId,
               text: dto.text,
               id: dto.id,
-              blankIndex: 1, // Default value - can be updated when backend provides this
+              blankIndex: dto.blankIndex,
               options: dto.options,
               correctOption: dto.correctOption,
             ),

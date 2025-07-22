@@ -271,7 +271,7 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
               .map(
                 (url) => ref
                     .read(sublevelControllerProvider.notifier)
-                    .getVideoUrl(widget.video.levelId, widget.video.id, url),
+                    .getAssetUrl(widget.video.levelId, widget.video.id, AssetType.video, url),
               )
               .toList();
 

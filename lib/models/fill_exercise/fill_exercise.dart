@@ -28,6 +28,7 @@ class FillExerciseDTO with _$FillExerciseDTO {
     required String text,
     required List<String> options,
     required int correctOption,
+    required int blankIndex,
     required SubLevelType type,
   }) = _FillExerciseDTO;
 

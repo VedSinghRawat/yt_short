@@ -3,7 +3,9 @@ import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
 import 'package:myapp/models/arrange_exercise/arrange_exercise.dart';
+import 'package:myapp/services/api/api_service.dart';
 import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/path/path_service.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
@@ -210,10 +212,7 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
 
               const SizedBox(height: 20),
 
-              // Image with fixed height (30% of screen)
               Container(
-                height: MediaQuery.of(context).size.height * 0.3, // 30% of screen height
-                width: double.infinity,
                 decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: Colors.grey[800]),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
@@ -221,10 +220,28 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
                     FileService.getFile(imagePath),
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
-                      developer.log('error is $error, $imagePath');
-                      return Container(
-                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: Colors.grey[800]),
-                        child: const Center(child: Icon(Icons.image, size: 40, color: Colors.grey)),
+                      final urls =
+                          [BaseUrl.cloudflare, BaseUrl.s3]
+                              .map(
+                                (url) => ref
+                                    .read(sublevelControllerProvider.notifier)
+                                    .getAssetUrl(widget.exercise.levelId, widget.exercise.id, AssetType.image, url),
+                              )
+                              .toList();
+
+                      return Image.network(
+                        urls[0],
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Image.network(
+                            urls[1],
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              developer.log('error is $error, $imagePath, $urls');
+                              return const Center(child: Icon(Icons.image, size: 40, color: Colors.grey));
+                            },
+                          );
+                        },
                       );
                     },
                   ),
