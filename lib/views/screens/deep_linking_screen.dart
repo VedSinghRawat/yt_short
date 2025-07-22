@@ -99,8 +99,8 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
   Widget _buildSuccessUI() {
     final currentLang = ref.read(langControllerProvider);
 
-    final headingText = choose(hindi: 'सिंक सफल हो गया', hinglish: 'You\'re all set!', lang: currentLang);
-    final buttonText = choose(hindi: 'आगे बढ़ें ', hinglish: 'Continue', lang: currentLang);
+    final headingText = choose(hindi: 'सिंक सफल हो गया', hinglish: 'Sync safal hogya', lang: currentLang);
+    final buttonText = choose(hindi: 'आगे बढ़ें ', hinglish: 'Aage badhe', lang: currentLang);
 
     return Column(
       mainAxisSize: MainAxisSize.min,

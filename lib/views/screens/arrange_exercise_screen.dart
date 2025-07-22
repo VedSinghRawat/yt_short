@@ -255,7 +255,7 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                         ),
-                        child: Text(choose(hindi: 'आगे बढ़ें', hinglish: 'Continue', lang: currentLang)),
+                        child: Text(choose(hindi: 'आगे बढ़ें', hinglish: 'Aage badhe', lang: currentLang)),
                       ),
                     ),
                   )

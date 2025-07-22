@@ -356,7 +356,6 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
 
                     const Spacer(),
 
-                    // Check/Continue button
                     _isCorrect
                         ? Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -371,7 +370,7 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                               ),
-                              child: Text(choose(hindi: 'आगे बढ़ें', hinglish: 'Continue', lang: currentLang)),
+                              child: Text(choose(hindi: 'आगे बढ़ें', hinglish: 'Aage badhe', lang: currentLang)),
                             ),
                           ),
                         )

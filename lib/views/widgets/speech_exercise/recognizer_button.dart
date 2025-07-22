@@ -88,7 +88,12 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             decoration: BoxDecoration(
               borderRadius: speechNotifier.isTestCompleted ? BorderRadius.circular(40) : null,
-              color: speechNotifier.isTestCompleted ? const Color.fromARGB(255, 241, 236, 236) : null,
+              color:
+                  speechNotifier.isTestCompleted
+                      ? speechNotifier.isPassed
+                          ? Colors.green.shade400
+                          : Colors.red.shade400
+                      : null,
               boxShadow: [
                 if (speechNotifier.isTestCompleted)
                   const BoxShadow(
@@ -119,11 +124,7 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
                                 hinglish: speechNotifier.isPassed ? 'Aage badhe' : 'Dobara kare',
                                 lang: ref.read(langControllerProvider),
                               ),
-                              style: TextStyle(
-                                color: speechNotifier.isPassed ? Colors.green.shade400 : Colors.red.shade400,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                             )
                             : SvgPicture.asset(
                               'assets/svgs/mic-${speechState.isListening ? 'on' : 'off'}.svg',
