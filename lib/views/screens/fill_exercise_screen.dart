@@ -278,7 +278,7 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                       Container(
                         key: _blankKey,
                         constraints: BoxConstraints(minWidth: _getWidestOptionWidth()),
-                        padding: EdgeInsets.symmetric(
+                        padding: const EdgeInsets.symmetric(
                           horizontal: _blankHorizontalPadding,
                           vertical: _blankVerticalPadding,
                         ),
