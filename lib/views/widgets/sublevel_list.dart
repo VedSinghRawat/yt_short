@@ -392,7 +392,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
                             (fillExercise) => FillExerciseScreen(
                               exercise: fillExercise,
                               goToNext: () => _goNextSublevel(index),
-                              isVisible: _currentPageIndex == index,
+                              isCurrent: _currentPageIndex == index,
                             ),
                       ),
                     ),
