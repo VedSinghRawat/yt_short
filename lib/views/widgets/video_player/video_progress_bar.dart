@@ -106,6 +106,10 @@ class _VideoProgressBarState extends State<VideoProgressBar> with SingleTickerPr
     _lastEstimatedPositionMs = estimatedPositionMs;
 
     double estimatedProgress = _calculateProgress(estimatedPositionMs, widget.durationMs);
+
+    if (widget.durationMs - estimatedPositionMs <= 300) {
+      estimatedPositionMs = widget.durationMs;
+    }
     return estimatedProgress;
   }
 

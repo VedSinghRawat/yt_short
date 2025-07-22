@@ -57,7 +57,7 @@ class InitializeService {
       if (currProgress == null && apiUser == null) return;
 
       final localLastModified = currProgress?.modified ?? 0;
-      final apiLastModified = apiUser != null ? DateTime.parse(apiUser.modified).millisecondsSinceEpoch : 0;
+      final apiLastModified = apiUser != null ? apiUser.lastProgress : 0;
       final localIsNewer = localLastModified > apiLastModified && currProgress?.levelId != null;
 
       if (localIsNewer) {
