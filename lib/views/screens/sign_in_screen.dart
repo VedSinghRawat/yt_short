@@ -26,7 +26,7 @@ class SignInScreen extends ConsumerWidget {
   const SignInScreen({super.key});
 
   Future<void> _handlePostSignIn(BuildContext context, WidgetRef ref) async {
-    final user = ref.read(userControllerProvider).currentUser;
+    final user = ref.read(userControllerProvider.notifier).getUser();
     if (user == null) return;
     final progress = ref.read(uIControllerProvider).currentProgress;
     final uiController = ref.read(uIControllerProvider.notifier);
@@ -141,7 +141,7 @@ class SignInScreen extends ConsumerWidget {
 
                                 if (!context.mounted) return;
 
-                                if (ref.read(userControllerProvider).currentUser == null) {
+                                if (ref.read(userControllerProvider.notifier).getUser() == null) {
                                   return;
                                 }
 

@@ -166,4 +166,12 @@ class UserController extends _$UserController {
       state = state.copyWith(loading: false);
     }
   }
+
+  User? getUser() {
+    final user = state.currentUser;
+    if (user == null) {
+      return SharedPref.get(PrefKey.user);
+    }
+    return user;
+  }
 }

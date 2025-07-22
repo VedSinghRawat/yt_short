@@ -50,10 +50,10 @@ class InitializeService {
       ]);
 
       final currProgress = SharedPref.get(
-        PrefKey.currProgress(userEmail: ref.read(userControllerProvider).currentUser?.email),
+        PrefKey.currProgress(userEmail: ref.read(userControllerProvider.notifier).getUser()?.email),
       );
 
-      final apiUser = ref.read(userControllerProvider).currentUser;
+      final apiUser = ref.read(userControllerProvider.notifier).getUser();
       if (currProgress == null && apiUser == null) return;
 
       final localLastModified = currProgress?.modified ?? 0;

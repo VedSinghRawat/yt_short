@@ -77,7 +77,7 @@ class AuthController extends _$AuthController {
   Future<void> syncCyId() async {
     state = state.copyWith(error: null, loading: true);
 
-    final user = ref.read(userControllerProvider).currentUser;
+    final user = ref.read(userControllerProvider.notifier).getUser();
     if (user == null) {
       state = state.copyWith(loading: false);
       return;
@@ -105,7 +105,7 @@ class AuthController extends _$AuthController {
     final userController = ref.read(userControllerProvider.notifier);
     final activityLogController = ref.read(activityLogControllerProvider.notifier);
 
-    final user = ref.read(userControllerProvider).currentUser;
+    final user = ref.read(userControllerProvider.notifier).getUser();
 
     if (user != null) {
       final activityLogs = SharedPref.get(PrefKey.activityLogs);

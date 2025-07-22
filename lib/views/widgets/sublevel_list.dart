@@ -38,7 +38,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
   int _currentPageIndex = 0;
 
   Future<void> _jumpToPage() async {
-    final userEmail = ref.read(userControllerProvider).currentUser?.email;
+    final userEmail = ref.read(userControllerProvider.notifier).getUser()?.email;
 
     final progress = ref.read(uIControllerProvider).currentProgress;
 

@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants.dart';
@@ -45,6 +47,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     bool isAdmin,
     int? doneToday,
   ) {
+    developer.log(
+      'cancelVideoChange: $maxLevel, $maxSubLevel, $level, $subLevel, $hasLocalProgress, $isAdmin, $doneToday',
+    );
     if (isAdmin) return false;
 
     final levelAfter = !hasLocalProgress || isLevelAfter(level, subLevel, maxLevel, maxSubLevel);
@@ -190,7 +195,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final level = sublevel.level;
     final sublevelIndex = sublevel.index;
 
-    final user = ref.read(userControllerProvider).currentUser;
+    final user = ref.read(userControllerProvider.notifier).getUser();
 
     final userEmail = user?.email;
 
