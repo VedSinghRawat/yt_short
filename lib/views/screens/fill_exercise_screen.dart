@@ -66,7 +66,6 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
   }
 
   List<String> _getSentenceParts() {
-    developer.log('blankIndex is ${widget.exercise}');
     final words = widget.exercise.text.split(' ');
     final blankIndex = widget.exercise.blankIndex;
 
