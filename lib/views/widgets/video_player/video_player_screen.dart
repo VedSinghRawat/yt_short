@@ -33,13 +33,11 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
   Duration? _lastPosition;
   String? error;
   bool _isVisible = false;
-  bool _isSeeking = false;
 
   bool _showPlayPauseIcon = false;
   IconData _iconData = Icons.play_arrow;
   Timer? _iconTimer;
   bool isFinished = false;
-  int? _lastTimeRemaining;
   bool _showDialogueArea = false;
 
   List<VideoDialogue> _displayableDialogues = [];
@@ -122,19 +120,10 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
 
     if (duration <= Duration.zero) return;
 
-    bool shouldBeFinished = false;
     final timeRemaining = duration - position;
 
-    if (timeRemaining.inMilliseconds <= 600) {
-      shouldBeFinished = true;
-    }
-
-    // Only check for backward jump if not in exercise mode, as seekTo(0) in exercises can trigger this.
-    if (!_isSeeking && _lastTimeRemaining != null && timeRemaining.inMilliseconds > _lastTimeRemaining!) {
-      shouldBeFinished = true;
-    }
-
-    _lastTimeRemaining = timeRemaining.inMilliseconds;
+    // With 100ms updates, we can use a much smaller threshold for detecting video end
+    bool shouldBeFinished = timeRemaining.inMilliseconds <= 100;
 
     isFinished = shouldBeFinished;
 
@@ -216,9 +205,11 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
       _controller!.removeListener(_listener);
     }
 
-    setState(() {
-      _showDialogueArea = false;
-    });
+    if (mounted) {
+      setState(() {
+        _showDialogueArea = false;
+      });
+    }
   }
 
   void _onVisibilityChanged(VisibilityInfo info) {
@@ -326,7 +317,7 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
 
   void _updateDisplayableDialogues(Duration currentPosition) {
     if (!mounted) return;
-    final currentSeconds = currentPosition.inSeconds.toDouble();
+    final currentSeconds = currentPosition.inMilliseconds / 1000;
 
     final newDialogues = widget.video.dialogues.where((d) => d.time <= currentSeconds).toList();
     newDialogues.sort((a, b) => b.time.compareTo(a.time));
@@ -340,13 +331,7 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
 
   Future<void> seek(Duration newPosition) async {
     if (_controller == null || !_controller!.value.isInitialized) return;
-    setState(() {
-      _isSeeking = true;
-    });
     await _controller!.seekTo(newPosition);
-    setState(() {
-      _isSeeking = false;
-    });
   }
 
   Future<void> _seekBackward() async {
