@@ -296,39 +296,35 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
 
                     final newOrderedIds = ref.read(levelControllerProvider).orderedIds?.length ?? 0;
 
-                    if (newOrderedIds > currentOrderedIds) {
+                    if (context.mounted) {
                       showSnackBar(
                         context,
                         message: choose(
-                          hindi: 'नए लेवल्स मिल गए! 🎉',
-                          hinglish: 'Naye levels mil gaye! 🎉',
+                          hindi:
+                              newOrderedIds > currentOrderedIds ? 'नए लेवल्स मिल गए! 🎉' : 'अभी कोई नए लेवल्स नहीं हैं',
+                          hinglish:
+                              newOrderedIds > currentOrderedIds
+                                  ? 'Naye levels mil gaye! 🎉'
+                                  : 'Abhi koi naye levels nahi hain',
                           lang: ref.read(langControllerProvider),
                         ),
                         type: SnackBarType.success,
-                      );
-                    } else {
-                      showSnackBar(
-                        context,
-                        message: choose(
-                          hindi: 'अभी कोई नए लेवल्स नहीं हैं',
-                          hinglish: 'Abhi koi naye levels nahi hain',
-                          lang: ref.read(langControllerProvider),
-                        ),
-                        type: SnackBarType.info,
                       );
                     }
 
                     await widget.onSublevelChange?.call(index, _pageController);
                   } catch (e) {
-                    showSnackBar(
-                      context,
-                      message: choose(
-                        hindi: 'कुछ गलत हुआ। कृपया बाद में कोशिश करें।',
-                        hinglish: 'Kuch galat hua. Kripya baad mein koshish karein.',
-                        lang: ref.read(langControllerProvider),
-                      ),
-                      type: SnackBarType.error,
-                    );
+                    if (context.mounted) {
+                      showSnackBar(
+                        context,
+                        message: choose(
+                          hindi: 'कुछ गलत हुआ। कृपया बाद में कोशिश करें।',
+                          hinglish: 'Kuch galat hua. Kripya baad mein koshish karein.',
+                          lang: ref.read(langControllerProvider),
+                        ),
+                        type: SnackBarType.error,
+                      );
+                    }
                   }
                 },
                 text: choose(

@@ -4,11 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:myapp/controllers/dialogue/dialogue_controller.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
-import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/video/video.dart';
 import 'package:myapp/models/dialogues/dialogues.dart';
 import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/path/path_service.dart';
+import 'package:myapp/views/widgets/lang_text.dart';
 
 class DialogueList extends ConsumerStatefulWidget {
   final List<VideoDialogue> dialogues;
@@ -174,8 +174,8 @@ class _DialogueListState extends ConsumerState<DialogueList> {
                               mainAxisSize: MainAxisSize.min,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                Text(
-                                  dialogue.text,
+                                LangText.bodyText(
+                                  text: dialogue.text,
                                   style: TextStyle(
                                     fontSize: textFontSize,
                                     color: Colors.white,
@@ -186,17 +186,10 @@ class _DialogueListState extends ConsumerState<DialogueList> {
 
                                 Padding(
                                   padding: const EdgeInsets.only(top: 8),
-                                  child: Text(
-                                    choose(
-                                      hindi: dialogue.hindiText,
-                                      hinglish: dialogue.hinglishText,
-                                      lang: ref.read(langControllerProvider),
-                                    ),
-                                    style: TextStyle(
-                                      fontSize: textFontSize * 0.8,
-                                      color: Colors.white70,
-                                      fontWeight: FontWeight.normal,
-                                    ),
+                                  child: LangText.body(
+                                    hindi: dialogue.hindiText,
+                                    hinglish: dialogue.hinglishText,
+                                    style: TextStyle(fontSize: textFontSize * 0.8, color: Colors.white70),
                                     textAlign: TextAlign.center,
                                   ),
                                 ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/views/widgets/lang_text.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -22,7 +23,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     final textTheme = Theme.of(context).textTheme;
 
     final appBar = AppBar(
-      title: Text(title, style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+      title: LangText.headingText(text: title, style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
       centerTitle: centerTitle,
       backgroundColor: backgroundColor ?? colorScheme.surface,
       foregroundColor: colorScheme.onSurface,

@@ -7,6 +7,7 @@ import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/controllers/speech/speech_controller.dart';
 import 'package:myapp/constants.dart';
+import 'package:myapp/views/widgets/lang_text.dart';
 
 class RecognizerButton extends ConsumerStatefulWidget {
   final VoidCallback onContinue;
@@ -118,12 +119,9 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
                         shouldShowResetButton
                             ? const Icon(Icons.refresh, size: 80, color: Colors.redAccent)
                             : speechNotifier.isTestCompleted
-                            ? Text(
-                              choose(
-                                hindi: speechNotifier.isPassed ? 'आगे बढ़े' : 'पुनः प्रयास करें',
-                                hinglish: speechNotifier.isPassed ? 'Aage badhe' : 'Dobara kare',
-                                lang: ref.read(langControllerProvider),
-                              ),
+                            ? LangText.body(
+                              hindi: speechNotifier.isPassed ? 'आगे बढ़े' : 'पुनः प्रयास करें',
+                              hinglish: speechNotifier.isPassed ? 'Aage badhe' : 'Dobara kare',
                               style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                             )
                             : SvgPicture.asset(
@@ -141,18 +139,19 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
         if (!speechNotifier.isTestCompleted)
           Padding(
             padding: const EdgeInsets.only(top: 12),
-            child: Text(
-              shouldShowResetButton
-                  ? choose(
-                    hindi: 'कुछ एरर आ गया है, रीसेट करें',
-                    hinglish: 'Kuch error agya hai, reset karien',
-                    lang: ref.read(langControllerProvider),
-                  )
-                  : choose(
-                    hindi: speechState.isListening ? 'सुन रहे है...' : 'बोलने से पहले टैप करें',
-                    hinglish: speechState.isListening ? 'Listening...' : 'Bolne se pehle tap karein',
-                    lang: ref.read(langControllerProvider),
-                  ),
+            child: LangText.body(
+              hindi:
+                  shouldShowResetButton
+                      ? 'कुछ एरर आ गया है, रीसेट करें'
+                      : speechState.isListening
+                      ? 'सुन रहे है...'
+                      : 'बोलने से पहले टैप करें',
+              hinglish:
+                  shouldShowResetButton
+                      ? 'Kuch error agya hai, reset karien'
+                      : speechState.isListening
+                      ? 'Listening...'
+                      : 'Bolne se pehle tap karein',
               style: TextStyle(
                 color:
                     shouldShowResetButton

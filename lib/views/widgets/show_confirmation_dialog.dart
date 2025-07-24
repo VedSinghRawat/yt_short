@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/views/widgets/lang_text.dart';
 
 Future<bool> showConfirmationDialog(
   BuildContext context, {
@@ -13,8 +14,8 @@ Future<bool> showConfirmationDialog(
     builder: (context) {
       return AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Confirm', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-        content: Text(question, style: const TextStyle(fontSize: 16)),
+        title: const LangText.headingText(text: 'Confirm', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+        content: LangText.bodyText(text: question, style: const TextStyle(fontSize: 16)),
         actions: [
           TextButton(
             onPressed: () {
@@ -22,7 +23,7 @@ Future<bool> showConfirmationDialog(
               result = false;
             },
             style: noButtonStyle ?? TextButton.styleFrom(foregroundColor: Colors.grey),
-            child: const Text('No'),
+            child: const LangText.bodyText(text: 'No'),
           ),
           ElevatedButton(
             onPressed: () {
@@ -35,7 +36,7 @@ Future<bool> showConfirmationDialog(
                   backgroundColor: Colors.redAccent,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-            child: const Text('Yes', style: TextStyle(color: Colors.white)),
+            child: const LangText.bodyText(text: 'Yes', style: TextStyle(color: Colors.white)),
           ),
         ],
       );

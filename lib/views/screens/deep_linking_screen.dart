@@ -5,6 +5,7 @@ import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/core/router/router.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/views/widgets/loader.dart';
+import 'package:myapp/views/widgets/lang_text.dart';
 import 'package:myapp/controllers/auth/auth_controller.dart';
 
 class DeepLinkingScreen extends ConsumerStatefulWidget {
@@ -55,31 +56,32 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
   }
 
   Widget _buildErrorUI(String error) {
-    final currentLang = ref.read(langControllerProvider);
-    final headingText = choose(hindi: 'सिंक फेल हो गया', hinglish: 'Sync failed', lang: currentLang);
-
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Text('❌', style: TextStyle(fontSize: 48)),
+        const LangText.bodyText(text: '❌', style: TextStyle(fontSize: 48)),
         const SizedBox(height: 12),
-        Text(headingText, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        const LangText.heading(hindi: 'सिंक फेल हो गया', hinglish: 'Sync failed', style: TextStyle(fontSize: 24)),
         const SizedBox(height: 12),
-        Text(error, textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+        LangText.bodyText(
+          text: error,
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Theme.of(context).colorScheme.error),
+        ),
         const SizedBox(height: 24),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
             minimumSize: const Size(double.infinity, 48),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(8))),
           ),
           onPressed: _syncCyId,
-          child: const Text('Retry'),
+          child: const LangText.bodyText(text: 'Retry'),
         ),
         const SizedBox(height: 12),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
             minimumSize: const Size(double.infinity, 48),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(8))),
             backgroundColor: Colors.grey[100],
             foregroundColor: Colors.grey[800],
           ),
@@ -90,29 +92,24 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
               context.goNamed(Routes.home);
             }
           },
-          child: const Text('Cancel'),
+          child: const LangText.bodyText(text: 'Cancel'),
         ),
       ],
     );
   }
 
   Widget _buildSuccessUI() {
-    final currentLang = ref.read(langControllerProvider);
-
-    final headingText = choose(hindi: 'सिंक सफल हो गया', hinglish: 'Sync safal hogya', lang: currentLang);
-    final buttonText = choose(hindi: 'आगे बढ़ें ', hinglish: 'Aage badhe', lang: currentLang);
-
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Text('🎉', style: TextStyle(fontSize: 48)),
+        const LangText.bodyText(text: '🎉', style: TextStyle(fontSize: 48)),
         const SizedBox(height: 12),
-        Text(headingText, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        const LangText.heading(hindi: 'सिंक सफल हो गया', hinglish: 'Sync safal hogya', style: TextStyle(fontSize: 24)),
         const SizedBox(height: 24),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
             minimumSize: const Size(double.infinity, 48),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(8))),
           ),
           onPressed: () {
             if (Navigator.canPop(context)) {
@@ -121,7 +118,7 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
               context.goNamed(Routes.home);
             }
           },
-          child: Text(buttonText),
+          child: const LangText.body(hindi: 'आगे बढ़ें', hinglish: 'Aage badhe'),
         ),
       ],
     );

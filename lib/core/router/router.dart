@@ -9,6 +9,7 @@ import 'package:myapp/views/widgets/obstructive_error_wrapper.dart';
 import 'package:myapp/views/screens/sign_in_screen.dart';
 import 'package:myapp/views/screens/initialize_screen.dart';
 import 'package:myapp/views/screens/profile_screen.dart';
+import 'package:myapp/views/widgets/lang_text.dart';
 
 class Routes {
   static const home = '/home';
@@ -41,6 +42,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
     ],
-    errorBuilder: (context, state) => Scaffold(body: Center(child: Text('Error: ${state.error}'))),
+    errorBuilder: (context, state) => Scaffold(body: Center(child: LangText.bodyText(text: 'Error: ${state.error}'))),
   );
 });

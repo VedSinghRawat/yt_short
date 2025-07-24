@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/views/widgets/lang_text.dart';
 
 class Loader extends StatelessWidget {
   final String? text;
@@ -12,7 +13,10 @@ class Loader extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           const CircularProgressIndicator.adaptive(),
-          if (text != null) ...[const SizedBox(height: 16), Text(text!, style: Theme.of(context).textTheme.bodyMedium)],
+          if (text != null) ...[
+            const SizedBox(height: 16),
+            LangText.bodyText(text: text!, style: Theme.of(context).textTheme.bodyMedium),
+          ],
         ],
       ),
     );

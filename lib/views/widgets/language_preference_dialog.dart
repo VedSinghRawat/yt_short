@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/models/models.dart';
+import 'package:myapp/views/widgets/lang_text.dart';
 
 class LanguagePreferenceDialog extends StatefulWidget {
   const LanguagePreferenceDialog({super.key});
@@ -28,14 +29,14 @@ class _LanguagePreferenceDialogState extends State<LanguagePreferenceDialog> {
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2), width: 2.0),
       ),
-      title: SizedBox(height: 60, child: Text(_titleText)),
+      title: SizedBox(height: 60, child: LangText.headingText(text: _titleText)),
       content: SizedBox(
         height: 140,
         width: 300,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(height: 50, child: Text(_contentText)),
+            SizedBox(height: 50, child: LangText.bodyText(text: _contentText)),
             const SizedBox(height: 24),
             Center(
               child: Container(
@@ -84,8 +85,8 @@ class _LanguagePreferenceDialogState extends State<LanguagePreferenceDialog> {
                             child: SizedBox(
                               height: 50,
                               child: Center(
-                                child: Text(
-                                  'हिन्दी',
+                                child: LangText.bodyText(
+                                  text: 'हिन्दी',
                                   style: TextStyle(
                                     color:
                                         _selectedLang == PrefLang.hindi
@@ -109,8 +110,8 @@ class _LanguagePreferenceDialogState extends State<LanguagePreferenceDialog> {
                             child: SizedBox(
                               height: 50,
                               child: Center(
-                                child: Text(
-                                  'Hinglish',
+                                child: LangText.bodyText(
+                                  text: 'Hinglish',
                                   style: TextStyle(
                                     color:
                                         _selectedLang == PrefLang.hinglish
@@ -144,7 +145,7 @@ class _LanguagePreferenceDialogState extends State<LanguagePreferenceDialog> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 12),
             ),
-            child: const Text('Confirm'),
+            child: const LangText.bodyText(text: 'Confirm'),
           ),
         ),
       ],

@@ -4,6 +4,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:myapp/constants.dart';
 import 'package:myapp/core/error/api_error.dart';
 import 'package:myapp/models/user/user.dart';
+import 'package:myapp/views/widgets/lang_text.dart';
 
 enum SnackBarType { error, info, success }
 
@@ -34,8 +35,8 @@ void showSnackBar(
             Icon(icon, color: Colors.white, size: 20),
             const SizedBox(width: 8),
             Expanded(
-              child: Text(
-                message,
+              child: LangText.bodyText(
+                text: message,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.white),

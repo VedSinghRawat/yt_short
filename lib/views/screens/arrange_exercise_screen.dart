@@ -6,9 +6,8 @@ import 'package:just_audio/just_audio.dart';
 import 'package:myapp/models/arrange_exercise/arrange_exercise.dart';
 import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/path/path_service.dart';
-import 'package:myapp/controllers/lang/lang_controller.dart';
-import 'package:myapp/core/utils.dart';
 import 'package:myapp/views/widgets/sublevel_image.dart';
+import 'package:myapp/views/widgets/lang_text.dart';
 import 'package:reorderables/reorderables.dart';
 
 class ArrangeExerciseScreen extends ConsumerStatefulWidget {
@@ -100,7 +99,6 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
   void _checkAnswer() {
     final userAnswer = currentOrder.join(' ').toLowerCase().trim();
     final correctAnswer = widget.exercise.text.toLowerCase().trim();
-    final currentLang = ref.read(langControllerProvider);
 
     if (userAnswer == correctAnswer) {
       setState(() {
@@ -109,16 +107,13 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
     } else {
       // Show error feedback
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            choose(
-              hindi: 'आपके वाक्य में कुछ गलत है, फिर से कोशिश करें',
-              hinglish: 'Aapke sentence mein kuch galat hai, firse koshish kare',
-              lang: currentLang,
-            ),
+        const SnackBar(
+          content: LangText.body(
+            hindi: 'आपके वाक्य में कुछ गलत है, फिर से कोशिश करें',
+            hinglish: 'Aapke sentence mein kuch galat hai, firse koshish kare',
           ),
           backgroundColor: Colors.red,
-          duration: const Duration(seconds: 1),
+          duration: Duration(seconds: 1),
         ),
       );
     }
@@ -165,13 +160,12 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 4, offset: const Offset(0, 2))],
       ),
-      child: Text(word, style: const TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.w500)),
+      child: LangText.bodyText(text: word, style: const TextStyle(color: Colors.black, fontSize: 18)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentLang = ref.watch(langControllerProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -187,21 +181,19 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
                 decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(12)),
                 child: Column(
                   children: [
-                    Text(
-                      choose(hindi: 'वाक्य व्यवस्था', hinglish: 'Arrange Exercise', lang: currentLang),
-                      style: TextStyle(color: theme.colorScheme.onPrimary, fontSize: 20, fontWeight: FontWeight.bold),
+                    LangText.heading(
+                      hindi: 'वाक्य व्यवस्था',
+                      hinglish: 'Arrange Exercise',
+                      style: TextStyle(color: theme.colorScheme.onPrimary),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      choose(
-                        hindi: 'नीचे दिए गए शब्दों को खींच कर छवि के हिसाब से सही वाक्य बनाएं।',
-                        hinglish: 'Niche diye gye words ko kheench kar image ke hisaab se sahi vakya banaye.',
-                        lang: currentLang,
-                      ),
+                    LangText.body(
+                      hindi: 'नीचे दिए गए शब्दों को खींच कर छवि के हिसाब से सही वाक्य बनाएं।',
+                      hinglish: 'Niche diye gye words ko kheench kar image ke hisaab se sahi vakya banaye.',
                       style: TextStyle(
                         color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
                         fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -252,10 +244,10 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
                           backgroundColor: Colors.green[400],
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                           textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                         ),
-                        child: Text(choose(hindi: 'आगे बढ़ें', hinglish: 'Aage badhe', lang: currentLang)),
+                        child: const LangText.body(hindi: 'आगे बढ़ें', hinglish: 'Aage badhe'),
                       ),
                     ),
                   )
@@ -268,10 +260,10 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
                             backgroundColor: theme.colorScheme.primary,
                             foregroundColor: theme.colorScheme.onPrimary,
                             padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                             textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                           ),
-                          child: Text(choose(hindi: 'जांचें', hinglish: 'Check', lang: currentLang)),
+                          child: const LangText.body(hindi: 'जांचें', hinglish: 'Check'),
                         ),
                       ),
 
@@ -285,10 +277,9 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
                             onPressed: _playHint,
 
                             icon: Icon(_isPlayingAudio ? Icons.stop : Icons.volume_up),
-                            label: Text(
-                              _isPlayingAudio
-                                  ? choose(hindi: 'ध्वनि चल रही है', hinglish: 'Playing', lang: currentLang)
-                                  : choose(hindi: 'सुझाव', hinglish: 'Hint', lang: currentLang),
+                            label: LangText.body(
+                              hindi: _isPlayingAudio ? 'ध्वनि चल रही है' : 'सुझाव',
+                              hinglish: _isPlayingAudio ? 'Playing' : 'Hint',
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor:
@@ -302,7 +293,7 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
                                       ? null
                                       : BorderSide(color: theme.colorScheme.secondary.withValues(alpha: 0.5), width: 1),
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                               textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                             ),
                           ),

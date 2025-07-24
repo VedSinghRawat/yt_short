@@ -3,10 +3,9 @@ import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/models/fill_exercise/fill_exercise.dart';
-import 'package:myapp/controllers/lang/lang_controller.dart';
-import 'package:myapp/core/utils.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:myapp/views/widgets/sublevel_image.dart';
+import 'package:myapp/views/widgets/lang_text.dart';
 
 class FillExerciseScreen extends ConsumerStatefulWidget {
   final FillExercise exercise;
@@ -123,7 +122,6 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
 
   Map<String, double> _getOriginalOptionPosition(int index) {
     try {
-      developer.log('getting original option position');
       // Get the position directly from the placeholder's GlobalKey
       if (_placeholderKeys[index].currentContext != null) {
         final RenderBox placeholderBox = _placeholderKeys[index].currentContext!.findRenderObject() as RenderBox;
@@ -137,8 +135,6 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
   }
 
   void _checkAnswer() {
-    final currentLang = ref.read(langControllerProvider);
-
     if (selectedOption == widget.exercise.correctOption) {
       setState(() {
         _isCorrect = true;
@@ -146,15 +142,12 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
     } else {
       // Show error feedback
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            choose(
-              hindi: 'गलत उत्तर है, फिर से कोशिश करें',
-              hinglish: 'Galat uttar hai, firse koshish kare',
-              lang: currentLang,
-            ),
+        const SnackBar(
+          content: LangText.body(
+            hindi: 'गलत उत्तर है, फिर से कोशिश करें',
+            hinglish: 'Galat uttar hai, firse koshish kare',
           ),
-          duration: const Duration(seconds: 1),
+          duration: Duration(seconds: 1),
           backgroundColor: Colors.red,
         ),
       );
@@ -169,7 +162,6 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currentLang = ref.watch(langControllerProvider); // Watch for language changes
     final sentenceParts = _getSentenceParts();
     final theme = Theme.of(context);
 
@@ -200,25 +192,19 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                       ),
                       child: Column(
                         children: [
-                          Text(
-                            choose(hindi: 'रिक्त स्थान भरें', hinglish: 'Fill in the Blank', lang: currentLang),
-                            style: TextStyle(
-                              color: theme.colorScheme.onPrimary,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          LangText.heading(
+                            hindi: 'रिक्त स्थान भरें',
+                            hinglish: 'Fill in the Blank',
+                            style: TextStyle(color: theme.colorScheme.onPrimary),
                           ),
                           const SizedBox(height: 8),
-                          Text(
-                            choose(
-                              hindi: 'छवि के अनुसार वाक्य में उचित विकल्प चुनकर रिक्त स्थान भरें।',
-                              hinglish: 'Chavi ke anusar vakya mein uchit vikalp chunkar rikta sthan bhariye.',
-                              lang: currentLang,
-                            ),
+                          LangText.body(
+                            hindi: 'छवि के अनुसार वाक्य में उचित विकल्प चुनकर रिक्त स्थान भरें।',
+                            hinglish: 'Chavi ke anusar vakya mein uchit vikalp chunkar rikta sthan bhariye.',
                             style: TextStyle(
                               color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
                               fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w600,
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -244,9 +230,9 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         if (sentenceParts[0].isNotEmpty)
-                          Text(
-                            '${sentenceParts[0]} ',
-                            style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w400),
+                          LangText.bodyText(
+                            text: '${sentenceParts[0]} ',
+                            style: const TextStyle(color: Colors.white, fontSize: 24),
                           ),
                         Container(
                           key: _blankKey,
@@ -261,9 +247,9 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                           child: const SizedBox(height: 20), // Reduced height for the blank
                         ),
                         if (sentenceParts[1].isNotEmpty)
-                          Text(
-                            ' ${sentenceParts[1]}',
-                            style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w400),
+                          LangText.bodyText(
+                            text: ' ${sentenceParts[1]}',
+                            style: const TextStyle(color: Colors.white, fontSize: 24),
                           ),
                       ],
                     ),
@@ -344,9 +330,9 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                                 color: Colors.grey[700],
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: Text(
-                                widget.exercise.options[index],
-                                style: TextStyle(color: Colors.grey[300], fontSize: 18, fontWeight: FontWeight.w500),
+                              child: LangText.bodyText(
+                                text: widget.exercise.options[index],
+                                style: TextStyle(color: Colors.grey[300], fontSize: 18),
                               ),
                             ),
                           );
@@ -367,10 +353,12 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                                 backgroundColor: Colors.green[400],
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                shape: const RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.all(Radius.circular(12)),
+                                ),
                                 textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                               ),
-                              child: Text(choose(hindi: 'आगे बढ़ें', hinglish: 'Aage badhe', lang: currentLang)),
+                              child: const LangText.body(hindi: 'आगे बढ़ें', hinglish: 'Aage badhe'),
                             ),
                           ),
                         )
@@ -384,11 +372,13 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                                 backgroundColor: theme.colorScheme.primary,
                                 foregroundColor: theme.colorScheme.onPrimary,
                                 padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                shape: const RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.all(Radius.circular(12)),
+                                ),
                                 textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                                 disabledBackgroundColor: Colors.grey[600],
                               ),
-                              child: Text(choose(hindi: 'जांचें', hinglish: 'Check', lang: currentLang)),
+                              child: const LangText.body(hindi: 'जांचें', hinglish: 'Check'),
                             ),
                           ),
                         ),
@@ -426,8 +416,8 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                           BoxShadow(color: Colors.orange.withValues(alpha: 0.5), blurRadius: 8, spreadRadius: 2),
                         ],
                       ),
-                      child: Text(
-                        widget.exercise.options[selectedOption!],
+                      child: LangText.bodyText(
+                        text: widget.exercise.options[selectedOption!],
                         style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w500),
                       ),
                     ),

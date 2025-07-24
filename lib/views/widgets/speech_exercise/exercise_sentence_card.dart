@@ -2,9 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
-import 'package:myapp/core/utils.dart';
 import 'package:myapp/controllers/speech/speech_controller.dart';
 import 'package:myapp/views/widgets/speech_exercise/recognizer_button.dart';
+import 'package:myapp/views/widgets/lang_text.dart';
 
 class SpeechExerciseCard extends ConsumerStatefulWidget {
   final String text;
@@ -169,8 +169,8 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                                                     color: backgroundColor,
                                                     borderRadius: BorderRadius.circular(6),
                                                   ),
-                                                  child: Text(
-                                                    _words[lineIndex][wordIndex],
+                                                  child: LangText.bodyText(
+                                                    text: _words[lineIndex][wordIndex],
                                                     style: TextStyle(
                                                       fontSize: 24,
                                                       fontWeight: fontWeight,
@@ -210,12 +210,9 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                                         color: Theme.of(context).colorScheme.onSecondary,
                                       ),
                                       const SizedBox(width: 8),
-                                      Text(
-                                        choose(
-                                          hindi: speechState.isPlayingAudio ? 'सुन रहे हैं...' : 'सुनें',
-                                          hinglish: speechState.isPlayingAudio ? 'Sun rahe hain...' : 'Sune',
-                                          lang: ref.read(langControllerProvider),
-                                        ),
+                                      LangText.body(
+                                        hindi: speechState.isPlayingAudio ? 'सुन रहे हैं...' : 'सुनें',
+                                        hinglish: speechState.isPlayingAudio ? 'Sun rahe hain...' : 'Sune',
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.w600,
@@ -249,8 +246,8 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
                             border:
                                 !speechNotifier.isTestCompleted ? Border.all(color: Colors.grey[700]!, width: 2) : null,
                           ),
-                          child: Text(
-                            '${textToShow.join(' ')}${_flatWords.length == textToShow.length ? '.' : ''}',
+                          child: LangText.bodyText(
+                            text: '${textToShow.join(' ')}${_flatWords.length == textToShow.length ? '.' : ''}',
                             style: recognizedWordStyle.copyWith(
                               color: !speechNotifier.isTestCompleted ? Colors.grey[300] : Colors.white,
                               fontWeight: FontWeight.w600,
@@ -294,17 +291,15 @@ class Header extends StatelessWidget {
           decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(12)),
           child: Column(
             children: [
-              Text(
-                choose(hindi: 'स्पीच एक्सरसाइज़', hinglish: 'Speech Exercise', lang: ref.read(langControllerProvider)),
-                style: TextStyle(color: theme.colorScheme.onPrimary, fontSize: 20, fontWeight: FontWeight.bold),
+              LangText.heading(
+                hindi: 'स्पीच एक्सरसाइज़',
+                hinglish: 'Speech Exercise',
+                style: TextStyle(color: theme.colorScheme.onPrimary),
               ),
               const SizedBox(height: 8),
-              Text(
-                choose(
-                  hindi: 'नीचे दिया गया वाक्य सही उच्चारण के साथ बोलें।',
-                  hinglish: 'Niche diya gaya vakya sahi ucharan ke saath bole.',
-                  lang: ref.read(langControllerProvider),
-                ),
+              LangText.body(
+                hindi: 'नीचे दिया गया वाक्य सही उच्चारण के साथ बोलें।',
+                hinglish: 'Niche diya gaya vakya sahi ucharan ke saath bole.',
                 style: TextStyle(
                   color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
                   fontSize: 14,

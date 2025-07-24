@@ -11,6 +11,7 @@ import 'package:myapp/controllers/auth/auth_controller.dart';
 import 'package:myapp/controllers/user/user_controller.dart';
 import 'package:myapp/models/user/user.dart';
 import 'package:myapp/controllers/ui/ui_controller.dart';
+import 'package:myapp/views/widgets/lang_text.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -36,7 +37,7 @@ class ProfileScreen extends ConsumerWidget {
       children: [
         Scaffold(
           appBar: AppBar(
-            title: Text(choose(hindi: 'प्रोफाइल', hinglish: 'Profile', lang: currentLang)),
+            title: const LangText.heading(hindi: 'प्रोफाइल', hinglish: 'Profile'),
             elevation: 0,
             actions: [
               if (user != null)
@@ -66,14 +67,14 @@ class ProfileScreen extends ConsumerWidget {
                       CircleAvatar(
                         radius: 50,
                         backgroundColor: const Color.fromARGB(225, 255, 255, 255),
-                        child: Text(
-                          user?.email.substring(0, 1).toUpperCase() ?? 'G',
+                        child: LangText.bodyText(
+                          text: user?.email.substring(0, 1).toUpperCase() ?? 'G',
                           style: TextStyle(fontSize: 40, color: theme.colorScheme.secondary),
                         ),
                       ),
                       const SizedBox(height: 10),
-                      Text(
-                        user?.email ?? 'Guest User',
+                      LangText.bodyText(
+                        text: user?.email ?? 'Guest User',
                         style: const TextStyle(
                           fontSize: 20,
                           color: Color.fromARGB(225, 255, 255, 255),
@@ -112,8 +113,9 @@ class ProfileScreen extends ConsumerWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            choose(hindi: 'भाषा', hinglish: 'Language', lang: currentLang),
+                          LangText.body(
+                            hindi: 'भाषा',
+                            hinglish: 'Language',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
@@ -127,7 +129,7 @@ class ProfileScreen extends ConsumerWidget {
                                 PrefLang.values.map((PrefLang lang) {
                                   return DropdownMenuItem<PrefLang>(
                                     value: lang,
-                                    child: Text(lang.name == 'hindi' ? 'हिंदी' : 'Hinglish'),
+                                    child: LangText.bodyText(text: lang.name == 'hindi' ? 'हिंदी' : 'Hinglish'),
                                   );
                                 }).toList(),
                             onChanged:
@@ -161,14 +163,16 @@ class ProfileScreen extends ConsumerWidget {
                         width: double.infinity,
                         child: ElevatedButton.icon(
                           icon: const Icon(Icons.restart_alt),
-                          label: Text(
-                            choose(hindi: 'प्रोफाइल रीसेट करें', hinglish: 'Reset Profile', lang: currentLang),
+                          label: const LangText.body(
+                            hindi: 'प्रोफाइल रीसेट करें',
+                            hinglish: 'Reset Profile',
+                            style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: theme.colorScheme.error,
                             foregroundColor: theme.colorScheme.onError,
                             padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(8))),
                           ),
                           onPressed:
                               isLoading
@@ -179,7 +183,7 @@ class ProfileScreen extends ConsumerWidget {
 
                                     if (context.mounted && success) {
                                       scaffoldMessenger.showSnackBar(
-                                        const SnackBar(content: Text('Profile reset successfully')),
+                                        const SnackBar(content: LangText.bodyText(text: 'Profile reset successfully')),
                                       );
                                     }
                                   },
@@ -215,9 +219,10 @@ class ProfileScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              choose(hindi: hindiTitle, hinglish: hinglishTitle, lang: ref.read(langControllerProvider)),
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.secondary),
+            LangText.heading(
+              hindi: hindiTitle,
+              hinglish: hinglishTitle,
+              style: TextStyle(fontSize: 18, color: theme.colorScheme.secondary, fontWeight: FontWeight.w700),
             ),
             Divider(
               color: theme.colorScheme.onPrimary.withValues(alpha: .5),
@@ -238,11 +243,15 @@ class ProfileScreen extends ConsumerWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            choose(hindi: labelHindi, hinglish: labelHinglish, lang: ref.read(langControllerProvider)),
+          LangText.body(
+            hindi: labelHindi,
+            hinglish: labelHinglish,
             style: TextStyle(fontSize: 16, color: theme.colorScheme.onPrimary, fontWeight: FontWeight.w700),
           ),
-          Text(value, style: TextStyle(fontSize: 16, color: theme.colorScheme.onPrimary, fontWeight: FontWeight.w500)),
+          LangText.bodyText(
+            text: value,
+            style: TextStyle(fontSize: 16, color: theme.colorScheme.onPrimary, fontWeight: FontWeight.w500),
+          ),
         ],
       ),
     );

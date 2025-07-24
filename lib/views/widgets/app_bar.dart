@@ -9,6 +9,7 @@ import 'package:myapp/core/utils.dart';
 import 'package:myapp/views/widgets/loading_refresh_icon.dart';
 import 'package:myapp/controllers/user/user_controller.dart';
 import 'package:myapp/controllers/ui/ui_controller.dart';
+import 'package:myapp/views/widgets/lang_text.dart';
 
 class HomeScreenAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
   const HomeScreenAppBar({super.key});
@@ -34,6 +35,7 @@ class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
     final isAppBarVisible = ref.watch(uIControllerProvider.select((state) => state.isAppBarVisible));
 
     final progress = ref.watch(uIControllerProvider.select((state) => state.currentProgress));
+    final titleText = 'Level ${progress?.level ?? 1} Sublevel ${progress?.subLevel ?? 1}';
 
     return Stack(
       children: [
@@ -48,7 +50,7 @@ class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
             opacity: isAppBarVisible ? 1.0 : 0.0,
             curve: Curves.easeInOutCubic,
             child: AppBar(
-              title: Text('Level ${progress?.level ?? 1} Sublevel ${progress?.subLevel ?? 1}'),
+              title: LangText.heading(hindi: titleText, hinglish: titleText),
               actions: [
                 if (needsReload || syncFailed)
                   LoadingRefreshIcon(

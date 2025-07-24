@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/models/video/video.dart';
+import 'package:myapp/views/widgets/lang_text.dart';
 import 'dialogue_list.dart';
 
 class DialoguePopup extends StatelessWidget {
@@ -38,13 +39,9 @@ class DialoguePopup extends StatelessWidget {
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                       decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary),
-                      child: Text(
-                        'Dialogues',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onPrimary,
-                          fontSize: 22,
-                        ),
+                      child: LangText.headingText(
+                        text: 'Dialogues',
+                        style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 22),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -58,20 +55,24 @@ class DialoguePopup extends StatelessWidget {
                   child: Container(
                     decoration: BoxDecoration(
                       boxShadow: [
-                        BoxShadow(color: Colors.grey[400]!.withValues(alpha: .2), blurRadius: 10, spreadRadius: 2),
+                        BoxShadow(
+                          color: Theme.of(context).colorScheme.surface.withValues(alpha: .2),
+                          blurRadius: 10,
+                          spreadRadius: 2,
+                        ),
                       ],
-                      border: Border.all(color: Colors.grey[400]!, width: 1.9),
+                      border: Border.all(color: Colors.red.shade700, width: 1.9),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(20),
                       child: Material(
-                        color: Theme.of(context).scaffoldBackgroundColor,
+                        color: Colors.red.shade400,
                         child: InkWell(
                           onTap: onClose,
-                          child: Padding(
-                            padding: const EdgeInsets.all(4.0),
-                            child: Icon(Icons.close_rounded, size: 20, color: Colors.grey[400]),
+                          child: const Padding(
+                            padding: EdgeInsets.all(4.0),
+                            child: Icon(Icons.close_rounded, size: 20, color: Colors.white70),
                           ),
                         ),
                       ),

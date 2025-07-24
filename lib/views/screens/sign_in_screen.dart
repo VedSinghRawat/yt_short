@@ -14,6 +14,7 @@ import '../../controllers/auth/auth_controller.dart';
 import 'package:myapp/controllers/ui/ui_controller.dart';
 import '../widgets/custom_app_bar.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:myapp/views/widgets/lang_text.dart';
 
 final Widget googleLogo = SvgPicture.asset(
   'assets/svgs/google-logo.svg',
@@ -99,28 +100,29 @@ class SignInScreen extends ConsumerWidget {
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    RichText(
-                      textAlign: TextAlign.center,
-                      text: TextSpan(
-                        children: [
-                          TextSpan(
-                            text: 'Learn English\n',
-                            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                              fontSize: 56,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
+                    Column(
+                      children: [
+                        LangText.heading(
+                          hindi: 'अंग्रेजी सीखें',
+                          hinglish: 'Learn English',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                            fontSize: 56,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
-                          TextSpan(
-                            text: 'With CodeYogi',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontSize: 32,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white70,
-                            ),
+                        ),
+                        LangText.heading(
+                          hindi: 'CodeYogi के साथ',
+                          hinglish: 'With CodeYogi',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white70,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 56),
                     Padding(
@@ -156,12 +158,15 @@ class SignInScreen extends ConsumerWidget {
                                 router.go(Routes.home);
                               },
                       icon: Padding(padding: const EdgeInsets.only(right: 8.0), child: googleLogo),
-                      label: const Text('Sign in with Google'),
+                      label: const LangText.body(
+                        hindi: 'Google से साइन इन करें',
+                        hinglish: 'Sign in with Google',
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).colorScheme.primary,
                         foregroundColor: Theme.of(context).colorScheme.onPrimary,
                         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
-                        textStyle: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
                         side: BorderSide(color: Theme.of(context).colorScheme.onTertiary, width: 0.5),
                       ),
                     ),

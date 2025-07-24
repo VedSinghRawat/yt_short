@@ -2,6 +2,7 @@ import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:myapp/views/widgets/lang_text.dart';
 
 Future<void> handlePermissionDenied(BuildContext context, String errorMessage, {required Permission permission}) async {
   try {
@@ -15,16 +16,16 @@ Future<void> handlePermissionDenied(BuildContext context, String errorMessage, {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('Permission Required'),
-            content: Text(errorMessage),
+            title: const LangText.headingText(text: 'Permission Required'),
+            content: LangText.bodyText(text: errorMessage),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+              TextButton(onPressed: () => Navigator.pop(context), child: const LangText.bodyText(text: 'Cancel')),
               TextButton(
                 onPressed: () {
                   openAppSettings();
                   Navigator.pop(context);
                 },
-                child: const Text('Open Settings'),
+                child: const LangText.bodyText(text: 'Open Settings'),
               ),
             ],
           ),
