@@ -20,31 +20,40 @@ class FillExerciseScreen extends ConsumerStatefulWidget {
 
 class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
   // Padding constants for text elements
-  static const double _textHorizontalPadding = 16.0;
-  static const double _textVerticalPadding = 10.0;
   static const double _optionButtonHorizontalPadding = 18.0;
   static const double _optionButtonVerticalPadding = 6.0;
-  static const double _additionalWidthPadding = 20.0;
   static const double _blankHorizontalPadding = 8.0;
   static const double _blankVerticalPadding = 6.0;
-  static const double _positionAdjustment = 6.0;
 
   int? selectedOption;
   final GlobalKey _blankKey = GlobalKey();
   final List<GlobalKey> _optionKeys = [];
   final List<GlobalKey> _placeholderKeys = [];
   final GlobalKey _optionsAreaKey = GlobalKey();
+  final GlobalKey _stackKey = GlobalKey();
   bool hasInitialized = false;
   bool _isCorrect = false;
   bool _isAnimating = false;
+
+  // Store calculated button sizes
+  List<Size> _buttonSizes = [];
+  bool _sizesCalculated = false;
+
+  // Store calculated blank position
+  Map<String, double> _blankPosition = {'left': 0, 'top': 0};
+  bool _blankPositionCalculated = false;
 
   @override
   void initState() {
     super.initState();
     // Initialize option keys and placeholder keys
-    for (int i = 0; i < widget.exercise.options.length; i++) {
-      _optionKeys.add(GlobalKey());
-      _placeholderKeys.add(GlobalKey());
+    if (widget.exercise.options.isNotEmpty) {
+      for (int i = 0; i < widget.exercise.options.length; i++) {
+        _optionKeys.add(GlobalKey());
+        _placeholderKeys.add(GlobalKey());
+      }
+    } else {
+      developer.log('Warning: exercise has no options');
     }
   }
 
@@ -60,6 +69,10 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
         hasInitialized = false;
         _isCorrect = false;
         _isAnimating = false;
+        _sizesCalculated = false;
+        _buttonSizes.clear();
+        _blankPositionCalculated = false;
+        _blankPosition = {'left': 0, 'top': 0};
       });
     }
   }
@@ -74,44 +87,111 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
     return [widget.exercise.text, ''];
   }
 
-  Size _calculateTextSize(String text) {
-    final textPainter = TextPainter(
-      text: TextSpan(text: text, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-      maxLines: 1,
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout();
+  void _calculateAndStoreButtonSizes() {
+    if (_sizesCalculated) return;
 
-    // Add padding using constants
-    return Size(
-      textPainter.width + (_textHorizontalPadding * 2), // horizontal padding on each side
-      textPainter.height + (_textVerticalPadding * 2), // vertical padding on top and bottom
-    );
+    // Safety check - ensure we have options and keys
+    if (widget.exercise.options.isEmpty || _optionKeys.isEmpty) {
+      developer.log('No options or option keys available');
+      return;
+    }
+
+    // Safety check - ensure lengths match
+    if (_optionKeys.length != widget.exercise.options.length) {
+      developer.log(
+        'Mismatch: optionKeys length ${_optionKeys.length}, options length ${widget.exercise.options.length}',
+      );
+      return;
+    }
+
+    // Check if all contexts are available
+    bool allContextsAvailable = true;
+    for (int i = 0; i < _optionKeys.length; i++) {
+      if (_optionKeys[i].currentContext == null) {
+        allContextsAvailable = false;
+        break;
+      }
+    }
+
+    // If not all contexts are ready, retry after 150ms
+    if (!allContextsAvailable) {
+      developer.log('Not all contexts available, retrying in 150ms');
+      Future.delayed(const Duration(milliseconds: 150), () {
+        if (mounted) {
+          _calculateAndStoreButtonSizes();
+        }
+      });
+      return;
+    }
+
+    // All contexts are available, calculate sizes
+    _buttonSizes = List.generate(widget.exercise.options.length, (index) {
+      developer.log('index: $index, optionKeys: $_optionKeys');
+      try {
+        final RenderBox buttonBox = _optionKeys[index].currentContext!.findRenderObject() as RenderBox;
+        developer.log('buttonBox: ${buttonBox.size}');
+        return buttonBox.size;
+      } catch (e) {
+        developer.log('Error getting button size for index $index: $e');
+        rethrow; // This should not happen if we checked contexts above
+      }
+    });
+
+    _sizesCalculated = true;
+  }
+
+  void _calculateAndStoreBlankPosition() {
+    if (_blankPositionCalculated) return;
+
+    try {
+      if (_blankKey.currentContext != null && _stackKey.currentContext != null) {
+        final RenderBox blankBox = _blankKey.currentContext!.findRenderObject() as RenderBox;
+        final RenderBox stackBox = _stackKey.currentContext!.findRenderObject() as RenderBox;
+
+        // Get blank position relative to the Stack container instead of global coordinates
+        final Offset relativePosition = blankBox.localToGlobal(Offset.zero, ancestor: stackBox);
+
+        _blankPosition = {
+          'left': relativePosition.dx,
+          'top': relativePosition.dy,
+          'width': blankBox.size.width,
+          'height': blankBox.size.height,
+        };
+        _blankPositionCalculated = true;
+        developer.log('Blank position calculated relative to Stack: $_blankPosition');
+      } else {
+        developer.log('Blank or Stack context not available, retrying in 150ms');
+        Future.delayed(const Duration(milliseconds: 150), () {
+          if (mounted) {
+            _calculateAndStoreBlankPosition();
+          }
+        });
+      }
+    } catch (e) {
+      developer.log('Error calculating blank position: $e');
+    }
   }
 
   double _getWidestOptionWidth() {
     double maxWidth = 0;
-    for (String option in widget.exercise.options) {
-      final size = _calculateTextSize(option);
+    for (int i = 0; i < widget.exercise.options.length; i++) {
+      final size = _buttonSizes[i];
       if (size.width > maxWidth) {
         maxWidth = size.width;
       }
     }
-    return maxWidth + _additionalWidthPadding;
+    return maxWidth;
   }
 
-  Map<String, double> _getBlankPosition() {
+  Map<String, double> _getTargetPosition() {
+    if (selectedOption == null) return {'left': 0, 'top': 0};
+
     try {
-      if (_blankKey.currentContext == null) return {'left': 0, 'top': 0};
-
-      final RenderBox blankBox = _blankKey.currentContext!.findRenderObject() as RenderBox;
-      final blankPosition = blankBox.localToGlobal(Offset.zero);
-
-      final selectedTextSize = _calculateTextSize(widget.exercise.options[selectedOption!]);
+      final selectedButtonSize = _buttonSizes[selectedOption!];
 
       return {
-        'left': blankPosition.dx + blankBox.size.width / 2 - selectedTextSize.width / 2 - _positionAdjustment,
-        'top': blankPosition.dy - selectedTextSize.height * 1.5 - _positionAdjustment,
+        'left': _blankPosition['left']! + (_blankPosition['width']! - selectedButtonSize.width) / 2,
+        'top': _blankPosition['top']! - 10,
       };
     } catch (e) {
       developer.log('Error getting blank position: $e');
@@ -122,11 +202,13 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
 
   Map<String, double> _getOriginalOptionPosition(int index) {
     try {
-      // Get the position directly from the placeholder's GlobalKey
-      if (_placeholderKeys[index].currentContext != null) {
+      if (_placeholderKeys[index].currentContext != null && _stackKey.currentContext != null) {
         final RenderBox placeholderBox = _placeholderKeys[index].currentContext!.findRenderObject() as RenderBox;
-        final position = placeholderBox.localToGlobal(Offset.zero);
-        return {'left': position.dx, 'top': position.dy - 52};
+        final RenderBox stackBox = _stackKey.currentContext!.findRenderObject() as RenderBox;
+
+        // Get position relative to Stack container
+        final Offset relativePosition = placeholderBox.localToGlobal(Offset.zero, ancestor: stackBox);
+        return {'left': relativePosition.dx, 'top': relativePosition.dy};
       }
     } catch (e) {
       developer.log('Error getting placeholder position: $e');
@@ -165,6 +247,20 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
     final sentenceParts = _getSentenceParts();
     final theme = Theme.of(context);
 
+    // Calculate button sizes and blank position after this frame when all widgets are rendered
+    if (hasInitialized && (!_sizesCalculated || !_blankPositionCalculated)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          if (!_sizesCalculated) {
+            _calculateAndStoreButtonSizes();
+          }
+          if (!_blankPositionCalculated) {
+            _calculateAndStoreBlankPosition();
+          }
+        }
+      });
+    }
+
     return Scaffold(
       body: SafeArea(
         child: VisibilityDetector(
@@ -177,6 +273,7 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
             });
           },
           child: Stack(
+            key: _stackKey,
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, kToolbarHeight + 16, 16, 16),
@@ -263,80 +360,84 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                         alignment: WrapAlignment.center,
                         spacing: 20.0,
                         runSpacing: 14.0,
-                        children: List.generate(widget.exercise.options.length, (index) {
-                          final isSelected = selectedOption == index;
+                        children:
+                            widget.exercise.options.isEmpty
+                                ? []
+                                : List.generate(widget.exercise.options.length, (index) {
+                                  final isSelected = selectedOption == index;
 
-                          // If this option is selected, show placeholder, otherwise show the actual button
-                          if (isSelected) {
-                            final textSize = _calculateTextSize(widget.exercise.options[index]);
-                            return SizedBox(
-                              width: textSize.width,
-                              height: textSize.height,
-                              key: _placeholderKeys[index],
-                            );
-                          }
+                                  // If this option is selected, show placeholder, otherwise show the actual button
+                                  if (isSelected) {
+                                    final buttonSize = _buttonSizes[index];
+                                    return SizedBox(
+                                      width: buttonSize.width,
+                                      height: buttonSize.height,
+                                      key: _placeholderKeys[index],
+                                    );
+                                  }
 
-                          return GestureDetector(
-                            key: _placeholderKeys[index],
-                            onTap: () {
-                              // If there's already a selection, reset first
-                              if (selectedOption != null) {
-                                setState(() {
-                                  selectedOption = null;
-                                  _isAnimating = false;
-                                });
-
-                                // Small delay before setting new selection
-                                Future.delayed(const Duration(milliseconds: 100), () {
-                                  if (mounted) {
-                                    setState(() {
-                                      selectedOption = index;
-                                      _isAnimating = false;
-                                    });
-
-                                    // Start animation after a brief delay
-                                    Future.delayed(const Duration(milliseconds: 50), () {
-                                      if (mounted) {
+                                  return GestureDetector(
+                                    key: _placeholderKeys[index],
+                                    onTap: () {
+                                      // If there's already a selection, reset first
+                                      if (selectedOption != null) {
                                         setState(() {
-                                          _isAnimating = true;
+                                          selectedOption = null;
+                                          _isAnimating = false;
+                                        });
+
+                                        // Small delay before setting new selection
+                                        Future.delayed(const Duration(milliseconds: 100), () {
+                                          if (mounted) {
+                                            setState(() {
+                                              selectedOption = index;
+                                              _isAnimating = false;
+                                            });
+
+                                            // Start animation after a brief delay
+                                            Future.delayed(const Duration(milliseconds: 50), () {
+                                              if (mounted) {
+                                                setState(() {
+                                                  _isAnimating = true;
+                                                });
+                                              }
+                                            });
+                                          }
+                                        });
+                                      } else {
+                                        // No previous selection, animate normally
+                                        setState(() {
+                                          selectedOption = index;
+                                          _isAnimating = false;
+                                        });
+
+                                        // Start animation after a brief delay
+                                        Future.delayed(const Duration(milliseconds: 50), () {
+                                          if (mounted) {
+                                            setState(() {
+                                              _isAnimating = true;
+                                            });
+                                          }
                                         });
                                       }
-                                    });
-                                  }
-                                });
-                              } else {
-                                // No previous selection, animate normally
-                                setState(() {
-                                  selectedOption = index;
-                                  _isAnimating = false;
-                                });
-
-                                // Start animation after a brief delay
-                                Future.delayed(const Duration(milliseconds: 50), () {
-                                  if (mounted) {
-                                    setState(() {
-                                      _isAnimating = true;
-                                    });
-                                  }
-                                });
-                              }
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: _optionButtonVerticalPadding,
-                                horizontal: _optionButtonHorizontalPadding,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.grey[700],
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: LangText.bodyText(
-                                text: widget.exercise.options[index],
-                                style: TextStyle(color: Colors.grey[300], fontSize: 18),
-                              ),
-                            ),
-                          );
-                        }),
+                                    },
+                                    child: Container(
+                                      key: _optionKeys[index],
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: _optionButtonVerticalPadding,
+                                        horizontal: _optionButtonHorizontalPadding,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[700],
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: LangText.bodyText(
+                                        text: widget.exercise.options[index],
+                                        style: TextStyle(color: Colors.grey[300], fontSize: 18),
+                                      ),
+                                    ),
+                                  );
+                                }),
                       ),
                     ),
 
@@ -394,8 +495,8 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                   duration: const Duration(milliseconds: 400),
                   curve: Curves.easeInOut,
                   left:
-                      _isAnimating ? _getBlankPosition()['left'] : _getOriginalOptionPosition(selectedOption!)['left'],
-                  top: _isAnimating ? _getBlankPosition()['top'] : _getOriginalOptionPosition(selectedOption!)['top'],
+                      _isAnimating ? _getTargetPosition()['left'] : _getOriginalOptionPosition(selectedOption!)['left'],
+                  top: _isAnimating ? _getTargetPosition()['top'] : _getOriginalOptionPosition(selectedOption!)['top'],
                   child: GestureDetector(
                     onTap: () {
                       setState(() {
