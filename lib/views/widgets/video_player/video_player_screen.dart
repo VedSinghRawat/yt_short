@@ -257,6 +257,8 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
     try {
       String localPath = PathService.sublevelAsset(widget.video.levelId, widget.video.id, AssetType.video);
 
+      if (!mounted) return;
+
       final urls =
           [BaseUrl.cloudflare, BaseUrl.s3]
               .map(
@@ -267,8 +269,10 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
               .toList();
 
       final file = FileService.getFile(localPath);
+      final fileExists = await file.exists();
+      if (!mounted) return;
 
-      if (await file.exists()) {
+      if (fileExists) {
         _controller = VideoPlayerController.file(file);
       } else if (urls.isNotEmpty) {
         try {
@@ -277,6 +281,8 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
           _controller = VideoPlayerController.networkUrl(Uri.parse(urls[1]));
         }
       }
+
+      if (!mounted) return;
 
       _controller!.addListener(_listener);
       await _controller!.initialize();

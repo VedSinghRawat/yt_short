@@ -31,17 +31,15 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
   final List<GlobalKey> _placeholderKeys = [];
   final GlobalKey _optionsAreaKey = GlobalKey();
   final GlobalKey _stackKey = GlobalKey();
-  bool hasInitialized = false;
   bool _isCorrect = false;
   bool _isAnimating = false;
 
   // Store calculated button sizes
   List<Size> _buttonSizes = [];
-  bool _sizesCalculated = false;
+  double _widestOptionWidth = 0;
 
   // Store calculated blank position
   Map<String, double> _blankPosition = {'left': 0, 'top': 0};
-  bool _blankPositionCalculated = false;
 
   @override
   void initState() {
@@ -64,14 +62,13 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
     // Check if isVisible changed from true to false (user scrolled away)
     if (oldWidget.isCurrent && !widget.isCurrent) {
       // Reset all user interactions
+      developer.log('Resetting state');
       setState(() {
         selectedOption = null;
-        hasInitialized = false;
         _isCorrect = false;
         _isAnimating = false;
-        _sizesCalculated = false;
         _buttonSizes.clear();
-        _blankPositionCalculated = false;
+        _widestOptionWidth = 0;
         _blankPosition = {'left': 0, 'top': 0};
       });
     }
@@ -88,8 +85,6 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
   }
 
   void _calculateAndStoreButtonSizes() {
-    if (_sizesCalculated) return;
-
     // Safety check - ensure we have options and keys
     if (widget.exercise.options.isEmpty || _optionKeys.isEmpty) {
       developer.log('No options or option keys available');
@@ -126,10 +121,8 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
 
     // All contexts are available, calculate sizes
     _buttonSizes = List.generate(widget.exercise.options.length, (index) {
-      developer.log('index: $index, optionKeys: $_optionKeys');
       try {
         final RenderBox buttonBox = _optionKeys[index].currentContext!.findRenderObject() as RenderBox;
-        developer.log('buttonBox: ${buttonBox.size}');
         return buttonBox.size;
       } catch (e) {
         developer.log('Error getting button size for index $index: $e');
@@ -137,12 +130,21 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
       }
     });
 
-    _sizesCalculated = true;
+    // Calculate and store the widest option width
+    _widestOptionWidth = 0;
+    for (final size in _buttonSizes) {
+      if (size.width > _widestOptionWidth) {
+        _widestOptionWidth = size.width;
+      }
+    }
+    developer.log('Widest option width calculated: $_widestOptionWidth');
+
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _calculateAndStoreBlankPosition() {
-    if (_blankPositionCalculated) return;
-
     try {
       if (_blankKey.currentContext != null && _stackKey.currentContext != null) {
         final RenderBox blankBox = _blankKey.currentContext!.findRenderObject() as RenderBox;
@@ -157,7 +159,6 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
           'width': blankBox.size.width,
           'height': blankBox.size.height,
         };
-        _blankPositionCalculated = true;
         developer.log('Blank position calculated relative to Stack: $_blankPosition');
       } else {
         developer.log('Blank or Stack context not available, retrying in 150ms');
@@ -170,17 +171,6 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
     } catch (e) {
       developer.log('Error calculating blank position: $e');
     }
-  }
-
-  double _getWidestOptionWidth() {
-    double maxWidth = 0;
-    for (int i = 0; i < widget.exercise.options.length; i++) {
-      final size = _buttonSizes[i];
-      if (size.width > maxWidth) {
-        maxWidth = size.width;
-      }
-    }
-    return maxWidth;
   }
 
   Map<String, double> _getTargetPosition() {
@@ -242,35 +232,35 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
     }
   }
 
+  void _initialize() {
+    // Calculate button sizes and blank position after this frame when all widgets are rendered
+    if (_buttonSizes.isEmpty || _blankPosition['width'] == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _calculateAndStoreButtonSizes();
+
+          _calculateAndStoreBlankPosition();
+        }
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final sentenceParts = _getSentenceParts();
     final theme = Theme.of(context);
 
-    // Calculate button sizes and blank position after this frame when all widgets are rendered
-    if (hasInitialized && (!_sizesCalculated || !_blankPositionCalculated)) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          if (!_sizesCalculated) {
-            _calculateAndStoreButtonSizes();
-          }
-          if (!_blankPositionCalculated) {
-            _calculateAndStoreBlankPosition();
-          }
-        }
-      });
-    }
+    developer.log(' buttonSizes: $_buttonSizes, blankPosition: $_blankPosition');
+    _initialize();
 
     return Scaffold(
       body: SafeArea(
         child: VisibilityDetector(
           key: ValueKey(widget.exercise.id),
           onVisibilityChanged: (visibility) {
-            if (!hasInitialized && visibility.visibleFraction != 1 || !mounted) return;
+            if (visibility.visibleFraction != 1 || !mounted) return;
 
-            setState(() {
-              hasInitialized = visibility.visibleFraction == 1;
-            });
+            _initialize();
           },
           child: Stack(
             key: _stackKey,
@@ -333,7 +323,7 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                           ),
                         Container(
                           key: _blankKey,
-                          constraints: BoxConstraints(minWidth: _getWidestOptionWidth()),
+                          constraints: BoxConstraints(minWidth: _widestOptionWidth),
                           padding: const EdgeInsets.symmetric(
                             horizontal: _blankHorizontalPadding,
                             vertical: _blankVerticalPadding,
@@ -490,7 +480,7 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
               ),
 
               // Only show positioned widget for selected option
-              if (hasInitialized && selectedOption != null)
+              if (selectedOption != null)
                 AnimatedPositioned(
                   duration: const Duration(milliseconds: 400),
                   curve: Curves.easeInOut,

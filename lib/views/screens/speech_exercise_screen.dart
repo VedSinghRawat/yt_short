@@ -27,7 +27,9 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
 
     if (oldWidget.isVisible && !widget.isVisible) {
       Future(() {
-        ref.read(speechProvider(targetWords: widget.exercise.text.split(' ')).notifier).resetState();
+        if (mounted) {
+          ref.read(speechProvider(targetWords: widget.exercise.text.split(' ')).notifier).resetState();
+        }
       });
     }
   }
