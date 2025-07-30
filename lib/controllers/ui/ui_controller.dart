@@ -25,6 +25,9 @@ class UIController extends _$UIController {
 
   void setIsAppBarVisible(bool visible) => state = state.copyWith(isAppBarVisible: visible);
 
+  /// Force app bar to be visible (used for landscape mode)
+  void forceAppBarVisible() => state = state.copyWith(isAppBarVisible: true);
+
   /// Store progress for the specified user email and update state
   Future<void> storeProgress(Progress progress, {String? userEmail}) async {
     await SharedPref.store(PrefKey.currProgress(userEmail: userEmail), progress);

@@ -1,14 +1,33 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/core/router/router.dart';
+import 'package:myapp/services/responsiveness/responsiveness_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await dotenv.load(fileName: kDebugMode ? '.env' : '.env.prod');
+
+  // Use ResponsivenessService static method for consistent device detection
+  // ignore: deprecated_member_use
+  final screenType = ResponsivenessService.getScreenTypeStatic(WidgetsBinding.instance.window);
+
+  if (screenType == Screen.mobile) {
+    // Mobile – lock to portrait
+    await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
+  } else {
+    // Tablet – allow all orientations
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+  }
 
   runApp(const ProviderScope(child: MyApp()));
 }

@@ -12,7 +12,9 @@ import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/activity_log/activity_log.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
+import 'package:myapp/services/responsiveness/responsiveness_service.dart';
 import 'package:myapp/views/widgets/app_bar.dart';
+import 'package:myapp/views/widgets/animated_app_bar.dart';
 import 'package:myapp/views/widgets/loader.dart';
 import 'package:myapp/views/widgets/sublevel_list.dart';
 
@@ -252,6 +254,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final loadingLevelIds = ref.watch(levelControllerProvider.select((state) => state.loadingById));
     final sublevels = ref.watch(sublevelControllerProvider.select((state) => state.sublevels));
+    final responsiveness = ResponsivenessService(context);
+    final isTabletLandscape = responsiveness.isTabletLandscape();
 
     if (sublevels == null) {
       return const Loader();
@@ -267,10 +271,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     return Scaffold(
+      appBar: isTabletLandscape ? const HomeScreenAppBar() : null,
       body: Stack(
         children: [
           SublevelsList(loadingById: loadingLevelIds, sublevels: _sortedSublevels!, onSublevelChange: onVideoChange),
-          const HomeScreenAppBar(),
+          if (!isTabletLandscape) const AnimatedAppBar(),
         ],
       ),
     );

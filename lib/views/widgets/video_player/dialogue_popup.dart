@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/models/video/video.dart';
+import 'package:myapp/services/responsiveness/responsiveness_service.dart';
 import 'package:myapp/views/widgets/lang_text.dart';
 import 'dialogue_list.dart';
 
@@ -12,6 +13,9 @@ class DialoguePopup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final responsiveness = ResponsivenessService(context);
+    final isTabletLandscape = responsiveness.isTabletLandscape();
+
     return IgnorePointer(
       ignoring: !visible,
       child: AnimatedOpacity(
@@ -25,7 +29,7 @@ class DialoguePopup extends StatelessWidget {
           child: Container(
             width: double.infinity,
             height: MediaQuery.of(context).size.height,
-            padding: const EdgeInsets.only(top: kToolbarHeight),
+            padding: isTabletLandscape ? EdgeInsets.zero : const EdgeInsets.only(top: kToolbarHeight),
             decoration: const BoxDecoration(
               color: Colors.black,
               boxShadow: [BoxShadow(color: Color.fromRGBO(255, 255, 255, 0.2), blurRadius: 12.0, spreadRadius: 4.0)],
@@ -41,14 +45,16 @@ class DialoguePopup extends StatelessWidget {
                       decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary),
                       child: LangText.headingText(
                         text: 'Dialogues',
-                        style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 22),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          fontSize: responsiveness.getResponsiveValues(mobile: 22, tablet: 26, largeTablet: 30),
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ),
                     Expanded(child: DialogueList(dialogues: dialogues)),
                   ],
                 ),
-                // Close button
                 Positioned(
                   right: 8,
                   top: 8,

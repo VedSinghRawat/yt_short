@@ -8,6 +8,7 @@ import 'package:myapp/models/video/video.dart';
 import 'package:myapp/models/dialogues/dialogues.dart';
 import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/path/path_service.dart';
+import 'package:myapp/services/responsiveness/responsiveness_service.dart';
 import 'package:myapp/views/widgets/lang_text.dart';
 
 class DialogueList extends ConsumerStatefulWidget {
@@ -131,6 +132,9 @@ class _DialogueListState extends ConsumerState<DialogueList> {
     final dialogues =
         widget.dialogues.map((e) => dialogueMap[e.id]).where((dialogue) => dialogue != null).cast<Dialogue>().toList();
 
+    final responsiveness = ResponsivenessService(context);
+    final isTablet = responsiveness.getScreenType() != Screen.mobile;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         // Calculate item height for full screen
@@ -157,9 +161,11 @@ class _DialogueListState extends ConsumerState<DialogueList> {
                       dialogues.map((dialogue) {
                         final bool isSelected = dialogue.id == widget.dialogues[_selectedDialogueIndex].id;
 
-                        final double textFontSize = isSelected ? 22 : 18;
+                        // Responsive font sizes for tablets
+                        final double baseFontSize = isTablet ? 28 : 22; // Increased for tablets
+                        final double textFontSize = isSelected ? baseFontSize : (isTablet ? 22 : 18);
                         final FontWeight textFontWeight = isSelected ? FontWeight.bold : FontWeight.w500;
-                        final double iconSize = isSelected ? 24 : 20;
+                        final double iconSize = isSelected ? (isTablet ? 28 : 24) : (isTablet ? 24 : 20);
                         final isPlaying = _playingDialogueFilename == dialogue.id;
                         final Color iconColor =
                             isPlaying
