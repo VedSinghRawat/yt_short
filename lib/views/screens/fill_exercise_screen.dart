@@ -62,7 +62,6 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
     // Check if isVisible changed from true to false (user scrolled away)
     if (oldWidget.isCurrent && !widget.isCurrent) {
       // Reset all user interactions
-      developer.log('Resetting state');
       setState(() {
         selectedOption = null;
         _isCorrect = false;
@@ -137,7 +136,6 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
         _widestOptionWidth = size.width;
       }
     }
-    developer.log('Widest option width calculated: $_widestOptionWidth');
 
     if (mounted) {
       setState(() {});
@@ -159,9 +157,7 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
           'width': blankBox.size.width,
           'height': blankBox.size.height,
         };
-        developer.log('Blank position calculated relative to Stack: $_blankPosition');
       } else {
-        developer.log('Blank or Stack context not available, retrying in 150ms');
         Future.delayed(const Duration(milliseconds: 150), () {
           if (mounted) {
             _calculateAndStoreBlankPosition();
@@ -250,7 +246,6 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
     final sentenceParts = _getSentenceParts();
     final theme = Theme.of(context);
 
-    developer.log(' buttonSizes: $_buttonSizes, blankPosition: $_blankPosition');
     _initialize();
 
     return Scaffold(

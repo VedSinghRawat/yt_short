@@ -139,92 +139,100 @@ class _DialogueListState extends ConsumerState<DialogueList> {
 
         return Stack(
           children: [
-            ListWheelScrollView.useDelegate(
+            // Main list with scrollbar
+            Scrollbar(
               controller: _scrollController,
-              itemExtent: calculatedItemHeight,
-              diameterRatio: 2.0,
-              perspective: 0.002,
-              physics: const FixedExtentScrollPhysics(),
-              childDelegate: ListWheelChildListDelegate(
-                children:
-                    dialogues.map((dialogue) {
-                      final bool isSelected = dialogue.id == widget.dialogues[_selectedDialogueIndex].id;
+              thumbVisibility: true,
+              interactive: true,
+              thickness: 6.0,
+              radius: const Radius.circular(3.0),
+              child: ListWheelScrollView.useDelegate(
+                controller: _scrollController,
+                itemExtent: calculatedItemHeight,
+                diameterRatio: 2.0,
+                perspective: 0.002,
+                physics: const FixedExtentScrollPhysics(),
+                childDelegate: ListWheelChildListDelegate(
+                  children:
+                      dialogues.map((dialogue) {
+                        final bool isSelected = dialogue.id == widget.dialogues[_selectedDialogueIndex].id;
 
-                      final double textFontSize = isSelected ? 22 : 18;
-                      final FontWeight textFontWeight = isSelected ? FontWeight.bold : FontWeight.w500;
-                      final double iconSize = isSelected ? 24 : 20;
-                      final isPlaying = _playingDialogueFilename == dialogue.id;
-                      final Color iconColor =
-                          isPlaying
-                              ? Colors.green.shade400
-                              : isSelected
-                              ? Colors.white
-                              : Colors.white70;
+                        final double textFontSize = isSelected ? 22 : 18;
+                        final FontWeight textFontWeight = isSelected ? FontWeight.bold : FontWeight.w500;
+                        final double iconSize = isSelected ? 24 : 20;
+                        final isPlaying = _playingDialogueFilename == dialogue.id;
+                        final Color iconColor =
+                            isPlaying
+                                ? Colors.green.shade400
+                                : isSelected
+                                ? Colors.white
+                                : Colors.white70;
 
-                      return Container(
-                        color: Colors.transparent,
-                        alignment: Alignment.center,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        constraints: const BoxConstraints(maxWidth: 380),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                LangText.bodyText(
-                                  text: dialogue.text,
-                                  style: TextStyle(
-                                    fontSize: textFontSize,
-                                    color: Colors.white,
-                                    fontWeight: textFontWeight,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 8),
-                                  child: LangText.body(
-                                    hindi: dialogue.hindiText,
-                                    hinglish: dialogue.hinglishText,
-                                    style: TextStyle(fontSize: textFontSize * 0.8, color: Colors.white70),
+                        return Container(
+                          color: Colors.transparent,
+                          alignment: Alignment.center,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          constraints: const BoxConstraints(maxWidth: 380),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  LangText.bodyText(
+                                    text: dialogue.text,
+                                    style: TextStyle(
+                                      fontSize: textFontSize,
+                                      color: Colors.white,
+                                      fontWeight: textFontWeight,
+                                    ),
                                     textAlign: TextAlign.center,
                                   ),
-                                ),
-                              ],
-                            ),
 
-                            GestureDetector(
-                              onTap: () => _playDialogueAudio(dialogue.id),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 300),
-                                curve: Curves.easeInOut,
-                                padding: const EdgeInsets.all(8.0),
-                                decoration: BoxDecoration(
-                                  color: isPlaying ? Colors.white : Colors.white.withAlpha(50),
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: isPlaying ? Colors.green.shade100 : Colors.white70,
-                                    width: isPlaying ? 2 : 1.5,
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 8),
+                                    child: LangText.body(
+                                      hindi: dialogue.hindiText,
+                                      hinglish: dialogue.hinglishText,
+                                      style: TextStyle(fontSize: textFontSize * 0.8, color: Colors.white70),
+                                      textAlign: TextAlign.center,
+                                    ),
                                   ),
-                                ),
-                                transform: Matrix4.identity()..scale(isPlaying ? 1.2 : 1.0),
-                                transformAlignment: Alignment.center,
-                                child: Icon(Icons.volume_up, color: iconColor, size: iconSize),
+                                ],
                               ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
+
+                              GestureDetector(
+                                onTap: () => _playDialogueAudio(dialogue.id),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeInOut,
+                                  padding: const EdgeInsets.all(8.0),
+                                  decoration: BoxDecoration(
+                                    color: isPlaying ? Colors.white : Colors.white.withAlpha(50),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: isPlaying ? Colors.green.shade100 : Colors.white70,
+                                      width: isPlaying ? 2 : 1.5,
+                                    ),
+                                  ),
+                                  transform: Matrix4.identity()..scale(isPlaying ? 1.2 : 1.0),
+                                  transformAlignment: Alignment.center,
+                                  child: Icon(Icons.volume_up, color: iconColor, size: iconSize),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                ),
               ),
             ),
             Positioned(
               top: 0,
               left: 0,
-              right: 0,
+              right: 20, // Leave space for scrollbar
               child: IgnorePointer(
                 child: Container(
                   height: calculatedItemHeight,
@@ -232,7 +240,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [Colors.black, Colors.black.withAlpha(0)],
+                      colors: [Colors.black, Colors.black.withAlpha(5)],
                       stops: const [0.0, 0.9],
                     ),
                   ),
@@ -242,7 +250,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
             Positioned(
               bottom: 0,
               left: 0,
-              right: 0,
+              right: 20, // Leave space for scrollbar
               child: IgnorePointer(
                 child: Container(
                   height: calculatedItemHeight,
@@ -250,7 +258,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
                     gradient: LinearGradient(
                       begin: Alignment.bottomCenter,
                       end: Alignment.topCenter,
-                      colors: [Colors.black, Colors.black.withAlpha(0)],
+                      colors: [Colors.black, Colors.black.withAlpha(5)],
                       stops: const [0.0, 0.9],
                     ),
                   ),
