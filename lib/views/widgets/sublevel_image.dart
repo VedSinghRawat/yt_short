@@ -48,7 +48,11 @@ class SubLevelImage extends ConsumerWidget {
               },
               errorBuilder: (context, error, stackTrace) {
                 developer.log('error is $error, $urls');
-                return const Center(child: Icon(Icons.image, size: 40, color: Colors.grey));
+                return Container(
+                  height: height,
+                  color: Colors.grey.shade200,
+                  child: const Center(child: Icon(Icons.image, size: 40, color: Colors.grey)),
+                );
               },
             );
           },
