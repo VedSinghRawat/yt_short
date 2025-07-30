@@ -142,6 +142,7 @@ class LevelController extends _$LevelController {
   }
 
   List<String> _getSurroundingLevelIds(int currIndex, List<String?> orderedIds) {
+    if (currIndex == -1) return [];
     final startBefore = math.max(0, currIndex - AppConstants.kMaxBeforeLevels);
     final endAfter = math.min(orderedIds.length, currIndex + AppConstants.kMaxAfterLevels + 1);
     final startAfter = math.min(orderedIds.length, currIndex + 1);

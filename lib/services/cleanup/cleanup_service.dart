@@ -95,11 +95,12 @@ class StorageCleanupService {
       // Ensure directory exists and input is valid
       if (!await levelsDir.exists() ||
           deletableLevelIds.isEmpty ||
-          deletableLevelIds.length - AppConstants.kProtectedIdsLength == 0) {
+          deletableLevelIds.length - AppConstants.kProtectedIdsLength <= 0) {
         return;
       }
 
       int totalSize = await compute(FileService.getDirectorySize, levelsDir);
+
       if (totalSize < AppConstants.kMaxStorageSizeBytes) return;
 
       int i = 0;
@@ -112,7 +113,7 @@ class StorageCleanupService {
       //protected levels are reached
       while (i < deletableLevelIds.length - AppConstants.kProtectedIdsLength) {
         final levelId = deletableLevelIds[i];
-        final folderPath = PathService.levelDir(levelId);
+        final folderPath = '${FileService.documentsDirectory.path}${PathService.levelDir(levelId)}';
 
         final level = levelById[levelId];
         if (level == null) continue;
@@ -121,29 +122,38 @@ class StorageCleanupService {
 
         // Delete videos one by one and update size
         for (var (index, sub) in level.sub_levels.indexed) {
-          final videoPath = PathService.sublevelAsset(levelId, sub.id, AssetType.video);
-          final videoFile = File(videoPath);
-          if (!await videoFile.exists()) continue;
+          if (sub.isVideo) {
+            final videoPathEndpoint = PathService.sublevelAsset(levelId, sub.id, AssetType.video);
+            final videoFile = FileService.getFile(videoPathEndpoint);
+            if (!await videoFile.exists()) continue;
 
-          final videoSize = await videoFile.length();
+            final videoSize = await videoFile.length();
 
-          toBeDeletedPaths[levelId]!.add(videoPath);
-          etagsToClean.add(
-            PathService.sublevelAsset(levelId, videoPath.split('/').last.replaceAll('.mp4', ''), AssetType.video),
-          );
+            toBeDeletedPaths[levelId]!.add(videoFile.path);
+            etagsToClean.add(
+              PathService.sublevelAsset(
+                levelId,
+                videoPathEndpoint.split('/').last.replaceAll('.mp4', ''),
+                AssetType.video,
+              ),
+            );
 
-          totalSize -= videoSize;
-
+            totalSize -= videoSize;
+          }
           // Handle audio files for speech exercises and drag-drop exercises
           if (sub.isSpeechExercise || sub.isArrangeExercise) {
-            final audioPath = PathService.sublevelAsset(levelId, sub.id, AssetType.audio);
-            final audioFile = File(audioPath);
+            final audioPathEndpoint = PathService.sublevelAsset(levelId, sub.id, AssetType.audio);
+            final audioFile = FileService.getFile(audioPathEndpoint);
             if (await audioFile.exists()) {
               final audioSize = await audioFile.length();
-              toBeDeletedPaths[levelId]!.add(audioPath);
+              toBeDeletedPaths[levelId]!.add(audioFile.path);
 
               etagsToClean.add(
-                PathService.sublevelAsset(levelId, audioPath.split('/').last.replaceAll('.mp3', ''), AssetType.audio),
+                PathService.sublevelAsset(
+                  levelId,
+                  audioPathEndpoint.split('/').last.replaceAll('.mp3', ''),
+                  AssetType.audio,
+                ),
               );
 
               totalSize -= audioSize;
@@ -152,14 +162,19 @@ class StorageCleanupService {
 
           // Handle image files for drag-drop exercises and fill exercises
           if (sub.isArrangeExercise || sub.isFillExercise) {
-            final imagePath = PathService.sublevelAsset(levelId, sub.id, AssetType.image);
-            final imageFile = File(imagePath);
+            final imagePathEndpoint = PathService.sublevelAsset(levelId, sub.id, AssetType.image);
+            final imageFile = FileService.getFile(imagePathEndpoint);
+
             if (await imageFile.exists()) {
               final imageSize = await imageFile.length();
-              toBeDeletedPaths[levelId]!.add(imagePath);
+              toBeDeletedPaths[levelId]!.add(imageFile.path);
 
               etagsToClean.add(
-                PathService.sublevelAsset(levelId, imagePath.split('/').last.replaceAll('.jpg', ''), AssetType.image),
+                PathService.sublevelAsset(
+                  levelId,
+                  imagePathEndpoint.split('/').last.replaceAll('.jpg', ''),
+                  AssetType.image,
+                ),
               );
 
               totalSize -= imageSize;
@@ -183,8 +198,16 @@ class StorageCleanupService {
         i++;
       }
 
-      await Future.wait(toBeDeletedPaths.values.map((paths) => compute(_deleteFiles, paths.toList())));
-      await Future.wait(dirPathsToDelete.map((dir) => compute(_deleteFolderRecursively, dir)));
+      // Delete files, one compute call at a time
+      for (final paths in toBeDeletedPaths.values) {
+        await compute(_deleteFiles, paths.toList());
+      }
+
+      // Delete directories, one compute call at a time
+      for (final dir in dirPathsToDelete) {
+        await compute(_deleteFolderRecursively, dir);
+      }
+
       await Future.wait(etagsToClean.map((eTag) => SharedPref.removeValue(PrefKey.eTag(eTag))));
     } catch (e) {
       developer.log("Error in cleanup process: $e");
