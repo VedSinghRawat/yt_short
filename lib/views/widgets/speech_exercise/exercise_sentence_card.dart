@@ -5,6 +5,7 @@ import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/controllers/speech/speech_controller.dart';
 import 'package:myapp/views/widgets/speech_exercise/recognizer_button.dart';
 import 'package:myapp/views/widgets/lang_text.dart';
+import 'package:myapp/services/responsiveness/responsiveness_service.dart';
 
 class SpeechExerciseCard extends ConsumerStatefulWidget {
   final String text;
@@ -79,9 +80,14 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
   Widget build(BuildContext context) {
     final speechState = ref.watch(speechProv);
     final speechNotifier = ref.read(speechProv.notifier);
+    final responsiveness = ResponsivenessService(context);
 
     // Match font sizes and line heights to keep total vertical space in sync
-    const double recognizedWordFontSize = 24;
+    final recognizedWordFontSize = responsiveness.getResponsiveValues(
+      mobile: 24.0,
+      tablet: 20.0, // Smaller font for small tablets
+      largeTablet: 24.0,
+    );
     const double recognizedWordLineHeight = 1.4; // Adjust if needed
 
     final recognizedWordStyle = TextStyle(
@@ -91,7 +97,7 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
       height: recognizedWordLineHeight,
     );
 
-    final textToShow = <String>[]; // Initialize an empty list for words to show
+    final textToShow = []; // Initialize an empty list for words to show
     for (var i = 0; i < speechState.recognizedWords.length; i++) {
       String word = speechState.recognizedWords[i];
       if (word.isEmpty) continue;
@@ -104,171 +110,159 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
     return VisibilityDetector(
       key: Key(widget.id),
       onVisibilityChanged: _onVisibilityChanged,
-      child: SafeArea(
-        child: Column(
-          children: [
-            // Top bar with heading
-            const Header(),
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 24.0),
+      child: Column(
+        children: [
+          const Header(),
+
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.only(top: 28.0, left: 16, right: 16),
               child: Column(
                 children: [
-                  Column(
+                  Stack(
                     children: [
-                      Stack(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Container(
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[800],
-                                borderRadius: BorderRadius.circular(12.0),
-                                border: Border.all(color: Colors.grey[700]!, width: 2),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.only(bottom: 44.0, top: 24.0, left: 18.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    for (int lineIndex = 0; lineIndex < _words.length; lineIndex++)
-                                      Wrap(
-                                        spacing: 8,
-                                        alignment: WrapAlignment.start,
-                                        crossAxisAlignment: WrapCrossAlignment.center,
-                                        children: [
-                                          for (int wordIndex = 0; wordIndex < _words[lineIndex].length; wordIndex++)
-                                            Builder(
-                                              builder: (context) {
-                                                int flatIndex = 0;
-                                                for (int i = 0; i < lineIndex; i++) {
-                                                  flatIndex += _words[i].length;
-                                                }
-                                                flatIndex += wordIndex;
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 16.0),
+                        padding: const EdgeInsets.only(bottom: 44.0, top: 24.0, left: 18.0),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[800],
+                          borderRadius: BorderRadius.circular(12.0),
+                          border: Border.all(color: Colors.grey[700]!, width: 2),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            for (int lineIndex = 0; lineIndex < _words.length; lineIndex++)
+                              Wrap(
+                                spacing: 8,
+                                alignment: WrapAlignment.start,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                children: [
+                                  for (int wordIndex = 0; wordIndex < _words[lineIndex].length; wordIndex++)
+                                    Builder(
+                                      builder: (context) {
+                                        int flatIndex = 0;
+                                        for (int i = 0; i < lineIndex; i++) {
+                                          flatIndex += _words[i].length;
+                                        }
+                                        flatIndex += wordIndex;
 
-                                                // Determine color based on marking
-                                                Color? backgroundColor;
-                                                FontWeight fontWeight = FontWeight.w600;
-                                                final mark = speechState.wordMarking.elementAtOrNull(flatIndex);
-                                                if (mark == true) {
-                                                  backgroundColor = const Color.fromARGB(255, 8, 85, 10);
-                                                  fontWeight = FontWeight.bold;
-                                                } else if (mark == false) {
-                                                  // false
-                                                  backgroundColor = Colors.redAccent;
-                                                  fontWeight = FontWeight.normal;
-                                                }
+                                        // Determine color based on marking
+                                        Color? backgroundColor;
+                                        FontWeight fontWeight = FontWeight.w600;
+                                        final mark = speechState.wordMarking.elementAtOrNull(flatIndex);
+                                        if (mark == true) {
+                                          backgroundColor = const Color.fromARGB(255, 8, 85, 10);
+                                          fontWeight = FontWeight.bold;
+                                        } else if (mark == false) {
+                                          // false
+                                          backgroundColor = Colors.redAccent;
+                                          fontWeight = FontWeight.normal;
+                                        }
 
-                                                return Container(
-                                                  padding:
-                                                      mark != null
-                                                          ? const EdgeInsets.symmetric(horizontal: 5, vertical: 4)
-                                                          : null,
-                                                  margin: mark != null ? const EdgeInsets.symmetric(vertical: 2) : null,
-                                                  decoration: BoxDecoration(
-                                                    color: backgroundColor,
-                                                    borderRadius: BorderRadius.circular(6),
-                                                  ),
-                                                  child: LangText.bodyText(
-                                                    text: _words[lineIndex][wordIndex],
-                                                    style: TextStyle(
-                                                      fontSize: 24,
-                                                      fontWeight: fontWeight,
-                                                      color: Colors.grey[300],
-                                                      textBaseline: TextBaseline.alphabetic,
-                                                    ),
-                                                  ),
-                                                );
-                                              },
+                                        return Container(
+                                          padding:
+                                              mark != null
+                                                  ? const EdgeInsets.symmetric(horizontal: 5, vertical: 4)
+                                                  : null,
+                                          margin: mark != null ? const EdgeInsets.symmetric(vertical: 2) : null,
+                                          decoration: BoxDecoration(
+                                            color: backgroundColor,
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: LangText.bodyText(
+                                            text: _words[lineIndex][wordIndex],
+                                            style: TextStyle(
+                                              fontSize: responsiveness.getResponsiveValues(
+                                                mobile: 24.0,
+                                                tablet: 20.0, // Smaller font for small tablets
+                                                largeTablet: 24.0,
+                                              ),
+                                              fontWeight: fontWeight,
+                                              color: Colors.grey[300],
+                                              textBaseline: TextBaseline.alphabetic,
                                             ),
-                                        ],
-                                      ),
-                                  ],
-                                ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                ],
                               ),
-                            ),
-                          ),
-                          Positioned(
-                            bottom: 24,
-                            right: 24,
-                            child: Material(
-                              color: Theme.of(context).colorScheme.secondary,
-                              borderRadius: BorderRadius.circular(30),
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(30),
-                                onTap: () {
-                                  ref.read(speechProv.notifier).playAudio(widget.levelId, widget.id);
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        speechState.isPlayingAudio ? Icons.hearing_rounded : Icons.hearing_outlined,
-                                        size: 18,
-                                        color: Theme.of(context).colorScheme.onSecondary,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      LangText.body(
-                                        hindi: speechState.isPlayingAudio ? 'सुन रहे हैं...' : 'सुनें',
-                                        hinglish: speechState.isPlayingAudio ? 'Sun rahe hain...' : 'Sune',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
 
-                      const SizedBox(height: 24),
-
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(16.0),
-                          decoration: BoxDecoration(
-                            color:
-                                !speechNotifier.isTestCompleted
-                                    ? Colors.grey[900]
-                                    : speechNotifier.isPassed
-                                    ? Colors.green[400]
-                                    : Colors.red[400],
-                            borderRadius: BorderRadius.circular(12.0),
-                            border:
-                                !speechNotifier.isTestCompleted ? Border.all(color: Colors.grey[700]!, width: 2) : null,
-                          ),
-                          child: LangText.bodyText(
-                            text: '${textToShow.join(' ')}${_flatWords.length == textToShow.length ? '.' : ''}',
-                            style: recognizedWordStyle.copyWith(
-                              color: !speechNotifier.isTestCompleted ? Colors.grey[300] : Colors.white,
-                              fontWeight: FontWeight.w600,
+                      Positioned(
+                        bottom: 24,
+                        right: 24,
+                        child: Material(
+                          color: Theme.of(context).colorScheme.secondary,
+                          borderRadius: BorderRadius.circular(30),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(30),
+                            onTap: () {
+                              ref.read(speechProv.notifier).playAudio(widget.levelId, widget.id);
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    speechState.isPlayingAudio ? Icons.hearing_rounded : Icons.hearing_outlined,
+                                    size: 18,
+                                    color: Theme.of(context).colorScheme.onSecondary,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  LangText.body(
+                                    hindi: speechState.isPlayingAudio ? 'सुन रहे हैं...' : 'सुनें',
+                                    hinglish: speechState.isPlayingAudio ? 'Sun rahe hain...' : 'Sune',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ],
                   ),
+
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color:
+                          !speechNotifier.isTestCompleted
+                              ? Colors.grey[900]
+                              : speechNotifier.isPassed
+                              ? Colors.green[400]
+                              : Colors.red[400],
+                      borderRadius: BorderRadius.circular(12.0),
+                      border: !speechNotifier.isTestCompleted ? Border.all(color: Colors.grey[700]!, width: 2) : null,
+                    ),
+                    child: LangText.bodyText(
+                      text: '${textToShow.join(' ')}${_flatWords.length == textToShow.length ? '.' : ''}',
+                      style: recognizedWordStyle.copyWith(
+                        color: !speechNotifier.isTestCompleted ? Colors.grey[300] : Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
+          ),
 
-            const Spacer(),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-              child: RecognizerButton(onContinue: widget.onContinue, targetWords: _flatWords),
-            ),
-          ],
-        ),
+          // Fixed bottom button
+          RecognizerButton(onContinue: widget.onContinue, targetWords: _flatWords),
+        ],
       ),
     );
   }
@@ -302,7 +296,6 @@ class Header extends StatelessWidget {
                 hinglish: 'Niche diya gaya vakya sahi ucharan ke saath bole.',
                 style: TextStyle(
                   color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
-                  fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
                 textAlign: TextAlign.center,

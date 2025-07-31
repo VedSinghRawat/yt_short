@@ -12,17 +12,17 @@ import 'package:myapp/controllers/user/user_controller.dart';
 import 'package:myapp/controllers/ui/ui_controller.dart';
 import 'package:myapp/views/widgets/lang_text.dart';
 
-class HomeScreenAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
-  const HomeScreenAppBar({super.key});
+class TopBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
+  const TopBar({super.key});
 
   @override
-  ConsumerState<HomeScreenAppBar> createState() => _HomeScreenAppBarState();
+  ConsumerState<TopBar> createState() => _TopBarState();
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
 
-class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
+class _TopBarState extends ConsumerState<TopBar> {
   bool _isLoading = false;
 
   @override
@@ -88,6 +88,7 @@ class _HomeScreenAppBarState extends ConsumerState<HomeScreenAppBar> {
             context.push(isLoggedIn ? Routes.profile : Routes.signIn);
           },
           icon: Icon(isLoggedIn ? Icons.account_circle : Icons.person_add),
+          iconSize: responsiveness.getResponsiveValues(mobile: 32, tablet: 36, largeTablet: 40),
         ),
       ],
     );

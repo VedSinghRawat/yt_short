@@ -6,28 +6,12 @@ import 'package:flutter/services.dart';
 enum Screen { mobile, tablet, largeTablet }
 
 class ResponsivenessService {
-  final BuildContext _context;
+  Screen screenType;
 
-  ResponsivenessService(this._context);
-
-  Screen getScreenType() {
-    return getScreenTypeStatic(View.of(_context));
-  }
-
-  // Method to check if current orientation is landscape
-  bool isLandscape() {
-    final orientation = MediaQuery.of(_context).orientation;
-    return orientation == Orientation.landscape;
-  }
-
-  // Method to check if device is tablet in landscape mode
-  bool isTabletLandscape() {
-    return getScreenType() != Screen.mobile && isLandscape();
-  }
+  ResponsivenessService(BuildContext context) : screenType = getScreenTypeStatic(View.of(context));
 
   // Method to get responsive numeric values based on device type
   double getResponsiveValues({required double mobile, required double tablet, required double largeTablet}) {
-    final screenType = getScreenType();
     switch (screenType) {
       case Screen.largeTablet:
         return largeTablet;
@@ -41,7 +25,7 @@ class ResponsivenessService {
   // Method to set orientation based on device type
   Future<void> setProperOrientation() async {
     try {
-      if (getScreenType() == Screen.mobile) {
+      if (screenType == Screen.mobile) {
         // Lock mobile to portrait only
         await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
       } else {

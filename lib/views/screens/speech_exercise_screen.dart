@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:myapp/services/responsiveness/responsiveness_service.dart';
 import 'package:myapp/views/widgets/speech_exercise/exercise_sentence_card.dart';
 import 'package:myapp/models/speech_exercise/speech_exercise.dart';
 import 'package:myapp/controllers/speech/speech_controller.dart';
@@ -36,17 +37,31 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final responsiveness = ResponsivenessService(context);
+
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, kToolbarHeight + 16, 16, 16),
-          child: SpeechExerciseCard(
-            key: UniqueKey(),
-            levelId: widget.exercise.levelId,
-            id: widget.exercise.id,
-            text: widget.exercise.text,
-            onContinue: widget.goToNext,
-          ),
+        child: OrientationBuilder(
+          builder: (context, orientation) {
+            final isPortrait = orientation == Orientation.portrait;
+            final padding = responsiveness.getResponsiveValues(mobile: 16, tablet: 24, largeTablet: 32);
+
+            return Padding(
+              padding: EdgeInsets.fromLTRB(padding, isPortrait ? kToolbarHeight + padding : padding, padding, padding),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 600),
+                  child: SpeechExerciseCard(
+                    key: UniqueKey(),
+                    levelId: widget.exercise.levelId,
+                    id: widget.exercise.id,
+                    text: widget.exercise.text,
+                    onContinue: widget.goToNext,
+                  ),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );

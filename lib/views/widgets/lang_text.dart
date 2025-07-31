@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/user/user.dart';
+import 'package:myapp/services/responsiveness/responsiveness_service.dart';
 
 enum SmartTextType {
   heading, // For headings - uses NotoSans for English
@@ -87,6 +88,7 @@ class LangText extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentLang = ref.watch(langControllerProvider);
+    final responsiveness = ResponsivenessService(context);
 
     final displayText = text ?? choose(hindi: hindi!, hinglish: hinglish!, lang: currentLang);
 
@@ -95,8 +97,14 @@ class LangText extends ConsumerWidget {
     // Set default styles based on text type
     final defaultStyle =
         textType == SmartTextType.heading
-            ? const TextStyle(fontSize: 20, fontWeight: FontWeight.w600)
-            : const TextStyle(fontSize: 16, fontWeight: FontWeight.w500);
+            ? TextStyle(
+              fontSize: responsiveness.getResponsiveValues(mobile: 20, tablet: 24, largeTablet: 28),
+              fontWeight: FontWeight.w600,
+            )
+            : TextStyle(
+              fontSize: responsiveness.getResponsiveValues(mobile: 13, tablet: 15, largeTablet: 17.5),
+              fontWeight: FontWeight.w500,
+            );
 
     // Merge defaults, font family, and provided style
     final mergedStyle = defaultStyle.copyWith(fontFamily: fontFamily).merge(style);

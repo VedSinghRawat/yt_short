@@ -133,7 +133,7 @@ class _DialogueListState extends ConsumerState<DialogueList> {
         widget.dialogues.map((e) => dialogueMap[e.id]).where((dialogue) => dialogue != null).cast<Dialogue>().toList();
 
     final responsiveness = ResponsivenessService(context);
-    final isTablet = responsiveness.getScreenType() != Screen.mobile;
+    final isTablet = responsiveness.screenType != Screen.mobile;
 
     return LayoutBuilder(
       builder: (context, constraints) {

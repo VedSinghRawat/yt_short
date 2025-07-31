@@ -1,5 +1,3 @@
-import 'dart:developer' as developer;
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
@@ -25,7 +23,6 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
   Future<void> _handleButtonPress() async {
     final speechNotifier = ref.read(speechProv.notifier);
     final speechState = ref.read(speechProv);
-    developer.log('speechState: ${speechState.errorMessage}');
 
     // Check if we need to show reset button
     if (speechState.errorMessage == AppConstants.kResetStateError) {
@@ -83,53 +80,51 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
 
     return Column(
       children: [
-        SizedBox(
-          width: 150,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-            decoration: BoxDecoration(
-              borderRadius: speechNotifier.isTestCompleted ? BorderRadius.circular(40) : null,
-              color:
-                  speechNotifier.isTestCompleted
-                      ? speechNotifier.isPassed
-                          ? Colors.green.shade400
-                          : Colors.red.shade400
-                      : null,
-              boxShadow: [
-                if (speechNotifier.isTestCompleted)
-                  const BoxShadow(
-                    color: Color.fromRGBO(128, 128, 128, 0.3),
-                    spreadRadius: 2,
-                    blurRadius: 5,
-                    offset: Offset(0, 2),
-                  ),
-              ],
-            ),
-            child: Center(
-              child: InkWell(
-                onTap: _handleButtonPress,
-                customBorder: speechNotifier.isPassed ? null : const CircleBorder(),
-                child: Container(
-                  decoration: BoxDecoration(
-                    shape: speechNotifier.isPassed ? BoxShape.rectangle : BoxShape.circle,
-                    borderRadius: speechNotifier.isPassed ? BorderRadius.circular(40) : null,
-                  ),
-                  child: Center(
-                    child:
-                        shouldShowResetButton
-                            ? const Icon(Icons.refresh, size: 80, color: Colors.redAccent)
-                            : speechNotifier.isTestCompleted
-                            ? LangText.body(
-                              hindi: speechNotifier.isPassed ? 'आगे बढ़े' : 'पुनः प्रयास करें',
-                              hinglish: speechNotifier.isPassed ? 'Aage badhe' : 'Dobara kare',
-                              style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                            )
-                            : SvgPicture.asset(
-                              'assets/svgs/mic-${speechState.isListening ? 'on' : 'off'}.svg',
-                              width: 80,
-                              height: 80,
-                            ),
-                  ),
+        Container(
+          constraints: const BoxConstraints(maxWidth: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: speechNotifier.isTestCompleted ? BorderRadius.circular(40) : null,
+            color:
+                speechNotifier.isTestCompleted
+                    ? speechNotifier.isPassed
+                        ? Colors.green.shade400
+                        : Colors.red.shade400
+                    : null,
+            boxShadow: [
+              if (speechNotifier.isTestCompleted)
+                const BoxShadow(
+                  color: Color.fromRGBO(128, 128, 128, 0.3),
+                  spreadRadius: 2,
+                  blurRadius: 5,
+                  offset: Offset(0, 2),
+                ),
+            ],
+          ),
+          child: Center(
+            child: InkWell(
+              onTap: _handleButtonPress,
+              customBorder: speechNotifier.isPassed ? null : const CircleBorder(),
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: speechNotifier.isPassed ? BoxShape.rectangle : BoxShape.circle,
+                  borderRadius: speechNotifier.isPassed ? BorderRadius.circular(40) : null,
+                ),
+                child: Center(
+                  child:
+                      shouldShowResetButton
+                          ? const Icon(Icons.refresh, size: 80, color: Colors.redAccent)
+                          : speechNotifier.isTestCompleted
+                          ? LangText.body(
+                            hindi: speechNotifier.isPassed ? 'आगे बढ़े' : 'पुनः प्रयास करें',
+                            hinglish: speechNotifier.isPassed ? 'Aage badhe' : 'Dobara kare',
+                            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                          )
+                          : SvgPicture.asset(
+                            'assets/svgs/mic-${speechState.isListening ? 'on' : 'off'}.svg',
+                            width: 80,
+                            height: 80,
+                          ),
                 ),
               ),
             ),
@@ -137,30 +132,27 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
         ),
 
         if (!speechNotifier.isTestCompleted)
-          Padding(
-            padding: const EdgeInsets.only(top: 12),
-            child: LangText.body(
-              hindi:
+          LangText.body(
+            hindi:
+                shouldShowResetButton
+                    ? 'कुछ एरर आ गया है, रीसेट करें'
+                    : speechState.isListening
+                    ? 'सुन रहे है...'
+                    : 'बोलने से पहले टैप करें',
+            hinglish:
+                shouldShowResetButton
+                    ? 'Kuch error agya hai, reset karien'
+                    : speechState.isListening
+                    ? 'Listening...'
+                    : 'Bolne se pehle tap karein',
+            style: TextStyle(
+              color:
                   shouldShowResetButton
-                      ? 'कुछ एरर आ गया है, रीसेट करें'
+                      ? Colors.orange
                       : speechState.isListening
-                      ? 'सुन रहे है...'
-                      : 'बोलने से पहले टैप करें',
-              hinglish:
-                  shouldShowResetButton
-                      ? 'Kuch error agya hai, reset karien'
-                      : speechState.isListening
-                      ? 'Listening...'
-                      : 'Bolne se pehle tap karein',
-              style: TextStyle(
-                color:
-                    shouldShowResetButton
-                        ? Colors.orange
-                        : speechState.isListening
-                        ? Colors.green
-                        : Theme.of(context).colorScheme.secondary,
-                fontSize: 18,
-              ),
+                      ? Colors.green
+                      : Theme.of(context).colorScheme.secondary,
+              fontSize: 18,
             ),
           ),
       ],

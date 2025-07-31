@@ -189,7 +189,7 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
 
     final responsiveness = ResponsivenessService(context);
     // Don't change app bar visibility in tablet landscape mode - it should always be visible
-    if (!responsiveness.isTabletLandscape()) {
+    if (responsiveness.screenType != Screen.mobile && MediaQuery.of(context).orientation == Orientation.landscape) {
       ref.read(uIControllerProvider.notifier).setIsAppBarVisible(value);
     } else {
       ref.read(uIControllerProvider.notifier).forceAppBarVisible();
@@ -374,16 +374,18 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
     final bool isPlayerReady = _controller?.value.isInitialized ?? false;
     final progress = ref.watch(uIControllerProvider.select((state) => state.currentProgress));
     final responsiveness = ResponsivenessService(context);
-    final isTabletLandscape = responsiveness.isTabletLandscape();
 
     return VisibilityDetector(
       key: Key(widget.video.id + widget.video.index.toString()),
       onVisibilityChanged: _onVisibilityChanged,
       child: SafeArea(
-        child:
-            isTabletLandscape
+        child: OrientationBuilder(
+          builder: (context, orientation) {
+            return orientation == Orientation.landscape && responsiveness.screenType != Screen.mobile
                 ? _buildTabletLandscapeLayout(isPlayerReady, progress, responsiveness)
-                : _buildPortraitLayout(isPlayerReady, progress, responsiveness),
+                : _buildPortraitLayout(isPlayerReady, progress, responsiveness);
+          },
+        ),
       ),
     );
   }

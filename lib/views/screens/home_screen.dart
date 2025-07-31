@@ -255,7 +255,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final loadingLevelIds = ref.watch(levelControllerProvider.select((state) => state.loadingById));
     final sublevels = ref.watch(sublevelControllerProvider.select((state) => state.sublevels));
     final responsiveness = ResponsivenessService(context);
-    final isTabletLandscape = responsiveness.isTabletLandscape();
+    final screenType = responsiveness.screenType;
 
     if (sublevels == null) {
       return const Loader();
@@ -271,12 +271,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     return Scaffold(
-      appBar: isTabletLandscape ? const HomeScreenAppBar() : null,
-      body: Stack(
-        children: [
-          SublevelsList(loadingById: loadingLevelIds, sublevels: _sortedSublevels!, onSublevelChange: onVideoChange),
-          if (!isTabletLandscape) const AnimatedAppBar(),
-        ],
+      appBar:
+          screenType != Screen.mobile
+              ? PreferredSize(
+                preferredSize: const Size.fromHeight(kToolbarHeight),
+                child: OrientationBuilder(
+                  builder: (context, orientation) {
+                    return orientation == Orientation.landscape ? const TopBar() : const SizedBox.shrink();
+                  },
+                ),
+              )
+              : null,
+      body: OrientationBuilder(
+        builder: (context, orientation) {
+          return Stack(
+            children: [
+              SublevelsList(
+                loadingById: loadingLevelIds,
+                sublevels: _sortedSublevels!,
+                onSublevelChange: onVideoChange,
+              ),
+              if (orientation == Orientation.portrait && screenType == Screen.mobile) const AnimatedAppBar(),
+            ],
+          );
+        },
       ),
     );
   }
