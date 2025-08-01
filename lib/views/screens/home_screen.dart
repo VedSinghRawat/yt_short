@@ -1,5 +1,3 @@
-import 'dart:developer' as developer;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants.dart';
@@ -14,7 +12,6 @@ import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/activity_log/activity_log.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
-import 'package:myapp/services/responsiveness/responsiveness_service.dart';
 import 'package:myapp/views/widgets/home_app_bar.dart';
 import 'package:myapp/views/widgets/home_app_bar_animated.dart';
 import 'package:myapp/views/widgets/loader.dart';
@@ -273,8 +270,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Scaffold(
       body: OrientationBuilder(
         builder: (context, orientation) {
-          developer.log('orientation for home screen: $orientation');
-
           if (orientation == Orientation.landscape) {
             // Landscape: Static app bar takes actual space
             return Column(

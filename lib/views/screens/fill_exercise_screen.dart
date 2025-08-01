@@ -6,6 +6,7 @@ import 'package:myapp/models/fill_exercise/fill_exercise.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:myapp/views/widgets/sublevel_image.dart';
 import 'package:myapp/views/widgets/lang_text.dart';
+import 'package:myapp/views/widgets/exercise_container.dart';
 
 class FillExerciseScreen extends ConsumerStatefulWidget {
   final FillExercise exercise;
@@ -248,269 +249,263 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
 
     _initialize();
 
-    return Scaffold(
-      body: SafeArea(
-        child: VisibilityDetector(
-          key: ValueKey(widget.exercise.id),
-          onVisibilityChanged: (visibility) {
-            if (visibility.visibleFraction != 1 || !mounted) return;
+    return ExerciseContainer(
+      addTopPadding: false, // Fill exercise needs custom top padding due to Stack
+      child: VisibilityDetector(
+        key: ValueKey(widget.exercise.id),
+        onVisibilityChanged: (visibility) {
+          if (visibility.visibleFraction != 1 || !mounted) return;
 
-            _initialize();
-          },
-          child: Stack(
-            key: _stackKey,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, kToolbarHeight + 16, 16, 16),
-                child: Column(
-                  children: [
-                    // Hindi header
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16.0),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        children: [
-                          LangText.heading(
-                            hindi: 'रिक्त स्थान भरें',
-                            hinglish: 'Fill in the Blank',
-                            style: TextStyle(color: theme.colorScheme.onPrimary),
-                          ),
-                          const SizedBox(height: 8),
-                          LangText.body(
-                            hindi: 'छवि के अनुसार वाक्य में उचित विकल्प चुनकर रिक्त स्थान भरें।',
-                            hinglish: 'Chavi ke anusar vakya mein uchit vikalp chunkar rikta sthan bhariye.',
-                            style: TextStyle(
-                              color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
+          _initialize();
+        },
+        child: Stack(
+          key: _stackKey,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, kToolbarHeight + 16, 16, 16),
+              child: Column(
+                children: [
+                  // Hindi header
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16.0),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-
-                    const SizedBox(height: 20),
-
-                    Container(
-                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: Colors.grey[800]),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: SubLevelImage(levelId: widget.exercise.levelId, sublevelId: widget.exercise.id),
-                      ),
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    // Sentence with blank
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      crossAxisAlignment: WrapCrossAlignment.center,
+                    child: Column(
                       children: [
-                        if (sentenceParts[0].isNotEmpty)
-                          LangText.bodyText(
-                            text: '${sentenceParts[0]} ',
-                            style: const TextStyle(color: Colors.white, fontSize: 24),
-                          ),
-                        Container(
-                          key: _blankKey,
-                          constraints: BoxConstraints(minWidth: _widestOptionWidth),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: _blankHorizontalPadding,
-                            vertical: _blankVerticalPadding,
-                          ),
-                          decoration: const BoxDecoration(
-                            border: Border(bottom: BorderSide(color: Colors.orange, width: 3)),
-                          ),
-                          child: const SizedBox(height: 20), // Reduced height for the blank
+                        LangText.heading(
+                          hindi: 'रिक्त स्थान भरें',
+                          hinglish: 'Fill in the Blank',
+                          style: TextStyle(color: theme.colorScheme.onPrimary),
                         ),
-                        if (sentenceParts[1].isNotEmpty)
-                          LangText.bodyText(
-                            text: ' ${sentenceParts[1]}',
-                            style: const TextStyle(color: Colors.white, fontSize: 24),
+                        const SizedBox(height: 8),
+                        LangText.body(
+                          hindi: 'छवि के अनुसार वाक्य में उचित विकल्प चुनकर रिक्त स्थान भरें।',
+                          hinglish: 'Chavi ke anusar vakya mein uchit vikalp chunkar rikta sthan bhariye.',
+                          style: TextStyle(
+                            color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
                           ),
+                          textAlign: TextAlign.center,
+                        ),
                       ],
                     ),
+                  ),
 
-                    const SizedBox(height: 40),
+                  const SizedBox(height: 20),
 
-                    // Multiple choice options area with normal buttons
-                    Container(
-                      key: _optionsAreaKey,
-                      child: Wrap(
-                        alignment: WrapAlignment.center,
-                        spacing: 20.0,
-                        runSpacing: 14.0,
-                        children:
-                            widget.exercise.options.isEmpty
-                                ? []
-                                : List.generate(widget.exercise.options.length, (index) {
-                                  final isSelected = selectedOption == index;
-
-                                  // If this option is selected, show placeholder, otherwise show the actual button
-                                  if (isSelected) {
-                                    final buttonSize = _buttonSizes[index];
-                                    return SizedBox(
-                                      width: buttonSize.width,
-                                      height: buttonSize.height,
-                                      key: _placeholderKeys[index],
-                                    );
-                                  }
-
-                                  return GestureDetector(
-                                    key: _placeholderKeys[index],
-                                    onTap: () {
-                                      // If there's already a selection, reset first
-                                      if (selectedOption != null) {
-                                        setState(() {
-                                          selectedOption = null;
-                                          _isAnimating = false;
-                                        });
-
-                                        // Small delay before setting new selection
-                                        Future.delayed(const Duration(milliseconds: 100), () {
-                                          if (mounted) {
-                                            setState(() {
-                                              selectedOption = index;
-                                              _isAnimating = false;
-                                            });
-
-                                            // Start animation after a brief delay
-                                            Future.delayed(const Duration(milliseconds: 50), () {
-                                              if (mounted) {
-                                                setState(() {
-                                                  _isAnimating = true;
-                                                });
-                                              }
-                                            });
-                                          }
-                                        });
-                                      } else {
-                                        // No previous selection, animate normally
-                                        setState(() {
-                                          selectedOption = index;
-                                          _isAnimating = false;
-                                        });
-
-                                        // Start animation after a brief delay
-                                        Future.delayed(const Duration(milliseconds: 50), () {
-                                          if (mounted) {
-                                            setState(() {
-                                              _isAnimating = true;
-                                            });
-                                          }
-                                        });
-                                      }
-                                    },
-                                    child: Container(
-                                      key: _optionKeys[index],
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: _optionButtonVerticalPadding,
-                                        horizontal: _optionButtonHorizontalPadding,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[700],
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: LangText.bodyText(
-                                        text: widget.exercise.options[index],
-                                        style: TextStyle(color: Colors.grey[300], fontSize: 18),
-                                      ),
-                                    ),
-                                  );
-                                }),
-                      ),
+                  Container(
+                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: Colors.grey[800]),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: SubLevelImage(levelId: widget.exercise.levelId, sublevelId: widget.exercise.id),
                     ),
+                  ),
 
-                    const Spacer(),
+                  const SizedBox(height: 32),
 
-                    _isCorrect
-                        ? Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: widget.goToNext,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green[400],
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: const RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.all(Radius.circular(12)),
-                                ),
-                                textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                              ),
-                              child: const LangText.body(hindi: 'आगे बढ़ें', hinglish: 'Aage badhe'),
+                  // Sentence with blank
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      if (sentenceParts[0].isNotEmpty)
+                        LangText.bodyText(
+                          text: '${sentenceParts[0]} ',
+                          style: const TextStyle(color: Colors.white, fontSize: 24),
+                        ),
+                      Container(
+                        key: _blankKey,
+                        constraints: BoxConstraints(minWidth: _widestOptionWidth),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: _blankHorizontalPadding,
+                          vertical: _blankVerticalPadding,
+                        ),
+                        decoration: const BoxDecoration(
+                          border: Border(bottom: BorderSide(color: Colors.orange, width: 3)),
+                        ),
+                        child: const SizedBox(height: 20), // Reduced height for the blank
+                      ),
+                      if (sentenceParts[1].isNotEmpty)
+                        LangText.bodyText(
+                          text: ' ${sentenceParts[1]}',
+                          style: const TextStyle(color: Colors.white, fontSize: 24),
+                        ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 40),
+
+                  // Multiple choice options area with normal buttons
+                  Container(
+                    key: _optionsAreaKey,
+                    child: Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 20.0,
+                      runSpacing: 14.0,
+                      children:
+                          widget.exercise.options.isEmpty
+                              ? []
+                              : List.generate(widget.exercise.options.length, (index) {
+                                final isSelected = selectedOption == index;
+
+                                // If this option is selected, show placeholder, otherwise show the actual button
+                                if (isSelected) {
+                                  final buttonSize = _buttonSizes[index];
+                                  return SizedBox(
+                                    width: buttonSize.width,
+                                    height: buttonSize.height,
+                                    key: _placeholderKeys[index],
+                                  );
+                                }
+
+                                return GestureDetector(
+                                  key: _placeholderKeys[index],
+                                  onTap: () {
+                                    // If there's already a selection, reset first
+                                    if (selectedOption != null) {
+                                      setState(() {
+                                        selectedOption = null;
+                                        _isAnimating = false;
+                                      });
+
+                                      // Small delay before setting new selection
+                                      Future.delayed(const Duration(milliseconds: 100), () {
+                                        if (mounted) {
+                                          setState(() {
+                                            selectedOption = index;
+                                            _isAnimating = false;
+                                          });
+
+                                          // Start animation after a brief delay
+                                          Future.delayed(const Duration(milliseconds: 50), () {
+                                            if (mounted) {
+                                              setState(() {
+                                                _isAnimating = true;
+                                              });
+                                            }
+                                          });
+                                        }
+                                      });
+                                    } else {
+                                      // No previous selection, animate normally
+                                      setState(() {
+                                        selectedOption = index;
+                                        _isAnimating = false;
+                                      });
+
+                                      // Start animation after a brief delay
+                                      Future.delayed(const Duration(milliseconds: 50), () {
+                                        if (mounted) {
+                                          setState(() {
+                                            _isAnimating = true;
+                                          });
+                                        }
+                                      });
+                                    }
+                                  },
+                                  child: Container(
+                                    key: _optionKeys[index],
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: _optionButtonVerticalPadding,
+                                      horizontal: _optionButtonHorizontalPadding,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[700],
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: LangText.bodyText(
+                                      text: widget.exercise.options[index],
+                                      style: TextStyle(color: Colors.grey[300], fontSize: 18),
+                                    ),
+                                  ),
+                                );
+                              }),
+                    ),
+                  ),
+
+                  const Spacer(),
+
+                  _isCorrect
+                      ? Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: widget.goToNext,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green[400],
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                              textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                             ),
-                          ),
-                        )
-                        : Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: selectedOption != null ? _checkAnswer : null,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: theme.colorScheme.primary,
-                                foregroundColor: theme.colorScheme.onPrimary,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: const RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.all(Radius.circular(12)),
-                                ),
-                                textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                                disabledBackgroundColor: Colors.grey[600],
-                              ),
-                              child: const LangText.body(hindi: 'जांचें', hinglish: 'Check'),
-                            ),
+                            child: const LangText.body(hindi: 'आगे बढ़ें', hinglish: 'Aage badhe'),
                           ),
                         ),
+                      )
+                      : Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: selectedOption != null ? _checkAnswer : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: theme.colorScheme.primary,
+                              foregroundColor: theme.colorScheme.onPrimary,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                              textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                              disabledBackgroundColor: Colors.grey[600],
+                            ),
+                            child: const LangText.body(hindi: 'जांचें', hinglish: 'Check'),
+                          ),
+                        ),
+                      ),
 
-                    const SizedBox(height: 12),
-                  ],
-                ),
+                  const SizedBox(height: 12),
+                ],
               ),
+            ),
 
-              // Only show positioned widget for selected option
-              if (selectedOption != null)
-                AnimatedPositioned(
-                  duration: const Duration(milliseconds: 400),
-                  curve: Curves.easeInOut,
-                  left:
-                      _isAnimating ? _getTargetPosition()['left'] : _getOriginalOptionPosition(selectedOption!)['left'],
-                  top: _isAnimating ? _getTargetPosition()['top'] : _getOriginalOptionPosition(selectedOption!)['top'],
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        selectedOption = null;
-                        _isAnimating = false;
-                      });
-                    },
-                    child: Container(
-                      key: _optionKeys[selectedOption!],
-                      padding: const EdgeInsets.symmetric(
-                        vertical: _optionButtonVerticalPadding,
-                        horizontal: _optionButtonHorizontalPadding,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.orange,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(color: Colors.orange.withValues(alpha: 0.5), blurRadius: 8, spreadRadius: 2),
-                        ],
-                      ),
-                      child: LangText.bodyText(
-                        text: widget.exercise.options[selectedOption!],
-                        style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w500),
-                      ),
+            // Only show positioned widget for selected option
+            if (selectedOption != null)
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.easeInOut,
+                left: _isAnimating ? _getTargetPosition()['left'] : _getOriginalOptionPosition(selectedOption!)['left'],
+                top: _isAnimating ? _getTargetPosition()['top'] : _getOriginalOptionPosition(selectedOption!)['top'],
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      selectedOption = null;
+                      _isAnimating = false;
+                    });
+                  },
+                  child: Container(
+                    key: _optionKeys[selectedOption!],
+                    padding: const EdgeInsets.symmetric(
+                      vertical: _optionButtonVerticalPadding,
+                      horizontal: _optionButtonHorizontalPadding,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.orange,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(color: Colors.orange.withValues(alpha: 0.5), blurRadius: 8, spreadRadius: 2),
+                      ],
+                    ),
+                    child: LangText.bodyText(
+                      text: widget.exercise.options[selectedOption!],
+                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w500),
                     ),
                   ),
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );

@@ -8,6 +8,7 @@ import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/path/path_service.dart';
 import 'package:myapp/views/widgets/sublevel_image.dart';
 import 'package:myapp/views/widgets/lang_text.dart';
+import 'package:myapp/views/widgets/exercise_container.dart';
 import 'package:reorderables/reorderables.dart';
 
 class ArrangeExerciseScreen extends ConsumerStatefulWidget {
@@ -164,146 +165,185 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildHeader() {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(12)),
+      child: Column(
+        children: [
+          LangText.heading(
+            hindi: 'वाक्य व्यवस्था',
+            hinglish: 'Arrange Exercise',
+            style: TextStyle(color: theme.colorScheme.onPrimary),
+          ),
+          const SizedBox(height: 8),
+          LangText.body(
+            hindi: 'नीचे दिए गए शब्दों को खींच कर छवि के हिसाब से सही वाक्य बनाएं।',
+            hinglish: 'Niche diye gye words ko kheench kar image ke hisaab se sahi vakya banaye.',
+            style: TextStyle(
+              color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImage() {
+    return SizedBox(
+      height: double.infinity,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: SubLevelImage(levelId: widget.exercise.levelId, sublevelId: widget.exercise.id),
+      ),
+    );
+  }
+
+  Widget _buildArrangeContainer() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10.0),
+      decoration: BoxDecoration(
+        color: Colors.grey[900],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[700]!, width: 2),
+      ),
+      child: ReorderableWrap(
+        spacing: 6,
+        runSpacing: 12,
+        needsLongPressDraggable: false,
+        onReorder: _onReorder,
+        children: currentOrder.map((word) => _buildWordBlock(word)).toList(),
+      ),
+    );
+  }
+
+  Widget _buildButtons() {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, kToolbarHeight + 16, 16, 16),
-          child: Column(
-            children: [
-              // Header with title and instructions
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16.0),
-                decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(12)),
-                child: Column(
-                  children: [
-                    LangText.heading(
-                      hindi: 'वाक्य व्यवस्था',
-                      hinglish: 'Arrange Exercise',
-                      style: TextStyle(color: theme.colorScheme.onPrimary),
-                    ),
-                    const SizedBox(height: 8),
-                    LangText.body(
-                      hindi: 'नीचे दिए गए शब्दों को खींच कर छवि के हिसाब से सही वाक्य बनाएं।',
-                      hinglish: 'Niche diye gye words ko kheench kar image ke hisaab se sahi vakya banaye.',
-                      style: TextStyle(
-                        color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
+    if (_isCorrect) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: widget.goToNext,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green[400],
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+              textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+            child: const LangText.body(hindi: 'आगे बढ़ें', hinglish: 'Aage badhe'),
+          ),
+        ),
+      );
+    }
+
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton(
+            onPressed: _checkAnswer,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+              textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+            child: const LangText.body(hindi: 'जांचें', hinglish: 'Check'),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            transform: Matrix4.identity()..scale(_isPlayingAudio ? 1.05 : 1.0),
+            child: ElevatedButton.icon(
+              onPressed: _playHint,
+              icon: Icon(_isPlayingAudio ? Icons.stop : Icons.volume_up),
+              label: LangText.body(
+                hindi: _isPlayingAudio ? 'ध्वनि चल रही है' : 'सुझाव',
+                hinglish: _isPlayingAudio ? 'Playing' : 'Hint',
               ),
-
-              const SizedBox(height: 20),
-
-              Container(
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: Colors.grey[800]),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: SubLevelImage(levelId: widget.exercise.levelId, sublevelId: widget.exercise.id),
-                ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    _isPlayingAudio ? theme.colorScheme.secondary : theme.colorScheme.secondary.withValues(alpha: 0.2),
+                foregroundColor: _isPlayingAudio ? theme.colorScheme.onSecondary : theme.colorScheme.onSurface,
+                side:
+                    _isPlayingAudio
+                        ? null
+                        : BorderSide(color: theme.colorScheme.secondary.withValues(alpha: 0.5), width: 1),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
-              const SizedBox(height: 20),
-
-              // Reorderable word container (size based on content)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(10.0),
-                decoration: BoxDecoration(
-                  color: Colors.grey[900],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[700]!, width: 2),
-                ),
-                child: ReorderableWrap(
-                  spacing: 6,
-                  runSpacing: 12,
-                  needsLongPressDraggable: false,
-                  onReorder: _onReorder,
-                  children: currentOrder.map((word) => _buildWordBlock(word)).toList(),
-                ),
-              ),
-
-              const Spacer(), // Push buttons to bottom
-
-              _isCorrect
-                  ? Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: widget.goToNext,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green[400],
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-                          textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                        ),
-                        child: const LangText.body(hindi: 'आगे बढ़ें', hinglish: 'Aage badhe'),
-                      ),
-                    ),
-                  )
-                  : Row(
+  @override
+  Widget build(BuildContext context) {
+    return ExerciseContainer(
+      maxWidth: null, // No max width for arrange exercise to allow full width in landscape
+      child: OrientationBuilder(
+        builder: (context, orientation) {
+          if (orientation == Orientation.landscape) {
+            // Landscape layout: Header at top (centered with max width), then image left and content right
+            return Column(
+              children: [
+                // Centered header with max width
+                Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 600), child: _buildHeader())),
+                const SizedBox(height: 20),
+                // Image and content side by side
+                Expanded(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
+                      // Image on the left - no constraints, maintains aspect ratio
+                      Expanded(flex: 3, child: Center(child: _buildImage())),
+                      const SizedBox(width: 20),
+                      // Arrange container and buttons on the right with max width constraint
                       Expanded(
-                        child: ElevatedButton(
-                          onPressed: _checkAnswer,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: theme.colorScheme.primary,
-                            foregroundColor: theme.colorScheme.onPrimary,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-                            textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                          ),
-                          child: const LangText.body(hindi: 'जांचें', hinglish: 'Check'),
-                        ),
-                      ),
-
-                      const SizedBox(width: 16),
-
-                      Expanded(
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          transform: Matrix4.identity()..scale(_isPlayingAudio ? 1.05 : 1.0),
-                          child: ElevatedButton.icon(
-                            onPressed: _playHint,
-
-                            icon: Icon(_isPlayingAudio ? Icons.stop : Icons.volume_up),
-                            label: LangText.body(
-                              hindi: _isPlayingAudio ? 'ध्वनि चल रही है' : 'सुझाव',
-                              hinglish: _isPlayingAudio ? 'Playing' : 'Hint',
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  _isPlayingAudio
-                                      ? theme.colorScheme.secondary
-                                      : theme.colorScheme.secondary.withValues(alpha: 0.2),
-                              foregroundColor:
-                                  _isPlayingAudio ? theme.colorScheme.onSecondary : theme.colorScheme.onSurface,
-                              side:
-                                  _isPlayingAudio
-                                      ? null
-                                      : BorderSide(color: theme.colorScheme.secondary.withValues(alpha: 0.5), width: 1),
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-                              textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                            ),
+                        flex: 2,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 600),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [_buildArrangeContainer(), const SizedBox(height: 40), _buildButtons()],
                           ),
                         ),
                       ),
                     ],
                   ),
-            ],
-          ),
-        ),
+                ),
+              ],
+            );
+          } else {
+            // Portrait layout: Vertical stack
+            return Column(
+              children: [
+                _buildHeader(),
+                const SizedBox(height: 20),
+                _buildImage(),
+                const SizedBox(height: 20),
+                _buildArrangeContainer(),
+                const Spacer(),
+                _buildButtons(),
+              ],
+            );
+          }
+        },
       ),
     );
   }
