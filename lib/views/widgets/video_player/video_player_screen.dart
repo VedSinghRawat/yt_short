@@ -187,13 +187,8 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
       _showDialogueArea = value;
     });
 
-    final responsiveness = ResponsivenessService(context);
-    // Don't change app bar visibility in tablet landscape mode - it should always be visible
-    if (responsiveness.screenType != Screen.mobile && MediaQuery.of(context).orientation == Orientation.landscape) {
-      ref.read(uIControllerProvider.notifier).setIsAppBarVisible(value);
-    } else {
-      ref.read(uIControllerProvider.notifier).forceAppBarVisible();
-    }
+    // Set app bar visibility based on the value, same behavior for all devices
+    ref.read(uIControllerProvider.notifier).setIsAppBarVisible(value);
   }
 
   Future<void> _handleVisibility(bool isVisible) async {

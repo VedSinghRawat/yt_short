@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter/material.dart';
 import 'package:myapp/models/video/video.dart';
 import 'package:myapp/services/responsiveness/responsiveness_service.dart';
@@ -31,9 +33,7 @@ class DialoguePopup extends StatelessWidget {
                 width: double.infinity,
                 height: MediaQuery.of(context).size.height,
                 padding:
-                    responsiveness.screenType != Screen.mobile && orientation == Orientation.landscape
-                        ? EdgeInsets.zero
-                        : const EdgeInsets.only(top: kToolbarHeight),
+                    orientation == Orientation.portrait ? const EdgeInsets.only(top: kToolbarHeight) : EdgeInsets.zero,
                 decoration: const BoxDecoration(
                   color: Colors.black,
                   boxShadow: [

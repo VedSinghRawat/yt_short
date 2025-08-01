@@ -12,17 +12,17 @@ import 'package:myapp/controllers/user/user_controller.dart';
 import 'package:myapp/controllers/ui/ui_controller.dart';
 import 'package:myapp/views/widgets/lang_text.dart';
 
-class TopBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
-  const TopBar({super.key});
+class HomeAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
+  const HomeAppBar({super.key});
 
   @override
-  ConsumerState<TopBar> createState() => _TopBarState();
+  ConsumerState<HomeAppBar> createState() => _HomeAppBarState();
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
 
-class _TopBarState extends ConsumerState<TopBar> {
+class _HomeAppBarState extends ConsumerState<HomeAppBar> {
   bool _isLoading = false;
 
   @override

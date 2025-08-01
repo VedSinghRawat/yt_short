@@ -39,15 +39,19 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
   Widget build(BuildContext context) {
     final responsiveness = ResponsivenessService(context);
 
+    final padding = responsiveness.getResponsiveValues(mobile: 16, tablet: 24, largeTablet: 32);
+
     return Scaffold(
       body: SafeArea(
         child: OrientationBuilder(
           builder: (context, orientation) {
-            final isPortrait = orientation == Orientation.portrait;
-            final padding = responsiveness.getResponsiveValues(mobile: 16, tablet: 24, largeTablet: 32);
-
             return Padding(
-              padding: EdgeInsets.fromLTRB(padding, isPortrait ? kToolbarHeight + padding : padding, padding, padding),
+              padding: EdgeInsets.fromLTRB(
+                padding,
+                orientation == Orientation.portrait ? kToolbarHeight + padding : padding,
+                padding,
+                padding,
+              ),
               child: Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 600),

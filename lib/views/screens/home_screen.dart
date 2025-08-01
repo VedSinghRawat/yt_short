@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants.dart';
@@ -13,8 +15,8 @@ import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/activity_log/activity_log.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 import 'package:myapp/services/responsiveness/responsiveness_service.dart';
-import 'package:myapp/views/widgets/app_bar.dart';
-import 'package:myapp/views/widgets/animated_app_bar.dart';
+import 'package:myapp/views/widgets/home_app_bar.dart';
+import 'package:myapp/views/widgets/home_app_bar_animated.dart';
 import 'package:myapp/views/widgets/loader.dart';
 import 'package:myapp/views/widgets/sublevel_list.dart';
 
@@ -254,8 +256,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final loadingLevelIds = ref.watch(levelControllerProvider.select((state) => state.loadingById));
     final sublevels = ref.watch(sublevelControllerProvider.select((state) => state.sublevels));
-    final responsiveness = ResponsivenessService(context);
-    final screenType = responsiveness.screenType;
 
     if (sublevels == null) {
       return const Loader();
@@ -271,29 +271,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     return Scaffold(
-      appBar:
-          screenType != Screen.mobile
-              ? PreferredSize(
-                preferredSize: const Size.fromHeight(kToolbarHeight),
-                child: OrientationBuilder(
-                  builder: (context, orientation) {
-                    return orientation == Orientation.landscape ? const TopBar() : const SizedBox.shrink();
-                  },
-                ),
-              )
-              : null,
       body: OrientationBuilder(
         builder: (context, orientation) {
-          return Stack(
-            children: [
-              SublevelsList(
-                loadingById: loadingLevelIds,
-                sublevels: _sortedSublevels!,
-                onSublevelChange: onVideoChange,
-              ),
-              if (orientation == Orientation.portrait && screenType == Screen.mobile) const AnimatedAppBar(),
-            ],
-          );
+          developer.log('orientation for home screen: $orientation');
+
+          if (orientation == Orientation.landscape) {
+            // Landscape: Static app bar takes actual space
+            return Column(
+              children: [
+                const HomeAppBar(),
+                Expanded(
+                  child: SublevelsList(
+                    loadingById: loadingLevelIds,
+                    sublevels: _sortedSublevels!,
+                    onSublevelChange: onVideoChange,
+                  ),
+                ),
+              ],
+            );
+          } else {
+            // Portrait: Animated app bar over content
+            return Stack(
+              children: [
+                SublevelsList(
+                  loadingById: loadingLevelIds,
+                  sublevels: _sortedSublevels!,
+                  onSublevelChange: onVideoChange,
+                ),
+                const HomeAppBarAnimated(),
+              ],
+            );
+          }
         },
       ),
     );

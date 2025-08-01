@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:myapp/views/widgets/app_bar.dart';
+import 'package:myapp/views/widgets/home_app_bar.dart';
 import 'package:myapp/controllers/ui/ui_controller.dart';
 
-class AnimatedAppBar extends ConsumerStatefulWidget {
-  const AnimatedAppBar({super.key});
+class HomeAppBarAnimated extends ConsumerStatefulWidget {
+  const HomeAppBarAnimated({super.key});
 
   @override
-  ConsumerState<AnimatedAppBar> createState() => _AnimatedAppBarState();
+  ConsumerState<HomeAppBarAnimated> createState() => _HomeAppBarAnimatedState();
 }
 
-class _AnimatedAppBarState extends ConsumerState<AnimatedAppBar> {
+class _HomeAppBarAnimatedState extends ConsumerState<HomeAppBarAnimated> {
   @override
   Widget build(BuildContext context) {
     final isAppBarVisible = ref.watch(uIControllerProvider.select((state) => state.isAppBarVisible));
@@ -25,7 +25,7 @@ class _AnimatedAppBarState extends ConsumerState<AnimatedAppBar> {
         duration: const Duration(milliseconds: 300),
         opacity: isAppBarVisible ? 1.0 : 0.0,
         curve: Curves.easeInOutCubic,
-        child: const TopBar(),
+        child: const HomeAppBar(),
       ),
     );
   }
