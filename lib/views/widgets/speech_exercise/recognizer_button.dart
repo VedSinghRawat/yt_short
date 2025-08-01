@@ -82,7 +82,6 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
       children: [
         Container(
           constraints: const BoxConstraints(maxWidth: 180),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
             borderRadius: speechNotifier.isTestCompleted ? BorderRadius.circular(40) : null,
             color:

@@ -48,7 +48,7 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
             return Padding(
               padding: EdgeInsets.fromLTRB(
                 padding,
-                orientation == Orientation.portrait ? kToolbarHeight + padding : padding,
+                orientation == Orientation.portrait ? kToolbarHeight + padding : 0,
                 padding,
                 padding,
               ),

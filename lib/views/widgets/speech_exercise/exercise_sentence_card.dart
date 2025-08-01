@@ -114,9 +114,11 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
         children: [
           const Header(),
 
+          const SizedBox(height: 28),
+
           Expanded(
             child: Container(
-              margin: const EdgeInsets.only(top: 28.0, left: 16, right: 16),
+              margin: const EdgeInsets.only(left: 16, right: 16),
               child: Column(
                 children: [
                   Stack(
