@@ -320,7 +320,7 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
                           constraints: const BoxConstraints(maxWidth: 600),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            children: [_buildArrangeContainer(), const SizedBox(height: 40), _buildButtons()],
+                            children: [_buildArrangeContainer(), const SizedBox(height: 80), _buildButtons()],
                           ),
                         ),
                       ),
@@ -335,7 +335,10 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
               children: [
                 _buildHeader(),
                 const SizedBox(height: 20),
-                _buildImage(),
+                Container(
+                  constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height / 3),
+                  child: _buildImage(),
+                ),
                 const SizedBox(height: 20),
                 _buildArrangeContainer(),
                 const Spacer(),
