@@ -486,11 +486,10 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               // Image on the left
-                              Expanded(flex: 3, child: Center(child: _buildImage())),
+                              Expanded(child: Center(child: _buildImage())),
                               const SizedBox(width: 20),
                               // Content on the right with max width constraint
                               Expanded(
-                                flex: 2,
                                 child: ConstrainedBox(
                                   constraints: const BoxConstraints(maxWidth: 600),
                                   child: Column(
@@ -636,8 +635,9 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                                           )
                                           : Padding(
                                             padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                                            child: SizedBox(
+                                            child: Container(
                                               width: double.infinity,
+                                              constraints: BoxConstraints(maxWidth: 240),
                                               child: ElevatedButton(
                                                 onPressed: selectedOption != null ? _checkAnswer : null,
                                                 style: ElevatedButton.styleFrom(

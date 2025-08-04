@@ -311,11 +311,10 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       // Image on the left - no constraints, maintains aspect ratio
-                      Expanded(flex: 3, child: Center(child: _buildImage())),
+                      Expanded(child: Center(child: _buildImage())),
                       const SizedBox(width: 20),
                       // Arrange container and buttons on the right with max width constraint
                       Expanded(
-                        flex: 2,
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 600),
                           child: Column(
