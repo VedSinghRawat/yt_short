@@ -637,7 +637,7 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                                             padding: const EdgeInsets.symmetric(horizontal: 16.0),
                                             child: Container(
                                               width: double.infinity,
-                                              constraints: BoxConstraints(maxWidth: 240),
+                                              constraints: const BoxConstraints(maxWidth: 240),
                                               child: ElevatedButton(
                                                 onPressed: selectedOption != null ? _checkAnswer : null,
                                                 style: ElevatedButton.styleFrom(
