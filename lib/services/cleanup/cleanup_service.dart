@@ -130,13 +130,7 @@ class StorageCleanupService {
             final videoSize = await videoFile.length();
 
             toBeDeletedPaths[levelId]!.add(videoFile.path);
-            etagsToClean.add(
-              PathService.sublevelAsset(
-                levelId,
-                videoPathEndpoint.split('/').last.replaceAll('.mp4', ''),
-                AssetType.video,
-              ),
-            );
+            etagsToClean.add(PathService.sublevelAsset(levelId, videoPathEndpoint, AssetType.video));
 
             totalSize -= videoSize;
           }
@@ -148,13 +142,7 @@ class StorageCleanupService {
               final audioSize = await audioFile.length();
               toBeDeletedPaths[levelId]!.add(audioFile.path);
 
-              etagsToClean.add(
-                PathService.sublevelAsset(
-                  levelId,
-                  audioPathEndpoint.split('/').last.replaceAll('.mp3', ''),
-                  AssetType.audio,
-                ),
-              );
+              etagsToClean.add(PathService.sublevelAsset(levelId, audioPathEndpoint, AssetType.audio));
 
               totalSize -= audioSize;
             }
@@ -169,13 +157,7 @@ class StorageCleanupService {
               final imageSize = await imageFile.length();
               toBeDeletedPaths[levelId]!.add(imageFile.path);
 
-              etagsToClean.add(
-                PathService.sublevelAsset(
-                  levelId,
-                  imagePathEndpoint.split('/').last.replaceAll('.jpg', ''),
-                  AssetType.image,
-                ),
-              );
+              etagsToClean.add(PathService.sublevelAsset(levelId, imagePathEndpoint, AssetType.image));
 
               totalSize -= imageSize;
             }
