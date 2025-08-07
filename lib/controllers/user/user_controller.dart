@@ -37,12 +37,14 @@ class UserController extends _$UserController {
 
   User userFromDTO(UserDTO userDTO) {
     final orderedIds = ref.read(levelControllerProvider).orderedIds;
+    developer.log('orderedIds: $orderedIds', name: 'UserController');
 
     final maxLevelIndex = orderedIds?.indexOf(userDTO.maxLevelId) ?? -1;
     final userMaxLevel = maxLevelIndex != -1 ? maxLevelIndex + 1 : 1;
 
     final levelIndex = orderedIds?.indexOf(userDTO.levelId) ?? -1;
     final userLevel = levelIndex != -1 ? levelIndex + 1 : 1;
+    developer.log('userLevel: $userLevel', name: 'UserController');
 
     final user = User.fromUserDTO(userDTO, userLevel, userMaxLevel);
 

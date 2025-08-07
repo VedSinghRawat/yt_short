@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:myapp/apis/initialize/initialize_api.dart';
 import 'package:myapp/constants.dart';
 import 'package:myapp/core/router/router.dart';
+import 'package:myapp/core/utils.dart';
 import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/info/info_service.dart';
 import 'package:myapp/core/shared_pref.dart';
@@ -40,28 +41,52 @@ class InitializeService {
       // order matters
       await SharedPref.init(); // first init shared pref
       await InfoService.init(); // then init info service
-      await initialApiCall(); // then call api because it depends on info service
 
-      await Future.wait([
-        storeCyId(), // depend on user
-        FileService.init(),
-        levelController.getOrderedIds(),
-        handleDeepLinking(), // deep linking depends on user
-      ]);
+      await Future.wait([FileService.init(), levelController.getOrderedIds()]);
+      await initialApiCall(); // depends on info service & levelController (orderedIds)
+      await Future.wait([storeCyId(), handleDeepLinking()]); // depends on user
 
       final currProgress = SharedPref.get(
         PrefKey.currProgress(userEmail: ref.read(userControllerProvider.notifier).getUser()?.email),
       );
 
       final apiUser = ref.read(userControllerProvider.notifier).getUser();
-      if (currProgress == null && apiUser == null) return;
+
+      developer.log('📊 Progress Sync Analysis:', name: 'InitializeService');
+      developer.log(
+        '📱 Local Progress: ${currProgress?.level}-${currProgress?.subLevel} '
+        '(levelId: ${currProgress?.levelId}, maxLevel: ${currProgress?.maxLevel}-${currProgress?.maxSubLevel})',
+        name: 'InitializeService',
+      );
+      developer.log(
+        '☁️ API User Progress: ${apiUser?.level}-${apiUser?.subLevel} '
+        '(levelId: ${apiUser?.levelId}, maxLevel: ${apiUser?.maxLevel}-${apiUser?.maxSubLevel})',
+        name: 'InitializeService',
+      );
+
+      if (currProgress == null && apiUser == null) {
+        developer.log('⚠️ No progress available (local or API)', name: 'InitializeService');
+        return;
+      }
 
       final localLastModified = currProgress?.modified ?? 0;
       final apiLastModified = apiUser != null ? apiUser.lastProgress : 0;
+
       final localIsNewer = localLastModified > apiLastModified && currProgress?.levelId != null;
 
+      developer.log(
+        '🕒 Timestamps - Local: $localLastModified (${formatMillis(localLastModified)}), '
+        'API: $apiLastModified (${formatMillis(apiLastModified)}), '
+        'Local is newer: $localIsNewer',
+        name: 'InitializeService',
+      );
+
       if (localIsNewer) {
-        await userController.sync(currProgress!.levelId!, currProgress.subLevel!);
+        developer.log(
+          '📱 Using LOCAL progress: syncing ${currProgress!.level}-${currProgress.subLevel} to server',
+          name: 'InitializeService',
+        );
+        await userController.sync(currProgress.levelId!, currProgress.subLevel!);
       } else {
         final progress = Progress(
           level: apiUser?.level,
@@ -72,10 +97,17 @@ class InitializeService {
           modified: apiUser != null ? DateTime.parse(apiUser.modified).millisecondsSinceEpoch : null,
         );
 
+        developer.log(
+          '☁️ Using API progress: storing ${progress.level}-${progress.subLevel} locally '
+          '(maxLevel: ${progress.maxLevel}-${progress.maxSubLevel})',
+          name: 'InitializeService',
+        );
+
         final uiController = ref.read(uIControllerProvider.notifier);
         await uiController.storeProgress(progress, userEmail: apiUser?.email);
       }
 
+      developer.log('✅ Progress sync completed', name: 'InitializeService');
       await SharedPref.store(PrefKey.isFirstLaunch, false);
     } catch (e, stackTrace) {
       developer.log('Error during initialize', error: e.toString(), stackTrace: stackTrace);

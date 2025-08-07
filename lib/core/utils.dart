@@ -121,3 +121,10 @@ String choose({required String hindi, required String hinglish, required PrefLan
     PrefLang.hinglish => hinglish,
   };
 }
+
+String formatMillis(int millis) {
+  if (millis == 0) return 'N/A';
+  final dt = DateTime.fromMillisecondsSinceEpoch(millis);
+  return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} '
+      '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}:${dt.second.toString().padLeft(2, '0')}';
+}
