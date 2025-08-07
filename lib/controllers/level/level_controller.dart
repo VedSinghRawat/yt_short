@@ -1,4 +1,3 @@
-import 'dart:developer' as developer;
 import 'dart:math' as math;
 import 'package:dio/dio.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -47,7 +46,6 @@ class LevelController extends _$LevelController {
 
     final level = levelDTOEither.fold(
       (l) {
-        developer.log(l.message, name: 'LevelController');
         state = state.copyWith(error: l.message);
         return null;
       },

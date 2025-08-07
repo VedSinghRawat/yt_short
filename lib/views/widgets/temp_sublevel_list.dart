@@ -17,7 +17,6 @@ import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 import 'package:myapp/models/video/video.dart';
 import 'dart:async';
-import 'dart:developer' as developer;
 
 class TempSublevelsList extends ConsumerStatefulWidget {
   final List<SubLevel> sublevels;
@@ -124,11 +123,6 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
         }
       }
     }
-
-    developer.log(
-      '🎯 Buffer built: current sublevel (${currentSublevel.level}-${currentSublevel.index}) at middle position $_middleIndex',
-      name: 'TempSublevelsList',
-    );
 
     // Log duplicate positions
     final duplicatePositions = <int>[];
@@ -340,11 +334,6 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
       ),
       type: SnackBarType.info,
     );
-
-    developer.log(
-      '🚫 Backward scroll blocked: ${isFirstLevel ? "First level" : "Loading older levels"}',
-      name: 'TempSublevelsList',
-    );
   }
 
   void _showForwardBlockedAlert() {
@@ -443,10 +432,6 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
       if (firstOldItemNewIndex > 0) {
         // Items were prepended
         itemsPrepended = true;
-        developer.log(
-          '✅ Items were prepended at the beginning (old items now start at index $firstOldItemNewIndex)',
-          name: 'TempSublevelsList',
-        );
       }
     }
 
