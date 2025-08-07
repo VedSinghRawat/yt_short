@@ -56,6 +56,8 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _jumpToCurrentProgress();
+      // Set initial app bar visibility
+      _setAppBarVisibility();
     });
   }
 
@@ -255,20 +257,29 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
     _controller.jumpToPage(_middleIndex);
   }
 
+  void _setAppBarVisibility() {
+    if (_currentGlobalIndex < widget.sublevels.length) {
+      final sublevel = widget.sublevels[_currentGlobalIndex];
+      // Use Future.microtask to defer the state modification until after the widget tree is built
+      Future.microtask(() {
+        if (mounted) {
+          sublevel.when(
+            video: (video) => ref.read(uIControllerProvider.notifier).setIsAppBarVisible(false),
+            speechExercise: (speechExercise) => ref.read(uIControllerProvider.notifier).setIsAppBarVisible(true),
+            arrangeExercise: (arrangeExercise) => ref.read(uIControllerProvider.notifier).setIsAppBarVisible(true),
+            fillExercise: (fillExercise) => ref.read(uIControllerProvider.notifier).setIsAppBarVisible(true),
+          );
+        }
+      });
+    }
+  }
+
   void _triggerSublevelChange() {
     // Notify parent about current sublevel change
     widget.onSublevelChange?.call(_currentGlobalIndex, _controller);
 
     // Update app bar visibility
-    if (_currentGlobalIndex < widget.sublevels.length) {
-      final sublevel = widget.sublevels[_currentGlobalIndex];
-      sublevel.when(
-        video: (video) => ref.read(uIControllerProvider.notifier).setIsAppBarVisible(false),
-        speechExercise: (speechExercise) => ref.read(uIControllerProvider.notifier).setIsAppBarVisible(true),
-        arrangeExercise: (arrangeExercise) => ref.read(uIControllerProvider.notifier).setIsAppBarVisible(true),
-        fillExercise: (fillExercise) => ref.read(uIControllerProvider.notifier).setIsAppBarVisible(true),
-      );
-    }
+    _setAppBarVisibility();
   }
 
   Future<void> _jumpToCurrentProgress() async {
@@ -291,6 +302,8 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
           setState(() {});
           // Dispose controllers for videos no longer in buffer
           _disposeUnusedControllers();
+          // Update app bar visibility after rebuilding buffer
+          _setAppBarVisibility();
         }
       } else {
         // For small jumps, just update the global index and let natural scrolling handle it
@@ -303,6 +316,9 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
       final jumpSublevel = widget.sublevels[_currentGlobalIndex];
       final progressUpdate = Progress(level: jumpSublevel.level, subLevel: jumpSublevel.index);
       await ref.read(uIControllerProvider.notifier).storeProgress(progressUpdate, userEmail: userEmail);
+
+      // Update app bar visibility after jumping to progress
+      _setAppBarVisibility();
     }
   }
 
@@ -413,6 +429,8 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
         _rebuildBufferWithPadding();
         if (mounted) {
           setState(() {});
+          // Update app bar visibility after rebuilding buffer
+          _setAppBarVisibility();
         }
       }
     }
@@ -462,6 +480,8 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
           _rebuildBufferWithPadding();
           if (mounted) {
             setState(() {});
+            // Update app bar visibility after rebuilding buffer
+            _setAppBarVisibility();
           }
         }
       } else {
@@ -490,6 +510,8 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
             setState(() {});
             // Dispose controllers for videos no longer in buffer
             _disposeUnusedControllers();
+            // Update app bar visibility after rebuilding buffer
+            _setAppBarVisibility();
           }
         }
       }
