@@ -6,6 +6,7 @@ import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/views/widgets/loader.dart';
 import 'package:myapp/views/widgets/video_player/video_player_screen.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
+import 'package:myapp/services/video/video_cache_service.dart';
 import 'package:myapp/controllers/ui/ui_controller.dart';
 import 'package:myapp/views/screens/error_screen.dart';
 import 'package:myapp/views/screens/speech_exercise_screen.dart';
@@ -14,6 +15,7 @@ import 'package:myapp/views/screens/fill_exercise_screen.dart';
 import 'package:myapp/controllers/user/user_controller.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
+import 'package:myapp/models/video/video.dart';
 import 'dart:async';
 import 'dart:developer' as developer;
 
@@ -252,6 +254,9 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
 
     _logBufferState('MOVE_FORWARD');
 
+    // Dispose controllers for videos no longer in buffer
+    _disposeUnusedControllers();
+
     // Jump back to middle - this prevents flicker
     _controller.jumpToPage(_middleIndex);
   }
@@ -283,6 +288,9 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
     _triggerSublevelChange();
 
     _logBufferState('MOVE_BACKWARD');
+
+    // Dispose controllers for videos no longer in buffer
+    _disposeUnusedControllers();
 
     // Jump back to middle - this prevents flicker
     _controller.jumpToPage(_middleIndex);
@@ -328,6 +336,8 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
 
         if (mounted) {
           setState(() {});
+          // Dispose controllers for videos no longer in buffer
+          _disposeUnusedControllers();
         }
       } else {
         developer.log(
@@ -413,7 +423,13 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
       video:
           (video) => VideoPlayerScreen(
             key: ValueKey('video_${video.id}_${sublevel.levelId}_${sublevel.index}'),
-            video: video,
+            video: Video(
+              id: video.id,
+              levelId: video.levelId,
+              level: sublevel.level,
+              index: sublevel.index,
+              dialogues: video.dialogues,
+            ),
             isCurrent: bufferIndex == _middleIndex,
           ),
       speechExercise:
@@ -570,6 +586,8 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
           _rebuildBufferWithPadding();
           if (mounted) {
             setState(() {});
+            // Dispose controllers for videos no longer in buffer
+            _disposeUnusedControllers();
           }
         } else {
           developer.log(
@@ -597,7 +615,60 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
   void dispose() {
     _controller.removeListener(_onControllerChange);
     _controller.dispose();
+
+    // Dispose all cached controllers when the widget is disposed
+    final cacheService = VideoCacheService();
+    cacheService.clearCache();
+    developer.log('📹 Disposed all cached controllers on widget dispose', name: 'TempSublevelsList');
+
     super.dispose();
+  }
+
+  // Check if a video is still in the buffer
+  bool _isVideoInBuffer(Video video) {
+    return _bufferSublevels.any(
+      (sublevel) => sublevel.when(
+        video:
+            (v) => v.id == video.id && v.levelId == video.levelId && v.level == video.level && v.index == video.index,
+        speechExercise: (speechExercise) => false,
+        arrangeExercise: (arrangeExercise) => false,
+        fillExercise: (fillExercise) => false,
+      ),
+    );
+  }
+
+  // Dispose controllers for videos that are no longer in the buffer
+  void _disposeUnusedControllers() {
+    final cacheService = VideoCacheService();
+    final cachedKeys = cacheService.cachedKeys;
+
+    for (final key in cachedKeys) {
+      // Extract video info from cache key (format: levelId_videoId_level_index)
+      final parts = key.split('_');
+      if (parts.length >= 4) {
+        final levelId = parts[0];
+        final videoId = parts[1];
+        final level = int.tryParse(parts[2]) ?? 1;
+        final index = int.tryParse(parts[3]) ?? 1;
+
+        // Check if this video is still in the buffer
+        bool isInBuffer = _bufferSublevels.any(
+          (sublevel) => sublevel.when(
+            video: (v) => v.id == videoId && v.levelId == levelId && v.level == level && v.index == index,
+            speechExercise: (speechExercise) => false,
+            arrangeExercise: (arrangeExercise) => false,
+            fillExercise: (fillExercise) => false,
+          ),
+        );
+
+        if (!isInBuffer) {
+          // Video is no longer in buffer, dispose it
+          final video = Video(id: videoId, levelId: levelId, level: level, index: index, dialogues: []);
+          cacheService.removeAndDisposeController(video);
+          developer.log('📹 Disposed unused controller: $key', name: 'TempSublevelsList');
+        }
+      }
+    }
   }
 
   @override

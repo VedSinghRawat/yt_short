@@ -20,6 +20,7 @@ import 'package:visibility_detector/visibility_detector.dart';
 import 'package:flutter/foundation.dart';
 import 'video_progress_bar.dart';
 import 'package:myapp/views/widgets/video_player/dialogue_popup.dart';
+import 'package:myapp/services/video/video_cache_service.dart';
 
 class VideoPlayerScreen extends ConsumerStatefulWidget {
   final Video video;
@@ -36,6 +37,9 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
   Duration? _lastPosition;
   String? error;
   bool _isVisible = false;
+
+  // Video cache service instance
+  final VideoCacheService _cacheService = VideoCacheService();
 
   bool _showPlayPauseIcon = false;
   IconData _iconData = Icons.play_arrow;
@@ -66,8 +70,16 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
     _iconTimer?.cancel();
     _animationTimer?.cancel();
     _bounceTimer?.cancel();
+
+    // Cache the controller before disposing - DON'T dispose it here
+    if (_controller != null && _controller!.value.isInitialized) {
+      _cacheService.cacheController(widget.video, _controller!);
+      developer.log('📹 Cached controller before widget dispose', name: 'VideoPlayerScreen');
+    }
+
+    // Remove listener but DON'T dispose the controller
     _controller?.removeListener(_listener);
-    _controller?.dispose();
+    // _controller?.dispose(); // REMOVED - let cache service handle disposal
     super.dispose();
   }
 
@@ -95,7 +107,8 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
       } else if (_controller != null &&
           _controller!.value.isInitialized &&
           !_controller!.value.isPlaying &&
-          _isVisible) {
+          _isVisible &&
+          widget.isCurrent) {
         await play();
       }
     }
@@ -270,6 +283,24 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
       });
     }
 
+    // Check if we have a cached controller
+    final cachedController = _cacheService.getCachedController(widget.video);
+    if (cachedController != null && cachedController.value.isInitialized) {
+      developer.log('📹 Using cached controller', name: 'VideoPlayerScreen');
+      _controller = cachedController;
+      _controller!.addListener(_listener);
+
+      // Reset to beginning and pause
+      await _controller!.seekTo(Duration.zero);
+      developer.log('📹 Reset cached controller to beginning', name: 'VideoPlayerScreen');
+
+      if (mounted) {
+        setState(() {});
+      }
+      return;
+    }
+
+    // If no cached controller, create a new one
     await _controller?.dispose();
     _controller = null;
 
@@ -315,7 +346,11 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
         _lastPosition = null;
       }
 
-      if (_isVisible && _controller!.value.isInitialized) {
+      // Cache the new controller
+      _cacheService.cacheController(widget.video, _controller!);
+      developer.log('📹 Cached new controller', name: 'VideoPlayerScreen');
+
+      if (_isVisible && _controller!.value.isInitialized && widget.isCurrent) {
         await play();
       }
     } catch (e) {

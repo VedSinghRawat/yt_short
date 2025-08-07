@@ -16,6 +16,7 @@ import 'package:myapp/views/screens/fill_exercise_screen.dart';
 import 'package:myapp/controllers/user/user_controller.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
+import 'package:myapp/models/video/video.dart';
 import 'dart:async';
 
 class SublevelsList extends ConsumerStatefulWidget {
@@ -381,7 +382,17 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
                     children: [
                       Center(
                         child: sublevel.when(
-                          video: (video) => VideoPlayerScreen(video: video, isCurrent: _currentPageIndex == index),
+                          video:
+                              (video) => VideoPlayerScreen(
+                                video: Video(
+                                  id: video.id,
+                                  levelId: video.levelId,
+                                  level: sublevel.level,
+                                  index: sublevel.index,
+                                  dialogues: video.dialogues,
+                                ),
+                                isCurrent: _currentPageIndex == index,
+                              ),
                           speechExercise:
                               (speechExercise) => SpeechExerciseScreen(
                                 exercise: speechExercise,
