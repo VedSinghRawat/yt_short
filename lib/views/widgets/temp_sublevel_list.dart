@@ -69,20 +69,12 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
     // Find current progress position - THIS IS THE MIDDLE
     final progress = ref.read(uIControllerProvider).currentProgress;
 
-    developer.log(
-      '🎯 User progress: ${progress?.level}-${progress?.subLevel} (levelId: ${progress?.levelId})',
-      name: 'TempSublevelsList',
-    );
-
     _currentGlobalIndex = widget.sublevels.indexWhere(
       (sublevel) => (sublevel.index == progress?.subLevel && sublevel.level == progress?.level),
     );
 
     if (_currentGlobalIndex < 0) {
       _currentGlobalIndex = 0;
-      developer.log('⚠️ Progress not found in sublevels, defaulting to index 0', name: 'TempSublevelsList');
-    } else {
-      developer.log('✅ Found progress at global index $_currentGlobalIndex', name: 'TempSublevelsList');
     }
 
     // Middle index is always fixed
@@ -90,23 +82,6 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
 
     // Build buffer with current sublevel at middle, pad when needed
     _rebuildBufferWithPadding();
-    developer.log(
-      'Initial buffer created with current sublevel at middle. Global index $_currentGlobalIndex, middle $_middleIndex',
-      name: 'TempSublevelsList',
-    );
-  }
-
-  void _logBufferState(String action) {
-    final bufferInfo = _bufferSublevels.map((sublevel) => '${sublevel.level}-${sublevel.index}').join(', ');
-    final currentSublevel =
-        _currentGlobalIndex < widget.sublevels.length
-            ? '${widget.sublevels[_currentGlobalIndex].level}-${widget.sublevels[_currentGlobalIndex].index}'
-            : 'N/A';
-
-    developer.log(
-      '[$action] Buffer: [$bufferInfo] | Global Index: $_currentGlobalIndex → $currentSublevel | Middle: $_middleIndex',
-      name: 'TempSublevelsList',
-    );
   }
 
   void _rebuildBufferWithPadding() {
@@ -160,11 +135,6 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
     for (int i = 0; i < _isDuplicate.length; i++) {
       if (_isDuplicate[i]) duplicatePositions.add(i);
     }
-    if (duplicatePositions.isNotEmpty) {
-      developer.log('🚫 Duplicate positions (scroll blocked): $duplicatePositions', name: 'TempSublevelsList');
-    }
-
-    _logBufferState('PADDED_REBUILD');
   }
 
   void _onControllerChange() {
@@ -182,7 +152,7 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
           return; // Allow scrolling to first ErrorPage
         } else {
           // Block scrolling to additional ErrorPages
-          developer.log('🚫 BLOCKED scroll to additional ErrorPage at $targetPage', name: 'TempSublevelsList');
+
           _controller.animateToPage(
             _middleIndex + 1,
             duration: const Duration(milliseconds: 100),
@@ -193,7 +163,6 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
       }
 
       // For other duplicates, show alert and block
-      developer.log('🚫 BLOCKED scroll to duplicate page $targetPage', name: 'TempSublevelsList');
 
       // Show appropriate alert
       if (targetPage < _middleIndex) {
@@ -252,8 +221,6 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
 
     _triggerSublevelChange();
 
-    _logBufferState('MOVE_FORWARD');
-
     // Dispose controllers for videos no longer in buffer
     _disposeUnusedControllers();
 
@@ -287,8 +254,6 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
 
     _triggerSublevelChange();
 
-    _logBufferState('MOVE_BACKWARD');
-
     // Dispose controllers for videos no longer in buffer
     _disposeUnusedControllers();
 
@@ -310,8 +275,6 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
         fillExercise: (fillExercise) => ref.read(uIControllerProvider.notifier).setIsAppBarVisible(true),
       );
     }
-
-    developer.log('🔄 Sublevel change triggered', name: 'TempSublevelsList');
   }
 
   Future<void> _jumpToCurrentProgress() async {
@@ -327,10 +290,6 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
 
       // Only rebuild buffer if the jump is significant (more than half buffer size)
       if (indexDifference > _bufferSize ~/ 2) {
-        developer.log(
-          'Major jump detected: Global Index $_currentGlobalIndex → $targetIndex (diff: $indexDifference)',
-          name: 'TempSublevelsList',
-        );
         _currentGlobalIndex = targetIndex;
         _rebuildBufferWithPadding();
 
@@ -340,10 +299,6 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
           _disposeUnusedControllers();
         }
       } else {
-        developer.log(
-          'Minor jump detected: Global Index $_currentGlobalIndex → $targetIndex (diff: $indexDifference) - using natural scroll',
-          name: 'TempSublevelsList',
-        );
         // For small jumps, just update the global index and let natural scrolling handle it
         _currentGlobalIndex = targetIndex;
       }
@@ -405,8 +360,6 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
       ),
       type: SnackBarType.info,
     );
-
-    developer.log('🚫 Forward scroll blocked: Last level reached', name: 'TempSublevelsList');
   }
 
   bool _isAtLastAvailableLevel() {
@@ -463,8 +416,6 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
       final newLength = widget.sublevels.length;
       final itemsAdded = newLength - oldLength;
 
-      developer.log('Sublevels count changed: $oldLength → $newLength (added: $itemsAdded)', name: 'TempSublevelsList');
-
       if (itemsAdded > 0) {
         // Items were added (likely prepending old levels)
         _handleNewSublevelsAdded(itemsAdded, oldWidget.sublevels);
@@ -496,20 +447,7 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
           '✅ Items were prepended at the beginning (old items now start at index $firstOldItemNewIndex)',
           name: 'TempSublevelsList',
         );
-      } else {
-        developer.log('✅ Items were appended at the end (new items added to end of list)', name: 'TempSublevelsList');
       }
-    }
-
-    // Store the current sublevel info before any changes
-    final currentSublevel =
-        _currentGlobalIndex < widget.sublevels.length ? widget.sublevels[_currentGlobalIndex] : null;
-
-    if (currentSublevel != null) {
-      developer.log(
-        '🎯 Current sublevel before adjustment: ${currentSublevel.level}-${currentSublevel.index} (global index: $_currentGlobalIndex)',
-        name: 'TempSublevelsList',
-      );
     }
 
     // Always update global index based on current progress, regardless of prepended/appended
@@ -519,16 +457,7 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
     );
 
     if (newGlobalIndex >= 0 && newGlobalIndex != _currentGlobalIndex) {
-      developer.log(
-        '📍 Updated global index based on current progress: $_currentGlobalIndex → $newGlobalIndex (${progress?.level}-${progress?.subLevel})',
-        name: 'TempSublevelsList',
-      );
       _currentGlobalIndex = newGlobalIndex;
-    } else if (newGlobalIndex >= 0) {
-      developer.log(
-        '📍 Global index unchanged: $_currentGlobalIndex (${progress?.level}-${progress?.subLevel})',
-        name: 'TempSublevelsList',
-      );
     }
 
     if (itemsPrepended) {
@@ -545,28 +474,17 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
         if (firstGlobalSublevel.level < firstBufferSublevel.level ||
             (firstGlobalSublevel.level == firstBufferSublevel.level &&
                 firstGlobalSublevel.index < firstBufferSublevel.index)) {
-          developer.log('🔄 Older levels prepended - updating buffer to replace padding', name: 'TempSublevelsList');
           _rebuildBufferWithPadding();
           if (mounted) {
             setState(() {});
           }
-        } else {
-          developer.log(
-            'ℹ️ Items prepended but no older levels to replace padding - buffer unchanged',
-            name: 'TempSublevelsList',
-          );
         }
       } else {
         // No left-side padding to replace
-        developer.log('ℹ️ Items prepended - buffer unchanged', name: 'TempSublevelsList');
       }
     } else {
       // For appended items, the global index should stay the same since items are added at the end
       // The current sublevel remains at the same position in the list
-      developer.log(
-        '📍 Global index unchanged for appended items: $_currentGlobalIndex (items added at end)',
-        name: 'TempSublevelsList',
-      );
 
       // Check if newer levels were appended that can replace right-side padding
       final hasRightSidePadding =
@@ -582,32 +500,14 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
         if (lastGlobalSublevel.level > lastBufferSublevel.level ||
             (lastGlobalSublevel.level == lastBufferSublevel.level &&
                 lastGlobalSublevel.index > lastBufferSublevel.index)) {
-          developer.log('🔄 Newer levels appended - updating buffer to replace padding', name: 'TempSublevelsList');
           _rebuildBufferWithPadding();
           if (mounted) {
             setState(() {});
             // Dispose controllers for videos no longer in buffer
             _disposeUnusedControllers();
           }
-        } else {
-          developer.log(
-            'ℹ️ Items added but no newer levels to replace padding - buffer unchanged',
-            name: 'TempSublevelsList',
-          );
         }
-      } else {
-        // No right-side padding to replace
-        developer.log('ℹ️ Items added in middle or end - buffer unchanged', name: 'TempSublevelsList');
       }
-    }
-
-    // Verify the adjustment worked correctly
-    if (_currentGlobalIndex < widget.sublevels.length) {
-      final newCurrentSublevel = widget.sublevels[_currentGlobalIndex];
-      developer.log(
-        '✅ Global index adjusted: now $_currentGlobalIndex → ${newCurrentSublevel.level}-${newCurrentSublevel.index}',
-        name: 'TempSublevelsList',
-      );
     }
   }
 
@@ -619,22 +519,8 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
     // Dispose all cached controllers when the widget is disposed
     final cacheService = VideoCacheService();
     cacheService.clearCache();
-    developer.log('📹 Disposed all cached controllers on widget dispose', name: 'TempSublevelsList');
 
     super.dispose();
-  }
-
-  // Check if a video is still in the buffer
-  bool _isVideoInBuffer(Video video) {
-    return _bufferSublevels.any(
-      (sublevel) => sublevel.when(
-        video:
-            (v) => v.id == video.id && v.levelId == video.levelId && v.level == video.level && v.index == video.index,
-        speechExercise: (speechExercise) => false,
-        arrangeExercise: (arrangeExercise) => false,
-        fillExercise: (fillExercise) => false,
-      ),
-    );
   }
 
   // Dispose controllers for videos that are no longer in the buffer
@@ -665,7 +551,6 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
           // Video is no longer in buffer, dispose it
           final video = Video(id: videoId, levelId: levelId, level: level, index: index, dialogues: []);
           cacheService.removeAndDisposeController(video);
-          developer.log('📹 Disposed unused controller: $key', name: 'TempSublevelsList');
         }
       }
     }

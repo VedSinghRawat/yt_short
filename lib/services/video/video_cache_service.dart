@@ -1,4 +1,3 @@
-import 'dart:developer' as developer;
 import 'package:video_player/video_player.dart';
 import 'package:myapp/models/video/video.dart';
 
@@ -19,26 +18,19 @@ class VideoCacheService {
   void cacheController(Video video, VideoPlayerController controller) {
     final key = _getCacheKey(video);
     _controllers[key] = controller;
-    developer.log('📹 Cached controller for video: $key', name: 'VideoCacheService');
   }
 
   // Get cached controller
   VideoPlayerController? getCachedController(Video video) {
     final key = _getCacheKey(video);
     final controller = _controllers[key];
-    if (controller != null) {
-      developer.log('📹 Retrieved cached controller for video: $key', name: 'VideoCacheService');
-    }
     return controller;
   }
 
   // Remove controller from cache
   void removeController(Video video) {
     final key = _getCacheKey(video);
-    final controller = _controllers.remove(key);
-    if (controller != null) {
-      developer.log('📹 Removed controller from cache: $key', name: 'VideoCacheService');
-    }
+    _controllers.remove(key);
   }
 
   // Remove and dispose controller from cache
@@ -47,7 +39,6 @@ class VideoCacheService {
     final controller = _controllers.remove(key);
     if (controller != null) {
       controller.dispose();
-      developer.log('📹 Removed and disposed controller from cache: $key', name: 'VideoCacheService');
     }
   }
 
@@ -58,7 +49,6 @@ class VideoCacheService {
       controller.dispose();
     }
     _controllers.clear();
-    developer.log('📹 Cleared and disposed all cached controllers', name: 'VideoCacheService');
   }
 
   // Get cache size
@@ -79,7 +69,6 @@ class VideoCacheService {
     final controller = _controllers.remove(key);
     if (controller != null) {
       controller.dispose();
-      developer.log('📹 Cleared and disposed cache for video: $key', name: 'VideoCacheService');
     }
   }
 

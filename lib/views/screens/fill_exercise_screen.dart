@@ -51,8 +51,6 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
         _optionKeys.add(GlobalKey());
         _placeholderKeys.add(GlobalKey());
       }
-    } else {
-      developer.log('Warning: exercise has no options');
     }
   }
 
@@ -87,15 +85,11 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
   void _calculateAndStoreButtonSizes() {
     // Safety check - ensure we have options and keys
     if (widget.exercise.options.isEmpty || _optionKeys.isEmpty) {
-      developer.log('No options or option keys available');
       return;
     }
 
     // Safety check - ensure lengths match
     if (_optionKeys.length != widget.exercise.options.length) {
-      developer.log(
-        'Mismatch: optionKeys length ${_optionKeys.length}, options length ${widget.exercise.options.length}',
-      );
       return;
     }
 
@@ -110,7 +104,6 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
 
     // If not all contexts are ready, retry after 150ms
     if (!allContextsAvailable) {
-      developer.log('Not all contexts available, retrying in 150ms');
       Future.delayed(const Duration(milliseconds: 150), () {
         if (mounted) {
           _calculateAndStoreButtonSizes();

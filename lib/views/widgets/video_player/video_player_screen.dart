@@ -74,7 +74,6 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
     // Cache the controller before disposing - DON'T dispose it here
     if (_controller != null && _controller!.value.isInitialized) {
       _cacheService.cacheController(widget.video, _controller!);
-      developer.log('📹 Cached controller before widget dispose', name: 'VideoPlayerScreen');
     }
 
     // Remove listener but DON'T dispose the controller
@@ -158,7 +157,6 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
 
       // Start animation when video finishes (backup trigger)
       if (widget.isCurrent) {
-        developer.log('🎬 Video finished, starting animation', name: 'VideoPlayerScreen');
         _startAnimationTimer();
       }
     }
@@ -286,13 +284,11 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
     // Check if we have a cached controller
     final cachedController = _cacheService.getCachedController(widget.video);
     if (cachedController != null && cachedController.value.isInitialized) {
-      developer.log('📹 Using cached controller', name: 'VideoPlayerScreen');
       _controller = cachedController;
       _controller!.addListener(_listener);
 
       // Reset to beginning and pause
       await _controller!.seekTo(Duration.zero);
-      developer.log('📹 Reset cached controller to beginning', name: 'VideoPlayerScreen');
 
       if (mounted) {
         setState(() {});
@@ -348,7 +344,6 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
 
       // Cache the new controller
       _cacheService.cacheController(widget.video, _controller!);
-      developer.log('📹 Cached new controller', name: 'VideoPlayerScreen');
 
       if (_isVisible && _controller!.value.isInitialized && widget.isCurrent) {
         await play();
@@ -417,8 +412,6 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
 
   // Animation methods
   void _startAnimationTimer() {
-    developer.log('🎬 _startAnimationTimer called', name: 'VideoPlayerScreen');
-
     _animationTimer?.cancel();
     _bounceTimer?.cancel();
 
@@ -566,7 +559,7 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
                     ),
                     // Scroll indicator (moves with video)
                     if (_showScrollIndicator && widget.isCurrent)
-                      Positioned(bottom: 40, left: 0, right: 0, child: const Center(child: ScrollIndicator())),
+                      const Positioned(bottom: 40, left: 0, right: 0, child: Center(child: ScrollIndicator())),
                   ],
                 ),
               ),
@@ -639,7 +632,7 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
                   ),
                   // Scroll indicator (moves with video)
                   if (_showScrollIndicator && widget.isCurrent)
-                    Positioned(bottom: 40, left: 0, right: 0, child: const Center(child: ScrollIndicator())),
+                    const Positioned(bottom: 40, left: 0, right: 0, child: Center(child: ScrollIndicator())),
                 ],
               ),
             ),

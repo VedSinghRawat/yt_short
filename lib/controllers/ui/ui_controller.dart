@@ -1,5 +1,3 @@
-import 'dart:developer' as developer;
-
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:myapp/core/util_types/progress.dart';
@@ -32,10 +30,6 @@ class UIController extends _$UIController {
 
   /// Store progress for the specified user email and update state
   Future<void> storeProgress(Progress progress, {String? userEmail}) async {
-    developer.log(
-      'Storing progress: ${progress.level}-${progress.subLevel} (levelId: ${progress.levelId})',
-      stackTrace: StackTrace.current,
-    );
     await SharedPref.store(PrefKey.currProgress(userEmail: userEmail), progress);
     state = state.copyWith(currentProgress: progress);
   }
