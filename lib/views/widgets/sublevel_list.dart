@@ -381,18 +381,18 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
                     children: [
                       Center(
                         child: sublevel.when(
-                          video: (video) => VideoPlayerScreen(video: video),
+                          video: (video) => VideoPlayerScreen(video: video, isCurrent: _currentPageIndex == index),
                           speechExercise:
                               (speechExercise) => SpeechExerciseScreen(
                                 exercise: speechExercise,
                                 goToNext: () => _goNextSublevel(index),
-                                isVisible: _currentPageIndex == index,
+                                isCurrent: _currentPageIndex == index,
                               ),
                           arrangeExercise:
                               (arrangeExercise) => ArrangeExerciseScreen(
                                 exercise: arrangeExercise,
                                 goToNext: () => _goNextSublevel(index),
-                                isVisible: _currentPageIndex == index,
+                                isCurrent: _currentPageIndex == index,
                               ),
                           fillExercise:
                               (fillExercise) => FillExerciseScreen(

@@ -14,9 +14,9 @@ import 'package:reorderables/reorderables.dart';
 class ArrangeExerciseScreen extends ConsumerStatefulWidget {
   final ArrangeExercise exercise;
   final VoidCallback goToNext;
-  final bool isVisible;
+  final bool isCurrent;
 
-  const ArrangeExerciseScreen({super.key, required this.exercise, required this.goToNext, required this.isVisible});
+  const ArrangeExerciseScreen({super.key, required this.exercise, required this.goToNext, required this.isCurrent});
 
   @override
   ConsumerState<ArrangeExerciseScreen> createState() => _ArrangeExerciseScreenState();
@@ -53,7 +53,7 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
   void didUpdateWidget(ArrangeExerciseScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (oldWidget.isVisible && !widget.isVisible) {
+    if (oldWidget.isCurrent && !widget.isCurrent) {
       setState(() {
         _initializeAndShuffleWords();
         _isCorrect = false;

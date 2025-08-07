@@ -4,7 +4,6 @@ import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/controllers/level/level_controller.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/views/widgets/loader.dart';
-import 'package:myapp/views/widgets/scroll_indicator.dart';
 import 'package:myapp/views/widgets/video_player/video_player_screen.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
 import 'package:myapp/controllers/ui/ui_controller.dart';
@@ -31,19 +30,15 @@ class TempSublevelsList extends ConsumerStatefulWidget {
 
 class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
   late PageController _controller;
-  bool _showAnimation = false;
-  bool _showScrollIndicator = false;
-  Timer? _animationTimer;
-  Timer? _bounceTimer;
 
   // Dynamic buffer management - key to preventing flicker
   static const int _bufferSize = 7; // Should be odd number (3, 5, 7, etc.)
   late int _middleIndex;
-  List<SubLevel> _bufferSublevels = [];
+  final List<SubLevel> _bufferSublevels = [];
   int _currentGlobalIndex = 0; // Current position in the full widget.sublevels list
 
   // Track which buffer positions contain duplicates (padding)
-  List<bool> _isDuplicate = [];
+  final List<bool> _isDuplicate = [];
 
   @override
   void initState() {
@@ -236,8 +231,6 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
       widget.onSublevelChange?.call(_currentGlobalIndex, _controller);
     }
 
-    _triggerSublevelChange();
-
     setState(() {
       if (_currentGlobalIndex < widget.sublevels.length) {
         // Remove first item, add new item to end
@@ -255,6 +248,8 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
       }
     });
 
+    _triggerSublevelChange();
+
     _logBufferState('MOVE_FORWARD');
 
     // Jump back to middle - this prevents flicker
@@ -270,8 +265,6 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
       return;
     }
 
-    _triggerSublevelChange();
-
     setState(() {
       // Remove last item, add new item to beginning
       _bufferSublevels.removeLast();
@@ -286,6 +279,8 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
         _isDuplicate.insert(0, true); // Mark as duplicate
       }
     });
+
+    _triggerSublevelChange();
 
     _logBufferState('MOVE_BACKWARD');
 
@@ -307,6 +302,8 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
         fillExercise: (fillExercise) => ref.read(uIControllerProvider.notifier).setIsAppBarVisible(true),
       );
     }
+
+    developer.log('🔄 Sublevel change triggered', name: 'TempSublevelsList');
   }
 
   Future<void> _jumpToCurrentProgress() async {
@@ -348,50 +345,6 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
       final progressUpdate = Progress(level: jumpSublevel.level, subLevel: jumpSublevel.index);
       await ref.read(uIControllerProvider.notifier).storeProgress(progressUpdate, userEmail: userEmail);
     }
-  }
-
-  void _startAnimationTimer() {
-    _animationTimer?.cancel();
-    _bounceTimer?.cancel();
-
-    setState(() {
-      _showScrollIndicator = true;
-    });
-
-    int bounceCount = 0;
-    const maxBounces = 6;
-
-    _bounceTimer = Timer.periodic(const Duration(milliseconds: 700), (timer) {
-      if (!mounted) {
-        timer.cancel();
-        return;
-      }
-
-      setState(() {
-        _showAnimation = !_showAnimation;
-      });
-
-      bounceCount++;
-      if (bounceCount >= maxBounces) {
-        timer.cancel();
-        if (mounted) {
-          setState(() {
-            _showAnimation = false;
-            _showScrollIndicator = false;
-          });
-        }
-      }
-    });
-
-    _animationTimer = Timer(const Duration(milliseconds: 5000), () {
-      if (mounted) {
-        setState(() {
-          _showAnimation = false;
-          _showScrollIndicator = false;
-        });
-        _animationTimer?.cancel();
-      }
-    });
   }
 
   void _goNextSublevel() {
@@ -458,19 +411,22 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
   Widget _buildSublevelContent(SubLevel sublevel, int bufferIndex) {
     return sublevel.when(
       video:
-          (video) =>
-              VideoPlayerScreen(key: ValueKey('video_${video.id}_${sublevel.levelId}_${sublevel.index}'), video: video),
+          (video) => VideoPlayerScreen(
+            key: ValueKey('video_${video.id}_${sublevel.levelId}_${sublevel.index}'),
+            video: video,
+            isCurrent: bufferIndex == _middleIndex,
+          ),
       speechExercise:
           (speechExercise) => SpeechExerciseScreen(
             exercise: speechExercise,
             goToNext: () => _goNextSublevel(),
-            isVisible: bufferIndex == _middleIndex,
+            isCurrent: bufferIndex == _middleIndex,
           ),
       arrangeExercise:
           (arrangeExercise) => ArrangeExerciseScreen(
             exercise: arrangeExercise,
             goToNext: () => _goNextSublevel(),
-            isVisible: bufferIndex == _middleIndex,
+            isCurrent: bufferIndex == _middleIndex,
           ),
       fillExercise:
           (fillExercise) => FillExerciseScreen(
@@ -639,8 +595,6 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
 
   @override
   void dispose() {
-    _animationTimer?.cancel();
-    _bounceTimer?.cancel();
     _controller.removeListener(_onControllerChange);
     _controller.dispose();
     super.dispose();
@@ -662,45 +616,7 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
       }
     });
 
-    // Listen for sublevel completion
-    ref.listen(sublevelControllerProvider.select((value) => value.hasFinishedSublevel), (previous, next) {
-      final progress = ref.read(uIControllerProvider).currentProgress;
-
-      if (!isLevelEqual(
-            progress?.level ?? 0,
-            progress?.subLevel ?? 0,
-            progress?.maxLevel ?? 0,
-            progress?.maxSubLevel ?? 0,
-          ) ||
-          !next) {
-        return;
-      }
-
-      // Show animation for video sublevels
-      if (_currentGlobalIndex < widget.sublevels.length) {
-        final currentSublevel = widget.sublevels[_currentGlobalIndex];
-        currentSublevel.when(
-          video: (video) => _startAnimationTimer(),
-          speechExercise: (speechExercise) => {},
-          arrangeExercise: (arrangeExercise) => {},
-          fillExercise: (fillExercise) => {},
-        );
-      }
-    });
-
-    // Listen for app bar visibility
-    ref.listen(uIControllerProvider.select((value) => value.isAppBarVisible), (previous, isVisible) {
-      if (isVisible) {
-        _animationTimer?.cancel();
-        _bounceTimer?.cancel();
-        if (mounted) {
-          setState(() {
-            _showAnimation = false;
-            _showScrollIndicator = false;
-          });
-        }
-      }
-    });
+    // Animation is now handled in video player screen
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -796,25 +712,7 @@ class _TempSublevelsListState extends ConsumerState<TempSublevelsList> {
             return SizedBox(
               height: MediaQuery.of(context).size.height,
               key: ValueKey('sublevel_${sublevel.levelId}_${sublevel.index}'),
-              child: Stack(
-                children: [
-                  AnimatedPositioned(
-                    duration: const Duration(milliseconds: 1000),
-                    curve: Curves.easeInOut,
-                    top: _showAnimation ? -30 : 0,
-                    left: 0,
-                    right: 0,
-                    bottom: _showAnimation ? 30 : 0,
-                    child: Stack(
-                      children: [
-                        Center(child: _buildSublevelContent(sublevel, index)),
-                        if (_showScrollIndicator && index == _middleIndex)
-                          const Positioned(bottom: 40, left: 0, right: 0, child: Center(child: ScrollIndicator())),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+              child: Center(child: _buildSublevelContent(sublevel, index)),
             );
           },
         ),

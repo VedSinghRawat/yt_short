@@ -8,9 +8,9 @@ import 'package:myapp/controllers/speech/speech_controller.dart';
 class SpeechExerciseScreen extends ConsumerStatefulWidget {
   final SpeechExercise exercise;
   final VoidCallback goToNext;
-  final bool isVisible;
+  final bool isCurrent;
 
-  const SpeechExerciseScreen({super.key, required this.exercise, required this.goToNext, required this.isVisible});
+  const SpeechExerciseScreen({super.key, required this.exercise, required this.goToNext, required this.isCurrent});
 
   @override
   ConsumerState<SpeechExerciseScreen> createState() => _SpeechExerciseScreenState();
@@ -26,7 +26,7 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
   void didUpdateWidget(SpeechExerciseScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (oldWidget.isVisible && !widget.isVisible) {
+    if (oldWidget.isCurrent && !widget.isCurrent) {
       Future(() {
         if (mounted) {
           ref.read(speechProvider(targetWords: widget.exercise.text.split(' ')).notifier).resetState();

@@ -14,6 +14,7 @@ import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
 import 'package:myapp/views/screens/error_screen.dart';
 
 import 'package:myapp/views/widgets/loader.dart';
+import 'package:myapp/views/widgets/scroll_indicator.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:flutter/foundation.dart';
@@ -22,8 +23,9 @@ import 'package:myapp/views/widgets/video_player/dialogue_popup.dart';
 
 class VideoPlayerScreen extends ConsumerStatefulWidget {
   final Video video;
+  final bool isCurrent;
 
-  const VideoPlayerScreen({super.key, required this.video});
+  const VideoPlayerScreen({super.key, required this.video, required this.isCurrent});
 
   @override
   ConsumerState<VideoPlayerScreen> createState() => _VideoPlayerState();
@@ -41,6 +43,12 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
   bool isFinished = false;
   bool _showDialogueArea = false;
 
+  // Animation-related variables
+  bool _showAnimation = false;
+  bool _showScrollIndicator = false;
+  Timer? _animationTimer;
+  Timer? _bounceTimer;
+
   List<VideoDialogue> _displayableDialogues = [];
   final GlobalKey _stackKey = GlobalKey();
 
@@ -56,6 +64,8 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _iconTimer?.cancel();
+    _animationTimer?.cancel();
+    _bounceTimer?.cancel();
     _controller?.removeListener(_listener);
     _controller?.dispose();
     super.dispose();
@@ -132,6 +142,12 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
     if (isFinished && !ref.read(sublevelControllerProvider).hasFinishedSublevel) {
       ref.read(sublevelControllerProvider.notifier).setHasFinishedSublevel(true);
       _controller?.removeListener(_listener);
+
+      // Start animation when video finishes (backup trigger)
+      if (widget.isCurrent) {
+        developer.log('🎬 Video finished, starting animation', name: 'VideoPlayerScreen');
+        _startAnimationTimer();
+      }
     }
   }
 
@@ -168,7 +184,7 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
   }
 
   Future<void> play() async {
-    if (_controller == null || !_controller!.value.isInitialized) return;
+    if (_controller == null || !_controller!.value.isInitialized || !widget.isCurrent) return;
     await _controller!.play();
 
     setDialogueAreaAndAppBar(false);
@@ -198,7 +214,7 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
 
     if (isVisible) {
       _controller!.addListener(_listener);
-      if (!_controller!.value.isPlaying && error == null && _controller!.value.isInitialized) {
+      if (!_controller!.value.isPlaying && error == null && _controller!.value.isInitialized && widget.isCurrent) {
         await _controller!.play();
       }
     } else {
@@ -364,11 +380,78 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
     await seek(newPosition);
   }
 
+  // Animation methods
+  void _startAnimationTimer() {
+    developer.log('🎬 _startAnimationTimer called', name: 'VideoPlayerScreen');
+
+    _animationTimer?.cancel();
+    _bounceTimer?.cancel();
+
+    setState(() {
+      _showScrollIndicator = true;
+    });
+
+    int bounceCount = 0;
+    const maxBounces = 6;
+
+    _bounceTimer = Timer.periodic(const Duration(milliseconds: 700), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
+      setState(() {
+        _showAnimation = !_showAnimation;
+      });
+
+      bounceCount++;
+      if (bounceCount >= maxBounces) {
+        timer.cancel();
+        if (mounted) {
+          setState(() {
+            _showAnimation = false;
+            _showScrollIndicator = false;
+          });
+        }
+      }
+    });
+
+    _animationTimer = Timer(const Duration(milliseconds: 5000), () {
+      if (mounted) {
+        setState(() {
+          _showAnimation = false;
+          _showScrollIndicator = false;
+        });
+        _animationTimer?.cancel();
+      }
+    });
+  }
+
+  void _stopAnimation() {
+    _animationTimer?.cancel();
+    _bounceTimer?.cancel();
+    if (mounted) {
+      setState(() {
+        _showAnimation = false;
+        _showScrollIndicator = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isPlayerReady = _controller?.value.isInitialized ?? false;
     final progress = ref.watch(uIControllerProvider.select((state) => state.currentProgress));
     final responsiveness = ResponsivenessService(context);
+
+    // Listen for app bar visibility changes to stop animation
+    ref.listen(uIControllerProvider.select((value) => value.isAppBarVisible), (previous, isVisible) {
+      if (isVisible) {
+        _stopAnimation();
+      }
+    });
+
+    // Animation is now handled directly in _listenerVideoFinished when video completes
 
     return VisibilityDetector(
       key: Key(widget.video.id + widget.video.index.toString()),
@@ -414,28 +497,43 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
               top: 0,
               width: videoWidth,
               height: stackHeight,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildVideoPlayer(isPlayerReady, progress, responsiveness, true, videoWidth, videoHeight, null),
-                  if (isPlayerReady)
-                    ValueListenableBuilder<VideoPlayerValue>(
-                      valueListenable: _controller!,
-                      builder: (context, value, child) {
-                        if (value.duration > Duration.zero) {
-                          return VideoProgressBar(
-                            durationMs: value.duration.inMilliseconds,
-                            currentPositionMs: value.position.inMilliseconds,
-                            isPlaying: value.isPlaying,
-                          );
-                        } else {
-                          return const SizedBox(height: 10);
-                        }
-                      },
-                    )
-                  else
-                    const VideoProgressBar(durationMs: 1, currentPositionMs: 0, isPlaying: false),
-                ],
+              child: AnimatedPositioned(
+                duration: const Duration(milliseconds: 1000),
+                curve: Curves.easeInOut,
+                top: _showAnimation ? -30 : 0,
+                left: 0,
+                right: 0,
+                bottom: _showAnimation ? 30 : 0,
+                child: Stack(
+                  children: [
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildVideoPlayer(isPlayerReady, progress, responsiveness, true, videoWidth, videoHeight, null),
+                        if (isPlayerReady)
+                          ValueListenableBuilder<VideoPlayerValue>(
+                            valueListenable: _controller!,
+                            builder: (context, value, child) {
+                              if (value.duration > Duration.zero) {
+                                return VideoProgressBar(
+                                  durationMs: value.duration.inMilliseconds,
+                                  currentPositionMs: value.position.inMilliseconds,
+                                  isPlaying: value.isPlaying,
+                                );
+                              } else {
+                                return const SizedBox(height: 10);
+                              }
+                            },
+                          )
+                        else
+                          const VideoProgressBar(durationMs: 1, currentPositionMs: 0, isPlaying: false),
+                      ],
+                    ),
+                    // Scroll indicator (moves with video)
+                    if (_showScrollIndicator && widget.isCurrent)
+                      Positioned(bottom: 40, left: 0, right: 0, child: const Center(child: ScrollIndicator())),
+                  ],
+                ),
               ),
             ),
             // Sliding dialogue section
@@ -470,29 +568,45 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
 
         return Stack(
           children: [
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Use same dimensions as mobile for portrait mode but constrained by stack height
-                _buildVideoPlayer(isPlayerReady, progress, responsiveness, false, null, null, stackHeight),
-                if (isPlayerReady)
-                  ValueListenableBuilder<VideoPlayerValue>(
-                    valueListenable: _controller!,
-                    builder: (context, value, child) {
-                      if (value.duration > Duration.zero) {
-                        return VideoProgressBar(
-                          durationMs: value.duration.inMilliseconds,
-                          currentPositionMs: value.position.inMilliseconds,
-                          isPlaying: value.isPlaying,
-                        );
-                      } else {
-                        return const SizedBox(height: 10);
-                      }
-                    },
-                  )
-                else
-                  const VideoProgressBar(durationMs: 1, currentPositionMs: 0, isPlaying: false),
-              ],
+            // Single AnimatedPositioned that moves everything together
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 1000),
+              curve: Curves.easeInOut,
+              top: _showAnimation ? -30 : 0,
+              left: 0,
+              right: 0,
+              bottom: _showAnimation ? 30 : 0,
+              child: Stack(
+                children: [
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Use same dimensions as mobile for portrait mode but constrained by stack height
+                      _buildVideoPlayer(isPlayerReady, progress, responsiveness, false, null, null, stackHeight),
+                      if (isPlayerReady)
+                        ValueListenableBuilder<VideoPlayerValue>(
+                          valueListenable: _controller!,
+                          builder: (context, value, child) {
+                            if (value.duration > Duration.zero) {
+                              return VideoProgressBar(
+                                durationMs: value.duration.inMilliseconds,
+                                currentPositionMs: value.position.inMilliseconds,
+                                isPlaying: value.isPlaying,
+                              );
+                            } else {
+                              return const SizedBox(height: 10);
+                            }
+                          },
+                        )
+                      else
+                        const VideoProgressBar(durationMs: 1, currentPositionMs: 0, isPlaying: false),
+                    ],
+                  ),
+                  // Scroll indicator (moves with video)
+                  if (_showScrollIndicator && widget.isCurrent)
+                    Positioned(bottom: 40, left: 0, right: 0, child: const Center(child: ScrollIndicator())),
+                ],
+              ),
             ),
             DialoguePopup(
               visible: _showDialogueArea && _displayableDialogues.isNotEmpty,

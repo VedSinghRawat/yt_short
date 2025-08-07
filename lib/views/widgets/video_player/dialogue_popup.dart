@@ -1,5 +1,3 @@
-import 'dart:developer' as developer;
-
 import 'package:flutter/material.dart';
 import 'package:myapp/models/video/video.dart';
 import 'package:myapp/services/responsiveness/responsiveness_service.dart';
