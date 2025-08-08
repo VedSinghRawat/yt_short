@@ -93,8 +93,7 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
         _lastPosition = _controller!.value.position;
       }
       await pause();
-      await _controller?.dispose();
-      _controller = null;
+
       if (mounted) {
         setState(() {
           _showPlayPauseIcon = false;
@@ -116,8 +115,15 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
   void _listener() {
     if (!mounted || _controller == null) return;
 
+    try {
+      final value = _controller!.value;
+      if (!value.isInitialized) return;
+    } catch (e) {
+      // Controller was disposed, ignore
+      return;
+    }
+
     final value = _controller!.value;
-    if (!value.isInitialized) return;
 
     _updateDisplayableDialogues(value.position);
 
@@ -519,49 +525,51 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
           children: [
             // Video section - animated position
             AnimatedPositioned(
-              duration: const Duration(milliseconds: 300),
+              duration: const Duration(milliseconds: 1000),
               curve: Curves.easeInOut,
               left: videoLeftPosition,
-              top: 0,
+              top: _showAnimation ? -30 : 0,
               width: videoWidth,
               height: stackHeight,
-              child: AnimatedPositioned(
-                duration: const Duration(milliseconds: 1000),
-                curve: Curves.easeInOut,
-                top: _showAnimation ? -30 : 0,
-                left: 0,
-                right: 0,
-                bottom: _showAnimation ? 30 : 0,
-                child: Stack(
-                  children: [
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildVideoPlayer(isPlayerReady, progress, responsiveness, true, videoWidth, videoHeight, null),
-                        if (isPlayerReady)
-                          ValueListenableBuilder<VideoPlayerValue>(
-                            valueListenable: _controller!,
-                            builder: (context, value, child) {
-                              if (value.duration > Duration.zero) {
-                                return VideoProgressBar(
-                                  durationMs: value.duration.inMilliseconds,
-                                  currentPositionMs: value.position.inMilliseconds,
-                                  isPlaying: value.isPlaying,
-                                );
-                              } else {
-                                return const SizedBox(height: 10);
-                              }
-                            },
-                          )
-                        else
-                          const VideoProgressBar(durationMs: 1, currentPositionMs: 0, isPlaying: false),
-                      ],
-                    ),
-                    // Scroll indicator (moves with video)
-                    if (_showScrollIndicator && widget.isCurrent)
-                      const Positioned(bottom: 40, left: 0, right: 0, child: Center(child: ScrollIndicator())),
-                  ],
-                ),
+              child: Stack(
+                children: [
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildVideoPlayer(isPlayerReady, progress, responsiveness, true, videoWidth, videoHeight, null),
+                      if (isPlayerReady)
+                        ValueListenableBuilder<VideoPlayerValue>(
+                          valueListenable: _controller!,
+                          builder: (context, value, child) {
+                            if (value.duration > Duration.zero) {
+                              return Center(
+                                child: SizedBox(
+                                  width: videoWidth,
+                                  child: VideoProgressBar(
+                                    durationMs: value.duration.inMilliseconds,
+                                    currentPositionMs: value.position.inMilliseconds,
+                                    isPlaying: value.isPlaying,
+                                  ),
+                                ),
+                              );
+                            } else {
+                              return Center(child: SizedBox(width: videoWidth, height: 10));
+                            }
+                          },
+                        )
+                      else
+                        Center(
+                          child: SizedBox(
+                            width: videoWidth,
+                            child: const VideoProgressBar(durationMs: 1, currentPositionMs: 0, isPlaying: false),
+                          ),
+                        ),
+                    ],
+                  ),
+                  // Scroll indicator (moves with video)
+                  if (_showScrollIndicator && widget.isCurrent)
+                    Positioned(bottom: 40, left: 0, right: 0, child: const Center(child: ScrollIndicator())),
+                ],
               ),
             ),
             // Sliding dialogue section
