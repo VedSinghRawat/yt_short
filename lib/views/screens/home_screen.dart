@@ -15,7 +15,7 @@ import 'package:myapp/models/sublevel/sublevel.dart';
 import 'package:myapp/views/widgets/home_app_bar.dart';
 import 'package:myapp/views/widgets/home_app_bar_animated.dart';
 import 'package:myapp/views/widgets/loader.dart';
-import 'package:myapp/views/widgets/temp_sublevel_list.dart';
+import 'package:myapp/views/widgets/sublevel_list.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -254,7 +254,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final loadingLevelIds = ref.watch(levelControllerProvider.select((state) => state.loadingById));
     final sublevels = ref.watch(sublevelControllerProvider.select((state) => state.sublevels));
 
-    if (sublevels == null) {
+    if (sublevels == null || sublevels.isEmpty) {
       return const Loader();
     }
 
@@ -276,7 +276,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               children: [
                 const HomeAppBar(),
                 Expanded(
-                  child: TempSublevelsList(
+                  child: SublevelsList(
                     loadingById: loadingLevelIds,
                     sublevels: _sortedSublevels!,
                     onSublevelChange: onVideoChange,
@@ -288,7 +288,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             // Portrait: Animated app bar over content
             return Stack(
               children: [
-                TempSublevelsList(
+                SublevelsList(
                   loadingById: loadingLevelIds,
                   sublevels: _sortedSublevels!,
                   onSublevelChange: onVideoChange,

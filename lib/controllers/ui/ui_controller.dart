@@ -18,23 +18,17 @@ class UIControllerState with _$UIControllerState {
 class UIController extends _$UIController {
   @override
   UIControllerState build() {
-    // Initialize with default progress (guest or last logged in user)
     final progress = SharedPref.get(PrefKey.currProgress());
     return UIControllerState(currentProgress: progress);
   }
 
   void setIsAppBarVisible(bool visible) => state = state.copyWith(isAppBarVisible: visible);
 
-  /// Force app bar to be visible (used for landscape mode)
-  void forceAppBarVisible() => state = state.copyWith(isAppBarVisible: true);
-
-  /// Store progress for the specified user email and update state
   Future<void> storeProgress(Progress progress, {String? userEmail}) async {
     await SharedPref.store(PrefKey.currProgress(userEmail: userEmail), progress);
     state = state.copyWith(currentProgress: progress);
   }
 
-  /// Remove progress for the specified user email
   Future<void> removeProgress({String? userEmail}) async {
     await SharedPref.removeValue(PrefKey.currProgress(userEmail: userEmail));
     state = state.copyWith(currentProgress: null);
