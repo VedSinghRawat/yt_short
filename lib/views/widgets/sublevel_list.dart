@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/controllers/level/level_controller.dart';
-import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/views/widgets/loader.dart';
 import 'package:myapp/views/widgets/video_player/video_player_screen.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
@@ -35,7 +34,35 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
   late PageController _pageController;
   final List<SubLevel?> _sublevelBuffer = List.filled(bufferSize, null, growable: false);
   int _currentPageIndex = 0;
-  int _currentBufferIndex = middleIndex;
+  // Tracks where the current sublevel is anchored in the buffer; reserved for future use
+  int _currentBufferIndex = middleIndex; // ignore: unused_field
+
+  /// Maps a buffer index (0..bufferSize) to the corresponding index
+  /// in `widget.sublevels` list. Returns null if not resolvable.
+  int? _mapBufferIndexToListIndex(int bufferIndex) {
+    if (bufferIndex < 0 || bufferIndex >= bufferSize) return null;
+
+    SubLevel? resolveNearestNonNull(int start) {
+      if (_sublevelBuffer[start] != null) return _sublevelBuffer[start];
+      // Search backwards then forwards for the nearest non-null
+      for (int offset = 1; offset < bufferSize; offset++) {
+        final left = start - offset;
+        if (left >= 0 && _sublevelBuffer[left] != null) return _sublevelBuffer[left];
+        final right = start + offset;
+        if (right < bufferSize && _sublevelBuffer[right] != null) return _sublevelBuffer[right];
+        if (left < 0 && right >= bufferSize) break;
+      }
+      return null;
+    }
+
+    final sublevel = resolveNearestNonNull(bufferIndex);
+    if (sublevel == null) return null;
+
+    // Find the matching sublevel in widget.sublevels by levelId + index
+    final listIndex = widget.sublevels.indexWhere((s) => s.levelId == sublevel.levelId && s.index == sublevel.index);
+
+    return listIndex == -1 ? null : listIndex;
+  }
 
   void _goNextSublevel(int index) {
     ref.read(sublevelControllerProvider.notifier).setHasFinishedSublevel(true);
@@ -74,8 +101,6 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
   /// Logs the buffer state showing only relevant information
   /// Shows 3 padding of null on both sides and levels in order
   void _logBufferState(String operation) {
-    print('📋 [BUFFER] Buffer state after $operation:');
-
     // Find the range of non-null elements
     int firstNonNullIndex = -1;
     int lastNonNullIndex = -1;
@@ -88,7 +113,6 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
     }
 
     if (firstNonNullIndex == -1) {
-      print('   Buffer is empty');
       return;
     }
 
@@ -96,34 +120,22 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
     int startIndex = (firstNonNullIndex - 3).clamp(0, bufferSize - 1);
     int endIndex = (lastNonNullIndex + 3).clamp(0, bufferSize - 1);
 
-    print('   Range: $startIndex to $endIndex (showing 3 padding on each side)');
-
     for (int i = startIndex; i <= endIndex; i++) {
       final sublevel = _sublevelBuffer[i];
-      if (sublevel != null) {
-        print('   [$i]: ${sublevel.level}-${sublevel.index}');
-      } else {
-        print('   [$i]: null');
-      }
+      if (sublevel != null) {}
     }
-
-    print('   Total sublevels in buffer: ${_sublevelBuffer.where((s) => s != null).length}');
-    print('   Buffer size: $bufferSize');
   }
 
   /// Fills the buffer with sublevels based on their level-sublevel ordering
   /// The current sublevel is placed at the middle index (500)
   /// Other sublevels are positioned before or after based on their ordering
   void _fillBuffer() {
-    print('🔄 [BUFFER] Initializing buffer...');
-
     // Clear the buffer first
     for (int i = 0; i < bufferSize; i++) {
       _sublevelBuffer[i] = null;
     }
 
     if (widget.sublevels.isEmpty) {
-      print('⚠️  [BUFFER] No sublevels to fill');
       return;
     }
 
@@ -131,8 +143,6 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
     final currentProgress = ref.read(uIControllerProvider).currentProgress;
     final currentLevel = currentProgress?.level ?? 1;
     final currentSublevel = currentProgress?.subLevel ?? 1;
-
-    print('📍 [BUFFER] Current progress: Level $currentLevel, Sublevel $currentSublevel');
 
     // Find the current sublevel in the list
     int currentSublevelIndex = -1;
@@ -146,16 +156,11 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
     // If current sublevel not found, use the first one
     if (currentSublevelIndex == -1) {
       currentSublevelIndex = 0;
-      print('⚠️  [BUFFER] Current sublevel not found, using first available');
     }
 
     // Place current sublevel at middle index
     _sublevelBuffer[middleIndex] = widget.sublevels[currentSublevelIndex];
     _currentBufferIndex = middleIndex;
-
-    print(
-      '🎯 [BUFFER] Placed current sublevel at index $middleIndex: ${widget.sublevels[currentSublevelIndex].level}-${widget.sublevels[currentSublevelIndex].index}',
-    );
 
     // Sort sublevels by level and sublevel for proper ordering
     final sortedSublevels = List<SubLevel>.from(widget.sublevels);
@@ -192,10 +197,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
   /// Updates the buffer when new sublevels are added
   /// After initial setup, just adds sublevels according to their natural order
   void _updateBuffer() {
-    print('🔄 [BUFFER] Updating buffer with ${widget.sublevels.length} sublevels...');
-
     if (widget.sublevels.isEmpty) {
-      print('⚠️  [BUFFER] No sublevels to update');
       return;
     }
 
@@ -211,26 +213,50 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
       }
     });
 
-    print('📊 [BUFFER] Sorted sublevels: ${sortedSublevels.map((s) => '${s.level}-${s.index}').join(', ')}');
+    int referenceIndex = -1;
 
-    // Find the first sublevel (level 1, sublevel 1) to use as reference point
-    int firstSublevelIndex = -1;
-    for (int i = 0; i < sortedSublevels.length; i++) {
-      if (sortedSublevels[i].level == 1 && sortedSublevels[i].index == 1) {
-        firstSublevelIndex = i;
-        break;
+    final currentBuffered = _getCurrentSublevel(_currentPageIndex);
+    if (currentBuffered != null) {
+      for (int i = 0; i < sortedSublevels.length; i++) {
+        if (isLevelEqual(
+          currentBuffered.level,
+          currentBuffered.index,
+          sortedSublevels[i].level,
+          sortedSublevels[i].index,
+        )) {
+          referenceIndex = i;
+          break;
+        }
       }
     }
 
-    // If no level 1-1 found, use the first sublevel as reference
-    if (firstSublevelIndex == -1) {
-      firstSublevelIndex = 0;
-      print('⚠️  [BUFFER] Level 1-1 not found, using first sublevel as reference');
+    // 2) Try user's current progress
+    if (referenceIndex == -1) {
+      final currentProgress = ref.read(uIControllerProvider).currentProgress;
+      final progressLevel = currentProgress?.level ?? 1;
+      final progressSublevel = currentProgress?.subLevel ?? 1;
+      for (int i = 0; i < sortedSublevels.length; i++) {
+        if (isLevelEqual(progressLevel, progressSublevel, sortedSublevels[i].level, sortedSublevels[i].index)) {
+          referenceIndex = i;
+          break;
+        }
+      }
     }
 
-    print(
-      '🎯 [BUFFER] Using reference sublevel: ${sortedSublevels[firstSublevelIndex].level}-${sortedSublevels[firstSublevelIndex].index} at index $firstSublevelIndex',
-    );
+    // 3) Fall back to 1-1
+    if (referenceIndex == -1) {
+      for (int i = 0; i < sortedSublevels.length; i++) {
+        if (sortedSublevels[i].level == 1 && sortedSublevels[i].index == 1) {
+          referenceIndex = i;
+          break;
+        }
+      }
+    }
+
+    // 4) Final fallback
+    if (referenceIndex == -1) {
+      referenceIndex = 0;
+    }
 
     // Clear the buffer first
     for (int i = 0; i < bufferSize; i++) {
@@ -238,18 +264,19 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
     }
 
     // Place the reference sublevel at middle index
-    _sublevelBuffer[middleIndex] = sortedSublevels[firstSublevelIndex];
+    _sublevelBuffer[middleIndex] = sortedSublevels[referenceIndex];
+    _currentBufferIndex = middleIndex;
 
     // Fill sublevels before the reference (going backwards from middle)
     int bufferIndex = middleIndex - 1;
-    for (int i = firstSublevelIndex - 1; i >= 0 && bufferIndex >= 0; i--) {
+    for (int i = referenceIndex - 1; i >= 0 && bufferIndex >= 0; i--) {
       _sublevelBuffer[bufferIndex] = sortedSublevels[i];
       bufferIndex--;
     }
 
     // Fill sublevels after the reference (going forwards from middle)
     bufferIndex = middleIndex + 1;
-    for (int i = firstSublevelIndex + 1; i < sortedSublevels.length && bufferIndex < bufferSize; i++) {
+    for (int i = referenceIndex + 1; i < sortedSublevels.length && bufferIndex < bufferSize; i++) {
       _sublevelBuffer[bufferIndex] = sortedSublevels[i];
       bufferIndex++;
     }
@@ -304,8 +331,29 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: (bufferSize ~/ 2) - 1);
+    _pageController = PageController(initialPage: middleIndex);
+    _currentPageIndex = middleIndex;
     _fillBuffer();
+
+    // Ensure the initially visible page is treated as current and triggers callbacks
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Set app bar visibility based on current sublevel type
+      final initialSublevel = _sublevelBuffer[_currentPageIndex];
+      if (initialSublevel != null) {
+        initialSublevel.when(
+          video: (video) => ref.read(uIControllerProvider.notifier).setIsAppBarVisible(false),
+          speechExercise: (speechExercise) => ref.read(uIControllerProvider.notifier).setIsAppBarVisible(true),
+          arrangeExercise: (arrangeExercise) => ref.read(uIControllerProvider.notifier).setIsAppBarVisible(true),
+          fillExercise: (fillExercise) => ref.read(uIControllerProvider.notifier).setIsAppBarVisible(true),
+        );
+      }
+
+      // Notify initial sublevel change with the correct list index
+      final listIndex = _mapBufferIndexToListIndex(_currentPageIndex);
+      if (listIndex != null) {
+        await widget.onSublevelChange?.call(listIndex, _pageController);
+      }
+    });
   }
 
   @override
@@ -393,7 +441,11 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
               );
             }
 
-            await widget.onSublevelChange?.call(index, _pageController);
+            // Map buffer index to list index before notifying
+            final listIndex = _mapBufferIndexToListIndex(index);
+            if (listIndex != null) {
+              await widget.onSublevelChange?.call(listIndex, _pageController);
+            }
           },
           itemBuilder: (context, index) {
             final sublevel = _sublevelBuffer[index];
@@ -461,7 +513,10 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
                         );
                       }
 
-                      await widget.onSublevelChange?.call(index, _pageController);
+                      final mapped = _mapBufferIndexToListIndex(index);
+                      if (mapped != null) {
+                        await widget.onSublevelChange?.call(mapped, _pageController);
+                      }
                     } catch (e) {
                       if (context.mounted) {
                         showSnackBar(

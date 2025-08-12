@@ -496,13 +496,11 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
               top: 0,
               width: videoWidth,
               height: stackHeight,
-              child: AnimatedPositioned(
+              child: TweenAnimationBuilder<double>(
                 duration: const Duration(milliseconds: 1000),
                 curve: Curves.easeInOut,
-                top: _showAnimation ? -30 : 0,
-                left: 0,
-                right: 0,
-                bottom: _showAnimation ? 30 : 0,
+                tween: Tween<double>(begin: 0, end: _showAnimation ? -30.0 : 0.0),
+                builder: (context, dy, child) => Transform.translate(offset: Offset(0, dy), child: child),
                 child: Stack(
                   children: [
                     Column(

@@ -25,8 +25,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  List<SubLevel>? _sortedSublevels;
-
   @override
   void initState() {
     super.initState();
@@ -97,16 +95,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return true;
   }
 
-  Future<bool> handleFetchSublevels(int index) async {
-    if (isLevelChanged(index, _sortedSublevels!)) {
+  Future<void> handleFetchSublevels(int index, List<SubLevel> sublevels) async {
+    if (isLevelChanged(index, sublevels)) {
       await fetchSublevels();
     }
-
-    if (index < _sortedSublevels!.length) return false;
-
-    await ref.read(levelControllerProvider.notifier).fetchLevels();
-
-    return true;
   }
 
   Future<void> syncProgress(int index, List<SubLevel> sublevels, String? userEmail, int subLevel, int maxLevel) async {
@@ -182,12 +174,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     await ref.read(uIControllerProvider.notifier).storeProgress(progress, userEmail: userEmail);
   }
 
-  Future<void> onVideoChange(int index, PageController controller) async {
-    if (!mounted || _sortedSublevels == null) return;
+  Future<void> onSublevelChange(int index, PageController controller) async {
+    if (!mounted) {
+      return;
+    }
 
-    if (await handleFetchSublevels(index)) return;
+    final sublevels = ref.read(sublevelControllerProvider).sublevels?.toList();
+    if (sublevels == null || sublevels.isEmpty || index < 0 || index >= sublevels.length) {
+      return;
+    }
 
-    final sublevel = _sortedSublevels![index];
+    await handleFetchSublevels(index, sublevels);
+
+    final sublevel = sublevels[index];
     final level = sublevel.level;
     final sublevelIndex = sublevel.index;
 
@@ -221,33 +220,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final lastLoggedInEmail = SharedPref.get(PrefKey.user)?.email;
 
-    if (lastLoggedInEmail == null) return;
-
+    if (lastLoggedInEmail == null) {
+      return;
+    }
     await SharedPref.pushValue(
       PrefKey.activityLogs,
       ActivityLog(subLevel: sublevelIndex, levelId: sublevel.levelId, userEmail: userEmail ?? lastLoggedInEmail),
     );
 
-    await syncProgress(index, _sortedSublevels!, userEmail, sublevelIndex, user?.maxLevel ?? 0);
+    await syncProgress(index, sublevels, userEmail, sublevelIndex, user?.maxLevel ?? 0);
 
     await syncActivityLogs();
   }
 
-  List<SubLevel> _getSortedSublevels(List<SubLevel> sublevels) {
-    return [...sublevels]..sort((a, b) {
-      final levelA = a.level;
-      final levelB = b.level;
-
-      if (levelA != levelB) {
-        return levelA.compareTo(levelB);
-      }
-
-      final subLevelA = a.index;
-      final subLevelB = b.index;
-
-      return subLevelA.compareTo(subLevelB);
-    });
-  }
+  // Removed sorting; sublevels are now passed as-is to SublevelsList
 
   @override
   Widget build(BuildContext context) {
@@ -258,12 +244,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return const Loader();
     }
 
-    // Only sort sublevels if they have changed
-    if (_sortedSublevels == null || _sortedSublevels!.length != sublevels.toList().length) {
-      _sortedSublevels = _getSortedSublevels(sublevels.toList());
-    }
-
-    if (loadingLevelIds.values.any((value) => value) && _sortedSublevels!.isEmpty) {
+    if (loadingLevelIds.values.any((value) => value) && sublevels.isEmpty) {
       return const Loader();
     }
 
@@ -278,8 +259,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 Expanded(
                   child: SublevelsList(
                     loadingById: loadingLevelIds,
-                    sublevels: _sortedSublevels!,
-                    onSublevelChange: onVideoChange,
+                    sublevels: sublevels.toList(),
+                    onSublevelChange: onSublevelChange,
                   ),
                 ),
               ],
@@ -290,8 +271,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               children: [
                 SublevelsList(
                   loadingById: loadingLevelIds,
-                  sublevels: _sortedSublevels!,
-                  onSublevelChange: onVideoChange,
+                  sublevels: sublevels.toList(),
+                  onSublevelChange: onSublevelChange,
                 ),
                 const HomeAppBarAnimated(),
               ],
