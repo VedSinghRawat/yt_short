@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/controllers/level/level_controller.dart';
 import 'package:myapp/views/widgets/loader.dart';
+import 'package:myapp/views/widgets/lang_text.dart';
 import 'package:myapp/views/widgets/video_player/video_player_screen.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
 import 'package:myapp/controllers/ui/ui_controller.dart';
@@ -36,6 +37,214 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
   int _currentPageIndex = 0;
   // Tracks where the current sublevel is anchored in the buffer; reserved for future use
   int _currentBufferIndex = middleIndex; // ignore: unused_field
+  bool _isLoadingPreviousLevels = false;
+  bool _isScrollBackBlocked = false;
+
+  /// Checks if we can scroll back further from the current position
+  bool _canScrollBack(int currentIndex) {
+    // Check if we have any sublevels before the current position
+    for (int i = currentIndex - 1; i >= 0; i--) {
+      if (_sublevelBuffer[i] != null) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// Checks if we're at the first level (level 1, sublevel 1)
+  bool _isAtFirstLevel(int currentIndex) {
+    final currentSublevel = _sublevelBuffer[currentIndex];
+    if (currentSublevel != null) {
+      return currentSublevel.level == 1 && currentSublevel.index == 1;
+    }
+    return false;
+  }
+
+  /// Fetches previous levels when needed for scrolling back
+  Future<void> _fetchPreviousLevelsIfNeeded() async {
+    if (_isLoadingPreviousLevels) return;
+
+    final levelState = ref.read(levelControllerProvider);
+    final orderedIds = levelState.orderedIds;
+
+    if (orderedIds == null || orderedIds.isEmpty) return;
+
+    // Find the first loaded level ID from the buffer
+    String? firstLoadedLevelId;
+    for (int i = 0; i < bufferSize; i++) {
+      if (_sublevelBuffer[i] != null) {
+        firstLoadedLevelId = _sublevelBuffer[i]!.levelId;
+        break;
+      }
+    }
+
+    if (firstLoadedLevelId == null) return;
+
+    final firstLoadedIndex = orderedIds.indexOf(firstLoadedLevelId);
+
+    // If we're at the first level in orderedIds, we can't fetch more
+    if (firstLoadedIndex <= 0) return;
+
+    // Check if we need to fetch previous levels
+    final needsPreviousLevels = firstLoadedIndex > 0;
+
+    if (needsPreviousLevels) {
+      setState(() {
+        _isLoadingPreviousLevels = true;
+      });
+
+      try {
+        final levelController = ref.read(levelControllerProvider.notifier);
+
+        // Fetch the previous level
+        final previousLevelId = orderedIds[firstLoadedIndex - 1];
+        await levelController.getLevel(previousLevelId);
+
+        // Update the buffer after fetching
+        _updateBuffer();
+
+        if (mounted) {
+          showSnackBar(
+            context,
+            message: choose(
+              hindi: 'पिछले लेवल लोड हो गए हैं',
+              hinglish: 'Pichle levels load ho gaye hain',
+              lang: ref.read(langControllerProvider),
+            ),
+            type: SnackBarType.success,
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          showSnackBar(
+            context,
+            message: choose(
+              hindi: 'पिछले लेवल लोड करने में समस्या हुई',
+              hinglish: 'Pichle levels load karne mein problem hui',
+              lang: ref.read(langControllerProvider),
+            ),
+            type: SnackBarType.error,
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoadingPreviousLevels = false;
+          });
+        }
+      }
+    }
+  }
+
+  /// Page controller listener to handle scroll back prevention
+  void _onPageControllerUpdate() {
+    if (!mounted) return;
+
+    final currentPage = _pageController.page ?? _currentPageIndex;
+    final isScrollingBack = currentPage < _currentPageIndex;
+
+    if (isScrollingBack) {
+      // Check if we can scroll back
+      if (!_canScrollBack(_currentPageIndex)) {
+        // Block the scroll back
+        setState(() {
+          _isScrollBackBlocked = true;
+        });
+
+        // Check if we're at the first level
+        if (_isAtFirstLevel(_currentPageIndex)) {
+          // Show alert that this is the first level
+          showSnackBar(
+            context,
+            message: choose(
+              hindi: 'यह पहला लेवल है। आप आगे नहीं जा सकते।',
+              hinglish: 'Ye peha level hai. Aap aage nahi ja sakte.',
+              lang: ref.read(langControllerProvider),
+            ),
+            type: SnackBarType.info,
+          );
+
+          // Prevent the scroll by jumping back to current position
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              _pageController.jumpToPage(_currentPageIndex);
+            }
+          });
+          return;
+        }
+
+        // Check if we need to fetch previous levels
+        final levelState = ref.read(levelControllerProvider);
+        final orderedIds = levelState.orderedIds;
+
+        if (orderedIds != null && orderedIds.isNotEmpty) {
+          // Find the first loaded level ID from the buffer
+          String? firstLoadedLevelId;
+          for (int i = 0; i < bufferSize; i++) {
+            if (_sublevelBuffer[i] != null) {
+              firstLoadedLevelId = _sublevelBuffer[i]!.levelId;
+              break;
+            }
+          }
+
+          if (firstLoadedLevelId != null) {
+            final firstLoadedIndex = orderedIds.indexOf(firstLoadedLevelId);
+
+            // If there are previous levels available to fetch
+            if (firstLoadedIndex > 0) {
+              // Show loading message
+              showSnackBar(
+                context,
+                message: choose(
+                  hindi: 'पिछले लेवल लोड हो रहे हैं...',
+                  hinglish: 'Pichle levels load ho rahe hain...',
+                  lang: ref.read(langControllerProvider),
+                ),
+                type: SnackBarType.info,
+              );
+
+              // Fetch previous levels
+              _fetchPreviousLevelsIfNeeded();
+
+              // Prevent the scroll by jumping back to current position
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  _pageController.jumpToPage(_currentPageIndex);
+                }
+              });
+              return;
+            }
+          }
+        }
+
+        // If we can't fetch more levels, show message
+        showSnackBar(
+          context,
+          message: choose(
+            hindi: 'पिछले लेवल उपलब्ध नहीं हैं',
+            hinglish: 'Pichle levels available nahi hain',
+            lang: ref.read(langControllerProvider),
+          ),
+          type: SnackBarType.info,
+        );
+
+        // Prevent the scroll by jumping back to current position
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _pageController.jumpToPage(_currentPageIndex);
+          }
+        });
+        return;
+      }
+    }
+
+    // Reset scroll back blocked state if not scrolling back
+    if (_isScrollBackBlocked) {
+      setState(() {
+        _isScrollBackBlocked = false;
+      });
+    }
+  }
 
   /// Maps a buffer index (0..bufferSize) to the corresponding index
   /// in `widget.sublevels` list. Returns null if not resolvable.
@@ -84,7 +293,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
     for (int i = 0; i < bufferSize; i++) {
       final sublevel = _sublevelBuffer[i];
       if (sublevel != null && sublevel.level == 1 && sublevel.index == 1) {
-        _pageController.animateToPage(i, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+        _pageController.jumpToPage(i);
         break;
       }
     }
@@ -335,6 +544,9 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
     _currentPageIndex = middleIndex;
     _fillBuffer();
 
+    // Add listener to prevent scroll back when appropriate
+    _pageController.addListener(_onPageControllerUpdate);
+
     // Ensure the initially visible page is treated as current and triggers callbacks
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // Set app bar visibility based on current sublevel type
@@ -361,11 +573,40 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.sublevels.length != widget.sublevels.length) {
       _updateBuffer();
+
+      // If we were loading previous levels and now have more sublevels,
+      // we can allow scroll back
+      if (_isLoadingPreviousLevels && _canScrollBack(_currentPageIndex)) {
+        setState(() {
+          _isLoadingPreviousLevels = false;
+        });
+
+        // Show success message that scroll back is now possible
+        if (mounted) {
+          showSnackBar(
+            context,
+            message: choose(
+              hindi: 'अब आप पिछले लेवल्स देख सकते हैं',
+              hinglish: 'Ab aap pichle levels dekh sakte hain',
+              lang: ref.read(langControllerProvider),
+            ),
+            type: SnackBarType.success,
+          );
+        }
+
+        // Also reset the scroll back blocked state
+        if (_isScrollBackBlocked) {
+          setState(() {
+            _isScrollBackBlocked = false;
+          });
+        }
+      }
     }
   }
 
   @override
   void dispose() {
+    _pageController.removeListener(_onPageControllerUpdate);
     _pageController.dispose();
     super.dispose();
   }
@@ -454,6 +695,27 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
                 sublevel == null ? _isLoadingRelevantLevels(ref) : (widget.loadingById[sublevel.levelId] ?? true);
 
             if (sublevel == null && !isLoading) {
+              // Check if we're loading previous levels
+              if (_isLoadingPreviousLevels) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      LangText.bodyText(
+                        text: choose(
+                          hindi: 'पिछले लेवल लोड हो रहे हैं...',
+                          hinglish: 'Pichle levels load ho rahe hain...',
+                          lang: ref.read(langControllerProvider),
+                        ),
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
               final levelState = ref.read(levelControllerProvider);
               final orderedIds = levelState.orderedIds;
               final lastAvailableLevelId = orderedIds?.last;
