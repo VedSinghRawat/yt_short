@@ -456,8 +456,9 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
       key: Key(widget.video.id + widget.video.index.toString()),
       onVisibilityChanged: _onVisibilityChanged,
       child: SafeArea(
-        child: OrientationBuilder(
-          builder: (context, orientation) {
+        child: Builder(
+          builder: (context) {
+            final orientation = MediaQuery.of(context).orientation;
             return orientation == Orientation.landscape && responsiveness.screenType != Screen.mobile
                 ? _buildTabletLandscapeLayout(isPlayerReady, progress, responsiveness)
                 : _buildPortraitLayout(isPlayerReady, progress, responsiveness);

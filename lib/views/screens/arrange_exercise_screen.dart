@@ -294,59 +294,58 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final orientation = MediaQuery.of(context).orientation;
+
     return ExerciseContainer(
       maxWidth: null, // No max width for arrange exercise to allow full width in landscape
-      child: OrientationBuilder(
-        builder: (context, orientation) {
-          if (orientation == Orientation.landscape) {
-            // Landscape layout: Header at top (centered with max width), then image left and content right
-            return Column(
-              children: [
-                // Centered header with max width
-                Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 600), child: _buildHeader())),
-                const SizedBox(height: 20),
-                // Image and content side by side
-                Expanded(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Image on the left - no constraints, maintains aspect ratio
-                      Expanded(child: Center(child: _buildImage())),
-                      const SizedBox(width: 20),
-                      // Arrange container and buttons on the right with max width constraint
-                      Expanded(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 600),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [_buildArrangeContainer(), const SizedBox(height: 80), _buildButtons()],
+      child:
+          orientation == Orientation.landscape
+              ? // Landscape layout: Header at top (centered with max width), then image left and content right
+              Column(
+                children: [
+                  // Centered header with max width
+                  Center(
+                    child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 600), child: _buildHeader()),
+                  ),
+                  const SizedBox(height: 20),
+                  // Image and content side by side
+                  Expanded(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Image on the left - no constraints, maintains aspect ratio
+                        Expanded(child: Center(child: _buildImage())),
+                        const SizedBox(width: 20),
+                        // Arrange container and buttons on the right with max width constraint
+                        Expanded(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 600),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [_buildArrangeContainer(), const SizedBox(height: 80), _buildButtons()],
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            );
-          } else {
-            // Portrait layout: Vertical stack
-            return Column(
-              children: [
-                _buildHeader(),
-                const SizedBox(height: 20),
-                Container(
-                  constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height / 3),
-                  child: _buildImage(),
-                ),
-                const SizedBox(height: 20),
-                _buildArrangeContainer(),
-                const Spacer(),
-                _buildButtons(),
-              ],
-            );
-          }
-        },
-      ),
+                ],
+              )
+              : // Portrait layout: Vertical stack
+              Column(
+                children: [
+                  _buildHeader(),
+                  const SizedBox(height: 20),
+                  Container(
+                    constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height / 3),
+                    child: _buildImage(),
+                  ),
+                  const SizedBox(height: 20),
+                  _buildArrangeContainer(),
+                  const Spacer(),
+                  _buildButtons(),
+                ],
+              ),
     );
   }
 }

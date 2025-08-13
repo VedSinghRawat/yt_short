@@ -436,139 +436,120 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
   @override
   Widget build(BuildContext context) {
     _initialize();
+    final orientation = MediaQuery.of(context).orientation;
+
+    // Trigger calculations when orientation changes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _calculateAndStoreButtonSizes();
+        _calculateAndStoreBlankPosition();
+      }
+    });
 
     return ExerciseContainer(
       maxWidth: null, // No max width to allow full width in landscape
       addTopPadding: false, // Custom padding needed for Stack
-      child: OrientationBuilder(
-        builder: (context, orientation) {
-          // Trigger calculations when orientation changes
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              _calculateAndStoreButtonSizes();
-              _calculateAndStoreBlankPosition();
-            }
-          });
-
-          return VisibilityDetector(
-            key: ValueKey(widget.exercise.id),
-            onVisibilityChanged: (visibility) {
-              if (visibility.visibleFraction != 1 || !mounted) return;
-              _initialize();
-            },
-            child: Stack(
-              key: _stackKey,
-              children: [
-                if (orientation == Orientation.landscape)
-                  // Landscape layout: Header at top, image left, content right
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        // Centered header with max width
-                        Center(
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 600),
-                            child: _buildHeader(),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        // Image and content side by side
-                        Expanded(
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              // Image on the left
-                              Expanded(child: Center(child: _buildImage())),
-                              const SizedBox(width: 20),
-                              // Content on the right with max width constraint
-                              Expanded(
-                                child: ConstrainedBox(
-                                  constraints: const BoxConstraints(maxWidth: 600),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
+      child: VisibilityDetector(
+        key: ValueKey(widget.exercise.id),
+        onVisibilityChanged: (visibility) {
+          if (visibility.visibleFraction != 1 || !mounted) return;
+          _initialize();
+        },
+        child: Stack(
+          key: _stackKey,
+          children: [
+            if (orientation == Orientation.landscape)
+              // Landscape layout: Header at top, image left, content right
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    // Centered header with max width
+                    Center(
+                      child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 600), child: _buildHeader()),
+                    ),
+                    const SizedBox(height: 20),
+                    // Image and content side by side
+                    Expanded(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // Image on the left
+                          Expanded(child: Center(child: _buildImage())),
+                          const SizedBox(width: 20),
+                          // Content on the right with max width constraint
+                          Expanded(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 600),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  // Group sentence and options together
+                                  Column(
                                     children: [
-                                      // Group sentence and options together
-                                      Column(
+                                      // Sentence with blank
+                                      Wrap(
+                                        alignment: WrapAlignment.center,
+                                        crossAxisAlignment: WrapCrossAlignment.center,
                                         children: [
-                                          // Sentence with blank
-                                          Wrap(
-                                            alignment: WrapAlignment.center,
-                                            crossAxisAlignment: WrapCrossAlignment.center,
-                                            children: [
-                                              if (_getSentenceParts()[0].isNotEmpty)
-                                                LangText.bodyText(
-                                                  text: '${_getSentenceParts()[0]} ',
-                                                  style: const TextStyle(color: Colors.white, fontSize: 24),
-                                                ),
-                                              Container(
-                                                key: _blankKey,
-                                                constraints: BoxConstraints(minWidth: _widestOptionWidth),
-                                                padding: const EdgeInsets.symmetric(
-                                                  horizontal: _blankHorizontalPadding,
-                                                  vertical: _blankVerticalPadding,
-                                                ),
-                                                decoration: const BoxDecoration(
-                                                  border: Border(bottom: BorderSide(color: Colors.orange, width: 3)),
-                                                ),
-                                                child: const SizedBox(height: 20),
-                                              ),
-                                              if (_getSentenceParts()[1].isNotEmpty)
-                                                LangText.bodyText(
-                                                  text: ' ${_getSentenceParts()[1]}',
-                                                  style: const TextStyle(color: Colors.white, fontSize: 24),
-                                                ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 40),
-                                          // Multiple choice options area
+                                          if (_getSentenceParts()[0].isNotEmpty)
+                                            LangText.bodyText(
+                                              text: '${_getSentenceParts()[0]} ',
+                                              style: const TextStyle(color: Colors.white, fontSize: 24),
+                                            ),
                                           Container(
-                                            key: _optionsAreaKey,
-                                            child: Wrap(
-                                              alignment: WrapAlignment.center,
-                                              spacing: 20.0,
-                                              runSpacing: 14.0,
-                                              children:
-                                                  widget.exercise.options.isEmpty
-                                                      ? []
-                                                      : List.generate(widget.exercise.options.length, (index) {
-                                                        final isSelected = selectedOption == index;
+                                            key: _blankKey,
+                                            constraints: BoxConstraints(minWidth: _widestOptionWidth),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: _blankHorizontalPadding,
+                                              vertical: _blankVerticalPadding,
+                                            ),
+                                            decoration: const BoxDecoration(
+                                              border: Border(bottom: BorderSide(color: Colors.orange, width: 3)),
+                                            ),
+                                            child: const SizedBox(height: 20),
+                                          ),
+                                          if (_getSentenceParts()[1].isNotEmpty)
+                                            LangText.bodyText(
+                                              text: ' ${_getSentenceParts()[1]}',
+                                              style: const TextStyle(color: Colors.white, fontSize: 24),
+                                            ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 40),
+                                      // Multiple choice options area
+                                      Container(
+                                        key: _optionsAreaKey,
+                                        child: Wrap(
+                                          alignment: WrapAlignment.center,
+                                          spacing: 20.0,
+                                          runSpacing: 14.0,
+                                          children:
+                                              widget.exercise.options.isEmpty
+                                                  ? []
+                                                  : List.generate(widget.exercise.options.length, (index) {
+                                                    final isSelected = selectedOption == index;
 
-                                                        if (isSelected) {
-                                                          final buttonSize = _buttonSizes[index];
-                                                          return SizedBox(
-                                                            width: buttonSize.width,
-                                                            height: buttonSize.height,
-                                                            key: _placeholderKeys[index],
-                                                          );
-                                                        }
+                                                    if (isSelected) {
+                                                      final buttonSize = _buttonSizes[index];
+                                                      return SizedBox(
+                                                        width: buttonSize.width,
+                                                        height: buttonSize.height,
+                                                        key: _placeholderKeys[index],
+                                                      );
+                                                    }
 
-                                                        return GestureDetector(
-                                                          key: _placeholderKeys[index],
-                                                          onTap: () {
-                                                            if (selectedOption != null) {
-                                                              setState(() {
-                                                                selectedOption = null;
-                                                                _isAnimating = false;
-                                                              });
+                                                    return GestureDetector(
+                                                      key: _placeholderKeys[index],
+                                                      onTap: () {
+                                                        if (selectedOption != null) {
+                                                          setState(() {
+                                                            selectedOption = null;
+                                                            _isAnimating = false;
+                                                          });
 
-                                                              Future.delayed(const Duration(milliseconds: 100), () {
-                                                                if (mounted) {
-                                                                  setState(() {
-                                                                    selectedOption = index;
-                                                                    _isAnimating = false;
-                                                                  });
-
-                                                                  Future.delayed(const Duration(milliseconds: 50), () {
-                                                                    if (mounted) {
-                                                                      setState(() {
-                                                                        _isAnimating = true;
-                                                                      });
-                                                                    }
-                                                                  });
-                                                                }
-                                                              });
-                                                            } else {
+                                                          Future.delayed(const Duration(milliseconds: 100), () {
+                                                            if (mounted) {
                                                               setState(() {
                                                                 selectedOption = index;
                                                                 _isAnimating = false;
@@ -582,142 +563,151 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
                                                                 }
                                                               });
                                                             }
-                                                          },
-                                                          child: Container(
-                                                            key: _optionKeys[index],
-                                                            padding: const EdgeInsets.symmetric(
-                                                              vertical: _optionButtonVerticalPadding,
-                                                              horizontal: _optionButtonHorizontalPadding,
-                                                            ),
-                                                            decoration: BoxDecoration(
-                                                              color: Colors.grey[700],
-                                                              borderRadius: BorderRadius.circular(12),
-                                                            ),
-                                                            child: LangText.bodyText(
-                                                              text: widget.exercise.options[index],
-                                                              style: TextStyle(color: Colors.grey[300], fontSize: 18),
-                                                            ),
-                                                          ),
-                                                        );
-                                                      }),
-                                            ),
-                                          ),
-                                        ],
+                                                          });
+                                                        } else {
+                                                          setState(() {
+                                                            selectedOption = index;
+                                                            _isAnimating = false;
+                                                          });
+
+                                                          Future.delayed(const Duration(milliseconds: 50), () {
+                                                            if (mounted) {
+                                                              setState(() {
+                                                                _isAnimating = true;
+                                                              });
+                                                            }
+                                                          });
+                                                        }
+                                                      },
+                                                      child: Container(
+                                                        key: _optionKeys[index],
+                                                        padding: const EdgeInsets.symmetric(
+                                                          vertical: _optionButtonVerticalPadding,
+                                                          horizontal: _optionButtonHorizontalPadding,
+                                                        ),
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.grey[700],
+                                                          borderRadius: BorderRadius.circular(12),
+                                                        ),
+                                                        child: LangText.bodyText(
+                                                          text: widget.exercise.options[index],
+                                                          style: TextStyle(color: Colors.grey[300], fontSize: 18),
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }),
+                                        ),
                                       ),
-                                      const SizedBox(height: 60),
-                                      // Buttons
-                                      _isCorrect
-                                          ? Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                                            child: SizedBox(
-                                              width: double.infinity,
-                                              child: ElevatedButton(
-                                                onPressed: widget.goToNext,
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.green[400],
-                                                  foregroundColor: Colors.white,
-                                                  padding: const EdgeInsets.symmetric(vertical: 16),
-                                                  shape: const RoundedRectangleBorder(
-                                                    borderRadius: BorderRadius.all(Radius.circular(12)),
-                                                  ),
-                                                  textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                                                ),
-                                                child: const LangText.body(hindi: 'आगे बढ़ें', hinglish: 'Aage badhe'),
-                                              ),
-                                            ),
-                                          )
-                                          : Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                                            child: Container(
-                                              width: double.infinity,
-                                              constraints: const BoxConstraints(maxWidth: 240),
-                                              child: ElevatedButton(
-                                                onPressed: selectedOption != null ? _checkAnswer : null,
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Theme.of(context).colorScheme.primary,
-                                                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                                                  padding: const EdgeInsets.symmetric(vertical: 16),
-                                                  shape: const RoundedRectangleBorder(
-                                                    borderRadius: BorderRadius.all(Radius.circular(12)),
-                                                  ),
-                                                  textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                                                  disabledBackgroundColor: Colors.grey[600],
-                                                ),
-                                                child: const LangText.body(hindi: 'जांचें', hinglish: 'Check'),
-                                              ),
-                                            ),
-                                          ),
                                     ],
                                   ),
-                                ),
+                                  const SizedBox(height: 60),
+                                  // Buttons
+                                  _isCorrect
+                                      ? Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                        child: SizedBox(
+                                          width: double.infinity,
+                                          child: ElevatedButton(
+                                            onPressed: widget.goToNext,
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.green[400],
+                                              foregroundColor: Colors.white,
+                                              padding: const EdgeInsets.symmetric(vertical: 16),
+                                              shape: const RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.all(Radius.circular(12)),
+                                              ),
+                                              textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                                            ),
+                                            child: const LangText.body(hindi: 'आगे बढ़ें', hinglish: 'Aage badhe'),
+                                          ),
+                                        ),
+                                      )
+                                      : Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                        child: Container(
+                                          width: double.infinity,
+                                          constraints: const BoxConstraints(maxWidth: 240),
+                                          child: ElevatedButton(
+                                            onPressed: selectedOption != null ? _checkAnswer : null,
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Theme.of(context).colorScheme.primary,
+                                              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                                              padding: const EdgeInsets.symmetric(vertical: 16),
+                                              shape: const RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.all(Radius.circular(12)),
+                                              ),
+                                              textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                                              disabledBackgroundColor: Colors.grey[600],
+                                            ),
+                                            child: const LangText.body(hindi: 'जांचें', hinglish: 'Check'),
+                                          ),
+                                        ),
+                                      ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  )
-                else
-                  // Portrait layout: Vertical stack with image height constraint
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, kToolbarHeight + 16, 16, 16),
-                    child: Column(
-                      children: [
-                        _buildHeader(),
-                        const SizedBox(height: 20),
-                        Container(
-                          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height / 3),
-                          child: _buildImage(),
-                        ),
-                        const SizedBox(height: 32),
-                        Expanded(child: _buildContent()),
-                        const SizedBox(height: 12),
-                      ],
-                    ),
-                  ),
-
-                // Animated positioned widget for selected option
-                if (selectedOption != null)
-                  AnimatedPositioned(
-                    duration: const Duration(milliseconds: 400),
-                    curve: Curves.easeInOut,
-                    left:
-                        _isAnimating
-                            ? _getTargetPosition()['left']
-                            : _getOriginalOptionPosition(selectedOption!)['left'],
-                    top:
-                        _isAnimating ? _getTargetPosition()['top'] : _getOriginalOptionPosition(selectedOption!)['top'],
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          selectedOption = null;
-                          _isAnimating = false;
-                        });
-                      },
-                      child: Container(
-                        key: _optionKeys[selectedOption!],
-                        padding: const EdgeInsets.symmetric(
-                          vertical: _optionButtonVerticalPadding,
-                          horizontal: _optionButtonHorizontalPadding,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.orange,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(color: Colors.orange.withValues(alpha: 0.5), blurRadius: 8, spreadRadius: 2),
-                          ],
-                        ),
-                        child: LangText.bodyText(
-                          text: widget.exercise.options[selectedOption!],
-                          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w500),
-                        ),
+                        ],
                       ),
                     ),
+                  ],
+                ),
+              )
+            else
+              // Portrait layout: Vertical stack with image height constraint
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, kToolbarHeight + 16, 16, 16),
+                child: Column(
+                  children: [
+                    _buildHeader(),
+                    const SizedBox(height: 20),
+                    Container(
+                      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height / 3),
+                      child: _buildImage(),
+                    ),
+                    const SizedBox(height: 32),
+                    Expanded(child: _buildContent()),
+                    const SizedBox(height: 12),
+                  ],
+                ),
+              ),
+
+            // Animated positioned widget for selected option
+            if (selectedOption != null)
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.easeInOut,
+                left: _isAnimating ? _getTargetPosition()['left'] : _getOriginalOptionPosition(selectedOption!)['left'],
+                top: _isAnimating ? _getTargetPosition()['top'] : _getOriginalOptionPosition(selectedOption!)['top'],
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      selectedOption = null;
+                      _isAnimating = false;
+                    });
+                  },
+                  child: Container(
+                    key: _optionKeys[selectedOption!],
+                    padding: const EdgeInsets.symmetric(
+                      vertical: _optionButtonVerticalPadding,
+                      horizontal: _optionButtonHorizontalPadding,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.orange,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(color: Colors.orange.withValues(alpha: 0.5), blurRadius: 8, spreadRadius: 2),
+                      ],
+                    ),
+                    child: LangText.bodyText(
+                      text: widget.exercise.options[selectedOption!],
+                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w500),
+                    ),
                   ),
-              ],
-            ),
-          );
-        },
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

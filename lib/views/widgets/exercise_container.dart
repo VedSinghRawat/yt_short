@@ -12,24 +12,21 @@ class ExerciseContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     final responsiveness = ResponsivenessService(context);
     final padding = responsiveness.getResponsiveValues(mobile: 16, tablet: 24, largeTablet: 32);
+    final orientation = MediaQuery.of(context).orientation;
 
     return Scaffold(
       body: SafeArea(
-        child: OrientationBuilder(
-          builder: (context, orientation) {
-            return Container(
-              padding: EdgeInsets.fromLTRB(
-                padding,
-                (orientation == Orientation.portrait && addTopPadding) ? kToolbarHeight + padding : 0,
-                padding,
-                padding,
-              ),
-              child:
-                  maxWidth != null
-                      ? Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: maxWidth!), child: child))
-                      : child,
-            );
-          },
+        child: Container(
+          padding: EdgeInsets.fromLTRB(
+            padding,
+            (orientation == Orientation.portrait && addTopPadding) ? kToolbarHeight + padding : 0,
+            padding,
+            padding,
+          ),
+          child:
+              maxWidth != null
+                  ? Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: maxWidth!), child: child))
+                  : child,
         ),
       ),
     );

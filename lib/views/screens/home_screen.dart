@@ -239,6 +239,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final loadingLevelIds = ref.watch(levelControllerProvider.select((state) => state.loadingById));
     final sublevels = ref.watch(sublevelControllerProvider.select((state) => state.sublevels));
+    final orientation = MediaQuery.of(context).orientation;
 
     if (sublevels == null || sublevels.isEmpty) {
       return const Loader();
@@ -249,37 +250,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     return Scaffold(
-      body: OrientationBuilder(
-        builder: (context, orientation) {
-          if (orientation == Orientation.landscape) {
-            // Landscape: Static app bar takes actual space
-            return Column(
-              children: [
-                const HomeAppBar(),
-                Expanded(
-                  child: SublevelsList(
+      body:
+          orientation == Orientation.landscape
+              ? // Landscape: Static app bar takes actual space
+              Column(
+                children: [
+                  const HomeAppBar(),
+                  Expanded(
+                    child: SublevelsList(
+                      loadingById: loadingLevelIds,
+                      sublevels: sublevels.toList(),
+                      onSublevelChange: onSublevelChange,
+                    ),
+                  ),
+                ],
+              )
+              : // Portrait: Animated app bar over content
+              Stack(
+                children: [
+                  SublevelsList(
                     loadingById: loadingLevelIds,
                     sublevels: sublevels.toList(),
                     onSublevelChange: onSublevelChange,
                   ),
-                ),
-              ],
-            );
-          } else {
-            // Portrait: Animated app bar over content
-            return Stack(
-              children: [
-                SublevelsList(
-                  loadingById: loadingLevelIds,
-                  sublevels: sublevels.toList(),
-                  onSublevelChange: onSublevelChange,
-                ),
-                const HomeAppBarAnimated(),
-              ],
-            );
-          }
-        },
-      ),
+                  const HomeAppBarAnimated(),
+                ],
+              ),
     );
   }
 }
