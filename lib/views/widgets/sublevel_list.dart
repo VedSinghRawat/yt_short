@@ -13,6 +13,7 @@ import 'package:myapp/views/screens/speech_exercise_screen.dart';
 import 'package:myapp/views/screens/arrange_exercise_screen.dart';
 import 'package:myapp/views/screens/fill_exercise_screen.dart';
 import 'package:myapp/controllers/user/user_controller.dart';
+import 'dart:developer' as developer;
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 import 'package:myapp/models/video/video.dart';
@@ -39,6 +40,72 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
   int _currentBufferIndex = middleIndex; // ignore: unused_field
   bool _isLoadingPreviousLevels = false;
   bool _isScrollBackBlocked = false;
+
+  int _getMaxForwardScrollableIndex() {
+    int lastNonNullIndex = -1;
+    for (int i = 0; i < bufferSize; i++) {
+      if (_sublevelBuffer[i] != null) {
+        lastNonNullIndex = i;
+      }
+    }
+
+    // If nothing is loaded, restrict to 0
+    if (lastNonNullIndex == -1) return 0;
+
+    final candidate = lastNonNullIndex + 1;
+    return candidate >= bufferSize ? bufferSize - 1 : candidate;
+  }
+
+  /// Returns the expected sublevel for a given buffer index, even if buffer holds null there.
+  /// Uses nearest non-null anchor in buffer and a sorted copy of `widget.sublevels` to infer.
+  SubLevel? _expectedSublevelAt(int bufferIndex) {
+    if (bufferIndex < 0 || bufferIndex >= bufferSize || widget.sublevels.isEmpty) return null;
+
+    int? anchorBufferIndex;
+    SubLevel? anchorSublevel;
+    // Prefer exact non-null at index
+    if (_sublevelBuffer[bufferIndex] != null) {
+      anchorBufferIndex = bufferIndex;
+      anchorSublevel = _sublevelBuffer[bufferIndex];
+    } else {
+      // Find nearest non-null around index
+      for (int offset = 1; offset < bufferSize; offset++) {
+        final left = bufferIndex - offset;
+        if (left >= 0 && _sublevelBuffer[left] != null) {
+          anchorBufferIndex = left;
+          anchorSublevel = _sublevelBuffer[left];
+          break;
+        }
+        final right = bufferIndex + offset;
+        if (right < bufferSize && _sublevelBuffer[right] != null) {
+          anchorBufferIndex = right;
+          anchorSublevel = _sublevelBuffer[right];
+          break;
+        }
+        if (left < 0 && right >= bufferSize) break;
+      }
+    }
+
+    if (anchorBufferIndex == null || anchorSublevel == null) return null;
+
+    // Build sorted list once per call
+    final sortedSublevels = List<SubLevel>.from(widget.sublevels)..sort((a, b) {
+      if (isLevelAfter(a.level, a.index, b.level, b.index)) return 1;
+      if (isLevelEqual(a.level, a.index, b.level, b.index)) return 0;
+      return -1;
+    });
+
+    final anchorListIndex = sortedSublevels.indexWhere(
+      (s) => s.levelId == anchorSublevel!.levelId && s.level == anchorSublevel.level && s.index == anchorSublevel.index,
+    );
+    if (anchorListIndex == -1) return null;
+
+    final delta = bufferIndex - anchorBufferIndex;
+    final targetListIndex = anchorListIndex + delta;
+    if (targetListIndex < 0 || targetListIndex >= sortedSublevels.length) return null;
+
+    return sortedSublevels[targetListIndex];
+  }
 
   /// Checks if we can scroll back further from the current position
   bool _canScrollBack(int currentIndex) {
@@ -142,8 +209,45 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
 
     final currentPage = _pageController.page ?? _currentPageIndex;
     final isScrollingBack = currentPage < _currentPageIndex;
+    final isScrollingForward = currentPage > _currentPageIndex;
 
     if (isScrollingBack) {
+      // If at the first sublevel of the current level, gate back-scroll based on previous level load state
+      final currentSublevel = _getCurrentSublevel(_currentPageIndex);
+      if (currentSublevel != null && currentSublevel.index == 1) {
+        final levelState = ref.read(levelControllerProvider);
+        final orderedIds = levelState.orderedIds;
+        if (orderedIds != null && orderedIds.isNotEmpty) {
+          final currentLevelIdx = orderedIds.indexOf(currentSublevel.levelId);
+          if (currentLevelIdx > 0) {
+            final prevLevelId = orderedIds[currentLevelIdx - 1];
+            final loadingStatus = levelState.loadingById[prevLevelId];
+
+            // If previous level is not loaded yet (null or loading), block back scroll
+            if (loadingStatus == null) {
+              // Start loading previous level immediately
+              ref.read(levelControllerProvider.notifier).getLevel(prevLevelId);
+
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  _pageController.jumpToPage(_currentPageIndex);
+                }
+              });
+              return;
+            } else if (loadingStatus == true) {
+              // Still loading, keep blocking back scroll
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  _pageController.jumpToPage(_currentPageIndex);
+                }
+              });
+              return;
+            }
+            // Else: loadingStatus == false -> previous level loaded; allow back scroll
+          }
+        }
+      }
+
       // Check if we can scroll back
       if (!_canScrollBack(_currentPageIndex)) {
         // Block the scroll back
@@ -157,8 +261,8 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
           showSnackBar(
             context,
             message: choose(
-              hindi: 'यह पहला लेवल है। आप आगे नहीं जा सकते।',
-              hinglish: 'Ye peha level hai. Aap aage nahi ja sakte.',
+              hindi: 'ये पहला लेवल है। आप पीछे नहीं जा सकते हैं।',
+              hinglish: 'Ye peha level hai. Aap pichhe nahi ja sakte hain.',
               lang: ref.read(langControllerProvider),
             ),
             type: SnackBarType.info,
@@ -244,6 +348,19 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
         _isScrollBackBlocked = false;
       });
     }
+
+    // Prevent scrolling forward beyond the first null (error page) after loaded content
+    if (isScrollingForward) {
+      final maxForwardIndex = _getMaxForwardScrollableIndex();
+      if (currentPage > maxForwardIndex) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _pageController.jumpToPage(maxForwardIndex);
+          }
+        });
+        return;
+      }
+    }
   }
 
   /// Maps a buffer index (0..bufferSize) to the corresponding index
@@ -310,36 +427,48 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
   /// Logs the buffer state showing only relevant information
   /// Shows 3 padding of null on both sides and levels in order
   void _logBufferState(String operation) {
-    // Find the range of non-null elements
     int firstNonNullIndex = -1;
     int lastNonNullIndex = -1;
+    int nonNullCount = 0;
 
     for (int i = 0; i < bufferSize; i++) {
-      if (_sublevelBuffer[i] != null) {
+      final s = _sublevelBuffer[i];
+      if (s != null) {
+        nonNullCount++;
         if (firstNonNullIndex == -1) firstNonNullIndex = i;
         lastNonNullIndex = i;
       }
     }
 
-    if (firstNonNullIndex == -1) {
+    final current = _getCurrentSublevel(_currentPageIndex);
+    final currentLabel = current == null ? 'null' : 'L${current.level}-S${current.index}';
+
+    if (nonNullCount == 0) {
+      developer.log('[SublevelsList] $operation: buffer empty | currentIndex=$_currentPageIndex($currentLabel)');
       return;
     }
 
-    // Calculate padding range (3 on each side)
-    int startIndex = (firstNonNullIndex - 3).clamp(0, bufferSize - 1);
-    int endIndex = (lastNonNullIndex + 3).clamp(0, bufferSize - 1);
+    // Collect a compact window around the first/last non-null entries
+    final startIndex = (firstNonNullIndex - 2).clamp(0, bufferSize - 1);
+    final endIndex = (lastNonNullIndex + 2).clamp(0, bufferSize - 1);
 
+    final preview = <String>[];
     for (int i = startIndex; i <= endIndex; i++) {
-      final sublevel = _sublevelBuffer[i];
-      if (sublevel != null) {}
+      final s = _sublevelBuffer[i];
+      if (s == null) {
+        preview.add('[$i:null]');
+      } else {
+        preview.add('[$i:L${s.level}-S${s.index}]');
+      }
     }
+
+    developer.log(
+      '[SublevelsList] $operation: filled=$nonNullCount, range=$firstNonNullIndex..$lastNonNullIndex, '
+      'currentIndex=$_currentPageIndex($currentLabel), window=${preview.join(', ')}',
+    );
   }
 
-  /// Fills the buffer with sublevels based on their level-sublevel ordering
-  /// The current sublevel is placed at the middle index (500)
-  /// Other sublevels are positioned before or after based on their ordering
   void _fillBuffer() {
-    // Clear the buffer first
     for (int i = 0; i < bufferSize; i++) {
       _sublevelBuffer[i] = null;
     }
@@ -472,19 +601,22 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
       _sublevelBuffer[i] = null;
     }
 
-    // Place the reference sublevel at middle index
-    _sublevelBuffer[middleIndex] = sortedSublevels[referenceIndex];
-    _currentBufferIndex = middleIndex;
+    // Anchor the current visible page to remain stable during updates
+    final anchorBufferIndex = _currentPageIndex.clamp(0, bufferSize - 1);
 
-    // Fill sublevels before the reference (going backwards from middle)
-    int bufferIndex = middleIndex - 1;
+    // Place the reference sublevel at the anchor index
+    _sublevelBuffer[anchorBufferIndex] = sortedSublevels[referenceIndex];
+    _currentBufferIndex = anchorBufferIndex;
+
+    // Fill sublevels before the reference (going backwards from anchor)
+    int bufferIndex = anchorBufferIndex - 1;
     for (int i = referenceIndex - 1; i >= 0 && bufferIndex >= 0; i--) {
       _sublevelBuffer[bufferIndex] = sortedSublevels[i];
       bufferIndex--;
     }
 
-    // Fill sublevels after the reference (going forwards from middle)
-    bufferIndex = middleIndex + 1;
+    // Fill sublevels after the reference (going forwards from anchor)
+    bufferIndex = anchorBufferIndex + 1;
     for (int i = referenceIndex + 1; i < sortedSublevels.length && bufferIndex < bufferSize; i++) {
       _sublevelBuffer[bufferIndex] = sortedSublevels[i];
       bufferIndex++;
@@ -667,9 +799,17 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
           itemCount: bufferSize,
           scrollDirection: Axis.vertical,
           onPageChanged: (index) async {
+            // Capture previous sublevel before updating index
+            final previousSublevel = _getCurrentSublevel(_currentPageIndex);
+
             setState(() {
               _currentPageIndex = index;
             });
+
+            // Log current L-S after page change
+            final curr = _getCurrentSublevel(_currentPageIndex) ?? _expectedSublevelAt(_currentPageIndex);
+            final label = curr == null ? 'null' : 'L${curr.level}-S${curr.index} (levelId=${curr.levelId})';
+            developer.log('[SublevelsList] onPageChanged -> index=$_currentPageIndex, current=$label');
 
             // Control app bar visibility based on sublevel type
             final sublevel = _sublevelBuffer[index];
@@ -680,6 +820,20 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
                 arrangeExercise: (arrangeExercise) => ref.read(uIControllerProvider.notifier).setIsAppBarVisible(true),
                 fillExercise: (fillExercise) => ref.read(uIControllerProvider.notifier).setIsAppBarVisible(true),
               );
+            }
+
+            // Fetch the level whenever the level changes (not sublevel)
+            final expectedAtIndex = _expectedSublevelAt(index);
+            if (expectedAtIndex != null) {
+              final prevLevelId = previousSublevel?.levelId;
+              final newLevelId = expectedAtIndex.levelId;
+              if (prevLevelId != newLevelId) {
+                final levelState = ref.read(levelControllerProvider);
+                final isKnown = levelState.loadingById.containsKey(newLevelId);
+                if (!isKnown) {
+                  ref.read(levelControllerProvider.notifier).getLevel(newLevelId);
+                }
+              }
             }
 
             // Map buffer index to list index before notifying

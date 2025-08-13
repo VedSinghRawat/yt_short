@@ -144,7 +144,6 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
 
       // Start animation when video finishes (backup trigger)
       if (widget.isCurrent) {
-        developer.log('🎬 Video finished, starting animation', name: 'VideoPlayerScreen');
         _startAnimationTimer();
       }
     }
@@ -381,8 +380,6 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
 
   // Animation methods
   void _startAnimationTimer() {
-    developer.log('🎬 _startAnimationTimer called', name: 'VideoPlayerScreen');
-
     _animationTimer?.cancel();
     _bounceTimer?.cancel();
 

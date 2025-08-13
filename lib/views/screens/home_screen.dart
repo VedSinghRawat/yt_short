@@ -97,7 +97,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Future<void> handleFetchSublevels(int index, List<SubLevel> sublevels) async {
     if (isLevelChanged(index, sublevels)) {
-      await fetchSublevels();
+      final newLevelId = sublevels[index].levelId;
+      await fetchSublevels(anchorLevelId: newLevelId);
     }
   }
 
@@ -130,7 +131,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return previousSubLevel.levelId != currSubLevel.levelId;
   }
 
-  Future<void> fetchSublevels() async {
+  Future<void> fetchSublevels({String? anchorLevelId}) async {
     await ref.read(levelControllerProvider.notifier).fetchLevels();
   }
 
@@ -184,8 +185,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return;
     }
 
-    await handleFetchSublevels(index, sublevels);
-
     final sublevel = sublevels[index];
     final level = sublevel.level;
     final sublevelIndex = sublevel.index;
@@ -216,7 +215,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     ref.read(sublevelControllerProvider.notifier).setHasFinishedSublevel(false);
 
+    final prevProgress = ref.read(uIControllerProvider).currentProgress;
     await syncLocalProgress(level, sublevelIndex, sublevel.levelId, localMaxLevel, localMaxSubLevel, userEmail);
+
+    // Trigger level prefetch immediately when the level changes (works for both directions, e.g., 4-1 -> 3-5)
+    if (prevProgress?.levelId != sublevel.levelId) {
+      await ref.read(levelControllerProvider.notifier).fetchLevels();
+    }
+
+    // Also run existing handler (kept for forward boundary scenarios)
+    await handleFetchSublevels(index, sublevels);
 
     final lastLoggedInEmail = SharedPref.get(PrefKey.user)?.email;
 
