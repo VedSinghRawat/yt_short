@@ -183,30 +183,32 @@ class _DialogueListState extends ConsumerState<DialogueList> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  LangText.bodyText(
-                                    text: dialogue.text,
-                                    style: TextStyle(
-                                      fontSize: textFontSize,
-                                      color: Colors.white,
-                                      fontWeight: textFontWeight,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 8),
-                                    child: LangText.body(
-                                      hindi: dialogue.hindiText,
-                                      hinglish: dialogue.hinglishText,
-                                      style: TextStyle(fontSize: textFontSize * 0.8, color: Colors.white70),
+                              Expanded(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    LangText.bodyText(
+                                      text: dialogue.text,
+                                      style: TextStyle(
+                                        fontSize: textFontSize,
+                                        color: Colors.white,
+                                        fontWeight: textFontWeight,
+                                      ),
                                       textAlign: TextAlign.center,
                                     ),
-                                  ),
-                                ],
+
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 8),
+                                      child: LangText.body(
+                                        hindi: dialogue.hindiText,
+                                        hinglish: dialogue.hinglishText,
+                                        style: TextStyle(fontSize: textFontSize * 0.8, color: Colors.white70),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
 
                               GestureDetector(
