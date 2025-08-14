@@ -447,7 +447,6 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
     });
 
     return ExerciseContainer(
-      maxWidth: null, // No max width to allow full width in landscape
       addTopPadding: false, // Custom padding needed for Stack
       child: VisibilityDetector(
         key: ValueKey(widget.exercise.id),

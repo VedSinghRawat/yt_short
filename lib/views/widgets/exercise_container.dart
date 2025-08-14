@@ -3,10 +3,9 @@ import 'package:myapp/services/responsiveness/responsiveness_service.dart';
 
 class ExerciseContainer extends StatelessWidget {
   final Widget child;
-  final double? maxWidth;
   final bool addTopPadding;
 
-  const ExerciseContainer({super.key, required this.child, this.maxWidth = 600, this.addTopPadding = true});
+  const ExerciseContainer({super.key, required this.child, this.addTopPadding = true});
 
   @override
   Widget build(BuildContext context) {
@@ -23,10 +22,12 @@ class ExerciseContainer extends StatelessWidget {
             padding,
             padding,
           ),
-          child:
-              maxWidth != null
-                  ? Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: maxWidth!), child: child))
-                  : child,
+          child: Center(
+            child:
+                orientation == Orientation.landscape
+                    ? child
+                    : ConstrainedBox(constraints: const BoxConstraints(maxWidth: 600), child: child),
+          ),
         ),
       ),
     );

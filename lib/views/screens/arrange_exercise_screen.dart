@@ -297,7 +297,6 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
     final orientation = MediaQuery.of(context).orientation;
 
     return ExerciseContainer(
-      maxWidth: null, // No max width for arrange exercise to allow full width in landscape
       child:
           orientation == Orientation.landscape
               ? // Landscape layout: Header at top (centered with max width), then image left and content right

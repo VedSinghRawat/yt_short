@@ -14,7 +14,7 @@ class SubLevelImage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final height = MediaQuery.of(context).size.height * 0.35;
+    final height = MediaQuery.of(context).size.height * 0.25;
     return Image.file(
       FileService.getFile(PathService.sublevelAsset(levelId, sublevelId, AssetType.image)),
       fit: BoxFit.cover,
