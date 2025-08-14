@@ -7,6 +7,9 @@ import 'package:myapp/models/activity_log/activity_log.dart';
 import 'package:myapp/models/user/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+// Ensure typed map for exercisesSeen
+Map<String, bool> _exercisesSeenFromJson(Map<String, dynamic> json) => Map<String, bool>.from(json);
+
 class PrefKey<ST, LT> {
   final dynamic Function(Map<String, dynamic> json)? fromJson;
   final String name;
@@ -25,8 +28,15 @@ class PrefKey<ST, LT> {
     name: 'activityLogs',
   );
 
-  // Map of exerciseType -> bool indicating if description has been shown already
-  static const exercisesSeen = PrefKey<Map<String, bool>, Unit>(name: 'exercisesSeen');
+  // Map of exerciseType -> bool indicating if description has been shown already.
+  // Stored per-user similar to currProgress.
+  static PrefKey<Map<String, bool>, Unit> exercisesSeen({String? userEmail}) {
+    final lastLoggedInEmail = SharedPref.get(PrefKey.user)?.email;
+    return PrefKey<Map<String, bool>, Unit>(
+      fromJson: _exercisesSeenFromJson,
+      name: 'exercisesSeen_${userEmail ?? lastLoggedInEmail ?? 'guest'}',
+    );
+  }
 
   /// [userEmail] is optional because it is not always available if the user is not logged in
   static PrefKey<Progress, Unit> currProgress({String? userEmail}) {

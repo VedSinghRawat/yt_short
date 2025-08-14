@@ -2,6 +2,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/shared_pref.dart';
+import 'package:myapp/models/sublevel/sublevel.dart';
 
 part 'ui_controller.freezed.dart';
 part 'ui_controller.g.dart';
@@ -33,5 +34,35 @@ class UIController extends _$UIController {
   Future<void> removeProgress({String? userEmail}) async {
     await SharedPref.removeValue(PrefKey.currProgress(userEmail: userEmail));
     state = state.copyWith(currentProgress: null);
+  }
+
+  // Enum-based helpers
+  String? _exerciseKeyFor(SubLevelType type) {
+    switch (type) {
+      case SubLevelType.speech:
+        return 'speech';
+      case SubLevelType.fill:
+        return 'fill';
+      case SubLevelType.arrange:
+        return 'arrange';
+      case SubLevelType.video:
+        return null; // not tracked for video
+    }
+  }
+
+  bool getExerciseSeen(SubLevelType type, {String? userEmail}) {
+    final key = _exerciseKeyFor(type);
+    if (key == null) return true; // ignore video
+    final map = SharedPref.get(PrefKey.exercisesSeen(userEmail: userEmail)) ?? <String, bool>{};
+    return map[key] == true;
+  }
+
+  Future<void> setExerciseSeen(SubLevelType type, {String? userEmail}) async {
+    final key = _exerciseKeyFor(type);
+    if (key == null) return; // ignore video
+    final existing = SharedPref.get(PrefKey.exercisesSeen(userEmail: userEmail)) ?? <String, bool>{};
+    final updated = Map<String, bool>.from(existing);
+    updated[key] = true;
+    await SharedPref.store(PrefKey.exercisesSeen(userEmail: userEmail), updated);
   }
 }

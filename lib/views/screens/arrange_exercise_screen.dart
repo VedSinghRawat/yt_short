@@ -10,7 +10,9 @@ import 'package:myapp/views/widgets/sublevel_image.dart';
 import 'package:myapp/views/widgets/lang_text.dart';
 import 'package:myapp/views/widgets/exercise_container.dart';
 import 'package:reorderables/reorderables.dart';
-import 'package:myapp/core/shared_pref.dart';
+import 'package:myapp/controllers/user/user_controller.dart';
+import 'package:myapp/controllers/ui/ui_controller.dart';
+import 'package:myapp/models/sublevel/sublevel.dart';
 
 class ArrangeExerciseScreen extends ConsumerStatefulWidget {
   final ArrangeExercise exercise;
@@ -35,17 +37,10 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
     super.initState();
     _initializeAndShuffleWords();
 
-    // Check if description for Arrange exercise has been seen
-    final seenMap = SharedPref.get(PrefKey.exercisesSeen) ?? <String, bool>{};
-    final hasSeen = seenMap['arrange'] == true;
+    // Check if description for Arrange exercise has been seen (per-user)
+    final userEmail = ref.read(userControllerProvider.notifier).getUser()?.email;
+    final hasSeen = ref.read(uIControllerProvider.notifier).getExerciseSeen(SubLevelType.arrange, userEmail: userEmail);
     _showDescription = !hasSeen;
-    if (!hasSeen) {
-      Future.microtask(() async {
-        final updated = Map<String, bool>.from(seenMap);
-        updated['arrange'] = true;
-        await SharedPref.store(PrefKey.exercisesSeen, updated);
-      });
-    }
 
     _audioPlayer.playerStateStream.listen((state) {
       if (!mounted) return;

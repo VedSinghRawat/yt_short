@@ -6,7 +6,9 @@ import 'package:myapp/controllers/speech/speech_controller.dart';
 import 'package:myapp/views/widgets/speech_exercise/recognizer_button.dart';
 import 'package:myapp/views/widgets/lang_text.dart';
 import 'package:myapp/services/responsiveness/responsiveness_service.dart';
-import 'package:myapp/core/shared_pref.dart';
+import 'package:myapp/controllers/user/user_controller.dart';
+import 'package:myapp/controllers/ui/ui_controller.dart';
+import 'package:myapp/models/sublevel/sublevel.dart';
 
 class SpeechExerciseCard extends ConsumerStatefulWidget {
   final String text;
@@ -281,16 +283,10 @@ class Header extends StatelessWidget {
     return Consumer(
       builder: (context, ref, child) {
         ref.watch(langControllerProvider); // Watch for language changes
-        final seenMap = SharedPref.get(PrefKey.exercisesSeen) ?? <String, bool>{};
-        final hasSeen = seenMap['speech'] == true;
-        if (!hasSeen) {
-          // Mark as seen in background
-          Future.microtask(() async {
-            final updated = Map<String, bool>.from(seenMap);
-            updated['speech'] = true;
-            await SharedPref.store(PrefKey.exercisesSeen, updated);
-          });
-        }
+        final userEmail = ref.read(userControllerProvider.notifier).getUser()?.email;
+        final hasSeen = ref
+            .read(uIControllerProvider.notifier)
+            .getExerciseSeen(SubLevelType.speech, userEmail: userEmail);
 
         return Container(
           width: double.infinity,

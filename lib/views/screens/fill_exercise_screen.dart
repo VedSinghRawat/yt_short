@@ -7,7 +7,9 @@ import 'package:visibility_detector/visibility_detector.dart';
 import 'package:myapp/views/widgets/sublevel_image.dart';
 import 'package:myapp/views/widgets/lang_text.dart';
 import 'package:myapp/views/widgets/exercise_container.dart';
-import 'package:myapp/core/shared_pref.dart';
+import 'package:myapp/controllers/user/user_controller.dart';
+import 'package:myapp/controllers/ui/ui_controller.dart';
+import 'package:myapp/models/sublevel/sublevel.dart';
 
 class FillExerciseScreen extends ConsumerStatefulWidget {
   final FillExercise exercise;
@@ -55,17 +57,11 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
       }
     }
 
-    // Check if description for Fill exercise has been seen
-    final seenMap = SharedPref.get(PrefKey.exercisesSeen) ?? <String, bool>{};
-    final hasSeen = seenMap['fill'] == true;
+    // Check if description for Fill exercise has been seen (per-user)
+    final userEmail = ref.read(userControllerProvider.notifier).getUser()?.email;
+    final hasSeen = ref.read(uIControllerProvider.notifier).getExerciseSeen(SubLevelType.fill, userEmail: userEmail);
     _showDescription = !hasSeen;
-    if (!hasSeen) {
-      Future.microtask(() async {
-        final updated = Map<String, bool>.from(seenMap);
-        updated['fill'] = true;
-        await SharedPref.store(PrefKey.exercisesSeen, updated);
-      });
-    }
+    // Do not mark here; we will set seen in dispose so the user sees the description once
   }
 
   @override
@@ -85,6 +81,8 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
       });
     }
   }
+
+  // No marking here; handled at sublevel change in SublevelsList
 
   List<String> _getSentenceParts() {
     final words = widget.exercise.text.split(' ');

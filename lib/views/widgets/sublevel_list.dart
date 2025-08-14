@@ -777,6 +777,26 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
               );
             }
 
+            // Mark the previous exercise type as seen so its description won't show next time
+            if (previousSublevel != null) {
+              final userEmail = ref.read(userControllerProvider.notifier).getUser()?.email;
+              await previousSublevel.when(
+                video: (_) async {},
+                speechExercise:
+                    (_) async => await ref
+                        .read(uIControllerProvider.notifier)
+                        .setExerciseSeen(SubLevelType.speech, userEmail: userEmail),
+                arrangeExercise:
+                    (_) async => await ref
+                        .read(uIControllerProvider.notifier)
+                        .setExerciseSeen(SubLevelType.arrange, userEmail: userEmail),
+                fillExercise:
+                    (_) async => await ref
+                        .read(uIControllerProvider.notifier)
+                        .setExerciseSeen(SubLevelType.fill, userEmail: userEmail),
+              );
+            }
+
             // Fetch the level whenever the level changes (not sublevel)
             final expectedAtIndex = _expectedSublevelAt(index);
             if (expectedAtIndex != null) {
