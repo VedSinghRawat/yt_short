@@ -23,7 +23,7 @@ class ArrangeExerciseScreen extends ConsumerStatefulWidget {
 }
 
 class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
-  List<String> currentOrder = [];
+  List<_WordItem> _currentItems = [];
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isPlayingAudio = false;
   bool _isCorrect = false;
@@ -77,28 +77,32 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
 
   void _initializeAndShuffleWords() {
     final originalWords = widget.exercise.text.trim().toLowerCase().split(' ');
-    currentOrder = List.from(originalWords);
+    // Assign unique IDs so duplicates are handled safely
+    _currentItems = List.generate(
+      originalWords.length,
+      (index) => _WordItem(id: '${widget.exercise.id}-$index', word: originalWords[index]),
+    );
 
-    final canBeDifferent = currentOrder.toSet().length > 1;
+    final canBeDifferent = originalWords.toSet().length > 1;
 
     if (canBeDifferent) {
       do {
-        currentOrder.shuffle();
-      } while (currentOrder.join(' ') == originalWords.join(' '));
+        _currentItems.shuffle();
+      } while (_currentItems.map((e) => e.word).join(' ') == originalWords.join(' '));
     } else {
-      currentOrder.shuffle();
+      _currentItems.shuffle();
     }
   }
 
   void _onReorder(int oldIndex, int newIndex) {
     setState(() {
-      final String word = currentOrder.removeAt(oldIndex);
-      currentOrder.insert(newIndex, word);
+      final _WordItem item = _currentItems.removeAt(oldIndex);
+      _currentItems.insert(newIndex, item);
     });
   }
 
   void _checkAnswer() {
-    final userAnswer = currentOrder.join(' ').toLowerCase().trim();
+    final userAnswer = _currentItems.map((e) => e.word).join(' ').toLowerCase().trim();
     final correctAnswer = widget.exercise.text.toLowerCase().trim();
 
     if (userAnswer == correctAnswer) {
@@ -151,9 +155,9 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
     }
   }
 
-  Widget _buildWordBlock(String word) {
+  Widget _buildWordBlock(_WordItem item) {
     return Container(
-      key: ValueKey(word),
+      key: ValueKey(item.id),
       margin: const EdgeInsets.symmetric(horizontal: 2),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -161,7 +165,7 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 4, offset: const Offset(0, 2))],
       ),
-      child: LangText.bodyText(text: word, style: const TextStyle(color: Colors.black, fontSize: 18)),
+      child: LangText.bodyText(text: item.word, style: const TextStyle(color: Colors.black, fontSize: 18)),
     );
   }
 
@@ -213,12 +217,16 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey[700]!, width: 2),
       ),
-      child: ReorderableWrap(
-        spacing: 6,
-        runSpacing: 12,
-        needsLongPressDraggable: false,
-        onReorder: _onReorder,
-        children: currentOrder.map((word) => _buildWordBlock(word)).toList(),
+      // Prevent inheriting PrimaryScrollController from parent scrollables
+      child: PrimaryScrollController(
+        controller: ScrollController(),
+        child: ReorderableWrap(
+          spacing: 6,
+          runSpacing: 12,
+          needsLongPressDraggable: false,
+          onReorder: _onReorder,
+          children: _currentItems.map((item) => _buildWordBlock(item)).toList(),
+        ),
       ),
     );
   }
@@ -348,4 +356,11 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
               ),
     );
   }
+}
+
+class _WordItem {
+  final String id;
+  final String word;
+
+  _WordItem({required this.id, required this.word});
 }
