@@ -25,6 +25,9 @@ class PrefKey<ST, LT> {
     name: 'activityLogs',
   );
 
+  // Map of exerciseType -> bool indicating if description has been shown already
+  static const exercisesSeen = PrefKey<Map<String, bool>, Unit>(name: 'exercisesSeen');
+
   /// [userEmail] is optional because it is not always available if the user is not logged in
   static PrefKey<Progress, Unit> currProgress({String? userEmail}) {
     final lastLoggedInEmail = SharedPref.get(PrefKey.user)?.email;
@@ -109,6 +112,8 @@ class SharedPref {
     try {
       if (isPrimitive(value)) {
         validVal = value.toString();
+      } else if (value is Map) {
+        validVal = jsonEncode(value);
       } else if (isListOfPrimitives(value)) {
         validVal = jsonEncode(value);
       } else if (hasToJson(value)) {

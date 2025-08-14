@@ -10,6 +10,7 @@ import 'package:myapp/views/widgets/sublevel_image.dart';
 import 'package:myapp/views/widgets/lang_text.dart';
 import 'package:myapp/views/widgets/exercise_container.dart';
 import 'package:reorderables/reorderables.dart';
+import 'package:myapp/core/shared_pref.dart';
 
 class ArrangeExerciseScreen extends ConsumerStatefulWidget {
   final ArrangeExercise exercise;
@@ -27,11 +28,24 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isPlayingAudio = false;
   bool _isCorrect = false;
+  bool _showDescription = true;
 
   @override
   void initState() {
     super.initState();
     _initializeAndShuffleWords();
+
+    // Check if description for Arrange exercise has been seen
+    final seenMap = SharedPref.get(PrefKey.exercisesSeen) ?? <String, bool>{};
+    final hasSeen = seenMap['arrange'] == true;
+    _showDescription = !hasSeen;
+    if (!hasSeen) {
+      Future.microtask(() async {
+        final updated = Map<String, bool>.from(seenMap);
+        updated['arrange'] = true;
+        await SharedPref.store(PrefKey.exercisesSeen, updated);
+      });
+    }
 
     _audioPlayer.playerStateStream.listen((state) {
       if (!mounted) return;
@@ -179,16 +193,17 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
             style: TextStyle(color: theme.colorScheme.onPrimary),
           ),
           const SizedBox(height: 8),
-          LangText.body(
-            hindi: 'नीचे दिए गए शब्दों को खींच कर छवि के हिसाब से सही वाक्य बनाएं।',
-            hinglish: 'Niche diye gye words ko kheench kar image ke hisaab se sahi vakya banaye.',
-            style: TextStyle(
-              color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
+          if (_showDescription)
+            LangText.body(
+              hindi: 'नीचे दिए गए शब्दों को खींच कर छवि के हिसाब से सही वाक्य बनाएं।',
+              hinglish: 'Niche diye gye words ko kheench kar image ke hisaab se sahi vakya banaye.',
+              style: TextStyle(
+                color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
         ],
       ),
     );

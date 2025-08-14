@@ -6,6 +6,7 @@ import 'package:myapp/controllers/speech/speech_controller.dart';
 import 'package:myapp/views/widgets/speech_exercise/recognizer_button.dart';
 import 'package:myapp/views/widgets/lang_text.dart';
 import 'package:myapp/services/responsiveness/responsiveness_service.dart';
+import 'package:myapp/core/shared_pref.dart';
 
 class SpeechExerciseCard extends ConsumerStatefulWidget {
   final String text;
@@ -280,6 +281,16 @@ class Header extends StatelessWidget {
     return Consumer(
       builder: (context, ref, child) {
         ref.watch(langControllerProvider); // Watch for language changes
+        final seenMap = SharedPref.get(PrefKey.exercisesSeen) ?? <String, bool>{};
+        final hasSeen = seenMap['speech'] == true;
+        if (!hasSeen) {
+          // Mark as seen in background
+          Future.microtask(() async {
+            final updated = Map<String, bool>.from(seenMap);
+            updated['speech'] = true;
+            await SharedPref.store(PrefKey.exercisesSeen, updated);
+          });
+        }
 
         return Container(
           width: double.infinity,
@@ -293,15 +304,16 @@ class Header extends StatelessWidget {
                 style: TextStyle(color: theme.colorScheme.onPrimary),
               ),
               const SizedBox(height: 8),
-              LangText.body(
-                hindi: 'नीचे दिया गया वाक्य सही उच्चारण के साथ बोलें।',
-                hinglish: 'Niche diya gaya vakya sahi ucharan ke saath bole.',
-                style: TextStyle(
-                  color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
-                  fontWeight: FontWeight.w500,
+              if (!hasSeen)
+                LangText.body(
+                  hindi: 'नीचे दिया गया वाक्य सही उच्चारण के साथ बोलें।',
+                  hinglish: 'Niche diya gaya vakya sahi ucharan ke saath bole.',
+                  style: TextStyle(
+                    color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
             ],
           ),
         );

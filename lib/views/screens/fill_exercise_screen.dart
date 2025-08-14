@@ -7,6 +7,7 @@ import 'package:visibility_detector/visibility_detector.dart';
 import 'package:myapp/views/widgets/sublevel_image.dart';
 import 'package:myapp/views/widgets/lang_text.dart';
 import 'package:myapp/views/widgets/exercise_container.dart';
+import 'package:myapp/core/shared_pref.dart';
 
 class FillExerciseScreen extends ConsumerStatefulWidget {
   final FillExercise exercise;
@@ -34,6 +35,7 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
   final GlobalKey _stackKey = GlobalKey();
   bool _isCorrect = false;
   bool _isAnimating = false;
+  bool _showDescription = true;
 
   // Store calculated button sizes
   List<Size> _buttonSizes = [];
@@ -51,6 +53,18 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
         _optionKeys.add(GlobalKey());
         _placeholderKeys.add(GlobalKey());
       }
+    }
+
+    // Check if description for Fill exercise has been seen
+    final seenMap = SharedPref.get(PrefKey.exercisesSeen) ?? <String, bool>{};
+    final hasSeen = seenMap['fill'] == true;
+    _showDescription = !hasSeen;
+    if (!hasSeen) {
+      Future.microtask(() async {
+        final updated = Map<String, bool>.from(seenMap);
+        updated['fill'] = true;
+        await SharedPref.store(PrefKey.exercisesSeen, updated);
+      });
     }
   }
 
@@ -248,16 +262,17 @@ class _FillExerciseScreenState extends ConsumerState<FillExerciseScreen> {
             style: TextStyle(color: theme.colorScheme.onPrimary),
           ),
           const SizedBox(height: 8),
-          LangText.body(
-            hindi: 'छवि के अनुसार वाक्य में उचित विकल्प चुनकर रिक्त स्थान भरें।',
-            hinglish: 'Chavi ke anusar vakya mein uchit vikalp chunkar rikta sthan bhariye.',
-            style: TextStyle(
-              color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
+          if (_showDescription)
+            LangText.body(
+              hindi: 'छवि के अनुसार वाक्य में उचित विकल्प चुनकर रिक्त स्थान भरें।',
+              hinglish: 'Chavi ke anusar vakya mein uchit vikalp chunkar rikta sthan bhariye.',
+              style: TextStyle(
+                color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
         ],
       ),
     );
