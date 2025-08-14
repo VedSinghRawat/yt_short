@@ -11,7 +11,6 @@ import 'package:myapp/services/level/level_service.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/level/level.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'dart:developer' as developer;
 
 part 'level_controller.freezed.dart';
 part 'level_controller.g.dart';
@@ -38,9 +37,7 @@ class LevelController extends _$LevelController {
   LevelControllerState build() => const LevelControllerState();
 
   Future<void> getLevel(String id) async {
-    final orderedIdsForLog = state.orderedIds ?? const [];
-    final levelNumForLog = orderedIdsForLog.indexOf(id) + 1;
-    developer.log('[LevelController] getLevel: start level=${levelNumForLog > 0 ? levelNumForLog : 'n/a'} id=$id');
+    // removed verbose developer logs
     state = state.copyWith(loadingById: {...state.loadingById}..update(id, (value) => true, ifAbsent: () => true));
 
     final levelDTOEither = await levelService.getLevel(id);
@@ -79,7 +76,6 @@ class LevelController extends _$LevelController {
       }),
       ...sublevelDTOs.map((subLevelDTO) => subLevelController.getAssets(subLevelDTO, level.id)),
     ]);
-    developer.log('[LevelController] getLevel: complete level=${levelNumForLog > 0 ? levelNumForLog : 'n/a'} id=$id');
   }
 
   Future<void> getOrderedIds() async {
@@ -111,9 +107,7 @@ class LevelController extends _$LevelController {
   }
 
   Future<void> fetchLevels() async {
-    developer.log('[LevelController] fetchLevels: start');
     final orderedIds = state.orderedIds;
-    developer.log('[LevelController] fetchLevels: orderedIds=$orderedIds');
 
     if (orderedIds == null) {
       state = state.copyWith(error: parseError(DioExceptionType.unknown, ref.read(langControllerProvider)));
@@ -123,37 +117,23 @@ class LevelController extends _$LevelController {
     state = state.copyWith(error: null);
     final progress = ref.read(uIControllerProvider).currentProgress;
     String currUserLevelId = progress?.levelId ?? orderedIds.first;
-    final anchorIdx = orderedIds.indexOf(currUserLevelId);
-    final anchorLevelNum = anchorIdx >= 0 ? anchorIdx + 1 : -1;
-    developer.log(
-      '[LevelController] anchorLevel=$anchorLevelNum | progressL-S=${progress?.level}-${progress?.subLevel} | orderedIdsLen=${orderedIds.length}',
-    );
+    // anchorIdx retained previously for logging; remove to avoid unused variable warning
 
     final loading = state.loadingById;
     if (loading[currUserLevelId] == null) {
-      developer.log('[LevelController] fetchLevels: fetching currentLevel=$anchorLevelNum');
       await getLevel(currUserLevelId);
-    } else {
-      developer.log(
-        '[LevelController] fetchLevels: current already known level=$anchorLevelNum loading=${loading[currUserLevelId]}',
-      );
-    }
+    } else {}
 
     // Build fetch list using flexible surrounding selection
     final toFetch = _getSurroundingLevelIds();
-    final toFetchLevels = toFetch.map((id) => orderedIds.indexOf(id) + 1).toList();
-    developer.log('[LevelController] fetchLevels: surrounding toFetchLevels=$toFetchLevels');
+    // removed verbose developer logs
 
     final fetchLevelReqs = <Future<void>>[];
     for (final levelId in toFetch) {
       final status = loading[levelId];
-      final lvlNum = orderedIds.indexOf(levelId) + 1;
       if (status == null) {
-        developer.log('[LevelController] fetchLevels: queue fetch level=$lvlNum');
         fetchLevelReqs.add(getLevel(levelId));
-      } else {
-        developer.log('[LevelController] fetchLevels: skip level=$lvlNum (loading=$status)');
-      }
+      } else {}
     }
 
     await Future.wait(fetchLevelReqs);
@@ -185,10 +165,6 @@ class LevelController extends _$LevelController {
       if (i < 0 || i >= orderedIds.length) continue;
       result.add(orderedIds[i]);
     }
-    final levelNums = result.map((id) => orderedIds.indexOf(id) + 1).toList();
-    developer.log(
-      '[LevelController] _getSurroundingLevelIds: anchorLevel=${idx + 1} window=[$start..$end] -> levels=$levelNums',
-    );
     return result;
   }
 }

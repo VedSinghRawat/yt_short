@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/apis/initialize/initialize_api.dart';
-import 'package:myapp/constants.dart';
 import 'package:myapp/core/router/router.dart';
 import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/info/info_service.dart';
@@ -86,7 +85,6 @@ class InitializeService {
 
     // TODO: Re-implement when android_play_install_referrer plugin is fixed
     // For now, skip referrer tracking to avoid build errors
-    developer.log('Install referrer tracking temporarily disabled due to plugin compatibility issues');
 
     // final referrer = await AndroidPlayInstallReferrer.installReferrer;
     // final cyId = referrer.installReferrer;

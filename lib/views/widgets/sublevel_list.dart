@@ -13,7 +13,6 @@ import 'package:myapp/views/screens/speech_exercise_screen.dart';
 import 'package:myapp/views/screens/arrange_exercise_screen.dart';
 import 'package:myapp/views/screens/fill_exercise_screen.dart';
 import 'package:myapp/controllers/user/user_controller.dart';
-import 'dart:developer' as developer;
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 import 'package:myapp/models/video/video.dart';
@@ -424,49 +423,8 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
     return null;
   }
 
-  /// Logs the buffer state showing only relevant information
-  /// Shows 3 padding of null on both sides and levels in order
-  void _logBufferState(String operation) {
-    int firstNonNullIndex = -1;
-    int lastNonNullIndex = -1;
-    int nonNullCount = 0;
-
-    for (int i = 0; i < bufferSize; i++) {
-      final s = _sublevelBuffer[i];
-      if (s != null) {
-        nonNullCount++;
-        if (firstNonNullIndex == -1) firstNonNullIndex = i;
-        lastNonNullIndex = i;
-      }
-    }
-
-    final current = _getCurrentSublevel(_currentPageIndex);
-    final currentLabel = current == null ? 'null' : 'L${current.level}-S${current.index}';
-
-    if (nonNullCount == 0) {
-      developer.log('[SublevelsList] $operation: buffer empty | currentIndex=$_currentPageIndex($currentLabel)');
-      return;
-    }
-
-    // Collect a compact window around the first/last non-null entries
-    final startIndex = (firstNonNullIndex - 2).clamp(0, bufferSize - 1);
-    final endIndex = (lastNonNullIndex + 2).clamp(0, bufferSize - 1);
-
-    final preview = <String>[];
-    for (int i = startIndex; i <= endIndex; i++) {
-      final s = _sublevelBuffer[i];
-      if (s == null) {
-        preview.add('[$i:null]');
-      } else {
-        preview.add('[$i:L${s.level}-S${s.index}]');
-      }
-    }
-
-    developer.log(
-      '[SublevelsList] $operation: filled=$nonNullCount, range=$firstNonNullIndex..$lastNonNullIndex, '
-      'currentIndex=$_currentPageIndex($currentLabel), window=${preview.join(', ')}',
-    );
-  }
+  /// Logs disabled in production. Kept as a no-op for potential future debugging.
+  void _logBufferState(String operation) {}
 
   void _fillBuffer() {
     for (int i = 0; i < bufferSize; i++) {
@@ -806,10 +764,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
               _currentPageIndex = index;
             });
 
-            // Log current L-S after page change
-            final curr = _getCurrentSublevel(_currentPageIndex) ?? _expectedSublevelAt(_currentPageIndex);
-            final label = curr == null ? 'null' : 'L${curr.level}-S${curr.index} (levelId=${curr.levelId})';
-            developer.log('[SublevelsList] onPageChanged -> index=$_currentPageIndex, current=$label');
+            // Log current L-S after page change (removed)
 
             // Control app bar visibility based on sublevel type
             final sublevel = _sublevelBuffer[index];
