@@ -63,6 +63,10 @@ class UserAPI implements IUserAPI {
       params: ApiParams(endpoint: '/user/reset', method: ApiMethod.post, body: {'email': email}),
     );
 
+    if (response.data?['user'] == null) {
+      throw Exception('Failed to reset profile');
+    }
+
     return UserDTO.fromJson(response.data['user']);
   }
 }

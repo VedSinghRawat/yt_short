@@ -6,12 +6,12 @@ import 'package:go_router/go_router.dart';
 import 'package:myapp/apis/initialize/initialize_api.dart';
 import 'package:myapp/core/router/router.dart';
 import 'package:myapp/services/file/file_service.dart';
-import 'package:myapp/services/info/info_service.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/controllers/level/level_controller.dart';
 import 'package:myapp/controllers/user/user_controller.dart';
 import 'package:myapp/controllers/ui/ui_controller.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'dart:developer' as developer;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -37,7 +37,6 @@ class InitializeService {
     try {
       // order matters
       await SharedPref.init(); // first init shared pref
-      await InfoService.init(); // then init info service
 
       await Future.wait([FileService.init(), levelController.getOrderedIds()]);
       await initialApiCall(); // depends on info service & levelController (orderedIds)
@@ -119,9 +118,9 @@ class InitializeService {
 
   Future<bool> initialApiCall() async {
     try {
-      final version = InfoService.packageInfo.version;
+      final version = await PackageInfo.fromPlatform();
 
-      final initialData = await initializeAPI.initialize(version);
+      final initialData = await initializeAPI.initialize(version.version);
 
       if (initialData.user != null) {
         final u = userController.userFromDTO(initialData.user!);

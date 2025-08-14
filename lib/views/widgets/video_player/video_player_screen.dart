@@ -526,7 +526,7 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
                     ),
                     // Scroll indicator (moves with video)
                     if (_showScrollIndicator && widget.isCurrent)
-                      Positioned(bottom: 40, left: 0, right: 0, child: const Center(child: ScrollIndicator())),
+                      const Positioned(bottom: 40, left: 0, right: 0, child: Center(child: ScrollIndicator())),
                   ],
                 ),
               ),
