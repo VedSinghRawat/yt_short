@@ -1,5 +1,3 @@
-import 'dart:developer' as developer;
-import 'dart:math' as math;
 import 'package:dio/dio.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:myapp/constants.dart';
@@ -39,6 +37,7 @@ class LevelController extends _$LevelController {
   LevelControllerState build() => const LevelControllerState();
 
   Future<void> getLevel(String id) async {
+    // removed verbose developer logs
     state = state.copyWith(loadingById: {...state.loadingById}..update(id, (value) => true, ifAbsent: () => true));
 
     final levelDTOEither = await levelService.getLevel(id);
@@ -47,7 +46,6 @@ class LevelController extends _$LevelController {
 
     final level = levelDTOEither.fold(
       (l) {
-        developer.log(l.message, name: 'LevelController');
         state = state.copyWith(error: l.message);
         return null;
       },
@@ -119,18 +117,24 @@ class LevelController extends _$LevelController {
     state = state.copyWith(error: null);
     final progress = ref.read(uIControllerProvider).currentProgress;
     String currUserLevelId = progress?.levelId ?? orderedIds.first;
+    // anchorIdx retained previously for logging; remove to avoid unused variable warning
 
     final loading = state.loadingById;
     if (loading[currUserLevelId] == null) {
       await getLevel(currUserLevelId);
+    } else {}
+
+    // Build fetch list using flexible surrounding selection
+    final toFetch = _getSurroundingLevelIds();
+    // removed verbose developer logs
+
+    final fetchLevelReqs = <Future<void>>[];
+    for (final levelId in toFetch) {
+      final status = loading[levelId];
+      if (status == null) {
+        fetchLevelReqs.add(getLevel(levelId));
+      } else {}
     }
-
-    final surroundingLevelIds = _getSurroundingLevelIds(orderedIds.indexOf(currUserLevelId), orderedIds);
-
-    final fetchLevelReqs =
-        surroundingLevelIds
-            .map((levelId) => loading[levelId] == null ? getLevel(levelId) : Future.value(null))
-            .toList();
 
     await Future.wait(fetchLevelReqs);
 
@@ -141,16 +145,26 @@ class LevelController extends _$LevelController {
     }
   }
 
-  List<String> _getSurroundingLevelIds(int currIndex, List<String?> orderedIds) {
-    if (currIndex == -1) return [];
-    final startBefore = math.max(0, currIndex - AppConstants.kMaxBeforeLevels);
-    final endAfter = math.min(orderedIds.length, currIndex + AppConstants.kMaxAfterLevels + 1);
-    final startAfter = math.min(orderedIds.length, currIndex + 1);
+  /// Returns level ids around current progress anchor in a single loop
+  /// Window size from AppConstants.kMaxBeforeLevels/kMaxAfterLevels
+  List<String> _getSurroundingLevelIds() {
+    final orderedIds = state.orderedIds;
+    if (orderedIds == null || orderedIds.isEmpty) return const [];
 
-    return orderedIds
-        .sublist(startBefore, currIndex)
-        .followedBy(orderedIds.sublist(startAfter, endAfter))
-        .whereType<String>()
-        .toList();
+    final progress = ref.read(uIControllerProvider).currentProgress;
+    final anchorLevelId = progress?.levelId ?? orderedIds.first;
+
+    var idx = orderedIds.indexOf(anchorLevelId);
+    if (idx == -1) idx = 0;
+
+    final start = idx - AppConstants.kMaxBeforeLevels;
+    final end = idx + AppConstants.kMaxAfterLevels;
+
+    final result = <String>[];
+    for (int i = start; i <= end; i++) {
+      if (i < 0 || i >= orderedIds.length) continue;
+      result.add(orderedIds[i]);
+    }
+    return result;
   }
 }

@@ -1,20 +1,18 @@
 import 'dart:async';
-import 'package:android_play_install_referrer/android_play_install_referrer.dart';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/apis/initialize/initialize_api.dart';
-import 'package:myapp/constants.dart';
 import 'package:myapp/core/router/router.dart';
 import 'package:myapp/services/cleanup/cleanup_service.dart';
 import 'package:myapp/services/file/file_service.dart';
-import 'package:myapp/services/info/info_service.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/controllers/level/level_controller.dart';
 import 'package:myapp/controllers/user/user_controller.dart';
 import 'package:myapp/controllers/ui/ui_controller.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'dart:developer' as developer;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -40,25 +38,24 @@ class InitializeService {
     try {
       // order matters
       await SharedPref.init(); // first init shared pref
-      await InfoService.init(); // then init info service
-      await initialApiCall(); // then call api because it depends on info service
 
-      await Future.wait([
-        storeCyId(), // depend on user
-        FileService.init(),
-        levelController.getOrderedIds(),
-        handleDeepLinking(), // deep linking depends on user
-      ]);
+      await Future.wait([FileService.init(), levelController.getOrderedIds()]);
+      await initialApiCall(); // depends on info service & levelController (orderedIds)
+      await Future.wait([storeCyId(), handleDeepLinking()]); // depends on user
 
       final currProgress = SharedPref.get(
         PrefKey.currProgress(userEmail: ref.read(userControllerProvider.notifier).getUser()?.email),
       );
 
       final apiUser = ref.read(userControllerProvider.notifier).getUser();
-      if (currProgress == null && apiUser == null) return;
+
+      if (currProgress == null && apiUser == null) {
+        return;
+      }
 
       final localLastModified = currProgress?.modified ?? 0;
       final apiLastModified = apiUser != null ? apiUser.lastProgress : 0;
+
       final localIsNewer = localLastModified > apiLastModified && currProgress?.levelId != null;
 
       if (localIsNewer) {
@@ -91,14 +88,13 @@ class InitializeService {
   Future<void> storeCyId() async {
     if (SharedPref.get(PrefKey.isFirstLaunch) == false) return;
 
-    final referrer = await AndroidPlayInstallReferrer.installReferrer;
+    // TODO: Re-implement when android_play_install_referrer plugin is fixed
+    // For now, skip referrer tracking to avoid build errors
 
-    final cyId = referrer.installReferrer;
-
-    // Skip if no referrer or if it's just the default Google Play organic referrer
-    if (cyId == null || cyId == AppConstants.kDefaultReferrer) return;
-
-    await SharedPref.store(PrefKey.cyId, cyId);
+    // final referrer = await AndroidPlayInstallReferrer.installReferrer;
+    // final cyId = referrer.installReferrer;
+    // if (cyId == null || cyId == AppConstants.kDefaultReferrer) return;
+    // await SharedPref.store(PrefKey.cyId, cyId);
   }
 
   Future<void> handleDeepLinking() async {
@@ -128,9 +124,9 @@ class InitializeService {
 
   Future<bool> initialApiCall() async {
     try {
-      final version = InfoService.packageInfo.version;
+      final version = await PackageInfo.fromPlatform();
 
-      final initialData = await initializeAPI.initialize(version);
+      final initialData = await initializeAPI.initialize(version.version);
 
       if (initialData.user != null) {
         final u = userController.userFromDTO(initialData.user!);

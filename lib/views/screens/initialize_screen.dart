@@ -5,7 +5,7 @@ import 'package:myapp/core/router/router.dart';
 import 'package:myapp/services/initialize/initialize_service.dart';
 import 'package:myapp/controllers/level/level_controller.dart';
 import 'package:myapp/views/screens/error_screen.dart';
-import 'package:myapp/views/widgets/page_loader.dart';
+import 'package:myapp/views/screens/loading_screen.dart';
 
 class InitializeScreen extends ConsumerWidget {
   const InitializeScreen({super.key});
@@ -17,7 +17,7 @@ class InitializeScreen extends ConsumerWidget {
     final levelState = ref.read(levelControllerProvider);
 
     if (levelState.orderedIds == null) {
-      return const PageLoader();
+      return const LoadingScreen();
     }
 
     if (levelState.error != null && levelState.orderedIds!.isEmpty) {
@@ -39,6 +39,6 @@ class InitializeScreen extends ConsumerWidget {
       });
     });
 
-    return const PageLoader();
+    return const LoadingScreen();
   }
 }

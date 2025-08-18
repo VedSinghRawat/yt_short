@@ -9,10 +9,11 @@ import 'package:myapp/models/video/video.dart';
 import 'package:myapp/services/api/api_service.dart';
 import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/path/path_service.dart';
+import 'package:myapp/services/responsiveness/responsiveness_service.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
 import 'package:myapp/views/screens/error_screen.dart';
-
 import 'package:myapp/views/widgets/loader.dart';
+import 'package:myapp/views/widgets/scroll_indicator.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:flutter/foundation.dart';
@@ -21,8 +22,9 @@ import 'package:myapp/views/widgets/video_player/dialogue_popup.dart';
 
 class VideoPlayerScreen extends ConsumerStatefulWidget {
   final Video video;
+  final bool isCurrent;
 
-  const VideoPlayerScreen({super.key, required this.video});
+  const VideoPlayerScreen({super.key, required this.video, required this.isCurrent});
 
   @override
   ConsumerState<VideoPlayerScreen> createState() => _VideoPlayerState();
@@ -40,7 +42,14 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
   bool isFinished = false;
   bool _showDialogueArea = false;
 
+  // Animation-related variables
+  bool _showAnimation = false;
+  bool _showScrollIndicator = false;
+  Timer? _animationTimer;
+  Timer? _bounceTimer;
+
   List<VideoDialogue> _displayableDialogues = [];
+  final GlobalKey _stackKey = GlobalKey();
 
   @override
   void initState() {
@@ -54,6 +63,8 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _iconTimer?.cancel();
+    _animationTimer?.cancel();
+    _bounceTimer?.cancel();
     _controller?.removeListener(_listener);
     _controller?.dispose();
     super.dispose();
@@ -130,6 +141,11 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
     if (isFinished && !ref.read(sublevelControllerProvider).hasFinishedSublevel) {
       ref.read(sublevelControllerProvider.notifier).setHasFinishedSublevel(true);
       _controller?.removeListener(_listener);
+
+      // Start animation when video finishes (backup trigger)
+      if (widget.isCurrent) {
+        _startAnimationTimer();
+      }
     }
   }
 
@@ -166,7 +182,7 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
   }
 
   Future<void> play() async {
-    if (_controller == null || !_controller!.value.isInitialized) return;
+    if (_controller == null || !_controller!.value.isInitialized || !widget.isCurrent) return;
     await _controller!.play();
 
     setDialogueAreaAndAppBar(false);
@@ -185,6 +201,7 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
       _showDialogueArea = value;
     });
 
+    // Set app bar visibility based on the value, same behavior for all devices
     ref.read(uIControllerProvider.notifier).setIsAppBarVisible(value);
   }
 
@@ -195,7 +212,7 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
 
     if (isVisible) {
       _controller!.addListener(_listener);
-      if (!_controller!.value.isPlaying && error == null && _controller!.value.isInitialized) {
+      if (!_controller!.value.isPlaying && error == null && _controller!.value.isInitialized && widget.isCurrent) {
         await _controller!.play();
       }
     } else {
@@ -361,95 +378,253 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
     await seek(newPosition);
   }
 
+  // Animation methods
+  void _startAnimationTimer() {
+    _animationTimer?.cancel();
+    _bounceTimer?.cancel();
+
+    setState(() {
+      _showScrollIndicator = true;
+    });
+
+    int bounceCount = 0;
+    const maxBounces = 6;
+
+    _bounceTimer = Timer.periodic(const Duration(milliseconds: 700), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
+      setState(() {
+        _showAnimation = !_showAnimation;
+      });
+
+      bounceCount++;
+      if (bounceCount >= maxBounces) {
+        timer.cancel();
+        if (mounted) {
+          setState(() {
+            _showAnimation = false;
+            _showScrollIndicator = false;
+          });
+        }
+      }
+    });
+
+    _animationTimer = Timer(const Duration(milliseconds: 5000), () {
+      if (mounted) {
+        setState(() {
+          _showAnimation = false;
+          _showScrollIndicator = false;
+        });
+        _animationTimer?.cancel();
+      }
+    });
+  }
+
+  void _stopAnimation() {
+    _animationTimer?.cancel();
+    _bounceTimer?.cancel();
+    if (mounted) {
+      setState(() {
+        _showAnimation = false;
+        _showScrollIndicator = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isPlayerReady = _controller?.value.isInitialized ?? false;
     final progress = ref.watch(uIControllerProvider.select((state) => state.currentProgress));
+    final responsiveness = ResponsivenessService(context);
+
+    // Listen for app bar visibility changes to stop animation
+    ref.listen(uIControllerProvider.select((value) => value.isAppBarVisible), (previous, isVisible) {
+      if (isVisible) {
+        _stopAnimation();
+      }
+    });
+
+    // Animation is now handled directly in _listenerVideoFinished when video completes
 
     return VisibilityDetector(
       key: Key(widget.video.id + widget.video.index.toString()),
       onVisibilityChanged: _onVisibilityChanged,
       child: SafeArea(
-        child: Stack(
+        child: Builder(
+          builder: (context) {
+            final orientation = MediaQuery.of(context).orientation;
+            return orientation == Orientation.landscape && responsiveness.screenType != Screen.mobile
+                ? _buildTabletLandscapeLayout(isPlayerReady, progress, responsiveness)
+                : _buildPortraitLayout(isPlayerReady, progress, responsiveness);
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTabletLandscapeLayout(bool isPlayerReady, dynamic progress, ResponsivenessService responsiveness) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final stackWidth = constraints.maxWidth;
+        final stackHeight = constraints.maxHeight;
+        final videoHeight = stackHeight - 10; // Video takes full stack height minus padding only in landscape
+        final videoWidth = videoHeight * (9 / 16); // Maintain 9:16 ratio
+
+        // Calculate available space and dialogue width
+        final availableSpace = stackWidth - videoWidth;
+        final dialogueWidth = availableSpace * (2 / 3); // 2/3 of available space
+
+        // Calculate video position - move left when dialogue is shown
+        final videoLeftPosition =
+            _showDialogueArea && _displayableDialogues.isNotEmpty
+                ? (stackWidth - videoWidth - dialogueWidth) / 2
+                : (stackWidth - videoWidth) / 2;
+
+        return Stack(
+          key: _stackKey,
           children: [
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Stack(
-                  alignment: Alignment.center,
+            // Video section - animated position
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              left: videoLeftPosition,
+              top: 0,
+              width: videoWidth,
+              height: stackHeight,
+              child: TweenAnimationBuilder<double>(
+                duration: const Duration(milliseconds: 1000),
+                curve: Curves.easeInOut,
+                tween: Tween<double>(begin: 0, end: _showAnimation ? -30.0 : 0.0),
+                builder: (context, dy, child) => Transform.translate(offset: Offset(0, dy), child: child),
+                child: Stack(
                   children: [
-                    if (error != null)
-                      Center(child: Padding(padding: const EdgeInsets.all(8.0), child: ErrorPage(text: error!)))
-                    else if (isPlayerReady && _controller != null)
-                      GestureDetector(
-                        onTap: _changePlayingState,
-                        child: AspectRatio(
-                          aspectRatio: _controller?.value.aspectRatio ?? 9 / 16,
-                          child: Stack(alignment: Alignment.center, children: [VideoPlayer(_controller!)]),
-                        ),
-                      )
-                    else
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width,
-                        height: MediaQuery.of(context).size.width * 16 / 9,
-                        child: const Center(child: Loader()),
-                      ),
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (isPlayerReady)
+                          ValueListenableBuilder<VideoPlayerValue>(
+                            valueListenable: _controller!,
+                            builder: (context, value, child) {
+                              if (value.duration > Duration.zero) {
+                                return Column(
+                                  children: [
+                                    VideoProgressBar(
+                                      durationMs: value.duration.inMilliseconds,
+                                      currentPositionMs: value.position.inMilliseconds,
+                                      isPlaying: value.isPlaying,
+                                    ),
+                                  ],
+                                );
+                              } else {
+                                return const SizedBox(height: 10);
+                              }
+                            },
+                          )
+                        else
+                          const VideoProgressBar(durationMs: 1, currentPositionMs: 0, isPlaying: false),
 
-                    if (isPlayerReady) ...[
-                      PlayPauseButton(showPlayPauseIcon: _showPlayPauseIcon, iconData: _iconData),
-
-                      Positioned(
-                        left: 100,
-                        bottom: 16,
-                        child: IconButton(
-                          icon: const Icon(Icons.replay_5, color: Colors.white, size: 30),
-                          onPressed: _seekBackward,
-                          style: IconButton.styleFrom(backgroundColor: Colors.black.withValues(alpha: .3)),
-                        ),
-                      ),
-                      Positioned(
-                        right: 100,
-                        bottom: 16,
-                        child: Visibility(
-                          visible:
-                              ref.watch(sublevelControllerProvider.select((s) => s.hasFinishedSublevel)) ||
-                              isLevelAfter(
-                                progress?.maxLevel ?? 1,
-                                progress?.maxSubLevel ?? 1,
-                                widget.video.level,
-                                widget.video.index,
-                              ),
-                          child: IconButton(
-                            icon: const Icon(Icons.forward_5, color: Colors.white, size: 30),
-                            onPressed: _seekForward,
-                            style: IconButton.styleFrom(backgroundColor: Colors.black.withValues(alpha: .3)),
-                          ),
-                        ),
-                      ),
-                    ],
+                        _buildVideoPlayer(isPlayerReady, progress, responsiveness, true, videoWidth, videoHeight, null),
+                      ],
+                    ),
+                    // Ensure buffering loader is visible in landscape too
+                    ValueListenableBuilder<VideoPlayerValue>(
+                      valueListenable: _controller!,
+                      builder: (context, value, child) {
+                        return AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          child:
+                              value.isBuffering
+                                  ? const Center(key: ValueKey('buffer_loader_landscape'), child: Loader())
+                                  : const SizedBox.shrink(key: ValueKey('buffer_empty_landscape')),
+                        );
+                      },
+                    ),
+                    // Scroll indicator (moves with video)
+                    if (_showScrollIndicator && widget.isCurrent)
+                      const Positioned(bottom: 40, left: 0, right: 0, child: Center(child: ScrollIndicator())),
                   ],
                 ),
-
-                if (isPlayerReady)
-                  ValueListenableBuilder<VideoPlayerValue>(
-                    valueListenable: _controller!,
-                    builder: (context, value, child) {
-                      if (value.duration > Duration.zero) {
-                        return VideoProgressBar(
-                          durationMs: value.duration.inMilliseconds,
-                          currentPositionMs: value.position.inMilliseconds,
-                          isPlaying: value.isPlaying,
-                        );
-                      } else {
-                        return const SizedBox(height: 10);
-                      }
-                    },
-                  )
-                else
-                  const VideoProgressBar(durationMs: 1, currentPositionMs: 0, isPlaying: false),
-              ],
+              ),
             ),
+            // Sliding dialogue section
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              right: _showDialogueArea && _displayableDialogues.isNotEmpty ? 0 : -dialogueWidth,
+              top: 0,
+              bottom: 0,
+              width: dialogueWidth,
+              child: DialoguePopup(
+                visible: true, // Always visible when positioned
+                dialogues: _displayableDialogues,
+                onClose: () async {
+                  setState(() {
+                    _showDialogueArea = false;
+                  });
+                  await play();
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
+  Widget _buildPortraitLayout(bool isPlayerReady, dynamic progress, ResponsivenessService responsiveness) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final stackHeight = constraints.maxHeight - 10;
+
+        return Stack(
+          children: [
+            // Single AnimatedPositioned that moves everything together
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 1000),
+              curve: Curves.easeInOut,
+              top: _showAnimation ? -30 : 0,
+              left: 0,
+              right: 0,
+              bottom: _showAnimation ? 30 : 0,
+              child: Stack(
+                children: [
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Use same dimensions as mobile for portrait mode but constrained by stack height
+                      _buildVideoPlayer(isPlayerReady, progress, responsiveness, false, null, null, stackHeight),
+                      if (isPlayerReady)
+                        ValueListenableBuilder<VideoPlayerValue>(
+                          valueListenable: _controller!,
+                          builder: (context, value, child) {
+                            if (value.duration > Duration.zero) {
+                              return Column(
+                                children: [
+                                  VideoProgressBar(
+                                    durationMs: value.duration.inMilliseconds,
+                                    currentPositionMs: value.position.inMilliseconds,
+                                    isPlaying: value.isPlaying,
+                                  ),
+                                ],
+                              );
+                            } else {
+                              return const SizedBox(height: 10);
+                            }
+                          },
+                        )
+                      else
+                        const VideoProgressBar(durationMs: 1, currentPositionMs: 0, isPlaying: false),
+                    ],
+                  ),
+                  // Scroll indicator (moves with video)
+                  if (_showScrollIndicator && widget.isCurrent)
+                    const Positioned(bottom: 40, left: 0, right: 0, child: Center(child: ScrollIndicator())),
+                ],
+              ),
+            ),
             DialoguePopup(
               visible: _showDialogueArea && _displayableDialogues.isNotEmpty,
               dialogues: _displayableDialogues,
@@ -461,36 +636,131 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
               },
             ),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
-}
 
-class PlayPauseButton extends StatelessWidget {
-  const PlayPauseButton({super.key, required bool showPlayPauseIcon, required IconData iconData})
-    : _showPlayPauseIcon = showPlayPauseIcon,
-      _iconData = iconData;
+  Widget _buildVideoPlayer(
+    bool isPlayerReady,
+    dynamic progress,
+    ResponsivenessService responsiveness,
+    bool isTabletLandscape,
+    double? width,
+    double? height, [
+    double? maxHeight,
+  ]) {
+    // Responsive button positioning with increased gaps for tablets
+    final backwardButtonLeft = responsiveness.getResponsiveValues(
+      mobile: 100.0,
+      tablet: 60.0, // Increased gap for small tablets
+      largeTablet: 80.0,
+    );
 
-  final bool _showPlayPauseIcon;
-  final IconData _iconData;
+    final forwardButtonRight = responsiveness.getResponsiveValues(
+      mobile: 100.0,
+      tablet: 60.0, // Increased gap for small tablets
+      largeTablet: 80.0,
+    );
 
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedOpacity(
-      opacity: _showPlayPauseIcon ? 1.0 : 0.0,
-      duration: const Duration(milliseconds: 400),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface.withValues(alpha: .6),
-          shape: BoxShape.circle,
-        ),
-        padding: const EdgeInsets.all(20),
-        child: Icon(
-          _iconData,
-          size: MediaQuery.of(context).size.width * 0.12,
-          color: Theme.of(context).colorScheme.onSurface,
-        ),
+    // Calculate video dimensions with max height constraint for portrait
+    double videoWidth = width ?? MediaQuery.of(context).size.width;
+    double videoHeight = height ?? (MediaQuery.of(context).size.width * 16 / 9);
+
+    // Apply max height constraint for portrait mode
+    if (!isTabletLandscape && maxHeight != null) {
+      if (videoHeight > maxHeight) {
+        videoHeight = maxHeight;
+        videoWidth = videoHeight * (9 / 16); // Recalculate width to maintain ratio
+      }
+    }
+
+    return SafeArea(
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          if (error != null)
+            Center(child: Padding(padding: const EdgeInsets.all(8.0), child: ErrorPage(text: error!)))
+          else if (isPlayerReady && _controller != null)
+            GestureDetector(
+              onTap: _changePlayingState,
+              child: SizedBox(
+                width: videoWidth,
+                height: videoHeight,
+                child: AspectRatio(
+                  aspectRatio: 9 / 16, // Always maintain 9:16 ratio
+                  child: VideoPlayer(_controller!),
+                ),
+              ),
+            )
+          else
+            SizedBox(width: videoWidth, height: videoHeight, child: const Center(child: Loader())),
+
+          if (isPlayerReady) ...[
+            // Buffering overlay loader
+            ValueListenableBuilder<VideoPlayerValue>(
+              valueListenable: _controller!,
+              builder: (context, value, child) {
+                return AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child:
+                      value.isBuffering
+                          ? const Center(key: ValueKey('buffer_loader'), child: Loader())
+                          : const SizedBox.shrink(key: ValueKey('buffer_empty')),
+                );
+              },
+            ),
+            // Play/Pause button with fade animation and touch blocking fix
+            IgnorePointer(
+              ignoring: !_showPlayPauseIcon, // Don't block touches when invisible
+              child: AnimatedOpacity(
+                opacity: _showPlayPauseIcon ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 400),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface.withValues(alpha: .6),
+                    shape: BoxShape.circle,
+                  ),
+                  padding: const EdgeInsets.all(20),
+                  child: Icon(
+                    _iconData,
+                    size: MediaQuery.of(context).size.width * 0.12,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ),
+            ),
+
+            Positioned(
+              left: backwardButtonLeft,
+              bottom: 16,
+              child: IconButton(
+                icon: const Icon(Icons.replay_5, color: Colors.white, size: 30),
+                onPressed: _seekBackward,
+                style: IconButton.styleFrom(backgroundColor: Colors.black.withValues(alpha: .3)),
+              ),
+            ),
+            Positioned(
+              right: forwardButtonRight,
+              bottom: 16,
+              child: Visibility(
+                visible:
+                    ref.watch(sublevelControllerProvider.select((s) => s.hasFinishedSublevel)) ||
+                    isLevelAfter(
+                      progress?.maxLevel ?? 1,
+                      progress?.maxSubLevel ?? 1,
+                      widget.video.level,
+                      widget.video.index,
+                    ),
+                child: IconButton(
+                  icon: const Icon(Icons.forward_5, color: Colors.white, size: 30),
+                  onPressed: _seekForward,
+                  style: IconButton.styleFrom(backgroundColor: Colors.black.withValues(alpha: .3)),
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

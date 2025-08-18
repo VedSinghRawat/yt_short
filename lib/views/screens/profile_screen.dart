@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'dart:developer' as developer;
 import 'package:go_router/go_router.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/core/router/router.dart';
@@ -139,7 +138,6 @@ class ProfileScreen extends ConsumerWidget {
                                       if (newValue == null || newValue == user.prefLang) return;
 
                                       try {
-                                        developer.log('updatePrefLang: $newValue');
                                         await userController.updatePrefLang(newValue);
                                       } catch (e) {
                                         if (context.mounted) {
