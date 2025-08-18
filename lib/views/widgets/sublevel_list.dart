@@ -806,7 +806,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
                 final levelState = ref.read(levelControllerProvider);
                 final isKnown = levelState.loadingById.containsKey(newLevelId);
                 if (!isKnown) {
-                  ref.read(levelControllerProvider.notifier).getLevel(newLevelId);
+                  await ref.read(levelControllerProvider.notifier).getLevel(newLevelId);
                 }
               }
             }
