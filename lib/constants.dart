@@ -8,7 +8,7 @@ class AppConstants {
   static const int kMaxLevelCompletionsPerDay = 2;
 
   // Storage constants
-  static const int kMaxStorageSizeBytes = 100 * 1024 * 1024; // 100mb
+  static const int kMaxStorageSizeBytes = 50 * 1024 * 1024; // 100mb
   static const double kDeleteCacheThreshold = kMaxStorageSizeBytes * 0.3; // 30%
 
   // Level management constants
