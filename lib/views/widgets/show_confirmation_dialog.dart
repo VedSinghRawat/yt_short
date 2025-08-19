@@ -11,6 +11,7 @@ Future<bool> showConfirmationDialog(
 
   await showDialog(
     context: context,
+    useRootNavigator: false,
     builder: (context) {
       return AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

@@ -710,6 +710,8 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
       final currentIndex = _pageController.page?.round() ?? 0;
 
       if (progress?.level == 1 && progress?.subLevel == 1) {
+        // Ensure buffer is rebuilt around new progress so 1-1 exists in buffer
+        _updateBuffer();
         final currentSublevel = _sublevelBuffer[currentIndex];
         if (currentSublevel == null || !(currentSublevel.level == 1 && currentSublevel.index == 1)) {
           _jumpToPage();

@@ -49,7 +49,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final levelAfter = !hasLocalProgress || isLevelAfter(level, subLevel, maxLevel, maxSubLevel);
     if (!levelAfter) return false;
 
-    if (isDailyLimitReached(doneToday)) return true;
+    if (isDailyLimitReached(doneToday)) return false;
 
     final hasFinishedVideo = ref.read(sublevelControllerProvider).hasFinishedSublevel;
     if (hasFinishedVideo) return false;
