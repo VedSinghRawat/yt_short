@@ -6,6 +6,7 @@ import 'package:myapp/core/utils.dart';
 import 'package:myapp/controllers/speech/speech_controller.dart';
 import 'package:myapp/constants.dart';
 import 'package:myapp/views/widgets/lang_text.dart';
+import 'package:myapp/services/responsiveness/responsiveness_service.dart';
 
 class RecognizerButton extends ConsumerStatefulWidget {
   final VoidCallback onContinue;
@@ -74,6 +75,24 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
   Widget build(BuildContext context) {
     final speechState = ref.watch(speechProv);
     final speechNotifier = ref.read(speechProv.notifier);
+    final responsiveness = ResponsivenessService(context);
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+
+    // Responsive sizing for different device types and orientations
+    final buttonSize =
+        isLandscape
+            ? responsiveness.getResponsiveValues(mobile: 80.0, tablet: 70.0, largeTablet: 80.0)
+            : responsiveness.getResponsiveValues(mobile: 80.0, tablet: 90.0, largeTablet: 100.0);
+
+    final containerMaxWidth =
+        isLandscape
+            ? responsiveness.getResponsiveValues(mobile: 180.0, tablet: 160.0, largeTablet: 180.0)
+            : responsiveness.getResponsiveValues(mobile: 180.0, tablet: 200.0, largeTablet: 220.0);
+
+    final fontSize =
+        isLandscape
+            ? responsiveness.getResponsiveValues(mobile: 18.0, tablet: 16.0, largeTablet: 18.0)
+            : responsiveness.getResponsiveValues(mobile: 18.0, tablet: 20.0, largeTablet: 22.0);
 
     // Check if we should show reset button
     final shouldShowResetButton = speechState.errorMessage == AppConstants.kResetStateError;
@@ -81,7 +100,7 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
     return Column(
       children: [
         Container(
-          constraints: const BoxConstraints(maxWidth: 180),
+          constraints: BoxConstraints(maxWidth: containerMaxWidth),
           decoration: BoxDecoration(
             borderRadius: speechNotifier.isTestCompleted ? BorderRadius.circular(40) : null,
             color:
@@ -112,17 +131,17 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
                 child: Center(
                   child:
                       shouldShowResetButton
-                          ? const Icon(Icons.refresh, size: 80, color: Colors.redAccent)
+                          ? Icon(Icons.refresh, size: buttonSize, color: Colors.redAccent)
                           : speechNotifier.isTestCompleted
                           ? LangText.body(
                             hindi: speechNotifier.isPassed ? 'आगे बढ़े' : 'पुनः प्रयास करें',
                             hinglish: speechNotifier.isPassed ? 'Aage badhe' : 'Dobara kare',
-                            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: Colors.white, fontSize: fontSize, fontWeight: FontWeight.bold),
                           )
                           : SvgPicture.asset(
                             'assets/svgs/mic-${speechState.isListening ? 'on' : 'off'}.svg',
-                            width: 80,
-                            height: 80,
+                            width: buttonSize,
+                            height: buttonSize,
                           ),
                 ),
               ),
@@ -151,7 +170,7 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
                       : speechState.isListening
                       ? Colors.green
                       : Theme.of(context).colorScheme.secondary,
-              fontSize: 18,
+              fontSize: fontSize,
             ),
           ),
       ],

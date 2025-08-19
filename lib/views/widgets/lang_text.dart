@@ -96,15 +96,20 @@ class LangText extends ConsumerWidget {
 
     // Set default styles based on text type
     final defaultStyle =
-        textType == SmartTextType.heading
-            ? TextStyle(
-              fontSize: responsiveness.getResponsiveValues(mobile: 20, tablet: 24, largeTablet: 28),
-              fontWeight: FontWeight.w600,
-            )
-            : TextStyle(
-              fontSize: responsiveness.getResponsiveValues(mobile: 13, tablet: 15, largeTablet: 17.5),
-              fontWeight: FontWeight.w500,
-            );
+        (() {
+          switch (textType) {
+            case SmartTextType.heading:
+              return TextStyle(
+                fontSize: responsiveness.getResponsiveValues(mobile: 20, tablet: 22, largeTablet: 24),
+                fontWeight: FontWeight.w600,
+              );
+            case SmartTextType.body:
+              return TextStyle(
+                fontSize: responsiveness.getResponsiveValues(mobile: 14, tablet: 18, largeTablet: 20),
+                fontWeight: FontWeight.w500,
+              );
+          }
+        })();
 
     // Merge defaults, font family, and provided style
     final mergedStyle = defaultStyle.copyWith(fontFamily: fontFamily).merge(style);
