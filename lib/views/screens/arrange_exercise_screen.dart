@@ -42,19 +42,25 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
     final hasSeen = ref.read(uIControllerProvider.notifier).getExerciseSeen(SubLevelType.arrange, userEmail: userEmail);
     _showDescription = !hasSeen;
 
-    _audioPlayer.playerStateStream.listen((state) {
+    _audioPlayer.playerStateStream.listen((playerState) {
       if (!mounted) return;
 
-      final shouldStop =
-          state.processingState == ProcessingState.completed ||
-          state.processingState == ProcessingState.idle ||
-          !state.playing;
+      // Set to true when audio starts playing
+      if (playerState.playing && playerState.processingState == ProcessingState.ready && !_isPlayingAudio) {
+        setState(() {
+          _isPlayingAudio = true;
+        });
+      }
 
-      if (!(shouldStop && _isPlayingAudio)) return;
-
-      setState(() {
-        _isPlayingAudio = false;
-      });
+      // Set to false when audio completes or stops
+      if ((playerState.processingState == ProcessingState.completed ||
+              playerState.processingState == ProcessingState.idle ||
+              !playerState.playing) &&
+          _isPlayingAudio) {
+        setState(() {
+          _isPlayingAudio = false;
+        });
+      }
     });
   }
 
@@ -69,17 +75,16 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
       });
 
       // Stop any playing audio
-      if (_isPlayingAudio) {
-        _audioPlayer.stop();
-        setState(() {
-          _isPlayingAudio = false;
-        });
-      }
+      _stopAudio();
     }
   }
 
   @override
   void dispose() {
+    // Stop any playing audio before disposing
+    if (_isPlayingAudio) {
+      _audioPlayer.stop();
+    }
     _audioPlayer.dispose();
     super.dispose();
   }
@@ -110,6 +115,13 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
     });
   }
 
+  void _stopAudio() {
+    if (_isPlayingAudio) {
+      _audioPlayer.stop();
+      // State will be updated by stream listener
+    }
+  }
+
   void _checkAnswer() {
     final userAnswer = _currentItems.map((e) => e.word).join(' ').toLowerCase().trim();
     final correctAnswer = widget.exercise.text.toLowerCase().trim();
@@ -138,9 +150,6 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
       // Stop current audio if playing
       if (_isPlayingAudio) {
         await _audioPlayer.stop();
-        setState(() {
-          _isPlayingAudio = false;
-        });
         return;
       }
 
@@ -148,19 +157,9 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
       final audioFile = FileService.getFile(audioPath);
 
       await _audioPlayer.setFilePath(audioFile.path);
-
-      setState(() {
-        _isPlayingAudio = true;
-      });
-
       await _audioPlayer.play();
-    } catch (e) {
-      developer.log("Error setting up audio playback: $e");
-      if (mounted) {
-        setState(() {
-          _isPlayingAudio = false;
-        });
-      }
+    } catch (e, stack) {
+      developer.log("Error setting up audio playback: $e", stackTrace: stack);
     }
   }
 

@@ -51,12 +51,32 @@ class Speech extends _$Speech {
 
   @override
   SpeechState build({required List<String> targetWords}) {
+    // Set up audio player state stream listener
+    _setupAudioStateListener();
+
     return SpeechState(
       recognizedWords: List.filled(targetWords.length, ''),
       wordMarking: List.filled(targetWords.length, null),
       offset: 0,
       targetWords: targetWords,
     );
+  }
+
+  void _setupAudioStateListener() {
+    // Remove any existing listeners to prevent duplicates
+    audioPlayer.playerStateStream.listen((playerState) {
+      // Set to true when audio starts playing
+      if (playerState.playing && playerState.processingState == ProcessingState.ready) {
+        state = state.copyWith(isPlayingAudio: true);
+      }
+
+      // Set to false when audio completes or stops
+      if (playerState.processingState == ProcessingState.completed ||
+          playerState.processingState == ProcessingState.idle ||
+          !playerState.playing) {
+        state = state.copyWith(isPlayingAudio: false);
+      }
+    });
   }
 
   void resetState() {
@@ -70,6 +90,7 @@ class Speech extends _$Speech {
     cancelListening();
     if (audioPlayer.playing) {
       audioPlayer.stop();
+      state = state.copyWith(isPlayingAudio: false);
     }
   }
 
@@ -171,23 +192,31 @@ class Speech extends _$Speech {
   }
 
   Future<void> playAudio(String levelId, String id) async {
-    if (audioPlayer.playing) {
-      await audioPlayer.stop();
+    try {
+      developer.log('playAudio called with levelId: $levelId, id: $id');
+      if (audioPlayer.playing) {
+        developer.log('Audio is already playing. Stopping current audio.');
+        await audioPlayer.stop();
+        return;
+      }
+
+      final audioFile = PathService.sublevelAsset(levelId, id, AssetType.audio);
+      developer.log('Resolved audio file path: $audioFile');
+
+      final fullPath = '${FileService.documentsDirectory.path}$audioFile';
+      developer.log('Full audio file path: $fullPath');
+
+      await audioPlayer.setFilePath(fullPath);
+      developer.log('Audio file path set on player.');
+
+      await audioPlayer.play();
+      developer.log('Audio playback started.');
+      // Audio state will be managed by playerStateStream listener
+    } catch (e, stack) {
+      developer.log('Error in playAudio: $e', error: e, stackTrace: stack);
+      // Reset state on error
       state = state.copyWith(isPlayingAudio: false);
-      return;
     }
-
-    final audioFile = PathService.sublevelAsset(levelId, id, AssetType.audio);
-
-    await audioPlayer.setFilePath('${FileService.documentsDirectory.path}$audioFile');
-
-    state = state.copyWith(isPlayingAudio: true);
-
-    await audioPlayer.play().then((_) async {
-      state = state.copyWith(isPlayingAudio: false);
-
-      await audioPlayer.stop();
-    });
   }
 
   Future<void> _showMicPermissionDeniedDialog(BuildContext context) async {
