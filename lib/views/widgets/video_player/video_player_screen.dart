@@ -458,6 +458,12 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
       if (isVisible) {
         _stopAnimation();
       }
+
+      if (!isVisible && _showDialogueArea) {
+        setState(() {
+          _showDialogueArea = false;
+        });
+      }
     });
 
     // Animation is now handled directly in _listenerVideoFinished when video completes
