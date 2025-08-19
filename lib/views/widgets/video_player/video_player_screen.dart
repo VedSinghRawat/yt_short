@@ -41,6 +41,7 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
   Timer? _iconTimer;
   bool isFinished = false;
   bool _showDialogueArea = false;
+  bool _isBuffering = false;
 
   // Animation-related variables
   bool _showAnimation = false;
@@ -107,6 +108,18 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
     if (!value.isInitialized) return;
 
     _updateDisplayableDialogues(value.position);
+
+    // Check buffering state - but not when video is finished
+    final position = value.position;
+    final duration = value.duration;
+    final isNearEnd = duration > Duration.zero && (duration - position).inMilliseconds <= 100;
+
+    final isBuffering = value.isBuffering && !isNearEnd && !isFinished;
+    if (_isBuffering != isBuffering) {
+      setState(() {
+        _isBuffering = isBuffering;
+      });
+    }
 
     if (value.hasError && error == null) {
       developer.log('error in video player ${value.errorDescription}');
@@ -675,6 +688,16 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
             SizedBox(width: videoWidth, height: videoHeight, child: const Center(child: Loader())),
 
           if (isPlayerReady) ...[
+            // Buffering loader overlay with touch pass-through
+            IgnorePointer(
+              ignoring: !_isBuffering, // Don't block touches when not buffering
+              child: AnimatedOpacity(
+                opacity: _isBuffering ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 200),
+                child: _isBuffering ? const Loader() : const SizedBox.shrink(),
+              ),
+            ),
+
             // Play/Pause button with fade animation and touch blocking fix
             IgnorePointer(
               ignoring: !_showPlayPauseIcon, // Don't block touches when invisible

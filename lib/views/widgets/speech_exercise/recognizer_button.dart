@@ -80,55 +80,50 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
 
     return Column(
       children: [
-        Container(
-          constraints: const BoxConstraints(maxWidth: 180),
-          decoration: BoxDecoration(
-            borderRadius: speechNotifier.isTestCompleted ? BorderRadius.circular(40) : null,
-            color:
-                speechNotifier.isTestCompleted
-                    ? speechNotifier.isPassed
-                        ? Colors.green.shade400
-                        : Colors.red.shade400
-                    : null,
-            boxShadow: [
-              if (speechNotifier.isTestCompleted)
-                const BoxShadow(
-                  color: Color.fromRGBO(128, 128, 128, 0.3),
-                  spreadRadius: 2,
-                  blurRadius: 5,
-                  offset: Offset(0, 2),
-                ),
-            ],
-          ),
-          child: Center(
-            child: InkWell(
-              onTap: _handleButtonPress,
-              customBorder: speechNotifier.isPassed ? null : const CircleBorder(),
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: speechNotifier.isPassed ? BoxShape.rectangle : BoxShape.circle,
-                  borderRadius: speechNotifier.isPassed ? BorderRadius.circular(40) : null,
-                ),
-                child: Center(
-                  child:
-                      shouldShowResetButton
-                          ? const Icon(Icons.refresh, size: 80, color: Colors.redAccent)
-                          : speechNotifier.isTestCompleted
-                          ? LangText.body(
-                            hindi: speechNotifier.isPassed ? 'आगे बढ़े' : 'पुनः प्रयास करें',
-                            hinglish: speechNotifier.isPassed ? 'Aage badhe' : 'Dobara kare',
-                            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                          )
-                          : SvgPicture.asset(
-                            'assets/svgs/mic-${speechState.isListening ? 'on' : 'off'}.svg',
-                            width: 80,
-                            height: 80,
-                          ),
+        // Completed state → full-width button like ArrangeExercise
+        if (speechNotifier.isTestCompleted)
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _handleButtonPress,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: speechNotifier.isPassed ? Colors.green.shade400 : Colors.red.shade400,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              ),
+              child: LangText.body(
+                hindi: speechNotifier.isPassed ? 'आगे बढ़ें' : 'पुनः प्रयास करें',
+                hinglish: speechNotifier.isPassed ? 'Aage badhe' : 'Dobara kare',
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+          )
+        else
+          // In-progress state → mic/reset circle as before
+          Container(
+            constraints: const BoxConstraints(maxWidth: 180),
+            child: Center(
+              child: InkWell(
+                onTap: _handleButtonPress,
+                customBorder: const CircleBorder(),
+                child: Container(
+                  decoration: const BoxDecoration(shape: BoxShape.circle),
+                  child: Center(
+                    child:
+                        shouldShowResetButton
+                            ? const Icon(Icons.refresh, size: 80, color: Colors.redAccent)
+                            : SvgPicture.asset(
+                              'assets/svgs/mic-${speechState.isListening ? 'on' : 'off'}.svg',
+                              width: 80,
+                              height: 80,
+                            ),
+                  ),
                 ),
               ),
             ),
           ),
-        ),
 
         if (!speechNotifier.isTestCompleted)
           LangText.body(
