@@ -209,7 +209,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       user?.isAdmin == true,
       user?.doneToday,
     )) {
-      await controller.animateToPage(index - 1, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+      final currentBufferPage = ((controller.page ?? controller.initialPage).round());
+      final targetPage = currentBufferPage > 0 ? currentBufferPage - 1 : 0;
+      await controller.animateToPage(targetPage, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
       return;
     }
 

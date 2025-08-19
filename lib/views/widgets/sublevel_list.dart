@@ -943,7 +943,12 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
               }
 
               return ErrorPage(
-                onButtonClick: () => widget.onSublevelChange?.call(index, _pageController),
+                onButtonClick: () {
+                  final mapped = _mapBufferIndexToListIndex(index);
+                  if (mapped != null) {
+                    widget.onSublevelChange?.call(mapped, _pageController);
+                  }
+                },
                 text: error,
                 buttonText: choose(
                   hindi: 'पुनः प्रयास करें',
