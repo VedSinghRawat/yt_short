@@ -6,6 +6,7 @@ import 'package:myapp/core/utils.dart';
 import 'package:myapp/controllers/speech/speech_controller.dart';
 import 'package:myapp/constants.dart';
 import 'package:myapp/views/widgets/lang_text.dart';
+import 'package:myapp/services/responsiveness/responsiveness_service.dart';
 
 class RecognizerButton extends ConsumerStatefulWidget {
   final VoidCallback onContinue;
@@ -74,56 +75,79 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
   Widget build(BuildContext context) {
     final speechState = ref.watch(speechProv);
     final speechNotifier = ref.read(speechProv.notifier);
+    final responsiveness = ResponsivenessService(context);
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+
+    // Responsive sizing for different device types and orientations
+    final buttonSize =
+        isLandscape
+            ? responsiveness.getResponsiveValues(mobile: 80.0, tablet: 70.0, largeTablet: 80.0)
+            : responsiveness.getResponsiveValues(mobile: 80.0, tablet: 90.0, largeTablet: 100.0);
+
+    final containerMaxWidth =
+        isLandscape
+            ? responsiveness.getResponsiveValues(mobile: 180.0, tablet: 160.0, largeTablet: 180.0)
+            : responsiveness.getResponsiveValues(mobile: 180.0, tablet: 200.0, largeTablet: 220.0);
+
+    final fontSize =
+        isLandscape
+            ? responsiveness.getResponsiveValues(mobile: 18.0, tablet: 16.0, largeTablet: 18.0)
+            : responsiveness.getResponsiveValues(mobile: 18.0, tablet: 20.0, largeTablet: 22.0);
 
     // Check if we should show reset button
     final shouldShowResetButton = speechState.errorMessage == AppConstants.kResetStateError;
 
     return Column(
       children: [
-        // Completed state → full-width button like ArrangeExercise
-        if (speechNotifier.isTestCompleted)
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _handleButtonPress,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: speechNotifier.isPassed ? Colors.green.shade400 : Colors.red.shade400,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-                textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              ),
-              child: LangText.body(
-                hindi: speechNotifier.isPassed ? 'आगे बढ़ें' : 'पुनः प्रयास करें',
-                hinglish: speechNotifier.isPassed ? 'Aage badhe' : 'Dobara kare',
-                style: const TextStyle(color: Colors.white),
-              ),
-            ),
-          )
-        else
-          // In-progress state → mic/reset circle as before
-          Container(
-            constraints: const BoxConstraints(maxWidth: 180),
-            child: Center(
-              child: InkWell(
-                onTap: _handleButtonPress,
-                customBorder: const CircleBorder(),
-                child: Container(
-                  decoration: const BoxDecoration(shape: BoxShape.circle),
-                  child: Center(
-                    child:
-                        shouldShowResetButton
-                            ? const Icon(Icons.refresh, size: 80, color: Colors.redAccent)
-                            : SvgPicture.asset(
-                              'assets/svgs/mic-${speechState.isListening ? 'on' : 'off'}.svg',
-                              width: 80,
-                              height: 80,
-                            ),
-                  ),
+        Container(
+          constraints: BoxConstraints(maxWidth: containerMaxWidth),
+          decoration: BoxDecoration(
+            borderRadius: speechNotifier.isTestCompleted ? BorderRadius.circular(40) : null,
+            color:
+                speechNotifier.isTestCompleted
+                    ? speechNotifier.isPassed
+                        ? Colors.green.shade400
+                        : Colors.red.shade400
+                    : null,
+            boxShadow: [
+              if (speechNotifier.isTestCompleted)
+                const BoxShadow(
+                  color: Color.fromRGBO(128, 128, 128, 0.3),
+                  spreadRadius: 2,
+                  blurRadius: 5,
+                  offset: Offset(0, 2),
+                ),
+            ],
+          ),
+          child: Center(
+            child: InkWell(
+              onTap: _handleButtonPress,
+              customBorder: speechNotifier.isPassed ? null : const CircleBorder(),
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: speechNotifier.isPassed ? BoxShape.rectangle : BoxShape.circle,
+                  borderRadius: speechNotifier.isPassed ? BorderRadius.circular(40) : null,
+                ),
+                child: Center(
+                  child:
+                      shouldShowResetButton
+                          ? Icon(Icons.refresh, size: buttonSize, color: Colors.redAccent)
+                          : speechNotifier.isTestCompleted
+                          ? LangText.body(
+                            hindi: speechNotifier.isPassed ? 'आगे बढ़े' : 'पुनः प्रयास करें',
+                            hinglish: speechNotifier.isPassed ? 'Aage badhe' : 'Dobara kare',
+                            style: TextStyle(color: Colors.white, fontSize: fontSize, fontWeight: FontWeight.bold),
+                          )
+                          : SvgPicture.asset(
+                            'assets/svgs/mic-${speechState.isListening ? 'on' : 'off'}.svg',
+                            width: buttonSize,
+                            height: buttonSize,
+                          ),
                 ),
               ),
             ),
           ),
+        ),
 
         if (!speechNotifier.isTestCompleted)
           LangText.body(
@@ -146,7 +170,7 @@ class _RecognizerButtonState extends ConsumerState<RecognizerButton> {
                       : speechState.isListening
                       ? Colors.green
                       : Theme.of(context).colorScheme.secondary,
-              fontSize: 18,
+              fontSize: fontSize,
             ),
           ),
       ],

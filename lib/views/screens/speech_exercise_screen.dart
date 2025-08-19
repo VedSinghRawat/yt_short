@@ -38,12 +38,18 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
   @override
   Widget build(BuildContext context) {
     return ExerciseContainer(
-      child: SpeechExerciseCard(
-        key: UniqueKey(),
-        levelId: widget.exercise.levelId,
-        id: widget.exercise.id,
-        text: widget.exercise.text,
-        onContinue: widget.goToNext,
+      child: ConstrainedBox(
+        constraints:
+            MediaQuery.of(context).orientation == Orientation.landscape
+                ? const BoxConstraints(maxWidth: 600)
+                : const BoxConstraints(maxWidth: 99999),
+        child: SpeechExerciseCard(
+          key: UniqueKey(),
+          levelId: widget.exercise.levelId,
+          id: widget.exercise.id,
+          text: widget.exercise.text,
+          onContinue: widget.goToNext,
+        ),
       ),
     );
   }

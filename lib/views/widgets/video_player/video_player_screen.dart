@@ -641,18 +641,24 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
     double? height, [
     double? maxHeight,
   ]) {
-    // Responsive button positioning with increased gaps for tablets
-    final backwardButtonLeft = responsiveness.getResponsiveValues(
-      mobile: 100.0,
-      tablet: 60.0, // Increased gap for small tablets
-      largeTablet: 80.0,
-    );
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
 
-    final forwardButtonRight = responsiveness.getResponsiveValues(
-      mobile: 100.0,
-      tablet: 60.0, // Increased gap for small tablets
-      largeTablet: 80.0,
-    );
+    // Responsive button positioning with increased gaps for tablets
+    final buttonGap =
+        isLandscape
+            ? responsiveness.getResponsiveValues(mobile: 60.0, tablet: 60.0, largeTablet: 60.0)
+            : responsiveness.getResponsiveValues(mobile: 60.0, tablet: 100.0, largeTablet: 150.0);
+
+    // Responsive button sizing for portrait mode
+    final buttonSize =
+        isLandscape
+            ? responsiveness.getResponsiveValues(mobile: 32.0, tablet: 32.0, largeTablet: 32.0)
+            : responsiveness.getResponsiveValues(mobile: 32.0, tablet: 40.0, largeTablet: 48.0);
+
+    final buttonPadding =
+        isLandscape
+            ? responsiveness.getResponsiveValues(mobile: 10.0, tablet: 10.0, largeTablet: 10.0)
+            : responsiveness.getResponsiveValues(mobile: 10.0, tablet: 12.0, largeTablet: 16.0);
 
     // Calculate video dimensions with max height constraint for portrait
     double videoWidth = width ?? MediaQuery.of(context).size.width;
@@ -720,31 +726,40 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
             ),
 
             Positioned(
-              left: backwardButtonLeft,
+              left: 0,
+              right: 0,
               bottom: 16,
-              child: IconButton(
-                icon: const Icon(Icons.replay_5, color: Colors.white, size: 30),
-                onPressed: _seekBackward,
-                style: IconButton.styleFrom(backgroundColor: Colors.black.withValues(alpha: .3)),
-              ),
-            ),
-            Positioned(
-              right: forwardButtonRight,
-              bottom: 16,
-              child: Visibility(
-                visible:
-                    ref.watch(sublevelControllerProvider.select((s) => s.hasFinishedSublevel)) ||
-                    isLevelAfter(
-                      progress?.maxLevel ?? 1,
-                      progress?.maxSubLevel ?? 1,
-                      widget.video.level,
-                      widget.video.index,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.replay_5, color: Colors.white, size: buttonSize),
+                    onPressed: _seekBackward,
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.black.withValues(alpha: .3),
+                      padding: EdgeInsets.all(buttonPadding),
                     ),
-                child: IconButton(
-                  icon: const Icon(Icons.forward_5, color: Colors.white, size: 30),
-                  onPressed: _seekForward,
-                  style: IconButton.styleFrom(backgroundColor: Colors.black.withValues(alpha: .3)),
-                ),
+                  ),
+                  SizedBox(width: buttonGap),
+                  Visibility(
+                    visible:
+                        ref.watch(sublevelControllerProvider.select((s) => s.hasFinishedSublevel)) ||
+                        isLevelAfter(
+                          progress?.maxLevel ?? 1,
+                          progress?.maxSubLevel ?? 1,
+                          widget.video.level,
+                          widget.video.index,
+                        ),
+                    child: IconButton(
+                      icon: Icon(Icons.forward_5, color: Colors.white, size: buttonSize),
+                      onPressed: _seekForward,
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.black.withValues(alpha: .3),
+                        padding: EdgeInsets.all(buttonPadding),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
