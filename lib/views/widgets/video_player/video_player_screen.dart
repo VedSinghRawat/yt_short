@@ -504,19 +504,16 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
                     Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        _buildVideoPlayer(isPlayerReady, progress, responsiveness, true, videoWidth, videoHeight, null),
                         if (isPlayerReady)
                           ValueListenableBuilder<VideoPlayerValue>(
                             valueListenable: _controller!,
                             builder: (context, value, child) {
                               if (value.duration > Duration.zero) {
-                                return Column(
-                                  children: [
-                                    VideoProgressBar(
-                                      durationMs: value.duration.inMilliseconds,
-                                      currentPositionMs: value.position.inMilliseconds,
-                                      isPlaying: value.isPlaying,
-                                    ),
-                                  ],
+                                return VideoProgressBar(
+                                  durationMs: value.duration.inMilliseconds,
+                                  currentPositionMs: value.position.inMilliseconds,
+                                  isPlaying: value.isPlaying,
                                 );
                               } else {
                                 return const SizedBox(height: 10);
@@ -525,22 +522,7 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
                           )
                         else
                           const VideoProgressBar(durationMs: 1, currentPositionMs: 0, isPlaying: false),
-
-                        _buildVideoPlayer(isPlayerReady, progress, responsiveness, true, videoWidth, videoHeight, null),
                       ],
-                    ),
-                    // Ensure buffering loader is visible in landscape too
-                    ValueListenableBuilder<VideoPlayerValue>(
-                      valueListenable: _controller!,
-                      builder: (context, value, child) {
-                        return AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 200),
-                          child:
-                              value.isBuffering
-                                  ? const Center(key: ValueKey('buffer_loader_landscape'), child: Loader())
-                                  : const SizedBox.shrink(key: ValueKey('buffer_empty_landscape')),
-                        );
-                      },
                     ),
                     // Scroll indicator (moves with video)
                     if (_showScrollIndicator && widget.isCurrent)
@@ -601,14 +583,10 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
                           valueListenable: _controller!,
                           builder: (context, value, child) {
                             if (value.duration > Duration.zero) {
-                              return Column(
-                                children: [
-                                  VideoProgressBar(
-                                    durationMs: value.duration.inMilliseconds,
-                                    currentPositionMs: value.position.inMilliseconds,
-                                    isPlaying: value.isPlaying,
-                                  ),
-                                ],
+                              return VideoProgressBar(
+                                durationMs: value.duration.inMilliseconds,
+                                currentPositionMs: value.position.inMilliseconds,
+                                isPlaying: value.isPlaying,
                               );
                             } else {
                               return const SizedBox(height: 10);
@@ -697,19 +675,6 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
             SizedBox(width: videoWidth, height: videoHeight, child: const Center(child: Loader())),
 
           if (isPlayerReady) ...[
-            // Buffering overlay loader
-            ValueListenableBuilder<VideoPlayerValue>(
-              valueListenable: _controller!,
-              builder: (context, value, child) {
-                return AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 200),
-                  child:
-                      value.isBuffering
-                          ? const Center(key: ValueKey('buffer_loader'), child: Loader())
-                          : const SizedBox.shrink(key: ValueKey('buffer_empty')),
-                );
-              },
-            ),
             // Play/Pause button with fade animation and touch blocking fix
             IgnorePointer(
               ignoring: !_showPlayPauseIcon, // Don't block touches when invisible
