@@ -3,9 +3,9 @@ import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:myapp/core/utils.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:myapp/constants.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
+import 'package:myapp/services/audio/audio_service.dart';
 import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/path/path_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -35,7 +35,7 @@ class SpeechState with _$SpeechState {
 @Riverpod(keepAlive: true)
 class Speech extends _$Speech {
   stt.SpeechToText? _speech;
-  final audioPlayer = AudioPlayer();
+  final AudioService _audioService = AudioService();
   late final langProvider = ref.read(langControllerProvider.notifier);
 
   stt.SpeechToText get _speechInstance {
@@ -51,32 +51,12 @@ class Speech extends _$Speech {
 
   @override
   SpeechState build({required List<String> targetWords}) {
-    // Set up audio player state stream listener
-    _setupAudioStateListener();
-
     return SpeechState(
       recognizedWords: List.filled(targetWords.length, ''),
       wordMarking: List.filled(targetWords.length, null),
       offset: 0,
       targetWords: targetWords,
     );
-  }
-
-  void _setupAudioStateListener() {
-    // Remove any existing listeners to prevent duplicates
-    audioPlayer.playerStateStream.listen((playerState) {
-      // Set to true when audio starts playing
-      if (playerState.playing && playerState.processingState == ProcessingState.ready) {
-        state = state.copyWith(isPlayingAudio: true);
-      }
-
-      // Set to false when audio completes or stops
-      if (playerState.processingState == ProcessingState.completed ||
-          playerState.processingState == ProcessingState.idle ||
-          !playerState.playing) {
-        state = state.copyWith(isPlayingAudio: false);
-      }
-    });
   }
 
   void resetState() {
@@ -88,8 +68,8 @@ class Speech extends _$Speech {
     );
 
     cancelListening();
-    if (audioPlayer.playing) {
-      audioPlayer.stop();
+    if (_audioService.isPlaying) {
+      _audioService.stopAudio();
       state = state.copyWith(isPlayingAudio: false);
     }
   }
@@ -194,24 +174,26 @@ class Speech extends _$Speech {
   Future<void> playAudio(String levelId, String id) async {
     try {
       developer.log('playAudio called with levelId: $levelId, id: $id');
-      if (audioPlayer.playing) {
+      if (_audioService.isPlaying) {
         developer.log('Audio is already playing. Stopping current audio.');
-        await audioPlayer.stop();
+        await _audioService.stopAudio();
+        state = state.copyWith(isPlayingAudio: false);
         return;
       }
 
+      state = state.copyWith(isPlayingAudio: true);
+
       final audioFile = PathService.sublevelAsset(levelId, id, AssetType.audio);
-      developer.log('Resolved audio file path: $audioFile');
-
       final fullPath = '${FileService.documentsDirectory.path}$audioFile';
-      developer.log('Full audio file path: $fullPath');
 
-      await audioPlayer.setFilePath(fullPath);
-      developer.log('Audio file path set on player.');
+      await _audioService.playAudio(
+        audioPath: fullPath,
+        onFinished: () {
+          state = state.copyWith(isPlayingAudio: false);
+        },
+      );
 
-      await audioPlayer.play();
       developer.log('Audio playback started.');
-      // Audio state will be managed by playerStateStream listener
     } catch (e, stack) {
       developer.log('Error in playAudio: $e', error: e, stackTrace: stack);
       // Reset state on error

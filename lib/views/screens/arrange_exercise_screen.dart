@@ -2,8 +2,8 @@ import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:myapp/models/arrange_exercise/arrange_exercise.dart';
+import 'package:myapp/services/audio/audio_service.dart';
 import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/path/path_service.dart';
 import 'package:myapp/views/widgets/sublevel_image.dart';
@@ -27,7 +27,7 @@ class ArrangeExerciseScreen extends ConsumerStatefulWidget {
 
 class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
   List<_WordItem> _currentItems = [];
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  final AudioService _audioService = AudioService();
   bool _isPlayingAudio = false;
   bool _isCorrect = false;
   bool _showDescription = true;
@@ -41,27 +41,6 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
     final userEmail = ref.read(userControllerProvider.notifier).getUser()?.email;
     final hasSeen = ref.read(uIControllerProvider.notifier).getExerciseSeen(SubLevelType.arrange, userEmail: userEmail);
     _showDescription = !hasSeen;
-
-    _audioPlayer.playerStateStream.listen((playerState) {
-      if (!mounted) return;
-
-      // Set to true when audio starts playing
-      if (playerState.playing && playerState.processingState == ProcessingState.ready && !_isPlayingAudio) {
-        setState(() {
-          _isPlayingAudio = true;
-        });
-      }
-
-      // Set to false when audio completes or stops
-      if ((playerState.processingState == ProcessingState.completed ||
-              playerState.processingState == ProcessingState.idle ||
-              !playerState.playing) &&
-          _isPlayingAudio) {
-        setState(() {
-          _isPlayingAudio = false;
-        });
-      }
-    });
   }
 
   @override
@@ -83,9 +62,8 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
   void dispose() {
     // Stop any playing audio before disposing
     if (_isPlayingAudio) {
-      _audioPlayer.stop();
+      _stopAudio();
     }
-    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -117,8 +95,10 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
 
   void _stopAudio() {
     if (_isPlayingAudio) {
-      _audioPlayer.stop();
-      // State will be updated by stream listener
+      _audioService.stopAudio();
+      setState(() {
+        _isPlayingAudio = false;
+      });
     }
   }
 
@@ -149,17 +129,32 @@ class _ArrangeExerciseScreenState extends ConsumerState<ArrangeExerciseScreen> {
     try {
       // Stop current audio if playing
       if (_isPlayingAudio) {
-        await _audioPlayer.stop();
+        _stopAudio();
         return;
       }
+
+      setState(() {
+        _isPlayingAudio = true;
+      });
 
       final audioPath = PathService.sublevelAsset(widget.exercise.levelId, widget.exercise.id, AssetType.audio);
       final audioFile = FileService.getFile(audioPath);
 
-      await _audioPlayer.setFilePath(audioFile.path);
-      await _audioPlayer.play();
+      await _audioService.playAudio(
+        audioPath: audioFile.path,
+        onFinished: () {
+          if (mounted) {
+            setState(() {
+              _isPlayingAudio = false;
+            });
+          }
+        },
+      );
     } catch (e, stack) {
       developer.log("Error setting up audio playback: $e", stackTrace: stack);
+      setState(() {
+        _isPlayingAudio = false;
+      });
     }
   }
 

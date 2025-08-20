@@ -1,11 +1,11 @@
 import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:myapp/controllers/dialogue/dialogue_controller.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/models/video/video.dart';
 import 'package:myapp/models/dialogues/dialogues.dart';
+import 'package:myapp/services/audio/audio_service.dart';
 import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/path/path_service.dart';
 import 'package:myapp/services/responsiveness/responsiveness_service.dart';
@@ -23,7 +23,7 @@ class DialogueList extends ConsumerStatefulWidget {
 class _DialogueListState extends ConsumerState<DialogueList> {
   late FixedExtentScrollController _scrollController;
   int _selectedDialogueIndex = 0;
-  final _audioPlayer = AudioPlayer();
+  final AudioService _audioService = AudioService();
   String _playingDialogueFilename = '';
 
   @override
@@ -44,7 +44,6 @@ class _DialogueListState extends ConsumerState<DialogueList> {
   @override
   void dispose() {
     _scrollController.dispose();
-    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -65,49 +64,33 @@ class _DialogueListState extends ConsumerState<DialogueList> {
 
   Future<void> _playDialogueAudio(String audioFilename) async {
     try {
-      await _audioPlayer.stop();
-
-      final localAudioFilePath = PathService.dialogueAsset(audioFilename, AssetType.audio);
-
-      // Check if file exists before attempting to play
-      final file = FileService.getFile(localAudioFilePath);
-      if (!await file.exists()) {
-        developer.log("Audio file not found: $localAudioFilePath");
-        if (mounted && _playingDialogueFilename == audioFilename) {
-          setState(() => _playingDialogueFilename = ''); // Reset if file not found
-        }
+      // If same audio is playing, stop it
+      if (_playingDialogueFilename == audioFilename && _audioService.isPlaying) {
+        await _audioService.stopAudio();
+        setState(() {
+          _playingDialogueFilename = '';
+        });
         return;
       }
 
-      await _audioPlayer.setFilePath(file.path);
-
       // Update state immediately to show green icon
-      if (mounted) {
-        setState(() {
-          _playingDialogueFilename = audioFilename;
-        });
-      }
+      setState(() {
+        _playingDialogueFilename = audioFilename;
+      });
 
-      // Play and wait for completion or error
-      await _audioPlayer
-          .play()
-          .then((_) {
-            // When playback completes normally
-            if (mounted && _playingDialogueFilename == audioFilename) {
-              setState(() {
-                _playingDialogueFilename = '';
-              });
-            }
-          })
-          .catchError((error) {
-            // Handle errors during playback
-            developer.log("Error during audio playback: $error");
-            if (mounted && _playingDialogueFilename == audioFilename) {
-              setState(() {
-                _playingDialogueFilename = '';
-              });
-            }
-          });
+      final localAudioFilePath = PathService.dialogueAsset(audioFilename, AssetType.audio);
+      final audioFile = FileService.getFile(localAudioFilePath);
+
+      await _audioService.playAudio(
+        audioPath: audioFile.path,
+        onFinished: () {
+          if (mounted && _playingDialogueFilename == audioFilename) {
+            setState(() {
+              _playingDialogueFilename = '';
+            });
+          }
+        },
+      );
     } catch (e) {
       developer.log("Error setting up or playing dialogue audio: $e");
       // Ensure state is reset even if setup fails
