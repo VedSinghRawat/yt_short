@@ -210,7 +210,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       user?.doneToday,
     )) {
       final currentBufferPage = ((controller.page ?? controller.initialPage).round());
-      final targetPage = currentBufferPage > 0 ? currentBufferPage - 1 : 0;
+      final targetPage = currentBufferPage > controller.initialPage ? currentBufferPage - 1 : controller.initialPage;
       await controller.animateToPage(targetPage, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
       return;
     }
