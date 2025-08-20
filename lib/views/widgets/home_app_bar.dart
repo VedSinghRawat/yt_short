@@ -52,7 +52,8 @@ class _HomeAppBarState extends ConsumerState<HomeAppBar> {
 
               final initializeService = await ref.read(initializeServiceProvider.future);
 
-              final isSuccess = await initializeService.initialApiCall();
+              final error = await initializeService.initialApiCall();
+              final isSuccess = error == null; // null means success, APIError means failure
 
               if (syncFailed) {
                 await ref

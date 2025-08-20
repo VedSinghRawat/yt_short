@@ -1,10 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/dialogues/dialogues.dart';
 import 'package:myapp/services/dialogue/dialogue_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:myapp/core/error/api_error.dart';
+import 'package:fpdart/fpdart.dart';
 
 part 'dialogue_controller.freezed.dart';
 part 'dialogue_controller.g.dart';
@@ -17,7 +18,6 @@ class DialogueControllerState with _$DialogueControllerState {
     @Default({}) Map<String, Dialogue> dialogues,
     @Default({}) Map<String, bool> loadingByDialogueId,
     @Default({}) Map<String, bool> downloadingByZipNum,
-    String? error,
   }) = _DialogueControllerState;
 }
 
@@ -28,36 +28,32 @@ class DialogueController extends _$DialogueController {
   @override
   DialogueControllerState build() => const DialogueControllerState();
 
-  Future<Dialogue?> get(String id) async {
+  FutureEither<Dialogue> get(String id) async {
     state = state.copyWith(
       loadingByDialogueId: {...state.loadingByDialogueId}..update(id, (value) => true, ifAbsent: () => true),
     );
 
     final dialogueEither = await dialogueService.get(id);
 
-    final dialogue = dialogueEither.fold<Dialogue?>(
+    final result = dialogueEither.fold<Either<APIError, Dialogue>>(
       (error) {
-        final lang = ref.read(langControllerProvider);
-        final message = parseError(error.dioExceptionType, lang);
-        state = state.copyWith(error: 'Failed to get dialogue $id: $message');
-        return null;
+        return left(error);
       },
       (dialogueDTO) {
         final dialogue = Dialogue.fromDTO(dialogueDTO, id);
         state = state.copyWith(
           dialogues: {...state.dialogues}..update(id, (value) => dialogue, ifAbsent: () => dialogue),
-          error: null,
         );
-        return dialogue;
+        return right(dialogue);
       },
     );
 
     state = state.copyWith(loadingByDialogueId: {...state.loadingByDialogueId}..update(id, (value) => false));
 
-    return dialogue;
+    return result;
   }
 
-  Future<void> downloadData(int zipNum) async {
+  Future<APIError?> downloadData(int zipNum) async {
     state = state.copyWith(
       downloadingByZipNum: {...state.downloadingByZipNum}
         ..update(zipNum.toString(), (value) => true, ifAbsent: () => true),
@@ -65,15 +61,15 @@ class DialogueController extends _$DialogueController {
 
     final result = await dialogueService.downloadDialogueZip(zipNum);
 
-    result.fold((error) {
-      final lang = ref.read(langControllerProvider);
-      final message = parseError(error.dioExceptionType, lang);
-      state = state.copyWith(error: 'Failed to download dialogue data: $message');
+    final error = result.fold((error) {
+      return error;
     }, (_) => null);
 
     state = state.copyWith(
       downloadingByZipNum: {...state.downloadingByZipNum}..update(zipNum.toString(), (value) => false),
     );
+
+    return error;
   }
 
   bool isDialogueDownloaded(String id) {
@@ -82,13 +78,5 @@ class DialogueController extends _$DialogueController {
 
   Dialogue? getDialogueById(String id) {
     return state.dialogues[id];
-  }
-
-  void setError(String? error) {
-    state = state.copyWith(error: error);
-  }
-
-  void clearError() {
-    state = state.copyWith(error: null);
   }
 }

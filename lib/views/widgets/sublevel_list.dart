@@ -171,7 +171,15 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
 
         // Fetch the previous level
         final previousLevelId = orderedIds[firstLoadedIndex - 1];
-        await levelController.getLevel(previousLevelId);
+        final result = await levelController.getLevel(previousLevelId);
+        result.fold(
+          (error) {
+            showSnackBar(context, message: error.message, type: SnackBarType.error);
+          },
+          (_) {
+            // Success - no action needed
+          },
+        );
 
         // Update the buffer after fetching
         _updateBuffer();
@@ -820,7 +828,15 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
                 final levelState = ref.read(levelControllerProvider);
                 final isKnown = levelState.loadingById.containsKey(newLevelId);
                 if (!isKnown) {
-                  await ref.read(levelControllerProvider.notifier).getLevel(newLevelId);
+                  final result = await ref.read(levelControllerProvider.notifier).getLevel(newLevelId);
+                  result.fold(
+                    (error) {
+                      showSnackBar(context, message: error.message, type: SnackBarType.error);
+                    },
+                    (_) {
+                      // Success - no action needed
+                    },
+                  );
                 }
               }
             }
@@ -895,7 +911,15 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
                       final levelController = ref.read(levelControllerProvider.notifier);
                       final currentOrderedIds = ref.read(levelControllerProvider).orderedIds?.length ?? 0;
 
-                      await levelController.getOrderedIds();
+                      final orderedIdsResult = await levelController.getOrderedIds();
+                      orderedIdsResult.fold(
+                        (error) {
+                          showSnackBar(context, message: error.message, type: SnackBarType.error);
+                        },
+                        (_) {
+                          // Success - no action needed
+                        },
+                      );
                       await levelController.fetchLevels();
 
                       final newOrderedIds = ref.read(levelControllerProvider).orderedIds?.length ?? 0;
@@ -950,26 +974,7 @@ class _SublevelsListState extends ConsumerState<SublevelsList> {
                 );
               }
 
-              final error = ref.watch(sublevelControllerProvider).error;
-
-              if (error == null) {
-                return const Loader();
-              }
-
-              return ErrorPage(
-                onButtonClick: () {
-                  final mapped = _mapBufferIndexToListIndex(index);
-                  if (mapped != null) {
-                    widget.onSublevelChange?.call(mapped, _pageController);
-                  }
-                },
-                text: error,
-                buttonText: choose(
-                  hindi: 'पुनः प्रयास करें',
-                  hinglish: 'Retry',
-                  lang: ref.read(langControllerProvider),
-                ),
-              );
+              return const Loader();
             }
 
             if (sublevel == null) {

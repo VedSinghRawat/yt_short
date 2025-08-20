@@ -12,6 +12,7 @@ import 'package:myapp/models/user/user.dart';
 import 'package:myapp/controllers/ui/ui_controller.dart';
 import 'package:myapp/views/widgets/lang_text.dart';
 import 'package:myapp/services/responsiveness/responsiveness_service.dart';
+import 'package:myapp/views/widgets/show_confirmation_dialog.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -53,7 +54,13 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                   color: theme.colorScheme.error,
                   onPressed: () async {
-                    await authController.signOut(context);
+                    final error = await authController.signOut();
+                    if (error != null) {
+                      if (context.mounted) {
+                        showSnackBar(context, message: error.message, type: SnackBarType.error);
+                      }
+                      return;
+                    }
                     if (context.mounted) {
                       context.go(Routes.signIn);
                     }
@@ -151,7 +158,15 @@ class ProfileScreen extends ConsumerWidget {
                                         : (PrefLang? newValue) async {
                                           if (newValue == null || newValue == user.prefLang) return;
                                           try {
-                                            await userController.updatePrefLang(newValue);
+                                            final result = await userController.updatePrefLang(newValue);
+                                            result.fold(
+                                              (error) {
+                                                showSnackBar(context, message: error.message, type: SnackBarType.error);
+                                              },
+                                              (_) {
+                                                // Success - no action needed
+                                              },
+                                            );
                                           } catch (e) {
                                             if (context.mounted) {
                                               showSnackBar(
@@ -190,13 +205,30 @@ class ProfileScreen extends ConsumerWidget {
                                       ? null
                                       : () async {
                                         final scaffoldMessenger = ScaffoldMessenger.of(context);
-                                        final success = await userController.resetProfile(context);
-                                        if (context.mounted && success) {
-                                          scaffoldMessenger.showSnackBar(
-                                            const SnackBar(
-                                              content: LangText.bodyText(text: 'Profile reset successfully'),
-                                            ),
-                                          );
+
+                                        // Show confirmation dialog first
+                                        final confirmed = await showConfirmationDialog(
+                                          context,
+                                          question: 'Are you sure you want to reset your profile?',
+                                        );
+
+                                        if (!confirmed) return; // User cancelled
+
+                                        final error = await userController.resetProfile();
+                                        if (error == null) {
+                                          // Success
+                                          if (context.mounted) {
+                                            scaffoldMessenger.showSnackBar(
+                                              const SnackBar(
+                                                content: LangText.bodyText(text: 'Profile reset successfully'),
+                                              ),
+                                            );
+                                          }
+                                        } else {
+                                          // Error occurred
+                                          if (context.mounted) {
+                                            showSnackBar(context, message: error.message, type: SnackBarType.error);
+                                          }
                                         }
                                       },
                             ),

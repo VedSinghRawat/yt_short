@@ -1,12 +1,11 @@
 import 'dart:developer' as developer;
-import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:myapp/controllers/activityLog/activity_log.controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:myapp/core/shared_pref.dart';
+import 'package:myapp/core/error/api_error.dart';
 import 'dart:async';
 import '../../services/auth/auth_service.dart';
-import '../../core/utils.dart';
 import '../user/user_controller.dart';
 
 part 'auth_controller.freezed.dart';
@@ -14,21 +13,18 @@ part 'auth_controller.g.dart';
 
 @freezed
 class AuthControllerState with _$AuthControllerState {
-  const factory AuthControllerState({@Default(false) bool loading, @Default(null) String? error}) =
-      _AuthControllerState;
+  const factory AuthControllerState({@Default(false) bool loading}) = _AuthControllerState;
 }
 
 @Riverpod(keepAlive: true)
 class AuthController extends _$AuthController {
-  bool _isProcessing = false;
   late final authService = ref.read(authServiceProvider);
 
   @override
   AuthControllerState build() => const AuthControllerState(loading: false);
 
   Future<bool> signInWithGoogle() async {
-    if (_isProcessing) return false;
-    _isProcessing = true;
+    if (state.loading) return false;
     state = state.copyWith(loading: true);
 
     final userController = ref.read(userControllerProvider.notifier);
@@ -39,7 +35,7 @@ class AuthController extends _$AuthController {
 
     await signInResult.fold(
       (error) {
-        state = state.copyWith(error: error.message);
+        // Error is handled by the calling code
       },
       (userDTO) async {
         try {
@@ -64,42 +60,35 @@ class AuthController extends _$AuthController {
         } catch (e, stackTrace) {
           developer.log('Error in AuthController.signInWithGoogle', error: e.toString(), stackTrace: stackTrace);
           await userController.removeCurrentUser();
-          state = state.copyWith(error: e.toString());
         }
       },
     );
 
-    _isProcessing = false;
     state = state.copyWith(loading: false);
     return needsLanguagePrompt;
   }
 
-  Future<void> syncCyId() async {
-    state = state.copyWith(error: null, loading: true);
+  Future<APIError?> syncCyId() async {
+    state = state.copyWith(loading: true);
 
     final user = ref.read(userControllerProvider.notifier).getUser();
     if (user == null) {
       state = state.copyWith(loading: false);
-      return;
+      return null;
     }
 
     final syncResult = await authService.syncCyId();
 
-    syncResult.fold(
-      (error) {
-        state = state.copyWith(error: error.message);
-      },
-      (_) {
-        state = state.copyWith(error: null);
-      },
-    );
+    final error = syncResult.fold((error) {
+      return error;
+    }, (_) => null);
 
     state = state.copyWith(loading: false);
+    return error;
   }
 
-  Future<void> signOut(BuildContext context) async {
-    if (_isProcessing) return;
-    _isProcessing = true;
+  Future<APIError?> signOut() async {
+    if (state.loading) return APIError(message: 'Already processing', trace: StackTrace.current);
     state = state.copyWith(loading: true);
 
     final userController = ref.read(userControllerProvider.notifier);
@@ -112,30 +101,33 @@ class AuthController extends _$AuthController {
 
       if (activityLogs != null) {
         try {
-          await activityLogController.syncActivityLogs(activityLogs);
+          final error = await activityLogController.syncActivityLogs(activityLogs);
+          if (error != null) {
+            return error;
+          }
           await SharedPref.removeValue(PrefKey.activityLogs);
         } catch (e, stackTrace) {
           developer.log('Error in AuthController.signOut', error: e.toString(), stackTrace: stackTrace);
+          return APIError(message: e.toString(), trace: stackTrace);
         }
       }
 
       final signOutResult = await authService.signOut();
 
-      await signOutResult.fold(
-        (error) {
-          if (context.mounted) {
-            showSnackBar(context, message: error.message, type: SnackBarType.error);
-          }
-        },
-        (_) async {
-          await userController.removeCurrentUser();
-        },
-      );
+      final error = signOutResult.fold((error) {
+        return error;
+      }, (_) => null);
 
+      if (error != null) {
+        state = state.copyWith(loading: false);
+        return error;
+      }
+
+      await userController.removeCurrentUser();
       await Future.delayed(Duration.zero); // Allow UI to update
     }
 
-    _isProcessing = false;
     state = state.copyWith(loading: false);
+    return null; // Success
   }
 }

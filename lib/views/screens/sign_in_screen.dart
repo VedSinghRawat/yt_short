@@ -80,7 +80,15 @@ class SignInScreen extends ConsumerWidget {
     );
 
     final finalLang = chosenLang ?? PrefLang.hinglish;
-    await ref.read(userControllerProvider.notifier).updatePrefLang(finalLang);
+    final result = await ref.read(userControllerProvider.notifier).updatePrefLang(finalLang);
+    result.fold(
+      (error) {
+        showSnackBar(context, message: error.message, type: SnackBarType.error);
+      },
+      (_) {
+        // Success - no action needed
+      },
+    );
   }
 
   @override

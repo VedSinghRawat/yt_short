@@ -14,6 +14,7 @@ import 'package:myapp/controllers/ui/ui_controller.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'dart:developer' as developer;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:myapp/core/error/api_error.dart';
 
 part 'initialize_service.g.dart';
 
@@ -39,6 +40,7 @@ class InitializeService {
       await SharedPref.init(); // first init shared pref
 
       await Future.wait([FileService.init(), levelController.getOrderedIds()]);
+
       await initialApiCall(); // depends on info service & levelController (orderedIds)
       await Future.wait([storeCyId(), handleDeepLinking()]); // depends on user
 
@@ -58,7 +60,10 @@ class InitializeService {
       final localIsNewer = localLastModified > apiLastModified && currProgress?.levelId != null;
 
       if (localIsNewer) {
-        await userController.sync(currProgress!.levelId!, currProgress.subLevel!);
+        final error = await userController.sync(currProgress!.levelId!, currProgress.subLevel!);
+        if (error != null) {
+          developer.log('Error syncing user progress: ${error.message}', error: error.trace);
+        }
       } else {
         final progress = Progress(
           level: apiUser?.level,
@@ -116,7 +121,7 @@ class InitializeService {
     });
   }
 
-  Future<bool> initialApiCall() async {
+  Future<APIError?> initialApiCall() async {
     try {
       final version = await PackageInfo.fromPlatform();
 
@@ -129,13 +134,13 @@ class InitializeService {
 
         // Store last logged in email
         await userController.updateCurrentUser(u);
-        return true;
+        return null; // Success
       }
 
-      return false;
+      return APIError(message: 'No user data received', trace: StackTrace.current);
     } catch (e, stackTrace) {
       developer.log('Error during initialize', error: e.toString(), stackTrace: stackTrace);
-      return false;
+      return APIError(message: e.toString(), trace: stackTrace);
     }
   }
 }

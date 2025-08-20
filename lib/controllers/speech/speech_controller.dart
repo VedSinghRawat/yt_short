@@ -23,7 +23,7 @@ class SpeechState with _$SpeechState {
   const factory SpeechState({
     @Default(false) bool isListening,
     @Default(false) bool isAvailable,
-    @Default(['I', 'am', 'ved']) List<String> recognizedWords,
+    @Default([]) List<String> recognizedWords,
     @Default([false, false, false]) List<bool?> wordMarking,
     @Default(false) bool isPlayingAudio,
     @Default(0) int offset,

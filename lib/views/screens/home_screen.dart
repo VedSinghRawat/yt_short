@@ -109,7 +109,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     if (userEmail != null) {
       final currSubLevel = sublevels[index];
-      isSyncSucceed = await ref.read(userControllerProvider.notifier).sync(currSubLevel.levelId, subLevel);
+      final error = await ref.read(userControllerProvider.notifier).sync(currSubLevel.levelId, subLevel);
+      isSyncSucceed = error == null; // null means success, APIError means failure
     }
 
     final previousSubLevel = sublevels[index - 1];

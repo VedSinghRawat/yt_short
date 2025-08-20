@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -16,6 +17,8 @@ class DeepLinkingScreen extends ConsumerStatefulWidget {
 }
 
 class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
+  String? _errorMessage;
+
   @override
   void initState() {
     super.initState();
@@ -23,8 +26,14 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
   }
 
   Future<void> _syncCyId() async {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(authControllerProvider.notifier).syncCyId();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final error = await ref.read(authControllerProvider.notifier).syncCyId();
+      if (error != null) {
+        developer.log('Error syncing cyId: ${error.message}', error: error.trace);
+        setState(() {
+          _errorMessage = error.message;
+        });
+      }
     });
   }
 
@@ -49,7 +58,7 @@ class _DeepLinkingScreenState extends ConsumerState<DeepLinkingScreen> {
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
           ),
-          child: authState.error != null ? _buildErrorUI(authState.error!) : _buildSuccessUI(),
+          child: _errorMessage != null ? _buildErrorUI(_errorMessage!) : _buildSuccessUI(),
         ),
       ),
     );
