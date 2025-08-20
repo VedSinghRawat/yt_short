@@ -1,4 +1,3 @@
-import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
@@ -47,7 +46,6 @@ class SubLevelImage extends ConsumerWidget {
                 return const Center(child: CircularProgressIndicator(color: Colors.white));
               },
               errorBuilder: (context, error, stackTrace) {
-                developer.log('error is $error, $urls');
                 return const Center(child: Icon(Icons.image, size: 40, color: Colors.grey));
               },
             );

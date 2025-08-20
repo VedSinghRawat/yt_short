@@ -122,7 +122,6 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
     }
 
     if (value.hasError && error == null) {
-      developer.log('error in video player ${value.errorDescription}');
       if (mounted) {
         ref.read(sublevelControllerProvider.notifier).setHasFinishedSublevel(true);
 

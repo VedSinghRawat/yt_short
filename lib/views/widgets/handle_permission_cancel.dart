@@ -1,5 +1,3 @@
-import 'dart:developer' as developer;
-
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:myapp/views/widgets/lang_text.dart';
@@ -31,6 +29,6 @@ Future<void> handlePermissionDenied(BuildContext context, String errorMessage, {
           ),
     );
   } catch (e) {
-    developer.log('error in handlePermissionDenied $e');
+    // Handle error silently
   }
 }

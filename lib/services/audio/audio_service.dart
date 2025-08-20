@@ -29,7 +29,6 @@ class AudioService {
       // Check if file exists
       final audioFile = File(audioPath);
       if (!await audioFile.exists()) {
-        developer.log("Audio file not found: $audioPath");
         return;
       }
 
@@ -71,8 +70,6 @@ class AudioService {
 
       // Play the audio
       await controller.play();
-
-      developer.log('Audio playback started for: $audioPath');
     } catch (e, stack) {
       developer.log('Error in playAudio: $e', error: e, stackTrace: stack);
       _currentPlayingPath = null;

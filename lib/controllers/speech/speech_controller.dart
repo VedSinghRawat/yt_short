@@ -173,9 +173,7 @@ class Speech extends _$Speech {
 
   Future<void> playAudio(String levelId, String id) async {
     try {
-      developer.log('playAudio called with levelId: $levelId, id: $id');
       if (_audioService.isPlaying) {
-        developer.log('Audio is already playing. Stopping current audio.');
         await _audioService.stopAudio();
         state = state.copyWith(isPlayingAudio: false);
         return;
@@ -192,8 +190,6 @@ class Speech extends _$Speech {
           state = state.copyWith(isPlayingAudio: false);
         },
       );
-
-      developer.log('Audio playback started.');
     } catch (e, stack) {
       developer.log('Error in playAudio: $e', error: e, stackTrace: stack);
       // Reset state on error
