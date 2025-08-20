@@ -218,7 +218,10 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
   }
 
   Future<void> _handleVisibility(bool isVisible) async {
-    if (_controller == null) return;
+    // If becoming visible but controller failed or isn't ready, try re-initializing
+    if (isVisible && (error != null || _controller == null || !(_controller!.value.isInitialized))) {
+      await _initializeVideoPlayerController();
+    }
 
     if (!_controller!.value.isInitialized) return;
 
