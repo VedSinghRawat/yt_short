@@ -55,15 +55,11 @@ class _HomeAppBarState extends ConsumerState<HomeAppBar> {
               final isSuccess = await initializeService.initialApiCall();
 
               if (syncFailed) {
-                await ref
-                    .read(userControllerProvider.notifier)
-                    .sync(currentUser?.levelId ?? '', currentUser?.subLevel ?? 0);
-              }
+                final progress = ref.read(uIControllerProvider).currentProgress;
 
-              final progress = ref.read(uIControllerProvider).currentProgress;
-
-              if (progress != null && progress.levelId != null && progress.subLevel != null) {
-                await ref.read(userControllerProvider.notifier).sync(progress.levelId!, progress.subLevel!);
+                if (progress != null && progress.levelId != null && progress.subLevel != null) {
+                  await ref.read(userControllerProvider.notifier).sync(progress.levelId!, progress.subLevel!);
+                }
               }
 
               setState(() {
