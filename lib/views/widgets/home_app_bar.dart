@@ -39,6 +39,8 @@ class _HomeAppBarState extends ConsumerState<HomeAppBar> {
     final responsiveness = ResponsivenessService(context);
     final titleFontSize = responsiveness.getResponsiveValues(mobile: 18, tablet: 22, largeTablet: 28);
 
+    final currentLang = ref.watch(langControllerProvider);
+
     return AppBar(
       title: LangText.heading(hindi: titleText, hinglish: titleText, style: TextStyle(fontSize: titleFontSize)),
       actions: [
@@ -53,31 +55,34 @@ class _HomeAppBarState extends ConsumerState<HomeAppBar> {
               final initializeService = await ref.read(initializeServiceProvider.future);
 
               final error = await initializeService.initialApiCall();
-              final isSuccess = error == null; // null means success, APIError means failure
 
-              if (syncFailed) {
+              if (error != null && context.mounted) {
+                showSnackBar(
+                  context,
+                  message: choose(
+                    hindi: 'ऐप सही से स्टार्ट नहीं हो पाया। कृपया कुछ समय के बाद ट्राई करें।',
+                    hinglish:
+                        'App sahi se start nhi ho paya. Kripya apna internet connection check karein aur kuch time baad try karien.',
+                    lang: currentLang,
+                  ),
+                  type: SnackBarType.error,
+                );
+              } else if (syncFailed) {
                 final progress = ref.read(uIControllerProvider).currentProgress;
 
                 if (progress != null && progress.levelId != null && progress.subLevel != null) {
-                  await ref.read(userControllerProvider.notifier).sync(progress.levelId!, progress.subLevel!);
+                  final error = await ref
+                      .read(userControllerProvider.notifier)
+                      .sync(progress.levelId!, progress.subLevel!);
+                  if (error != null && context.mounted) {
+                    showSnackBar(context, message: error.message, type: SnackBarType.error);
+                  }
                 }
               }
 
               setState(() {
                 _isLoading = false;
               });
-
-              if (!context.mounted) return;
-
-              showSnackBar(
-                context,
-                type: isSuccess ? SnackBarType.success : SnackBarType.error,
-                message: choose(
-                  hindi: isSuccess ? 'डेटा सफलतापूर्वक अपडेट हो गया' : 'डेटा अपडेट नहीं हो सका।',
-                  hinglish: isSuccess ? 'Data update ho gaya' : 'Data update nahin ho saka',
-                  lang: ref.read(langControllerProvider),
-                ),
-              );
             },
           ),
         IconButton(

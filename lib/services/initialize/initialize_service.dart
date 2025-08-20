@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'package:android_play_install_referrer/android_play_install_referrer.dart';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/apis/initialize/initialize_api.dart';
+import 'package:myapp/constants.dart';
 import 'package:myapp/core/router/router.dart';
 import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/core/shared_pref.dart';
@@ -87,13 +89,10 @@ class InitializeService {
   Future<void> storeCyId() async {
     if (SharedPref.get(PrefKey.isFirstLaunch) == false) return;
 
-    // TODO: Re-implement when android_play_install_referrer plugin is fixed
-    // For now, skip referrer tracking to avoid build errors
-
-    // final referrer = await AndroidPlayInstallReferrer.installReferrer;
-    // final cyId = referrer.installReferrer;
-    // if (cyId == null || cyId == AppConstants.kDefaultReferrer) return;
-    // await SharedPref.store(PrefKey.cyId, cyId);
+    final referrer = await AndroidPlayInstallReferrer.installReferrer;
+    final cyId = referrer.installReferrer;
+    if (cyId == null || cyId == AppConstants.kDefaultReferrer) return;
+    await SharedPref.store(PrefKey.cyId, cyId);
   }
 
   Future<void> handleDeepLinking() async {

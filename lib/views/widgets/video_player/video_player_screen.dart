@@ -538,6 +538,8 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
                               }
                             },
                           )
+                        else if (error != null)
+                          const SizedBox.shrink()
                         else
                           const VideoProgressBar(durationMs: 1, currentPositionMs: 0, isPlaying: false),
                       ],
@@ -611,6 +613,8 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
                             }
                           },
                         )
+                      else if (error != null)
+                        const SizedBox.shrink()
                       else
                         const VideoProgressBar(durationMs: 1, currentPositionMs: 0, isPlaying: false),
                     ],
@@ -682,7 +686,20 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
         alignment: Alignment.center,
         children: [
           if (error != null)
-            Center(child: Padding(padding: const EdgeInsets.all(8.0), child: ErrorPage(text: error!)))
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: ErrorPage(
+                  text: errorText,
+                  onButtonClick: () => _initializeVideoPlayerController(),
+                  buttonText: choose(
+                    hindi: 'वीडियो लोड करें',
+                    hinglish: 'Video load karein',
+                    lang: ref.read(langControllerProvider),
+                  ),
+                ),
+              ),
+            )
           else if (isPlayerReady && _controller != null)
             GestureDetector(
               onTap: _changePlayingState,

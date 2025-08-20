@@ -7,6 +7,7 @@ import 'package:myapp/core/error/api_error.dart';
 import 'dart:async';
 import '../../services/auth/auth_service.dart';
 import '../user/user_controller.dart';
+import 'package:fpdart/fpdart.dart';
 
 part 'auth_controller.freezed.dart';
 part 'auth_controller.g.dart';
@@ -23,23 +24,22 @@ class AuthController extends _$AuthController {
   @override
   AuthControllerState build() => const AuthControllerState(loading: false);
 
-  Future<bool> signInWithGoogle() async {
-    if (state.loading) return false;
+  Future<Either<APIError, bool>> signInWithGoogle() async {
+    if (state.loading) return left(APIError(message: 'Already processing', trace: StackTrace.current));
     state = state.copyWith(loading: true);
 
     final userController = ref.read(userControllerProvider.notifier);
 
     final signInResult = await authService.signInWithGoogle();
 
-    bool needsLanguagePrompt = false;
-
-    await signInResult.fold(
+    return signInResult.fold(
       (error) {
-        // Error is handled by the calling code
+        state = state.copyWith(loading: false);
+        return left(error);
       },
       (userDTO) async {
         try {
-          needsLanguagePrompt = userDTO.prefLang == null;
+          final needsLanguagePrompt = userDTO.prefLang == null;
 
           // Update user model *before* potentially showing dialog
           final user = userController.userFromDTO(userDTO);
@@ -57,15 +57,17 @@ class AuthController extends _$AuthController {
           );
 
           await userController.updateCurrentUser(user);
+
+          state = state.copyWith(loading: false);
+          return right(needsLanguagePrompt);
         } catch (e, stackTrace) {
           developer.log('Error in AuthController.signInWithGoogle', error: e.toString(), stackTrace: stackTrace);
           await userController.removeCurrentUser();
+          state = state.copyWith(loading: false);
+          return left(APIError(message: e.toString(), trace: stackTrace));
         }
       },
     );
-
-    state = state.copyWith(loading: false);
-    return needsLanguagePrompt;
   }
 
   Future<APIError?> syncCyId() async {
