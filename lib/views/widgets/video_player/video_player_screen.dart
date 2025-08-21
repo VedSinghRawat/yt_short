@@ -260,7 +260,6 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
     if (!mounted) return;
 
     final isNowVisible = info.visibleFraction > 0.8;
-
     if (_isVisible == isNowVisible) return;
 
     setState(() {
