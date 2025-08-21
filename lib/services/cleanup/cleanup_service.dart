@@ -1,5 +1,6 @@
 import 'dart:developer' as developer show log;
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants.dart';
@@ -32,82 +33,100 @@ class StorageCleanupService {
 
   /// Removes least-important cached levels while protecting nearby levels
   Future<void> cleanLocalFiles(String currentLevelId) async {
-    final localLevelIds = await FileService.listNames(
-      Directory('${FileService.documentsDirectory.path}/levels'),
-      type: EntitiesType.folders,
-    );
-    final orderedIds = levelController.orderedIds;
-    if (orderedIds == null) return;
+    try {
+      final localLevelIds = await FileService.listNames(
+        Directory('${FileService.documentsDirectory.path}/levels'),
+        type: EntitiesType.folders,
+      );
+      final orderedIds = levelController.orderedIds;
+      if (orderedIds == null) return;
 
-    final Map<String, int> idToIndexMap = {for (int i = 0; i < orderedIds.length; i++) orderedIds[i]: i};
+      Directory levelsDir = Directory('${FileService.documentsDirectory.path}/levels');
 
-    final int currentIndex = idToIndexMap[currentLevelId] ?? -1;
+      if (!await levelsDir.exists()) return;
 
-    // renaming the localLevelIds to deletableIds before sorting for semantics
-    final deletableLevelIds = localLevelIds;
-    // sorting the deletableIds based on the distance from the current level and moving the
-    // protected level to the end
-    deletableLevelIds.sort((idA, idB) {
-      final int indexA = idToIndexMap[idA] ?? -1;
-      final int indexB = idToIndexMap[idB] ?? -1;
+      int totalSize = await compute(FileService.getDirectorySize, levelsDir.path);
 
-      final int distanceA = indexA - currentIndex;
-      final int distanceB = indexB - currentIndex;
+      if (totalSize < AppConstants.kMaxStorageSizeBytes) return;
 
-      // Keep protected levels at the end
-      if (_isProtectedLevel(distanceA)) return 1;
-      if (_isProtectedLevel(distanceB)) return -1;
+      final Map<String, int> idToIndexMap = {for (int i = 0; i < orderedIds.length; i++) orderedIds[i]: i};
 
-      return distanceA.abs().compareTo(distanceB.abs());
-    });
+      final int currentIndex = idToIndexMap[currentLevelId] ?? -1;
 
-    final sublevelIdsByDialogueFilename = <String, Set<String>>{};
-    final levelById = <String, LevelDTO>{};
+      // renaming the localLevelIds to deletableIds before sorting for semantics
+      final deletableLevelIds = localLevelIds;
+      // sorting the deletableIds based on the distance from the current level and moving the
+      // protected level to the end
+      deletableLevelIds.sort((idA, idB) {
+        final int indexA = idToIndexMap[idA] ?? -1;
+        final int indexB = idToIndexMap[idB] ?? -1;
 
-    await Future.wait(
-      deletableLevelIds.map((levelId) async {
-        final level = await levelService.getLocalLevel(levelId);
-        if (level == null) return null;
+        final int distanceA = indexA - currentIndex;
+        final int distanceB = indexB - currentIndex;
 
-        levelById[levelId] = level;
+        // Keep protected levels at the end
+        if (_isProtectedLevel(distanceA)) return 1;
+        if (_isProtectedLevel(distanceB)) return -1;
 
-        for (var sub in level.sub_levels) {
+        return distanceA.abs().compareTo(distanceB.abs());
+      });
+
+      if (deletableLevelIds.isEmpty || deletableLevelIds.length - AppConstants.kProtectedIdsLength <= 0) return;
+
+      final levelById = <String, LevelDTO>{};
+
+      await Future.wait(
+        deletableLevelIds.map((levelId) async {
+          final level = await levelService.getLocalLevel(levelId);
+          if (level == null) return null;
+
+          levelById[levelId] = level;
+        }),
+      );
+
+      // Build dialogueId -> referencing sublevelIds map from all local levels
+      final dialogueIdToSubId = <String, Set<String>>{};
+      for (final level in levelById.values) {
+        for (final sub in level.sub_levels) {
           sub.whenOrNull(
             video: (v) {
-              for (var dialogue in v.dialogues) {
-                final filename = dialogue.id;
-
-                if (sublevelIdsByDialogueFilename[filename] == null) {
-                  sublevelIdsByDialogueFilename[filename] = {};
-                }
-
-                sublevelIdsByDialogueFilename[filename]!.add(sub.id);
+              for (final dialogue in v.dialogues) {
+                dialogueIdToSubId.putIfAbsent(dialogue.id, () => <String>{}).add(sub.id);
               }
             },
           );
         }
-      }),
-    );
-
-    try {
-      Directory levelsDir = Directory('${FileService.documentsDirectory.path}/levels');
-
-      // Ensure directory exists and input is valid
-      if (!await levelsDir.exists() ||
-          deletableLevelIds.isEmpty ||
-          deletableLevelIds.length - AppConstants.kProtectedIdsLength <= 0) {
-        return;
       }
-
-      int totalSize = await compute(FileService.getDirectorySize, levelsDir);
-
-      if (totalSize < AppConstants.kMaxStorageSizeBytes) return;
 
       int i = 0;
 
       final toBeDeletedPaths = <String, Set<String>>{};
       final dirPathsToDelete = <String>{};
       final etagsToClean = <String>{};
+      final deletedVideosIds = <String>{};
+      final toBeDeletedDialoguePaths = <String>{};
+      final dialogueIdToZipNum = <String, int>{};
+      final zipNumToDialogueIds = <int, Set<String>>{};
+
+      // get zip to check that all dialogues of same zip can be deleted or not
+      Future<int?> getZipNumForDialogue(String dialogueId) async {
+        if (dialogueIdToZipNum.containsKey(dialogueId)) return dialogueIdToZipNum[dialogueId];
+
+        final dataFile = FileService.getFile(PathService.dialogueAsset(dialogueId, AssetType.data));
+        if (!await dataFile.exists()) return null;
+        try {
+          final content = await dataFile.readAsString();
+          final jsonMap = jsonDecode(content) as Map<String, dynamic>;
+          final zipNum = (jsonMap['zipNum'] as num?)?.toInt();
+          if (zipNum != null) {
+            dialogueIdToZipNum[dialogueId] = zipNum;
+            zipNumToDialogueIds.putIfAbsent(zipNum, () => <String>{}).add(dialogueId);
+          }
+          return zipNum;
+        } catch (_) {
+          return null;
+        }
+      }
 
       // Start deleting until space is freed, also breaking the loop if the
       //protected levels are reached
@@ -118,92 +137,101 @@ class StorageCleanupService {
         final level = levelById[levelId];
         if (level == null) continue;
 
-        toBeDeletedPaths[levelId] = {};
+        toBeDeletedPaths[levelId] = <String>{};
 
-        // Delete videos one by one and update size
+        bool finishedAllSublevels = true;
+
         for (var (index, sub) in level.sub_levels.indexed) {
+          String? endpoint;
+
+          final assetType =
+              sub.isVideo
+                  ? AssetType.video
+                  : (sub.isSpeechExercise || sub.isArrangeExercise)
+                  ? AssetType.audio
+                  : (sub.isArrangeExercise || sub.isFillExercise)
+                  ? AssetType.image
+                  : null;
+
+          endpoint = assetType != null ? PathService.sublevelAsset(levelId, sub.id, assetType) : null;
+
           if (sub.isVideo) {
-            final videoPathEndpoint = PathService.sublevelAsset(levelId, sub.id, AssetType.video);
-            final videoFile = FileService.getFile(videoPathEndpoint);
-            if (!await videoFile.exists()) continue;
-
-            final videoSize = await videoFile.length();
-
-            toBeDeletedPaths[levelId]!.add(videoFile.path);
-            etagsToClean.add(
-              PathService.sublevelAsset(
-                levelId,
-                videoPathEndpoint.split('/').last.replaceAll('.mp4', ''),
-                AssetType.video,
-              ),
-            );
-
-            totalSize -= videoSize;
-          }
-          // Handle audio files for speech exercises and drag-drop exercises
-          if (sub.isSpeechExercise || sub.isArrangeExercise) {
-            final audioPathEndpoint = PathService.sublevelAsset(levelId, sub.id, AssetType.audio);
-            final audioFile = FileService.getFile(audioPathEndpoint);
-            if (await audioFile.exists()) {
-              final audioSize = await audioFile.length();
-              toBeDeletedPaths[levelId]!.add(audioFile.path);
-
-              etagsToClean.add(
-                PathService.sublevelAsset(
-                  levelId,
-                  audioPathEndpoint.split('/').last.replaceAll('.mp3', ''),
-                  AssetType.audio,
-                ),
-              );
-
-              totalSize -= audioSize;
-            }
+            deletedVideosIds.add(sub.id);
           }
 
-          // Handle image files for drag-drop exercises and fill exercises
-          if (sub.isArrangeExercise || sub.isFillExercise) {
-            final imagePathEndpoint = PathService.sublevelAsset(levelId, sub.id, AssetType.image);
-            final imageFile = FileService.getFile(imagePathEndpoint);
+          if (endpoint != null) {
+            final file = FileService.getFile(endpoint);
 
-            if (await imageFile.exists()) {
-              final imageSize = await imageFile.length();
-              toBeDeletedPaths[levelId]!.add(imageFile.path);
+            if (!await file.exists()) continue;
 
-              etagsToClean.add(
-                PathService.sublevelAsset(
-                  levelId,
-                  imagePathEndpoint.split('/').last.replaceAll('.jpg', ''),
-                  AssetType.image,
-                ),
-              );
+            final size = await file.length();
 
-              totalSize -= imageSize;
-            }
-          }
-
-          // delete full folder if there are no videos left
-          if (index == level.sub_levels.length - 1) {
-            dirPathsToDelete.add(folderPath);
-
-            etagsToClean.add(PathService.levelJson(levelId));
-            toBeDeletedPaths[levelId] = {};
-            continue;
+            toBeDeletedPaths[levelId]!.add(file.path);
+            etagsToClean.add(endpoint);
+            totalSize -= size;
           }
 
           if (totalSize < AppConstants.kDeleteCacheThreshold) {
+            finishedAllSublevels = false;
             break;
           }
+
+          // If this is the last sublevel and threshold not met, delete entire folder for this level
+          if (index == level.sub_levels.length - 1) {
+            dirPathsToDelete.add(folderPath);
+            etagsToClean.add(PathService.levelJson(levelId));
+            toBeDeletedPaths[levelId] = <String>{};
+          }
+        }
+
+        // Stop processing more levels once we have freed enough space
+        if (!finishedAllSublevels && totalSize < AppConstants.kDeleteCacheThreshold) {
+          break;
         }
 
         i++;
       }
 
-      // Delete files, one compute call at a time
+      await Future.wait(dialogueIdToSubId.keys.map((id) async => await getZipNumForDialogue(id)));
+
+      // Determine which zipNums still have at least one dialogue referenced by a non-deleted sublevel
+      final zipNumHasRemainingUsage = <int, bool>{};
+      dialogueIdToSubId.forEach((dialogueId, subIds) {
+        final zipNum = dialogueIdToZipNum[dialogueId];
+        if (zipNum == null) return;
+        final hasRemaining = subIds.any((sid) => !deletedVideosIds.contains(sid));
+        if (hasRemaining) {
+          zipNumHasRemainingUsage[zipNum] = true;
+        }
+      });
+
+      final deletableZipNums = zipNumToDialogueIds.keys.where((z) => !(zipNumHasRemainingUsage[z] ?? false));
+
+      // Queue dialogue audio files and zip files for deletion
+      for (final zipNum in deletableZipNums) {
+        final dialogueIds = zipNumToDialogueIds[zipNum] ?? const <String>{};
+        for (final dialogueId in dialogueIds) {
+          final audioEndpoint = PathService.dialogueAsset(dialogueId, AssetType.audio);
+          final audioFile = FileService.getFile(audioEndpoint);
+
+          if (await audioFile.exists()) {
+            toBeDeletedDialoguePaths.add(audioFile.path);
+            etagsToClean.add(audioEndpoint);
+          }
+        }
+
+        final zipEndpoint = PathService.dialogueZip(zipNum);
+        etagsToClean.add(zipEndpoint);
+      }
+
       for (final paths in toBeDeletedPaths.values) {
         await compute(_deleteFiles, paths.toList());
       }
 
-      // Delete directories, one compute call at a time
+      if (toBeDeletedDialoguePaths.isNotEmpty) {
+        await compute(_deleteFiles, toBeDeletedDialoguePaths.toList());
+      }
+
       for (final dir in dirPathsToDelete) {
         await compute(_deleteFolderRecursively, dir);
       }

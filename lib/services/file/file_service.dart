@@ -42,10 +42,10 @@ class FileService {
     await file.writeAsBytes(data);
   }
 
-  static int getDirectorySize(Directory directory) {
+  static int getDirectorySize(String directoryPath) {
     int totalSize = 0;
     try {
-      List<FileSystemEntity> files = directory.listSync(recursive: true);
+      List<FileSystemEntity> files = Directory(directoryPath).listSync(recursive: true);
 
       for (var file in files) {
         if (file is File) {
