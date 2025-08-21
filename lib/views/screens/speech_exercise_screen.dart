@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/views/widgets/exercise_container.dart';
+import 'package:myapp/models/sublevel/sublevel.dart';
 import 'package:myapp/views/widgets/speech_exercise/exercise_sentence_card.dart';
 import 'package:myapp/models/speech_exercise/speech_exercise.dart';
 import 'package:myapp/controllers/speech/speech_controller.dart';
@@ -38,6 +39,11 @@ class _SpeechExerciseScreenState extends ConsumerState<SpeechExerciseScreen> {
   @override
   Widget build(BuildContext context) {
     return ExerciseContainer(
+      titleHindi: 'स्पीच एक्सरसाइज़',
+      titleHinglish: 'Speech Exercise',
+      descriptionHindi: 'नीचे दिया गया वाक्य सही उच्चारण के साथ बोलें।',
+      descriptionHinglish: 'Niche diya gaya vakya sahi ucharan ke saath bole.',
+      exerciseType: SubLevelType.speech,
       child: ConstrainedBox(
         constraints:
             MediaQuery.of(context).orientation == Orientation.landscape

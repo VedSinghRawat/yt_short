@@ -1,14 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:visibility_detector/visibility_detector.dart';
-import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/controllers/speech/speech_controller.dart';
 import 'package:myapp/views/widgets/speech_exercise/recognizer_button.dart';
 import 'package:myapp/views/widgets/lang_text.dart';
 import 'package:myapp/services/responsiveness/responsiveness_service.dart';
-import 'package:myapp/controllers/user/user_controller.dart';
-import 'package:myapp/controllers/ui/ui_controller.dart';
-import 'package:myapp/models/sublevel/sublevel.dart';
+// Removed unused imports related to header
 
 class SpeechExerciseCard extends ConsumerStatefulWidget {
   final String text;
@@ -115,8 +112,6 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
       onVisibilityChanged: _onVisibilityChanged,
       child: Column(
         children: [
-          const Header(),
-
           const SizedBox(height: 28),
 
           Expanded(
@@ -273,47 +268,4 @@ class _SpeechExerciseCardState extends ConsumerState<SpeechExerciseCard> {
   }
 }
 
-class Header extends StatelessWidget {
-  const Header({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Consumer(
-      builder: (context, ref, child) {
-        ref.watch(langControllerProvider); // Watch for language changes
-        final userEmail = ref.read(userControllerProvider.notifier).getUser()?.email;
-        final hasSeen = ref
-            .read(uIControllerProvider.notifier)
-            .getExerciseSeen(SubLevelType.speech, userEmail: userEmail);
-
-        return Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16.0),
-          decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(12)),
-          child: Column(
-            children: [
-              LangText.heading(
-                hindi: 'स्पीच एक्सरसाइज़',
-                hinglish: 'Speech Exercise',
-                style: TextStyle(color: theme.colorScheme.onPrimary),
-              ),
-              const SizedBox(height: 8),
-              if (!hasSeen)
-                LangText.body(
-                  hindi: 'नीचे दिया गया वाक्य सही उच्चारण के साथ बोलें।',
-                  hinglish: 'Niche diya gaya vakya sahi ucharan ke saath bole.',
-                  style: TextStyle(
-                    color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
-                    fontWeight: FontWeight.w500,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
+// Header moved to ExerciseContainer
