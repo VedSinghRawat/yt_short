@@ -72,6 +72,14 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
   }
 
   @override
+  void didUpdateWidget(VideoPlayerScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isCurrent == false && widget.isCurrent && error != null) {
+      _initializeVideoPlayerController();
+    }
+  }
+
+  @override
   Future<void> didChangeAppLifecycleState(AppLifecycleState state) async {
     super.didChangeAppLifecycleState(state);
 
@@ -218,12 +226,7 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
   }
 
   Future<void> _handleVisibility(bool isVisible) async {
-    // If becoming visible but controller failed or isn't ready, try re-initializing
-    if (isVisible && (error != null || _controller == null || !(_controller!.value.isInitialized))) {
-      await _initializeVideoPlayerController();
-    }
-
-    if (!_controller!.value.isInitialized) return;
+    if (_controller == null || !_controller!.value.isInitialized) return;
 
     if (isVisible) {
       _controller!.addListener(_listener);
@@ -316,6 +319,7 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
       if (!mounted) return;
 
       _controller!.addListener(_listener);
+
       await _controller!.initialize();
 
       if (mounted) {
@@ -692,7 +696,11 @@ class _VideoPlayerState extends ConsumerState<VideoPlayerScreen> with WidgetsBin
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: ErrorPage(
-                  text: errorText,
+                  text: choose(
+                    hindi: 'वीडियो चालू नहीं हो पाई, आप नीचे दी गई बटन से दोबारा कोशिश कर सकते हैं।',
+                    hinglish: 'Video start nahi ho payi, aap niche di button se dobara try karein.',
+                    lang: ref.read(langControllerProvider),
+                  ),
                   onButtonClick: () => _initializeVideoPlayerController(),
                   buttonText: choose(
                     hindi: 'वीडियो लोड करें',
