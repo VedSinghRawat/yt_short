@@ -1,5 +1,4 @@
 import 'dart:developer' as developer;
-import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/core/shared_pref.dart';
@@ -9,8 +8,9 @@ import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/models.dart';
 import 'package:myapp/models/user/user.dart';
 import 'package:myapp/services/user/user_service.dart';
-import 'package:myapp/views/widgets/show_confirmation_dialog.dart';
 import 'package:myapp/controllers/ui/ui_controller.dart';
+import 'package:myapp/core/error/api_error.dart';
+import 'package:fpdart/fpdart.dart';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -67,101 +67,87 @@ class UserController extends _$UserController {
     await SharedPref.removeValue(PrefKey.user);
   }
 
-  Future<bool> sync(String levelId, int subLevel) async {
+  Future<APIError?> sync(String levelId, int subLevel) async {
     final result = await userService.sync(levelId, subLevel);
 
     return result.fold(
       (error) {
         developer.log('Error syncing user progress: ${error.message}', error: error.trace);
         state = state.copyWith(syncFailed: true);
-        return false;
+        return error;
       },
       (userDTO) async {
         await updateCurrentUser(userFromDTO(userDTO));
         state = state.copyWith(syncFailed: false);
-        return true;
+        return null; // Success
       },
     );
   }
 
-  Future<void> updatePrefLang(PrefLang newLang) async {
-    if (state.currentUser == null) return;
+  FutureEither<void> updatePrefLang(PrefLang newLang) async {
+    if (state.currentUser == null) return left(APIError(message: 'No user found', trace: StackTrace.current));
 
     state = state.copyWith(loading: true);
 
     final result = await userService.updateProfile(prefLang: newLang);
 
-    await result.fold(
+    return result.fold(
       (error) {
         developer.log('Error updating user preference language: ${error.message}', error: error.trace);
         state = state.copyWith(loading: false);
+        return left(error);
       },
       (updatedUserDTO) async {
         await updateCurrentUser(userFromDTO(updatedUserDTO));
         state = state.copyWith(loading: false);
+        return right(null);
       },
     );
   }
 
-  Future<bool> resetProfile(BuildContext context) async {
+  Future<APIError?> resetProfile() async {
     try {
-      if (state.loading) return false;
+      if (state.loading) return APIError(message: 'Already processing', trace: StackTrace.current);
 
       state = state.copyWith(loading: true);
 
       final user = state.currentUser;
 
       if (user == null) {
-        return false;
-      }
-
-      final confirmed = await showConfirmationDialog(context, question: 'Are you sure you want to reset your profile?');
-
-      if (!confirmed) {
-        return false;
+        return APIError(message: 'No user found', trace: StackTrace.current);
       }
 
       final resetResult = await userService.resetProfile(user.email);
 
-      final newUser = resetResult.fold<User?>(
-        (error) {
+      final foldResult = await resetResult.fold<Future<APIError?>>(
+        (error) async {
           developer.log('Error resetting user profile: ${error.message}', error: error.trace);
-          if (context.mounted) {
-            showSnackBar(context, message: error.message, type: SnackBarType.error);
-          }
-          return null;
+          return error;
         },
-        (userDTO) {
-          return userFromDTO(userDTO);
+        (userDTO) async {
+          final newUser = userFromDTO(userDTO);
+          final progress = Progress(
+            level: newUser.level,
+            subLevel: newUser.subLevel,
+            levelId: newUser.levelId,
+            maxLevel: newUser.maxLevel,
+            maxSubLevel: newUser.maxSubLevel,
+            modified: DateTime.parse(newUser.modified).millisecondsSinceEpoch,
+          );
+
+          // Update progress through UI controller
+          final uiController = ref.read(uIControllerProvider.notifier);
+          await uiController.storeProgress(progress, userEmail: newUser.email);
+
+          await updateCurrentUser(newUser);
+
+          return null; // Success
         },
       );
 
-      if (newUser == null) {
-        return false;
-      }
-
-      final progress = Progress(
-        level: newUser.level,
-        subLevel: newUser.subLevel,
-        levelId: newUser.levelId,
-        maxLevel: newUser.maxLevel,
-        maxSubLevel: newUser.maxSubLevel,
-        modified: DateTime.parse(newUser.modified).millisecondsSinceEpoch,
-      );
-
-      // Update progress through UI controller
-      final uiController = ref.read(uIControllerProvider.notifier);
-      await uiController.storeProgress(progress, userEmail: newUser.email);
-
-      await updateCurrentUser(newUser);
-
-      return true;
+      return foldResult;
     } catch (e) {
-      if (!context.mounted) return false;
-
-      showSnackBar(context, message: e.toString(), type: SnackBarType.error);
-
-      return false;
+      return APIError(message: e.toString(), trace: StackTrace.current);
     } finally {
       state = state.copyWith(loading: false);
     }

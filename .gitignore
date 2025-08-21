@@ -82,3 +82,6 @@ android/app/.cxx/
 
 # VSCode related
 .vscode/
+
+# Keystore
+*keystore.*

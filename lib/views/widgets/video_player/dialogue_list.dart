@@ -1,13 +1,14 @@
 import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:myapp/controllers/dialogue/dialogue_controller.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/models/video/video.dart';
 import 'package:myapp/models/dialogues/dialogues.dart';
+import 'package:myapp/services/audio/audio_service.dart';
 import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/path/path_service.dart';
+import 'package:myapp/services/responsiveness/responsiveness_service.dart';
 import 'package:myapp/views/widgets/lang_text.dart';
 
 class DialogueList extends ConsumerStatefulWidget {
@@ -22,7 +23,7 @@ class DialogueList extends ConsumerStatefulWidget {
 class _DialogueListState extends ConsumerState<DialogueList> {
   late FixedExtentScrollController _scrollController;
   int _selectedDialogueIndex = 0;
-  final _audioPlayer = AudioPlayer();
+  final AudioService _audioService = AudioService();
   String _playingDialogueFilename = '';
 
   @override
@@ -43,7 +44,6 @@ class _DialogueListState extends ConsumerState<DialogueList> {
   @override
   void dispose() {
     _scrollController.dispose();
-    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -64,49 +64,33 @@ class _DialogueListState extends ConsumerState<DialogueList> {
 
   Future<void> _playDialogueAudio(String audioFilename) async {
     try {
-      await _audioPlayer.stop();
-
-      final localAudioFilePath = PathService.dialogueAsset(audioFilename, AssetType.audio);
-
-      // Check if file exists before attempting to play
-      final file = FileService.getFile(localAudioFilePath);
-      if (!await file.exists()) {
-        developer.log("Audio file not found: $localAudioFilePath");
-        if (mounted && _playingDialogueFilename == audioFilename) {
-          setState(() => _playingDialogueFilename = ''); // Reset if file not found
-        }
+      // If same audio is playing, stop it
+      if (_playingDialogueFilename == audioFilename && _audioService.isPlaying) {
+        await _audioService.stopAudio();
+        setState(() {
+          _playingDialogueFilename = '';
+        });
         return;
       }
 
-      await _audioPlayer.setFilePath(file.path);
-
       // Update state immediately to show green icon
-      if (mounted) {
-        setState(() {
-          _playingDialogueFilename = audioFilename;
-        });
-      }
+      setState(() {
+        _playingDialogueFilename = audioFilename;
+      });
 
-      // Play and wait for completion or error
-      await _audioPlayer
-          .play()
-          .then((_) {
-            // When playback completes normally
-            if (mounted && _playingDialogueFilename == audioFilename) {
-              setState(() {
-                _playingDialogueFilename = '';
-              });
-            }
-          })
-          .catchError((error) {
-            // Handle errors during playback
-            developer.log("Error during audio playback: $error");
-            if (mounted && _playingDialogueFilename == audioFilename) {
-              setState(() {
-                _playingDialogueFilename = '';
-              });
-            }
-          });
+      final localAudioFilePath = PathService.dialogueAsset(audioFilename, AssetType.audio);
+      final audioFile = FileService.getFile(localAudioFilePath);
+
+      await _audioService.playAudio(
+        audioPath: audioFile.path,
+        onFinished: () {
+          if (mounted && _playingDialogueFilename == audioFilename) {
+            setState(() {
+              _playingDialogueFilename = '';
+            });
+          }
+        },
+      );
     } catch (e) {
       developer.log("Error setting up or playing dialogue audio: $e");
       // Ensure state is reset even if setup fails
@@ -130,6 +114,9 @@ class _DialogueListState extends ConsumerState<DialogueList> {
 
     final dialogues =
         widget.dialogues.map((e) => dialogueMap[e.id]).where((dialogue) => dialogue != null).cast<Dialogue>().toList();
+
+    final responsiveness = ResponsivenessService(context);
+    final isTablet = responsiveness.screenType != Screen.mobile;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -157,9 +144,11 @@ class _DialogueListState extends ConsumerState<DialogueList> {
                       dialogues.map((dialogue) {
                         final bool isSelected = dialogue.id == widget.dialogues[_selectedDialogueIndex].id;
 
-                        final double textFontSize = isSelected ? 22 : 18;
+                        // Responsive font sizes for tablets
+                        final double baseFontSize = isTablet ? 28 : 22; // Increased for tablets
+                        final double textFontSize = isSelected ? baseFontSize : (isTablet ? 22 : 18);
                         final FontWeight textFontWeight = isSelected ? FontWeight.bold : FontWeight.w500;
-                        final double iconSize = isSelected ? 24 : 20;
+                        final double iconSize = isSelected ? (isTablet ? 28 : 24) : (isTablet ? 24 : 20);
                         final isPlaying = _playingDialogueFilename == dialogue.id;
                         final Color iconColor =
                             isPlaying
@@ -177,30 +166,32 @@ class _DialogueListState extends ConsumerState<DialogueList> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  LangText.bodyText(
-                                    text: dialogue.text,
-                                    style: TextStyle(
-                                      fontSize: textFontSize,
-                                      color: Colors.white,
-                                      fontWeight: textFontWeight,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 8),
-                                    child: LangText.body(
-                                      hindi: dialogue.hindiText,
-                                      hinglish: dialogue.hinglishText,
-                                      style: TextStyle(fontSize: textFontSize * 0.8, color: Colors.white70),
+                              Expanded(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    LangText.bodyText(
+                                      text: dialogue.text,
+                                      style: TextStyle(
+                                        fontSize: textFontSize,
+                                        color: Colors.white,
+                                        fontWeight: textFontWeight,
+                                      ),
                                       textAlign: TextAlign.center,
                                     ),
-                                  ),
-                                ],
+
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 8),
+                                      child: LangText.body(
+                                        hindi: dialogue.hindiText,
+                                        hinglish: dialogue.hinglishText,
+                                        style: TextStyle(fontSize: textFontSize * 0.8, color: Colors.white70),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
 
                               GestureDetector(

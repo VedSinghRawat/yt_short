@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:myapp/constants.dart';
 import 'package:myapp/core/error/api_error.dart';
 import 'package:myapp/models/user/user.dart';
@@ -14,47 +15,59 @@ void showSnackBar(
   SnackBarType type = SnackBarType.info,
   Duration duration = const Duration(seconds: 3),
 }) {
-  if (!context.mounted) return;
+  void show() {
+    if (!context.mounted) return;
 
-  final (backgroundColor, icon) = switch (type) {
-    SnackBarType.error => (Colors.red, Icons.error_outline),
-    SnackBarType.info => (Colors.blue, Icons.info_outline),
-    SnackBarType.success => (Colors.green, Icons.check_circle_outline),
-  };
+    final (backgroundColor, icon) = switch (type) {
+      SnackBarType.error => (Colors.red, Icons.error_outline),
+      SnackBarType.info => (Colors.blue, Icons.info_outline),
+      SnackBarType.success => (Colors.green, Icons.check_circle_outline),
+    };
 
-  final messenger = ScaffoldMessenger.of(context);
-  final deviceHeight = MediaQuery.of(context).size.height;
+    final messenger = ScaffoldMessenger.of(context);
+    final deviceHeight = MediaQuery.of(context).size.height;
 
-  messenger.clearSnackBars();
-  messenger.showSnackBar(
-    SnackBar(
-      content: IntrinsicHeight(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Icon(icon, color: Colors.white, size: 20),
-            const SizedBox(width: 8),
-            Expanded(
-              child: LangText.bodyText(
-                text: message,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.white),
+    messenger.clearSnackBars();
+    messenger.showSnackBar(
+      SnackBar(
+        content: IntrinsicHeight(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(icon, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: LangText.bodyText(
+                  text: message,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.white),
+                ),
               ),
-            ),
-            const VerticalDivider(color: Colors.white, thickness: 1),
-            IconButton(onPressed: () => messenger.clearSnackBars(), icon: const Icon(Icons.close, color: Colors.white)),
-          ],
+              const VerticalDivider(color: Colors.white, thickness: 1),
+              IconButton(
+                onPressed: () => messenger.clearSnackBars(),
+                icon: const Icon(Icons.close, color: Colors.white),
+              ),
+            ],
+          ),
         ),
+        backgroundColor: backgroundColor,
+        behavior: SnackBarBehavior.floating,
+        duration: duration,
+        margin: EdgeInsets.only(bottom: deviceHeight - 200, left: 16, right: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        padding: const EdgeInsets.only(left: 10, right: 0, top: 10, bottom: 10),
       ),
-      backgroundColor: backgroundColor,
-      behavior: SnackBarBehavior.floating,
-      duration: duration,
-      margin: EdgeInsets.only(bottom: deviceHeight - 200, left: 16, right: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      padding: const EdgeInsets.only(left: 10, right: 0, top: 10, bottom: 10),
-    ),
-  );
+    );
+  }
+
+  final phase = SchedulerBinding.instance.schedulerPhase;
+  if (phase == SchedulerPhase.idle || phase == SchedulerPhase.postFrameCallbacks) {
+    show();
+  } else {
+    SchedulerBinding.instance.addPostFrameCallback((_) => show());
+  }
 }
 
 bool isLevelAfter(int levelA, int subLevelA, int levelB, int subLevelB) {
@@ -120,4 +133,11 @@ String choose({required String hindi, required String hinglish, required PrefLan
     PrefLang.hindi => hindi,
     PrefLang.hinglish => hinglish,
   };
+}
+
+String formatMillis(int millis) {
+  if (millis == 0) return 'N/A';
+  final dt = DateTime.fromMillisecondsSinceEpoch(millis);
+  return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} '
+      '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}:${dt.second.toString().padLeft(2, '0')}';
 }

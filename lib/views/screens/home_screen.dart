@@ -12,7 +12,8 @@ import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/activity_log/activity_log.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
-import 'package:myapp/views/widgets/app_bar.dart';
+import 'package:myapp/views/widgets/home_app_bar.dart';
+import 'package:myapp/views/widgets/home_app_bar_animated.dart';
 import 'package:myapp/views/widgets/loader.dart';
 import 'package:myapp/views/widgets/sublevel_list.dart';
 
@@ -24,8 +25,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  List<SubLevel>? _sortedSublevels;
-
   @override
   void initState() {
     super.initState();
@@ -96,16 +95,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return true;
   }
 
-  Future<bool> handleFetchSublevels(int index) async {
-    if (isLevelChanged(index, _sortedSublevels!)) {
-      await fetchSublevels();
+  Future<void> handleFetchSublevels(int index, List<SubLevel> sublevels) async {
+    if (isLevelChanged(index, sublevels)) {
+      final newLevelId = sublevels[index].levelId;
+      await fetchSublevels(anchorLevelId: newLevelId);
     }
-
-    if (index < _sortedSublevels!.length) return false;
-
-    await ref.read(levelControllerProvider.notifier).fetchLevels();
-
-    return true;
   }
 
   Future<void> syncProgress(int index, List<SubLevel> sublevels, String? userEmail, int subLevel, int maxLevel) async {
@@ -115,7 +109,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     if (userEmail != null) {
       final currSubLevel = sublevels[index];
-      isSyncSucceed = await ref.read(userControllerProvider.notifier).sync(currSubLevel.levelId, subLevel);
+      final error = await ref.read(userControllerProvider.notifier).sync(currSubLevel.levelId, subLevel);
+      isSyncSucceed = error == null; // null means success, APIError means failure
     }
 
     final previousSubLevel = sublevels[index - 1];
@@ -137,7 +132,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return previousSubLevel.levelId != currSubLevel.levelId;
   }
 
-  Future<void> fetchSublevels() async {
+  Future<void> fetchSublevels({String? anchorLevelId}) async {
     await ref.read(levelControllerProvider.notifier).fetchLevels();
   }
 
@@ -181,12 +176,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     await ref.read(uIControllerProvider.notifier).storeProgress(progress, userEmail: userEmail);
   }
 
-  Future<void> onVideoChange(int index, PageController controller) async {
-    if (!mounted || _sortedSublevels == null) return;
+  Future<void> onSublevelChange(int index, PageController controller) async {
+    if (!mounted) {
+      return;
+    }
 
-    if (await handleFetchSublevels(index)) return;
+    final sublevels = ref.read(sublevelControllerProvider).sublevels?.toList();
+    if (sublevels == null || sublevels.isEmpty || index < 0 || index >= sublevels.length) {
+      return;
+    }
 
-    final sublevel = _sortedSublevels![index];
+    final sublevel = sublevels[index];
     final level = sublevel.level;
     final sublevelIndex = sublevel.index;
 
@@ -210,69 +210,83 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       user?.isAdmin == true,
       user?.doneToday,
     )) {
-      await controller.animateToPage(index - 1, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+      final currentBufferPage = ((controller.page ?? controller.initialPage).round());
+      final targetPage = currentBufferPage > controller.initialPage ? currentBufferPage - 1 : controller.initialPage;
+      await controller.animateToPage(targetPage, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
       return;
     }
 
     ref.read(sublevelControllerProvider.notifier).setHasFinishedSublevel(false);
 
+    final prevProgress = ref.read(uIControllerProvider).currentProgress;
     await syncLocalProgress(level, sublevelIndex, sublevel.levelId, localMaxLevel, localMaxSubLevel, userEmail);
+
+    // Trigger level prefetch immediately when the level changes (works for both directions, e.g., 4-1 -> 3-5)
+    if (prevProgress?.levelId != sublevel.levelId) {
+      await ref.read(levelControllerProvider.notifier).fetchLevels();
+    }
+
+    // Also run existing handler (kept for forward boundary scenarios)
+    await handleFetchSublevels(index, sublevels);
 
     final lastLoggedInEmail = SharedPref.get(PrefKey.user)?.email;
 
-    if (lastLoggedInEmail == null) return;
-
+    if (lastLoggedInEmail == null) {
+      return;
+    }
     await SharedPref.pushValue(
       PrefKey.activityLogs,
       ActivityLog(subLevel: sublevelIndex, levelId: sublevel.levelId, userEmail: userEmail ?? lastLoggedInEmail),
     );
 
-    await syncProgress(index, _sortedSublevels!, userEmail, sublevelIndex, user?.maxLevel ?? 0);
+    await syncProgress(index, sublevels, userEmail, sublevelIndex, user?.maxLevel ?? 0);
 
     await syncActivityLogs();
   }
 
-  List<SubLevel> _getSortedSublevels(List<SubLevel> sublevels) {
-    return [...sublevels]..sort((a, b) {
-      final levelA = a.level;
-      final levelB = b.level;
-
-      if (levelA != levelB) {
-        return levelA.compareTo(levelB);
-      }
-
-      final subLevelA = a.index;
-      final subLevelB = b.index;
-
-      return subLevelA.compareTo(subLevelB);
-    });
-  }
+  // Removed sorting; sublevels are now passed as-is to SublevelsList
 
   @override
   Widget build(BuildContext context) {
     final loadingLevelIds = ref.watch(levelControllerProvider.select((state) => state.loadingById));
     final sublevels = ref.watch(sublevelControllerProvider.select((state) => state.sublevels));
+    final orientation = MediaQuery.of(context).orientation;
 
-    if (sublevels == null) {
+    if (sublevels == null || sublevels.isEmpty) {
       return const Loader();
     }
 
-    // Only sort sublevels if they have changed
-    if (_sortedSublevels == null || _sortedSublevels!.length != sublevels.toList().length) {
-      _sortedSublevels = _getSortedSublevels(sublevels.toList());
-    }
-
-    if (loadingLevelIds.values.any((value) => value) && _sortedSublevels!.isEmpty) {
+    if (loadingLevelIds.values.any((value) => value) && sublevels.isEmpty) {
       return const Loader();
     }
 
     return Scaffold(
-      body: Stack(
-        children: [
-          SublevelsList(loadingById: loadingLevelIds, sublevels: _sortedSublevels!, onSublevelChange: onVideoChange),
-          const HomeScreenAppBar(),
-        ],
-      ),
+      body:
+          orientation == Orientation.landscape
+              ? // Landscape: Static app bar takes actual space
+              Column(
+                children: [
+                  const HomeAppBar(),
+                  Expanded(
+                    child: SublevelsList(
+                      loadingById: loadingLevelIds,
+                      sublevels: sublevels.toList(),
+                      onSublevelChange: onSublevelChange,
+                    ),
+                  ),
+                ],
+              )
+              : // Portrait: Animated app bar over content
+              Stack(
+                children: [
+                  SublevelsList(
+                    loadingById: loadingLevelIds,
+                    sublevels: sublevels.toList(),
+                    onSublevelChange: onSublevelChange,
+                  ),
+                  const HomeAppBarAnimated(),
+                ],
+              ),
     );
   }
 }

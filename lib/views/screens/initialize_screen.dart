@@ -5,28 +5,47 @@ import 'package:myapp/core/router/router.dart';
 import 'package:myapp/services/initialize/initialize_service.dart';
 import 'package:myapp/controllers/level/level_controller.dart';
 import 'package:myapp/views/screens/error_screen.dart';
-import 'package:myapp/views/widgets/page_loader.dart';
+import 'package:myapp/views/screens/loading_screen.dart';
 
-class InitializeScreen extends ConsumerWidget {
+class InitializeScreen extends ConsumerStatefulWidget {
   const InitializeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<InitializeScreen> createState() => _InitializeScreenState();
+}
+
+class _InitializeScreenState extends ConsumerState<InitializeScreen> {
+  String? _errorMessage;
+
+  @override
+  Widget build(BuildContext context) {
     final initState = ref.watch(initializeServiceProvider);
 
     final levelState = ref.read(levelControllerProvider);
 
     if (levelState.orderedIds == null) {
-      return const PageLoader();
+      return const LoadingScreen();
     }
 
-    if (levelState.error != null && levelState.orderedIds!.isEmpty) {
+    if (_errorMessage != null && levelState.orderedIds!.isEmpty) {
       return Scaffold(
         body: ErrorPage(
-          text: levelState.error.toString(),
+          text: _errorMessage!,
           buttonText: "Retry",
           onButtonClick: () async {
-            await ref.read(levelControllerProvider.notifier).getOrderedIds();
+            final result = await ref.read(levelControllerProvider.notifier).getOrderedIds();
+            result.fold(
+              (error) {
+                setState(() {
+                  _errorMessage = error.message;
+                });
+              },
+              (_) {
+                setState(() {
+                  _errorMessage = null;
+                });
+              },
+            );
           },
         ),
       );
@@ -39,6 +58,6 @@ class InitializeScreen extends ConsumerWidget {
       });
     });
 
-    return const PageLoader();
+    return const LoadingScreen();
   }
 }

@@ -1,18 +1,17 @@
 import 'dart:developer' as developer;
-import 'dart:math' as math;
-import 'package:dio/dio.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:myapp/constants.dart';
 import 'package:myapp/controllers/dialogue/dialogue_controller.dart';
-import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
 import 'package:myapp/controllers/ui/ui_controller.dart';
+import 'package:myapp/core/error/api_error.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/models/sublevel/sublevel.dart';
 import 'package:myapp/services/level/level_service.dart';
 import 'package:myapp/core/utils.dart';
 import 'package:myapp/models/level/level.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:fpdart/fpdart.dart';
 
 part 'level_controller.freezed.dart';
 part 'level_controller.g.dart';
@@ -25,7 +24,6 @@ class LevelControllerState with _$LevelControllerState {
     List<String>? orderedIds,
     // true when loading, false when loaded, null when not tried to load/fetch
     @Default({}) Map<String, bool> loadingById,
-    String? error,
   }) = _LevelControllerState;
 }
 
@@ -38,18 +36,17 @@ class LevelController extends _$LevelController {
   @override
   LevelControllerState build() => const LevelControllerState();
 
-  Future<void> getLevel(String id) async {
+  FutureEither<Level?> getLevel(String id) async {
+    // removed verbose developer logs
     state = state.copyWith(loadingById: {...state.loadingById}..update(id, (value) => true, ifAbsent: () => true));
 
     final levelDTOEither = await levelService.getLevel(id);
     List<SubLevelDTO> sublevelDTOs = [];
     Set<String> dialogueIds = {};
 
-    final level = levelDTOEither.fold(
+    final foldRes = levelDTOEither.fold<Either<APIError, Level>>(
       (l) {
-        developer.log(l.message, name: 'LevelController');
-        state = state.copyWith(error: l.message);
-        return null;
+        return left(l);
       },
       (r) {
         final level = Level.fromLevelDTO(r);
@@ -62,35 +59,52 @@ class LevelController extends _$LevelController {
           subLevelDTO.whenOrNull(video: (v) => dialogueIds.addAll(v.dialogues.map((d) => d.id)));
         }
 
-        return level;
+        return right(level);
       },
     );
 
     state = state.copyWith(loadingById: {...state.loadingById}..update(id, (value) => false));
 
-    if (level == null) return;
+    await foldRes.fold<FutureEither<void>>(
+      (error) async {
+        return left(error);
+      },
+      (level) async {
+        await Future.wait([
+          ...dialogueIds.map((dialogueId) async {
+            final dialogueResult = await dialogueController.get(dialogueId);
+            final dialogue = dialogueResult.fold((error) => null, (dialogue) => dialogue);
+            if (dialogue == null) return;
+            final downloadError = await dialogueController.downloadData(dialogue.zipNum);
+            if (downloadError != null) {
+              developer.log('Error downloading dialogue data: ${downloadError.message}', error: downloadError.trace);
+            }
+          }),
+          ...sublevelDTOs.map((subLevelDTO) async {
+            final assetError = await subLevelController.getAssets(subLevelDTO, level.id);
+            if (assetError != null) {
+              developer.log('Error getting sublevel assets: ${assetError.message}', error: assetError.trace);
+            }
+          }),
+        ]);
+        return right(null);
+      },
+    );
 
-    await Future.wait([
-      ...dialogueIds.map((dialogueId) async {
-        final dialogue = await dialogueController.get(dialogueId);
-        if (dialogue == null) return;
-        await dialogueController.downloadData(dialogue.zipNum);
-      }),
-      ...sublevelDTOs.map((subLevelDTO) => subLevelController.getAssets(subLevelDTO, level.id)),
-    ]);
+    return foldRes;
   }
 
-  Future<void> getOrderedIds() async {
+  FutureEither<List<String>?> getOrderedIds() async {
     final result = await levelService.getOrderedIds();
 
-    await result.fold(
-      (error) {
-        state = state.copyWith(error: error.message);
+    final orderedIds = await result.fold(
+      (error) async {
         // Try to load from local storage as fallback
         final localIds = SharedPref.get(PrefKey.orderedIds);
         if (localIds != null) {
           state = state.copyWith(orderedIds: localIds);
         }
+        return null;
       },
       (orderedIds) async {
         if (orderedIds != null) {
@@ -104,19 +118,20 @@ class LevelController extends _$LevelController {
             state = state.copyWith(orderedIds: localIds);
           }
         }
+        return orderedIds;
       },
     );
+
+    return right(orderedIds);
   }
 
   Future<void> fetchLevels() async {
     final orderedIds = state.orderedIds;
 
     if (orderedIds == null) {
-      state = state.copyWith(error: parseError(DioExceptionType.unknown, ref.read(langControllerProvider)));
       return;
     }
 
-    state = state.copyWith(error: null);
     final progress = ref.read(uIControllerProvider).currentProgress;
     String currUserLevelId = progress?.levelId ?? orderedIds.first;
 
@@ -125,32 +140,45 @@ class LevelController extends _$LevelController {
       await getLevel(currUserLevelId);
     }
 
-    final surroundingLevelIds = _getSurroundingLevelIds(orderedIds.indexOf(currUserLevelId), orderedIds);
+    // Build fetch list using flexible surrounding selection
+    final toFetch = _getSurroundingLevelIds();
 
-    final fetchLevelReqs =
-        surroundingLevelIds
-            .map((levelId) => loading[levelId] == null ? getLevel(levelId) : Future.value(null))
-            .toList();
+    final fetchLevelReqs = <Future<void>>[];
+    for (final levelId in toFetch) {
+      final status = loading[levelId];
+      if (status == null) {
+        fetchLevelReqs.add(getLevel(levelId));
+      }
+    }
 
     await Future.wait(fetchLevelReqs);
 
     if (currUserLevelId == orderedIds.last) {
-      final message = AppConstants.allLevelsCompleted(ref.read(langControllerProvider));
-
-      state = state.copyWith(error: message);
+      // All levels completed - this is not an error, just informational
+      developer.log('All levels completed');
     }
   }
 
-  List<String> _getSurroundingLevelIds(int currIndex, List<String?> orderedIds) {
-    if (currIndex == -1) return [];
-    final startBefore = math.max(0, currIndex - AppConstants.kMaxBeforeLevels);
-    final endAfter = math.min(orderedIds.length, currIndex + AppConstants.kMaxAfterLevels + 1);
-    final startAfter = math.min(orderedIds.length, currIndex + 1);
+  /// Returns level ids around current progress anchor in a single loop
+  /// Window size from AppConstants.kMaxBeforeLevels/kMaxAfterLevels
+  List<String> _getSurroundingLevelIds() {
+    final orderedIds = state.orderedIds;
+    if (orderedIds == null || orderedIds.isEmpty) return const [];
 
-    return orderedIds
-        .sublist(startBefore, currIndex)
-        .followedBy(orderedIds.sublist(startAfter, endAfter))
-        .whereType<String>()
-        .toList();
+    final progress = ref.read(uIControllerProvider).currentProgress;
+    final anchorLevelId = progress?.levelId ?? orderedIds.first;
+
+    var idx = orderedIds.indexOf(anchorLevelId);
+    if (idx == -1) idx = 0;
+
+    final start = idx - AppConstants.kMaxBeforeLevels;
+    final end = idx + AppConstants.kMaxAfterLevels;
+
+    final result = <String>[];
+    for (int i = start; i <= end; i++) {
+      if (i < 0 || i >= orderedIds.length) continue;
+      result.add(orderedIds[i]);
+    }
+    return result;
   }
 }

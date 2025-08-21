@@ -6,6 +6,7 @@ import 'package:myapp/services/api/api_service.dart';
 import 'package:myapp/services/path/path_service.dart';
 import 'package:myapp/services/sublevel/sublevel_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:myapp/core/error/api_error.dart';
 
 part 'sublevel_controller.freezed.dart';
 part 'sublevel_controller.g.dart';
@@ -14,11 +15,8 @@ part 'sublevel_controller.g.dart';
 class SublevelControllerState with _$SublevelControllerState {
   const SublevelControllerState._();
 
-  const factory SublevelControllerState({
-    Set<SubLevel>? sublevels,
-    @Default(false) bool hasFinishedSublevel,
-    String? error,
-  }) = _SublevelControllerState;
+  const factory SublevelControllerState({Set<SubLevel>? sublevels, @Default(false) bool hasFinishedSublevel}) =
+      _SublevelControllerState;
 }
 
 @Riverpod(keepAlive: true)
@@ -37,21 +35,16 @@ class SublevelController extends _$SublevelController {
     return '${baseUrl.url}${PathService.sublevelAsset(levelId, id, assetType)}';
   }
 
-  void setVideoPlayingError(String e) => state = state.copyWith(error: e);
-
   void setHasFinishedSublevel(bool to) => state = state.copyWith(hasFinishedSublevel: to);
 
-  Future<void> getAssets(SubLevelDTO subLevelDTO, String levelId) async {
+  Future<APIError?> getAssets(SubLevelDTO subLevelDTO, String levelId) async {
     final result = await subLevelService.getAssets(subLevelDTO, levelId);
 
-    result.fold(
-      (error) {
-        developer.log('Error getting sublevel assets: ${error.message}', error: error.trace);
-        state = state.copyWith(error: 'Failed to get sublevel assets: ${error.message}');
-      },
-      (_) {
-        // Success - no action needed
-      },
-    );
+    final error = result.fold((error) {
+      developer.log('Error getting sublevel assets: ${error.message}', error: error.trace);
+      return error;
+    }, (_) => null);
+
+    return error;
   }
 }

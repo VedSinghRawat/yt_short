@@ -19,7 +19,7 @@ class _LanguagePreferenceDialogState extends State<LanguagePreferenceDialog> {
   String get _contentText {
     return _selectedLang == PrefLang.hindi
         ? 'वह भाषा चुनें जिसमें आप सबसे अधिक सहज हैं।'
-        : 'Vo bhasha chunen jis mein aap sabse adhik sahaj hain.';
+        : 'Vah bhasha chunen jis mein aap sabse adhik sahaj hain.';
   }
 
   @override

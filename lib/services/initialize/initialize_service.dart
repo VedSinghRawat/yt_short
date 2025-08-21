@@ -9,14 +9,15 @@ import 'package:myapp/constants.dart';
 import 'package:myapp/core/router/router.dart';
 import 'package:myapp/services/cleanup/cleanup_service.dart';
 import 'package:myapp/services/file/file_service.dart';
-import 'package:myapp/services/info/info_service.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
 import 'package:myapp/controllers/level/level_controller.dart';
 import 'package:myapp/controllers/user/user_controller.dart';
 import 'package:myapp/controllers/ui/ui_controller.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'dart:developer' as developer;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:myapp/core/error/api_error.dart';
 
 part 'initialize_service.g.dart';
 
@@ -40,29 +41,32 @@ class InitializeService {
     try {
       // order matters
       await SharedPref.init(); // first init shared pref
-      await InfoService.init(); // then init info service
-      await initialApiCall(); // then call api because it depends on info service
 
-      await Future.wait([
-        storeCyId(), // depend on user
-        FileService.init(),
-        levelController.getOrderedIds(),
-        handleDeepLinking(), // deep linking depends on user
-      ]);
+      await Future.wait([FileService.init(), levelController.getOrderedIds()]);
+
+      await initialApiCall(); // depends on info service & levelController (orderedIds)
+      await Future.wait([storeCyId(), handleDeepLinking()]); // depends on user
 
       final currProgress = SharedPref.get(
         PrefKey.currProgress(userEmail: ref.read(userControllerProvider.notifier).getUser()?.email),
       );
 
       final apiUser = ref.read(userControllerProvider.notifier).getUser();
-      if (currProgress == null && apiUser == null) return;
+
+      if (currProgress == null && apiUser == null) {
+        return;
+      }
 
       final localLastModified = currProgress?.modified ?? 0;
       final apiLastModified = apiUser != null ? apiUser.lastProgress : 0;
+
       final localIsNewer = localLastModified > apiLastModified && currProgress?.levelId != null;
 
       if (localIsNewer) {
-        await userController.sync(currProgress!.levelId!, currProgress.subLevel!);
+        final error = await userController.sync(currProgress!.levelId!, currProgress.subLevel!);
+        if (error != null) {
+          developer.log('Error syncing user progress: ${error.message}', error: error.trace);
+        }
       } else {
         final progress = Progress(
           level: apiUser?.level,
@@ -92,12 +96,8 @@ class InitializeService {
     if (SharedPref.get(PrefKey.isFirstLaunch) == false) return;
 
     final referrer = await AndroidPlayInstallReferrer.installReferrer;
-
     final cyId = referrer.installReferrer;
-
-    // Skip if no referrer or if it's just the default Google Play organic referrer
     if (cyId == null || cyId == AppConstants.kDefaultReferrer) return;
-
     await SharedPref.store(PrefKey.cyId, cyId);
   }
 
@@ -126,11 +126,11 @@ class InitializeService {
     });
   }
 
-  Future<bool> initialApiCall() async {
+  Future<APIError?> initialApiCall() async {
     try {
-      final version = InfoService.packageInfo.version;
+      final version = await PackageInfo.fromPlatform();
 
-      final initialData = await initializeAPI.initialize(version);
+      final initialData = await initializeAPI.initialize(version.version);
 
       if (initialData.user != null) {
         final u = userController.userFromDTO(initialData.user!);
@@ -139,13 +139,13 @@ class InitializeService {
 
         // Store last logged in email
         await userController.updateCurrentUser(u);
-        return true;
+        return null; // Success
       }
 
-      return false;
+      return APIError(message: 'No user data received', trace: StackTrace.current);
     } catch (e, stackTrace) {
       developer.log('Error during initialize', error: e.toString(), stackTrace: stackTrace);
-      return false;
+      return APIError(message: e.toString(), trace: stackTrace);
     }
   }
 }

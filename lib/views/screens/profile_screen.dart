@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'dart:developer' as developer;
 import 'package:go_router/go_router.dart';
 import 'package:myapp/controllers/lang/lang_controller.dart';
 import 'package:myapp/core/router/router.dart';
@@ -12,6 +11,8 @@ import 'package:myapp/controllers/user/user_controller.dart';
 import 'package:myapp/models/user/user.dart';
 import 'package:myapp/controllers/ui/ui_controller.dart';
 import 'package:myapp/views/widgets/lang_text.dart';
+import 'package:myapp/services/responsiveness/responsiveness_service.dart';
+import 'package:myapp/views/widgets/show_confirmation_dialog.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -33,6 +34,9 @@ class ProfileScreen extends ConsumerWidget {
     // Combine loading states
     final isLoading = authLoading || userLoading;
 
+    // Initialize responsiveness service
+    final responsivenessService = ResponsivenessService(context);
+
     return Stack(
       children: [
         Scaffold(
@@ -43,9 +47,20 @@ class ProfileScreen extends ConsumerWidget {
               if (user != null)
                 IconButton(
                   icon: const Icon(Icons.logout),
+                  iconSize: responsivenessService.getResponsiveValues(mobile: 24.0, tablet: 28.0, largeTablet: 32.0),
+                  constraints: BoxConstraints(
+                    minWidth: responsivenessService.getResponsiveValues(mobile: 48.0, tablet: 56.0, largeTablet: 64.0),
+                    minHeight: responsivenessService.getResponsiveValues(mobile: 48.0, tablet: 56.0, largeTablet: 64.0),
+                  ),
                   color: theme.colorScheme.error,
                   onPressed: () async {
-                    await authController.signOut(context);
+                    final error = await authController.signOut();
+                    if (error != null) {
+                      if (context.mounted) {
+                        showSnackBar(context, message: error.message, type: SnackBarType.error);
+                      }
+                      return;
+                    }
                     if (context.mounted) {
                       context.go(Routes.signIn);
                     }
@@ -54,144 +69,175 @@ class ProfileScreen extends ConsumerWidget {
             ],
           ),
           body: SingleChildScrollView(
-            child: Column(
-              children: [
-                Container(
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    borderRadius: BorderRadius.only(bottomLeft: Radius.circular(30), bottomRight: Radius.circular(30)),
-                  ),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 20),
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundColor: const Color.fromARGB(225, 255, 255, 255),
-                        child: LangText.bodyText(
-                          text: user?.email.substring(0, 1).toUpperCase() ?? 'G',
-                          style: TextStyle(fontSize: 40, color: theme.colorScheme.secondary),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      decoration: const BoxDecoration(
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(30),
+                          bottomRight: Radius.circular(30),
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      LangText.bodyText(
-                        text: user?.email ?? 'Guest User',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          color: Color.fromARGB(225, 255, 255, 255),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                if (progress != null && progress.level != null)
-                  _buildInfoCard(
-                    context,
-                    ref,
-                    hindiTitle: 'प्रगति विवरण',
-                    hinglishTitle: 'Progress Overview',
-                    children: [
-                      _buildInfoRow(context, ref, 'लेवल', 'Level', '${progress.level}'),
-                      _buildInfoRow(context, ref, 'सबलेवल', 'Sublevel', '${progress.subLevel}'),
-                      _buildInfoRow(context, ref, 'अधिकतम लेवल', 'Max Level Reached', '${progress.maxLevel}'),
-                      _buildInfoRow(context, ref, 'अधिकतम सबलेवल', 'Max Sublevel Reached', '${progress.maxSubLevel}'),
-                    ],
-                  ),
-                const SizedBox(height: 20),
-                // Language Preference Card
-                if (user != null)
-                  _buildInfoCard(
-                    context,
-                    ref,
-                    hindiTitle: 'अतिरिक्त',
-                    hinglishTitle: 'Extras',
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      child: Column(
                         children: [
-                          LangText.body(
-                            hindi: 'भाषा',
-                            hinglish: 'Language',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: Theme.of(context).colorScheme.onPrimary,
+                          const SizedBox(height: 20),
+                          CircleAvatar(
+                            radius: 50,
+                            backgroundColor: const Color.fromARGB(225, 255, 255, 255),
+                            child: LangText.bodyText(
+                              text: user?.email.substring(0, 1).toUpperCase() ?? 'G',
+                              style: TextStyle(fontSize: 40, color: theme.colorScheme.secondary),
                             ),
                           ),
-                          DropdownButton<PrefLang>(
-                            value: user.prefLang,
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                            items:
-                                PrefLang.values.map((PrefLang lang) {
-                                  return DropdownMenuItem<PrefLang>(
-                                    value: lang,
-                                    child: LangText.bodyText(text: lang.name == 'hindi' ? 'हिंदी' : 'Hinglish'),
-                                  );
-                                }).toList(),
-                            onChanged:
-                                userLoading
-                                    ? null
-                                    : (PrefLang? newValue) async {
-                                      if (newValue == null || newValue == user.prefLang) return;
-
-                                      try {
-                                        developer.log('updatePrefLang: $newValue');
-                                        await userController.updatePrefLang(newValue);
-                                      } catch (e) {
-                                        if (context.mounted) {
-                                          showSnackBar(
-                                            context,
-                                            message: choose(
-                                              hindi: 'भाषा नहीं बदल सके',
-                                              hinglish: 'Bhasa nahin badal sake',
-                                              lang: currentLang,
-                                            ),
-                                            type: SnackBarType.error,
-                                          );
-                                        }
-                                      }
-                                    },
+                          const SizedBox(height: 10),
+                          LangText.headingText(
+                            text: user?.email ?? 'Guest User',
+                            style: const TextStyle(color: Color.fromARGB(225, 255, 255, 255)),
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    if (progress != null && progress.level != null)
+                      _buildInfoCard(
+                        context,
+                        ref,
+                        hindiTitle: 'प्रगति विवरण',
+                        hinglishTitle: 'Progress Overview',
+                        children: [
+                          _buildInfoRow(context, ref, 'लेवल', 'Level', '${progress.level}'),
+                          _buildInfoRow(context, ref, 'सबलेवल', 'Sublevel', '${progress.subLevel}'),
+                          _buildInfoRow(context, ref, 'अधिकतम लेवल', 'Max Level Reached', '${progress.maxLevel}'),
+                          _buildInfoRow(
+                            context,
+                            ref,
+                            'अधिकतम सबलेवल',
+                            'Max Sublevel Reached',
+                            '${progress.maxSubLevel}',
                           ),
                         ],
                       ),
-                      const SizedBox(height: 20),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          icon: const Icon(Icons.restart_alt),
-                          label: const LangText.body(
-                            hindi: 'प्रोफाइल रीसेट करें',
-                            hinglish: 'Reset Profile',
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: theme.colorScheme.error,
-                            foregroundColor: theme.colorScheme.onError,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(8))),
-                          ),
-                          onPressed:
-                              isLoading
-                                  ? null
-                                  : () async {
-                                    final scaffoldMessenger = ScaffoldMessenger.of(context);
-                                    final success = await userController.resetProfile(context);
-
-                                    if (context.mounted && success) {
-                                      scaffoldMessenger.showSnackBar(
-                                        const SnackBar(content: LangText.bodyText(text: 'Profile reset successfully')),
+                    const SizedBox(height: 20),
+                    if (user != null)
+                      _buildInfoCard(
+                        context,
+                        ref,
+                        hindiTitle: 'अतिरिक्त',
+                        hinglishTitle: 'Extras',
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              LangText.body(
+                                hindi: 'भाषा',
+                                hinglish: 'Language',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  color: Theme.of(context).colorScheme.onPrimary,
+                                ),
+                              ),
+                              DropdownButton<PrefLang>(
+                                value: user.prefLang,
+                                style: const TextStyle(fontWeight: FontWeight.w500),
+                                items:
+                                    PrefLang.values.map((PrefLang lang) {
+                                      return DropdownMenuItem<PrefLang>(
+                                        value: lang,
+                                        child: LangText.bodyText(text: lang.name == 'hindi' ? 'हिंदी' : 'Hinglish'),
                                       );
-                                    }
-                                  },
-                        ),
+                                    }).toList(),
+                                onChanged:
+                                    userLoading
+                                        ? null
+                                        : (PrefLang? newValue) async {
+                                          if (newValue == null || newValue == user.prefLang) return;
+                                          try {
+                                            final result = await userController.updatePrefLang(newValue);
+                                            result.fold(
+                                              (error) {
+                                                showSnackBar(context, message: error.message, type: SnackBarType.error);
+                                              },
+                                              (_) {
+                                                // Success - no action needed
+                                              },
+                                            );
+                                          } catch (e) {
+                                            if (context.mounted) {
+                                              showSnackBar(
+                                                context,
+                                                message: choose(
+                                                  hindi: 'भाषा नहीं बदल सके',
+                                                  hinglish: 'Bhasa nahin badal sake',
+                                                  lang: currentLang,
+                                                ),
+                                                type: SnackBarType.error,
+                                              );
+                                            }
+                                          }
+                                        },
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              icon: const Icon(Icons.restart_alt),
+                              label: const LangText.body(
+                                hindi: 'प्रोफाइल रीसेट करें',
+                                hinglish: 'Reset Profile',
+                                style: TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: theme.colorScheme.error,
+                                foregroundColor: theme.colorScheme.onError,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(8))),
+                              ),
+                              onPressed:
+                                  isLoading
+                                      ? null
+                                      : () async {
+                                        final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+                                        // Show confirmation dialog first
+                                        final confirmed = await showConfirmationDialog(
+                                          context,
+                                          question: 'Are you sure you want to reset your profile?',
+                                        );
+
+                                        if (!confirmed) return; // User cancelled
+
+                                        final error = await userController.resetProfile();
+                                        if (error == null) {
+                                          // Success
+                                          if (context.mounted) {
+                                            scaffoldMessenger.showSnackBar(
+                                              const SnackBar(
+                                                content: LangText.bodyText(text: 'Profile reset successfully'),
+                                              ),
+                                            );
+                                          }
+                                        } else {
+                                          // Error occurred
+                                          if (context.mounted) {
+                                            showSnackBar(context, message: error.message, type: SnackBarType.error);
+                                          }
+                                        }
+                                      },
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-              ],
+                  ],
+                ),
+              ),
             ),
           ),
         ),
@@ -222,7 +268,7 @@ class ProfileScreen extends ConsumerWidget {
             LangText.heading(
               hindi: hindiTitle,
               hinglish: hinglishTitle,
-              style: TextStyle(fontSize: 18, color: theme.colorScheme.secondary, fontWeight: FontWeight.w700),
+              style: TextStyle(color: theme.colorScheme.secondary, fontWeight: FontWeight.w700),
             ),
             Divider(
               color: theme.colorScheme.onPrimary.withValues(alpha: .5),
@@ -246,11 +292,11 @@ class ProfileScreen extends ConsumerWidget {
           LangText.body(
             hindi: labelHindi,
             hinglish: labelHinglish,
-            style: TextStyle(fontSize: 16, color: theme.colorScheme.onPrimary, fontWeight: FontWeight.w700),
+            style: TextStyle(color: theme.colorScheme.onPrimary, fontWeight: FontWeight.w700),
           ),
           LangText.bodyText(
             text: value,
-            style: TextStyle(fontSize: 16, color: theme.colorScheme.onPrimary, fontWeight: FontWeight.w500),
+            style: TextStyle(color: theme.colorScheme.onPrimary, fontWeight: FontWeight.w500),
           ),
         ],
       ),

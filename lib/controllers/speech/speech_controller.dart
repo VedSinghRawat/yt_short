@@ -3,9 +3,9 @@ import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:myapp/core/utils.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:myapp/constants.dart';
 import 'package:myapp/controllers/sublevel/sublevel_controller.dart';
+import 'package:myapp/services/audio/audio_service.dart';
 import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/services/path/path_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -24,7 +24,7 @@ class SpeechState with _$SpeechState {
     @Default(false) bool isListening,
     @Default(false) bool isAvailable,
     @Default([]) List<String> recognizedWords,
-    @Default([]) List<bool?> wordMarking,
+    @Default([false, false, false]) List<bool?> wordMarking,
     @Default(false) bool isPlayingAudio,
     @Default(0) int offset,
     required List<String> targetWords,
@@ -35,7 +35,7 @@ class SpeechState with _$SpeechState {
 @Riverpod(keepAlive: true)
 class Speech extends _$Speech {
   stt.SpeechToText? _speech;
-  final audioPlayer = AudioPlayer();
+  final AudioService _audioService = AudioService();
   late final langProvider = ref.read(langControllerProvider.notifier);
 
   stt.SpeechToText get _speechInstance {
@@ -68,8 +68,9 @@ class Speech extends _$Speech {
     );
 
     cancelListening();
-    if (audioPlayer.playing) {
-      audioPlayer.stop();
+    if (_audioService.isPlaying) {
+      _audioService.stopAudio();
+      state = state.copyWith(isPlayingAudio: false);
     }
   }
 
@@ -171,23 +172,29 @@ class Speech extends _$Speech {
   }
 
   Future<void> playAudio(String levelId, String id) async {
-    if (audioPlayer.playing) {
-      await audioPlayer.stop();
+    try {
+      if (_audioService.isPlaying) {
+        await _audioService.stopAudio();
+        state = state.copyWith(isPlayingAudio: false);
+        return;
+      }
+
+      state = state.copyWith(isPlayingAudio: true);
+
+      final audioFile = PathService.sublevelAsset(levelId, id, AssetType.audio);
+      final fullPath = '${FileService.documentsDirectory.path}$audioFile';
+
+      await _audioService.playAudio(
+        audioPath: fullPath,
+        onFinished: () {
+          state = state.copyWith(isPlayingAudio: false);
+        },
+      );
+    } catch (e, stack) {
+      developer.log('Error in playAudio: $e', error: e, stackTrace: stack);
+      // Reset state on error
       state = state.copyWith(isPlayingAudio: false);
-      return;
     }
-
-    final audioFile = PathService.sublevelAsset(levelId, id, AssetType.audio);
-
-    await audioPlayer.setFilePath('${FileService.documentsDirectory.path}$audioFile');
-
-    state = state.copyWith(isPlayingAudio: true);
-
-    await audioPlayer.play().then((_) async {
-      state = state.copyWith(isPlayingAudio: false);
-
-      await audioPlayer.stop();
-    });
   }
 
   Future<void> _showMicPermissionDeniedDialog(BuildContext context) async {

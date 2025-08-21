@@ -1,4 +1,4 @@
-package com.example.codeyogienglishcourse
+package com.example.angrezyogi
 
 import io.flutter.embedding.android.FlutterActivity
 

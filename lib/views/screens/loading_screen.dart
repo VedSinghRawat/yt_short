@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import '../../services/responsiveness/responsiveness_service.dart';
 
-class PageLoader extends StatefulWidget {
-  const PageLoader({super.key});
+class LoadingScreen extends StatefulWidget {
+  const LoadingScreen({super.key});
 
   @override
-  State<PageLoader> createState() => _PageLoaderState();
+  State<LoadingScreen> createState() => _LoadingScreenState();
 }
 
-class _PageLoaderState extends State<PageLoader> with SingleTickerProviderStateMixin {
+class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   @override
@@ -24,14 +25,28 @@ class _PageLoaderState extends State<PageLoader> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
+    final responsivenessService = ResponsivenessService(context);
+
+    // Responsive image width
+    final imageWidth = responsivenessService.getResponsiveValues(mobile: 150.0, tablet: 200.0, largeTablet: 250.0);
+
+    // Responsive loading bar width
+    final loadingBarWidth = responsivenessService.getResponsiveValues(mobile: 200.0, tablet: 300.0, largeTablet: 400.0);
+
+    // Responsive loading bar height
+    final loadingBarHeight = responsivenessService.getResponsiveValues(mobile: 8.0, tablet: 10.0, largeTablet: 12.0);
+
     return Scaffold(
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset('assets/img/logo.png', width: 150),
+            Image.asset('assets/img/logo.png', width: imageWidth),
             const SizedBox(height: 40),
-            CustomPaint(size: const Size(200, 8), painter: _LoadingBarPainter(animation: _controller)),
+            CustomPaint(
+              size: Size(loadingBarWidth, loadingBarHeight),
+              painter: _LoadingBarPainter(animation: _controller),
+            ),
           ],
         ),
       ),
