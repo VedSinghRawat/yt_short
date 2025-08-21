@@ -7,6 +7,7 @@ import 'package:myapp/core/error/api_error.dart';
 import 'dart:async';
 import '../../services/auth/auth_service.dart';
 import '../user/user_controller.dart';
+import '../ui/ui_controller.dart';
 import 'package:fpdart/fpdart.dart';
 
 part 'auth_controller.freezed.dart';
@@ -57,6 +58,10 @@ class AuthController extends _$AuthController {
           );
 
           await userController.updateCurrentUser(user);
+
+          // Load per-user progress now that the user has changed
+          final ui = ref.read(uIControllerProvider.notifier);
+          await ui.loadProgressForUser(user.email);
 
           state = state.copyWith(loading: false);
           return right(needsLanguagePrompt);
@@ -124,6 +129,10 @@ class AuthController extends _$AuthController {
         state = state.copyWith(loading: false);
         return error;
       }
+
+      // Clear per-user progress from UI state and storage
+      final ui = ref.read(uIControllerProvider.notifier);
+      await ui.removeProgress(userEmail: user.email);
 
       await userController.removeCurrentUser();
       await Future.delayed(Duration.zero); // Allow UI to update

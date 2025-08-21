@@ -36,6 +36,11 @@ class UIController extends _$UIController {
     state = state.copyWith(currentProgress: null);
   }
 
+  Future<void> loadProgressForUser(String userEmail) async {
+    final progress = SharedPref.get(PrefKey.currProgress(userEmail: userEmail));
+    state = state.copyWith(currentProgress: progress);
+  }
+
   // Enum-based helpers
   String? _exerciseKeyFor(SubLevelType type) {
     switch (type) {
