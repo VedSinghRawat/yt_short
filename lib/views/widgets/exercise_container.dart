@@ -44,65 +44,55 @@ class _ExerciseContainerState extends ConsumerState<ExerciseContainer> {
   }
 
   Widget _buildHeader(ThemeData theme) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(12)),
-      child: Stack(
-        children: [
-          Align(
-            alignment: Alignment.topCenter,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                LangText.heading(
-                  hindi: widget.titleHindi,
-                  hinglish: widget.titleHinglish,
-                  style: TextStyle(color: theme.colorScheme.onPrimary),
+    return Stack(
+      children: [
+        Container(
+          width: double.infinity,
+          constraints: const BoxConstraints(maxWidth: 600),
+          padding: const EdgeInsets.all(16.0),
+          decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(12)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              LangText.heading(
+                hindi: widget.titleHindi,
+                hinglish: widget.titleHinglish,
+                style: TextStyle(color: theme.colorScheme.onPrimary),
+                textAlign: TextAlign.center,
+              ),
+              if (_showDescription) ...[
+                const SizedBox(height: 8),
+                LangText.body(
+                  hindi: widget.descriptionHindi,
+                  hinglish: widget.descriptionHinglish,
+                  style: TextStyle(
+                    color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
+                    fontWeight: FontWeight.w600,
+                  ),
                   textAlign: TextAlign.center,
                 ),
-                if (_showDescription) const SizedBox(height: 8),
-                if (_showDescription)
-                  LangText.body(
-                    hindi: widget.descriptionHindi,
-                    hinglish: widget.descriptionHinglish,
-                    style: TextStyle(
-                      color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
-                      fontWeight: FontWeight.w600,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
               ],
-            ),
+            ],
           ),
-          Positioned(
-            top: -7,
-            right: 0,
-            child:
-                !_canReopenDescription
-                    ? const SizedBox.shrink()
-                    : (_showDescription
-                        ? IconButton(
-                          style: IconButton.styleFrom(backgroundColor: Colors.black12),
-                          icon: const Icon(Icons.close, color: Colors.white54),
-                          onPressed: () {
-                            setState(() {
-                              _showDescription = false;
-                            });
-                          },
-                        )
-                        : IconButton(
-                          style: IconButton.styleFrom(backgroundColor: Colors.black12),
-                          icon: const Icon(Icons.info_outline, color: Colors.white54),
-                          onPressed: () {
-                            setState(() {
-                              _showDescription = true;
-                            });
-                          },
-                        )),
-          ),
-        ],
-      ),
+        ),
+
+        Positioned(
+          top: 8,
+          right: 8,
+          child:
+              !_canReopenDescription
+                  ? const SizedBox.shrink()
+                  : (IconButton(
+                    style: IconButton.styleFrom(backgroundColor: Colors.black12),
+                    icon: Icon(_showDescription ? Icons.close : Icons.info_outline, color: Colors.white54),
+                    onPressed: () {
+                      setState(() {
+                        _showDescription = !_showDescription;
+                      });
+                    },
+                  )),
+        ),
+      ],
     );
   }
 
