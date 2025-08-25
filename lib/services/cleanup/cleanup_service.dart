@@ -1,5 +1,6 @@
 import 'dart:developer' as developer show log;
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:myapp/constants.dart';
@@ -30,168 +31,211 @@ class StorageCleanupService {
     }
   }
 
-  /// Removes least-important cached levels while protecting nearby levels
+  Future<int?> _getZipNumForDialogue(
+    String dialogueId,
+    Map<String, int> dialogueIdToZipNum,
+    Map<int, Set<String>> zipNumToDialogueIds,
+  ) async {
+    if (dialogueIdToZipNum.containsKey(dialogueId)) return dialogueIdToZipNum[dialogueId];
+
+    final dialogueDataFile = FileService.getFile(PathService.dialogueAsset(dialogueId, AssetType.data));
+
+    if (!await dialogueDataFile.exists()) return null;
+
+    try {
+      final content = await dialogueDataFile.readAsString();
+      final jsonMap = jsonDecode(content) as Map<String, dynamic>;
+      final zipNum = (jsonMap['zipNum'] as num?)?.toInt();
+      if (zipNum != null) {
+        dialogueIdToZipNum[dialogueId] = zipNum;
+        zipNumToDialogueIds.putIfAbsent(zipNum, () => <String>{}).add(dialogueId);
+      }
+      return zipNum;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> cleanLocalFiles(String currentLevelId) async {
-    final localLevelIds = await FileService.listNames(
-      Directory('${FileService.documentsDirectory.path}/levels'),
-      type: EntitiesType.folders,
-    );
-    final orderedIds = levelController.orderedIds;
-    if (orderedIds == null) return;
+    try {
+      Directory levelsDir = Directory('${FileService.documentsDirectory.path}/levels');
 
-    final Map<String, int> idToIndexMap = {for (int i = 0; i < orderedIds.length; i++) orderedIds[i]: i};
+      if (!await levelsDir.exists()) return;
 
-    final int currentIndex = idToIndexMap[currentLevelId] ?? -1;
+      final deletableLevelIds = await FileService.listNames(levelsDir, type: EntitiesType.folders);
+      final orderedIds = levelController.orderedIds;
 
-    // renaming the localLevelIds to deletableIds before sorting for semantics
-    final deletableLevelIds = localLevelIds;
-    // sorting the deletableIds based on the distance from the current level and moving the
-    // protected level to the end
-    deletableLevelIds.sort((idA, idB) {
-      final int indexA = idToIndexMap[idA] ?? -1;
-      final int indexB = idToIndexMap[idB] ?? -1;
+      if (orderedIds == null) return;
 
-      final int distanceA = indexA - currentIndex;
-      final int distanceB = indexB - currentIndex;
+      int totalSize = await compute(FileService.getDirectorySize, levelsDir.path);
 
-      // Keep protected levels at the end
-      if (_isProtectedLevel(distanceA)) return 1;
-      if (_isProtectedLevel(distanceB)) return -1;
+      if (totalSize < AppConstants.kMaxStorageSizeBytes) return;
 
-      return distanceA.abs().compareTo(distanceB.abs());
-    });
+      final Map<String, int> idToIndexMap = {for (int i = 0; i < orderedIds.length; i++) orderedIds[i]: i};
 
-    final sublevelIdsByDialogueFilename = <String, Set<String>>{};
-    final levelById = <String, LevelDTO>{};
+      final int currentIndex = idToIndexMap[currentLevelId] ?? -1;
 
-    await Future.wait(
-      deletableLevelIds.map((levelId) async {
-        final level = await levelService.getLocalLevel(levelId);
-        if (level == null) return null;
+      deletableLevelIds.sort((idA, idB) {
+        final int indexA = idToIndexMap[idA] ?? -1;
+        final int indexB = idToIndexMap[idB] ?? -1;
 
-        levelById[levelId] = level;
+        final int distanceA = indexA - currentIndex;
+        final int distanceB = indexB - currentIndex;
 
-        for (var sub in level.sub_levels) {
+        if (_isProtectedLevel(distanceA)) return 1;
+        if (_isProtectedLevel(distanceB)) return -1;
+
+        return distanceA.abs().compareTo(distanceB.abs());
+      });
+
+      if (deletableLevelIds.isEmpty || deletableLevelIds.length - AppConstants.kProtectedIdsLength <= 0) return;
+
+      final levelById = <String, LevelDTO>{};
+
+      await Future.wait(
+        deletableLevelIds.map((levelId) async {
+          final level = await levelService.getLocalLevel(levelId);
+          if (level == null) return null;
+
+          levelById[levelId] = level;
+        }),
+      );
+
+      final dialogueIdToCount = <String, int>{};
+
+      for (final level in levelById.values) {
+        for (final sub in level.sub_levels) {
           sub.whenOrNull(
             video: (v) {
-              for (var dialogue in v.dialogues) {
-                final filename = dialogue.id;
-
-                if (sublevelIdsByDialogueFilename[filename] == null) {
-                  sublevelIdsByDialogueFilename[filename] = {};
-                }
-
-                sublevelIdsByDialogueFilename[filename]!.add(sub.id);
+              for (final dialogue in v.dialogues) {
+                dialogueIdToCount.putIfAbsent(dialogue.id, () => 0);
+                dialogueIdToCount[dialogue.id] = dialogueIdToCount[dialogue.id]! + 1;
               }
             },
           );
         }
-      }),
-    );
-
-    try {
-      Directory levelsDir = Directory('${FileService.documentsDirectory.path}/levels');
-
-      // Ensure directory exists and input is valid
-      if (!await levelsDir.exists() ||
-          deletableLevelIds.isEmpty ||
-          deletableLevelIds.length - AppConstants.kProtectedIdsLength == 0) {
-        return;
       }
-
-      int totalSize = await compute(FileService.getDirectorySize, levelsDir);
-      if (totalSize < AppConstants.kMaxStorageSizeBytes) return;
 
       int i = 0;
 
       final toBeDeletedPaths = <String, Set<String>>{};
       final dirPathsToDelete = <String>{};
       final etagsToClean = <String>{};
+      final deletedVideosIds = <String>{};
+      final dialogueIdToZipNum = <String, int>{};
+      final zipNumToDialogueIds = <int, Set<String>>{};
 
-      // Start deleting until space is freed, also breaking the loop if the
-      //protected levels are reached
       while (i < deletableLevelIds.length - AppConstants.kProtectedIdsLength) {
         final levelId = deletableLevelIds[i];
-        final folderPath = PathService.levelDir(levelId);
+        final folderPath = '${FileService.documentsDirectory.path}${PathService.levelDir(levelId)}';
 
         final level = levelById[levelId];
         if (level == null) continue;
 
-        toBeDeletedPaths[levelId] = {};
+        toBeDeletedPaths[levelId] = <String>{};
 
-        // Delete videos one by one and update size
+        bool finishedAllSublevels = true;
+
         for (var (index, sub) in level.sub_levels.indexed) {
-          final videoPath = PathService.sublevelAsset(levelId, sub.id, AssetType.video);
-          final videoFile = File(videoPath);
-          if (!await videoFile.exists()) continue;
+          final assetType = switch (true) {
+            _ when sub.isVideo => AssetType.video,
+            _ when sub.isSpeechExercise || sub.isArrangeExercise => AssetType.audio,
+            _ when sub.isArrangeExercise || sub.isFillExercise => AssetType.image,
+            _ => null,
+          };
 
-          final videoSize = await videoFile.length();
+          if (assetType == null) continue;
 
-          toBeDeletedPaths[levelId]!.add(videoPath);
-          etagsToClean.add(
-            PathService.sublevelAsset(levelId, videoPath.split('/').last.replaceAll('.mp4', ''), AssetType.video),
-          );
+          final endpoint = PathService.sublevelAsset(levelId, sub.id, assetType);
 
-          totalSize -= videoSize;
-
-          // Handle audio files for speech exercises and drag-drop exercises
-          if (sub.isSpeechExercise || sub.isArrangeExercise) {
-            final audioPath = PathService.sublevelAsset(levelId, sub.id, AssetType.audio);
-            final audioFile = File(audioPath);
-            if (await audioFile.exists()) {
-              final audioSize = await audioFile.length();
-              toBeDeletedPaths[levelId]!.add(audioPath);
-
-              etagsToClean.add(
-                PathService.sublevelAsset(levelId, audioPath.split('/').last.replaceAll('.mp3', ''), AssetType.audio),
-              );
-
-              totalSize -= audioSize;
-            }
+          if (sub.isVideo) {
+            deletedVideosIds.add(sub.id);
           }
 
-          // Handle image files for drag-drop exercises and fill exercises
-          if (sub.isArrangeExercise || sub.isFillExercise) {
-            final imagePath = PathService.sublevelAsset(levelId, sub.id, AssetType.image);
-            final imageFile = File(imagePath);
-            if (await imageFile.exists()) {
-              final imageSize = await imageFile.length();
-              toBeDeletedPaths[levelId]!.add(imagePath);
+          final file = FileService.getFile(endpoint);
 
-              etagsToClean.add(
-                PathService.sublevelAsset(levelId, imagePath.split('/').last.replaceAll('.jpg', ''), AssetType.image),
-              );
+          if (!await file.exists()) continue;
 
-              totalSize -= imageSize;
-            }
-          }
+          final size = await file.length();
 
-          // delete full folder if there are no videos left
-          if (index == level.sub_levels.length - 1) {
-            dirPathsToDelete.add(folderPath);
-
-            etagsToClean.add(PathService.levelJson(levelId));
-            toBeDeletedPaths[levelId] = {};
-            continue;
-          }
+          toBeDeletedPaths[levelId]!.add(file.path);
+          etagsToClean.add(endpoint);
+          totalSize -= size;
 
           if (totalSize < AppConstants.kDeleteCacheThreshold) {
+            finishedAllSublevels = false;
             break;
           }
+
+          if (index == level.sub_levels.length - 1) {
+            dirPathsToDelete.add(folderPath);
+            etagsToClean.add(PathService.levelJson(levelId));
+            toBeDeletedPaths[levelId] = <String>{};
+          }
+        }
+
+        if (!finishedAllSublevels && totalSize < AppConstants.kDeleteCacheThreshold) {
+          break;
         }
 
         i++;
       }
 
-      await Future.wait(toBeDeletedPaths.values.map((paths) => compute(_deleteFiles, paths.toList())));
-      await Future.wait(dirPathsToDelete.map((dir) => compute(_deleteFolderRecursively, dir)));
+      if (deletedVideosIds.isNotEmpty) {
+        await Future.wait(
+          dialogueIdToCount.keys.map(
+            (id) async => await _getZipNumForDialogue(id, dialogueIdToZipNum, zipNumToDialogueIds),
+          ),
+        );
+
+        final Set<int> zipNumHasRemainingUsage = {};
+
+        dialogueIdToCount.forEach((dialogueId, count) {
+          final zipNum = dialogueIdToZipNum[dialogueId];
+          if (zipNum == null) return;
+          if (count > 0) {
+            zipNumHasRemainingUsage.add(zipNum);
+          }
+        });
+
+        final deletableZipNums = zipNumToDialogueIds.keys.where((z) => !zipNumHasRemainingUsage.contains(z));
+
+        for (final zipNum in deletableZipNums) {
+          final dialogueIds = zipNumToDialogueIds[zipNum] ?? const <String>{};
+          for (final dialogueId in dialogueIds) {
+            for (final type in [AssetType.audio, AssetType.data]) {
+              final endpoint = PathService.dialogueAsset(dialogueId, type);
+              final file = FileService.getFile(endpoint);
+              if (await file.exists()) {
+                if (!toBeDeletedPaths.containsKey(dialogueId)) {
+                  toBeDeletedPaths[dialogueId] = <String>{};
+                }
+
+                toBeDeletedPaths[dialogueId]!.add(file.path);
+                etagsToClean.add(endpoint);
+              }
+            }
+          }
+
+          final zipEndpoint = PathService.dialogueZip(zipNum);
+          etagsToClean.add(zipEndpoint);
+        }
+      }
+
+      for (final paths in toBeDeletedPaths.values) {
+        await compute(_deleteFiles, paths.toList());
+      }
+
+      for (final dir in dirPathsToDelete) {
+        await compute(_deleteFolderRecursively, dir);
+      }
+
       await Future.wait(etagsToClean.map((eTag) => SharedPref.removeValue(PrefKey.eTag(eTag))));
     } catch (e) {
       developer.log("Error in cleanup process: $e");
     }
   }
 
-  /// Prevents deletion of current, previous and next two levels
   bool _isProtectedLevel(int dist) =>
       (dist < 0 && dist.abs() <= AppConstants.kMaxPreviousLevelsToKeep) || dist <= AppConstants.kMaxNextLevelsToKeep;
 }

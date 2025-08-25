@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:myapp/apis/initialize/initialize_api.dart';
 import 'package:myapp/constants.dart';
 import 'package:myapp/core/router/router.dart';
+import 'package:myapp/services/cleanup/cleanup_service.dart';
 import 'package:myapp/services/file/file_service.dart';
 import 'package:myapp/core/shared_pref.dart';
 import 'package:myapp/core/util_types/progress.dart';
@@ -81,6 +82,11 @@ class InitializeService {
       }
 
       await SharedPref.store(PrefKey.isFirstLaunch, false);
+
+      ref
+          .read(storageCleanupServiceProvider)
+          .cleanLocalFiles(SharedPref.get(PrefKey.currProgress(userEmail: apiUser?.email))?.levelId ?? '')
+          .ignore();
     } catch (e, stackTrace) {
       developer.log('Error during initialize', error: e.toString(), stackTrace: stackTrace);
     }
