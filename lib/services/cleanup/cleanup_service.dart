@@ -34,16 +34,13 @@ class StorageCleanupService {
   /// Removes least-important cached levels while protecting nearby levels
   Future<void> cleanLocalFiles(String currentLevelId) async {
     try {
-      final localLevelIds = await FileService.listNames(
-        Directory('${FileService.documentsDirectory.path}/levels'),
-        type: EntitiesType.folders,
-      );
-      final orderedIds = levelController.orderedIds;
-      if (orderedIds == null) return;
-
       Directory levelsDir = Directory('${FileService.documentsDirectory.path}/levels');
 
       if (!await levelsDir.exists()) return;
+
+      final localLevelIds = await FileService.listNames(levelsDir, type: EntitiesType.folders);
+      final orderedIds = levelController.orderedIds;
+      if (orderedIds == null) return;
 
       int totalSize = await compute(FileService.getDirectorySize, levelsDir.path);
 
