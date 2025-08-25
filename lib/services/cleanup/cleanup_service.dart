@@ -31,7 +31,6 @@ class StorageCleanupService {
     }
   }
 
-  /// Removes least-important cached levels while protecting nearby levels
   Future<void> cleanLocalFiles(String currentLevelId) async {
     try {
       Directory levelsDir = Directory('${FileService.documentsDirectory.path}/levels');
@@ -50,10 +49,8 @@ class StorageCleanupService {
 
       final int currentIndex = idToIndexMap[currentLevelId] ?? -1;
 
-      // renaming the localLevelIds to deletableIds before sorting for semantics
       final deletableLevelIds = localLevelIds;
-      // sorting the deletableIds based on the distance from the current level and moving the
-      // protected level to the end
+
       deletableLevelIds.sort((idA, idB) {
         final int indexA = idToIndexMap[idA] ?? -1;
         final int indexB = idToIndexMap[idB] ?? -1;
@@ -61,7 +58,6 @@ class StorageCleanupService {
         final int distanceA = indexA - currentIndex;
         final int distanceB = indexB - currentIndex;
 
-        // Keep protected levels at the end
         if (_isProtectedLevel(distanceA)) return 1;
         if (_isProtectedLevel(distanceB)) return -1;
 
@@ -81,7 +77,6 @@ class StorageCleanupService {
         }),
       );
 
-      // Build dialogueId -> referencing sublevelIds map from all local levels
       final dialogueIdToSubId = <String, Set<String>>{};
       for (final level in levelById.values) {
         for (final sub in level.sub_levels) {
@@ -105,7 +100,6 @@ class StorageCleanupService {
       final dialogueIdToZipNum = <String, int>{};
       final zipNumToDialogueIds = <int, Set<String>>{};
 
-      // get zip to check that all dialogues of same zip can be deleted or not
       Future<int?> getZipNumForDialogue(String dialogueId) async {
         if (dialogueIdToZipNum.containsKey(dialogueId)) return dialogueIdToZipNum[dialogueId];
 
@@ -125,8 +119,6 @@ class StorageCleanupService {
         }
       }
 
-      // Start deleting until space is freed, also breaking the loop if the
-      //protected levels are reached
       while (i < deletableLevelIds.length - AppConstants.kProtectedIdsLength) {
         final levelId = deletableLevelIds[i];
         final folderPath = '${FileService.documentsDirectory.path}${PathService.levelDir(levelId)}';
@@ -173,7 +165,6 @@ class StorageCleanupService {
             break;
           }
 
-          // If this is the last sublevel and threshold not met, delete entire folder for this level
           if (index == level.sub_levels.length - 1) {
             dirPathsToDelete.add(folderPath);
             etagsToClean.add(PathService.levelJson(levelId));
@@ -181,7 +172,6 @@ class StorageCleanupService {
           }
         }
 
-        // Stop processing more levels once we have freed enough space
         if (!finishedAllSublevels && totalSize < AppConstants.kDeleteCacheThreshold) {
           break;
         }
@@ -191,7 +181,6 @@ class StorageCleanupService {
 
       await Future.wait(dialogueIdToSubId.keys.map((id) async => await getZipNumForDialogue(id)));
 
-      // Determine which zipNums still have at least one dialogue referenced by a non-deleted sublevel
       final zipNumHasRemainingUsage = <int, bool>{};
       dialogueIdToSubId.forEach((dialogueId, subIds) {
         final zipNum = dialogueIdToZipNum[dialogueId];
@@ -204,7 +193,6 @@ class StorageCleanupService {
 
       final deletableZipNums = zipNumToDialogueIds.keys.where((z) => !(zipNumHasRemainingUsage[z] ?? false));
 
-      // Queue dialogue audio files and zip files for deletion
       for (final zipNum in deletableZipNums) {
         final dialogueIds = zipNumToDialogueIds[zipNum] ?? const <String>{};
         for (final dialogueId in dialogueIds) {
@@ -239,7 +227,6 @@ class StorageCleanupService {
     }
   }
 
-  /// Prevents deletion of current, previous and next two levels
   bool _isProtectedLevel(int dist) =>
       (dist < 0 && dist.abs() <= AppConstants.kMaxPreviousLevelsToKeep) || dist <= AppConstants.kMaxNextLevelsToKeep;
 }
