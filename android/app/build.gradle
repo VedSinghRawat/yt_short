@@ -40,6 +40,9 @@ android {
 
     buildTypes {
         release {
+            // Use the debug signing config for local testing
+            signingConfig signingConfigs.debug
+
             minifyEnabled true
             shrinkResources true
             // Without a manual keystore, the release variant won't be signed locally.
