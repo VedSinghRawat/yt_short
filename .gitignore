@@ -83,5 +83,8 @@ android/app/.cxx/
 # VSCode related
 .vscode/
 
-# Keystore
+# Keystore (ensure no secrets are committed)
 *keystore.*
+**/*.keystore
+**/*.jks
+android/key.properties

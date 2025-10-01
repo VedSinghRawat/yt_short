@@ -8,13 +8,7 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
-def keystoreProperties = new Properties()
-def keystorePropertiesFile = rootProject.file("key.properties")
-if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
-} else {
-    throw new FileNotFoundException("Missing android/key.properties. It must exist with keystore credentials.")
-}
+// Removed manual keystore loading; release builds will use default/debug signing
 
 android {
     namespace = "com.example.angrezyogi"
@@ -41,18 +35,15 @@ android {
         versionName = flutter.versionName
     }
 
-    signingConfigs {
-        release {
-            keyAlias keystoreProperties['keyAlias']
-            keyPassword keystoreProperties['keyPassword']
-            storeFile rootProject.file(keystoreProperties['storeFile'])
-            storePassword keystoreProperties['storePassword']
-        }
-    }
+    // No manual signingConfigs; CI or Play Console signing is recommended
+
 
     buildTypes {
         release {
-            signingConfig signingConfigs.release
+            minifyEnabled true
+            shrinkResources true
+            // Without a manual keystore, the release variant won't be signed locally.
+            // Configure Play App Signing, or provide signing via CI environment if needed.
         }
     }
 }
